@@ -97,12 +97,45 @@ async def get_entry(store: KVStore, key: str) -> KVEntry:
         raise ReconciliationError(f"NATS KV read failed for {key}") from error
 
 
-def mapping_state(value: Any) -> str:
+def mapping_state(
+    value: Any, expected_uid: str | None = None, expected_meeting_id: str | None = None
+) -> str:
     raw = value.encode() if isinstance(value, str) else bytes(value)
     if raw == LIVE_MAPPING:
         return "live"
     if raw == TOMBSTONE_MAPPING:
         return "tombstoned"
+    try:
+        decoded = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return "unknown"
+    try:
+        data = json.loads(decoded)
+    except json.JSONDecodeError:
+        parts = decoded.split("|", 2)
+        if len(parts) == 3 and parts[0] and parts[2]:
+            if expected_uid is not None and parts[0] != expected_uid:
+                return "unknown"
+            if expected_meeting_id is not None and parts[2] != expected_meeting_id:
+                return "unknown"
+            return "live"
+        return "unknown"
+    if (
+        isinstance(data, dict)
+        and isinstance(data.get("uid"), str)
+        and data["uid"]
+        and isinstance(data.get("username"), str)
+        and isinstance(data.get("meeting_id"), str)
+        and data["meeting_id"]
+    ):
+        if expected_uid is not None and data["uid"] != expected_uid:
+            return "unknown"
+        if (
+            expected_meeting_id is not None
+            and data["meeting_id"] != expected_meeting_id
+        ):
+            return "unknown"
+        return "live"
     return "unknown"
 
 

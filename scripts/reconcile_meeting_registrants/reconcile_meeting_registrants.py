@@ -7,13 +7,16 @@
 import argparse
 import asyncio
 import json
+import math
 import os
 import sys
+import threading
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Iterable, Protocol
+from urllib.parse import urlsplit, urlunsplit
 
 try:
     import boto3
@@ -42,13 +45,15 @@ from common import (
     registrant_key,
 )
 
-PLAN_VERSION = 1
+PLAN_VERSION = 2
 
 
 class Discovery(Protocol):
     def discover(self, meeting_id: str) -> list[str]: ...
 
-    def contains(self, meeting_id: str, uid: str) -> bool: ...
+    def contains(
+        self, meeting_id: str, uid: str, timeout: float | None = None
+    ) -> bool: ...
 
 
 class Authority(Protocol):
@@ -112,10 +117,18 @@ class CandidateSnapshot:
 
 
 @dataclass(frozen=True)
+class TargetIdentity:
+    opensearch_url: str
+    opensearch_index: str
+    nats_url: str
+
+
+@dataclass(frozen=True)
 class Plan:
     version: int
     meeting_id: str
     environment: Environment
+    targets: TargetIdentity
     candidates: list[CandidateSnapshot]
 
 
@@ -187,9 +200,49 @@ def parse_args(argv: list[str] | None = None) -> Config:
     )
 
 
+def target_identity(config: Config) -> TargetIdentity:
+    if not config.opensearch_index:
+        raise ReconciliationError("OpenSearch index must not be empty")
+    return TargetIdentity(
+        opensearch_url=_sanitize_endpoint(config.opensearch_url),
+        opensearch_index=config.opensearch_index,
+        nats_url=_sanitize_endpoint(config.nats_url),
+    )
+
+
+def _sanitize_endpoint(value: str) -> str:
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as error:
+        raise ReconciliationError("target endpoint is malformed") from error
+    if not parsed.scheme or not hostname:
+        raise ReconciliationError("target endpoint must include scheme and host")
+    if (
+        parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ReconciliationError(
+            "target endpoint must not include credentials, query, or fragment"
+        )
+    host = f"[{hostname.lower()}]" if ":" in hostname else hostname.lower()
+    netloc = f"{host}:{port}" if port is not None else host
+    return urlunsplit((parsed.scheme.lower(), netloc, parsed.path.rstrip("/"), "", ""))
+
+
 def _validate_args(
     parser: argparse.ArgumentParser, args: argparse.Namespace, mode: str
 ) -> None:
+    timing_values = (
+        args.request_timeout,
+        args.verify_timeout,
+        args.verify_interval,
+    )
+    if not all(math.isfinite(value) for value in timing_values):
+        parser.error("timing values must be finite")
     if args.request_timeout <= 0 or args.verify_timeout < 0:
         parser.error("timeouts must be positive")
     if args.verify_interval < 0:
@@ -234,7 +287,7 @@ class OpenSearchDiscovery:
             if scroll_id is not None:
                 self._clear_scroll(scroll_id)
 
-    def contains(self, meeting_id: str, uid: str) -> bool:
+    def contains(self, meeting_id: str, uid: str, timeout: float | None = None) -> bool:
         body = {
             "size": 1,
             "_source": ["object_id"],
@@ -247,7 +300,11 @@ class OpenSearchDiscovery:
                 }
             },
         }
-        payload = self._post(f"{self.base_url}/{self.index}/_search", json=body)
+        payload = self._post(
+            f"{self.base_url}/{self.index}/_search",
+            request_timeout=timeout,
+            json=body,
+        )
         return bool(self._hits(payload))
 
     def _first_page(self, meeting_id: str) -> dict[str, Any]:
@@ -275,9 +332,16 @@ class OpenSearchDiscovery:
             json={"scroll": "1m", "scroll_id": scroll_id},
         )
 
-    def _post(self, url: str, **kwargs: Any) -> dict[str, Any]:
+    def _post(
+        self, url: str, request_timeout: float | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         try:
-            response = self.session.post(url, timeout=self.timeout, **kwargs)
+            timeout = (
+                self.timeout
+                if request_timeout is None
+                else min(self.timeout, request_timeout)
+            )
+            response = self.session.post(url, timeout=timeout, **kwargs)
             response.raise_for_status()
             payload = response.json()
         except Exception as error:
@@ -446,6 +510,8 @@ class DynamoAuthority:
         pending = unprocessed[self.table_name]
         if not isinstance(pending, dict) or not isinstance(pending.get("Keys"), list):
             raise ReconciliationError("DynamoDB returned malformed unprocessed keys")
+        if pending.get("ConsistentRead") is not True:
+            raise ReconciliationError("DynamoDB retry is not consistently read")
         requested = {
             json.dumps(key, sort_keys=True) for key in request[self.table_name]["Keys"]
         }
@@ -486,7 +552,7 @@ async def snapshot_candidate(
     mapping_entry = await get_entry(mappings, mapping_key(uid))
     payload, encoding = decode_payload(value_entry.value)
     _validate_identity(payload, meeting_id, uid)
-    state = mapping_state(mapping_entry.value)
+    state = mapping_state(mapping_entry.value, uid, meeting_id)
     return CandidateSnapshot(
         uid=uid,
         classification="",
@@ -495,7 +561,7 @@ async def snapshot_candidate(
         digest=payload_digest(value_entry.value),
         mapping_state=state,
         mapping_revision=mapping_entry.revision,
-        deleted=DELETED_FIELD in payload,
+        deleted=payload.get(DELETED_FIELD) not in (None, ""),
     )
 
 
@@ -528,10 +594,13 @@ def read_plan(path: Path) -> Plan:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         environment = Environment(**data["environment"])
+        targets = TargetIdentity(**data["targets"])
         candidates = [
             CandidateSnapshot(**candidate) for candidate in data["candidates"]
         ]
-        plan = Plan(data["version"], data["meeting_id"], environment, candidates)
+        plan = Plan(
+            data["version"], data["meeting_id"], environment, targets, candidates
+        )
     except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         raise ReconciliationError("plan file is malformed or unreadable") from error
     if plan.version != PLAN_VERSION:
@@ -542,6 +611,7 @@ def read_plan(path: Path) -> Plan:
 async def build_plan(
     meeting_id: str,
     environment: Environment,
+    targets: TargetIdentity,
     discovery: Discovery,
     authority: Authority,
     values: KVStore,
@@ -555,7 +625,7 @@ async def build_plan(
         classification = classifications[uid]
         _validate_candidate_state(snapshot, classification)
         candidates.append(replace(snapshot, classification=classification))
-    return Plan(PLAN_VERSION, meeting_id, environment, candidates)
+    return Plan(PLAN_VERSION, meeting_id, environment, targets, candidates)
 
 
 def _validate_candidate_state(snapshot: CandidateSnapshot, classification: str) -> None:
@@ -710,7 +780,8 @@ async def restore_candidate(
     confirmations: RestoreConfirmations,
     authority: Authority,
     values: KVStore,
-) -> None:
+    mappings: KVStore,
+) -> int:
     _require_confirmation_match(
         (meeting_id, environment.account, environment.table_arn),
         (confirmations.meeting_id, confirmations.aws_account, confirmations.table_arn),
@@ -718,10 +789,15 @@ async def restore_candidate(
     )
     if authority.classify([uid]).get(uid) != "active":
         raise ReconciliationError("DynamoDB does not contain the restore UID")
+    mapping_entry = await get_entry(mappings, mapping_key(uid))
+    if mapping_state(mapping_entry.value) != "tombstoned":
+        raise ReconciliationError("restore UID mapping is not tombstoned")
     entry = await get_entry(values, registrant_key(uid))
     payload, encoding = decode_payload(entry.value)
     _validate_identity(payload, meeting_id, uid)
-    if DELETED_FIELD not in payload:
+    if payload.get("registrant_id") != uid:
+        raise ReconciliationError(f"restore payload registrant mismatch for {uid}")
+    if payload.get(DELETED_FIELD) in (None, ""):
         raise ReconciliationError("restore UID is not soft-deleted")
     del payload[DELETED_FIELD]
     try:
@@ -734,6 +810,7 @@ async def restore_candidate(
         if isinstance(error, RevisionConflictError):
             raise
         raise ReconciliationError(f"NATS KV restore failed for {uid}") from error
+    return mapping_entry.revision
 
 
 async def verify_apply(
@@ -749,17 +826,21 @@ async def verify_apply(
     while True:
         incomplete = []
         for uid in uids:
-            if discovery.contains(meeting_id, uid):
+            message = f"apply verification incomplete: {incomplete or uids}"
+            if await _contains_before_deadline(
+                discovery, meeting_id, uid, deadline, message
+            ):
                 incomplete.append(uid)
                 continue
-            entry = await get_entry(mappings, mapping_key(uid))
+            entry = await _get_before_deadline(
+                mappings, mapping_key(uid), deadline, message
+            )
             if mapping_state(entry.value) != "tombstoned":
                 incomplete.append(uid)
         if not incomplete:
             return
-        if time.monotonic() >= deadline:
-            raise VerificationError(f"apply verification incomplete: {incomplete}")
-        await sleep(interval)
+        message = f"apply verification incomplete: {incomplete}"
+        await sleep(min(interval, _remaining_time(deadline, message)))
 
 
 async def verify_restore(
@@ -767,18 +848,97 @@ async def verify_restore(
     uid: str,
     discovery: Discovery,
     mappings: KVStore,
+    after_mapping_revision: int,
     timeout: float,
     interval: float,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
 ) -> None:
     deadline = time.monotonic() + timeout
     while True:
-        entry = await get_entry(mappings, mapping_key(uid))
-        if discovery.contains(meeting_id, uid) and mapping_state(entry.value) == "live":
+        message = f"restore verification incomplete: {uid}"
+        entry = await _get_before_deadline(
+            mappings, mapping_key(uid), deadline, message
+        )
+        if (
+            await _contains_before_deadline(
+                discovery, meeting_id, uid, deadline, message
+            )
+            and mapping_state(entry.value, uid, meeting_id) == "live"
+            and entry.revision > after_mapping_revision
+        ):
             return
-        if time.monotonic() >= deadline:
-            raise VerificationError(f"restore verification incomplete: {uid}")
-        await sleep(interval)
+        await sleep(min(interval, _remaining_time(deadline, message)))
+
+
+def _remaining_time(deadline: float, message: str) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise VerificationError(message)
+    return remaining
+
+
+async def _get_before_deadline(
+    mappings: KVStore, key: str, deadline: float, message: str
+) -> Any:
+    remaining = _remaining_time(deadline, message)
+    try:
+        return await asyncio.wait_for(
+            get_entry(mappings, key),
+            timeout=remaining,
+        )
+    except TimeoutError as error:
+        raise VerificationError(message) from error
+
+
+async def _contains_before_deadline(
+    discovery: Discovery,
+    meeting_id: str,
+    uid: str,
+    deadline: float,
+    message: str,
+) -> bool:
+    remaining = _remaining_time(deadline, message)
+    try:
+        return await asyncio.wait_for(
+            _run_in_daemon_thread(
+                discovery.contains,
+                meeting_id,
+                uid,
+                remaining,
+            ),
+            timeout=remaining,
+        )
+    except TimeoutError as error:
+        raise VerificationError(message) from error
+
+
+async def _run_in_daemon_thread(function: Callable[..., Any], *args: Any) -> Any:
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+
+    def run() -> None:
+        try:
+            result, error = function(*args), None
+        except Exception as caught:
+            result, error = None, caught
+        try:
+            loop.call_soon_threadsafe(_complete_future, future, result, error)
+        except RuntimeError:
+            pass
+
+    threading.Thread(target=run, daemon=True).start()
+    return await future
+
+
+def _complete_future(
+    future: asyncio.Future[Any], result: Any, error: Exception | None
+) -> None:
+    if future.done():
+        return
+    if error is not None:
+        future.set_exception(error)
+    else:
+        future.set_result(result)
 
 
 def build_aws_clients(config: Config) -> tuple[Any, Any]:
@@ -812,6 +972,10 @@ def _assume_role(session: Any, config: Config) -> Any:
 async def run(config: Config) -> dict[str, Any]:
     if requests is None:
         raise ReconciliationError("requests is not installed")
+    if config.mode == "apply":
+        reviewed_plan = read_plan(config.plan_path)
+        if target_identity(config) != reviewed_plan.targets:
+            raise PlanDriftError("runtime targets differ from the reviewed plan")
     sts, dynamodb = build_aws_clients(config)
     authority = DynamoAuthority(sts, dynamodb, config.dynamodb_table, config.aws_region)
     environment = authority.discover_environment()
@@ -849,7 +1013,13 @@ async def _run_dry(
     mappings: KVStore,
 ) -> dict[str, Any]:
     plan = await build_plan(
-        config.meeting_id, environment, discovery, authority, values, mappings
+        config.meeting_id,
+        environment,
+        target_identity(config),
+        discovery,
+        authority,
+        values,
+        mappings,
     )
     write_plan(plan, config.plan_path)
     return _summary("dry-run", plan.candidates)
@@ -866,6 +1036,8 @@ async def _run_apply(
     plan = read_plan(config.plan_path)
     if config.meeting_id != plan.meeting_id:
         raise PlanDriftError("target meeting differs from the reviewed plan")
+    if target_identity(config) != plan.targets:
+        raise PlanDriftError("runtime targets differ from the reviewed plan")
     if environment != plan.environment:
         raise PlanDriftError("AWS environment differs from the plan")
     confirmations = Confirmations(
@@ -908,14 +1080,21 @@ async def _run_restore(
         config.confirm_aws_account or "",
         config.confirm_table_arn or "",
     )
-    await restore_candidate(
-        config.meeting_id, uid, environment, confirmations, authority, values
+    mapping_revision = await restore_candidate(
+        config.meeting_id,
+        uid,
+        environment,
+        confirmations,
+        authority,
+        values,
+        mappings,
     )
     await verify_restore(
         config.meeting_id,
         uid,
         discovery,
         mappings,
+        mapping_revision,
         config.verify_timeout,
         config.verify_interval,
     )

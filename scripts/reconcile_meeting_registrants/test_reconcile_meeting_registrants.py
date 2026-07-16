@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
+import json
 import os
 import tempfile
+import time
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -115,11 +117,13 @@ class FakeAuthority:
 class FakeDiscovery:
     def __init__(self, uids):
         self.uids = list(uids)
+        self.timeouts = []
 
     def discover(self, meeting_id):
         return list(self.uids)
 
-    def contains(self, meeting_id, uid):
+    def contains(self, meeting_id, uid, timeout=None):
+        self.timeouts.append(timeout)
         return uid in self.uids
 
 
@@ -138,6 +142,9 @@ def cli_args(*extra, meeting_id="987", table="registrants"):
 
 
 ENVIRONMENT = reconcile.Environment("123", "us-east-1", "arn:table", "reg", "id", "S")
+TARGETS = reconcile.TargetIdentity(
+    "http://search", "resources", "nats://localhost:4222"
+)
 
 
 class ConfigTests(unittest.TestCase):
@@ -165,6 +172,16 @@ class ConfigTests(unittest.TestCase):
         self.assertNotIn("--aws-access-key-id", option_strings)
         self.assertNotIn("--aws-secret-access-key", option_strings)
         self.assertNotIn("--aws-session-token", option_strings)
+
+    def test_non_finite_timing_values_are_rejected(self):
+        for option, value in (
+            ("--request-timeout", "nan"),
+            ("--verify-timeout", "inf"),
+            ("--verify-interval", "nan"),
+        ):
+            with self.subTest(option=option, value=value):
+                with self.assertRaises(SystemExit):
+                    reconcile.parse_args(cli_args(option, value))
 
 
 class OpenSearchTests(unittest.TestCase):
@@ -394,6 +411,22 @@ class DynamoDBTests(unittest.TestCase):
         with self.assertRaises(reconcile.ReconciliationError):
             authority.classify(["uid-1"])
 
+    def test_unprocessed_keys_without_consistent_read_fail_closed(self):
+        response = {
+            "Responses": {"reg": []},
+            "UnprocessedKeys": {"reg": {"Keys": [{"id": {"S": "uid-1"}}]}},
+        }
+        authority = reconcile.DynamoAuthority(
+            Mock(),
+            FakeDynamo([response, {"Responses": {"reg": []}, "UnprocessedKeys": {}}]),
+            "reg",
+            "us-east-1",
+            sleep=lambda _: None,
+        )
+        authority.environment = ENVIRONMENT
+        with self.assertRaises(reconcile.ReconciliationError):
+            authority.classify(["uid-1"])
+
     def test_classification_batches_one_hundred_keys_without_scan(self):
         uids = [f"uid-{number:03d}" for number in range(101)]
         dynamo = FakeDynamo(
@@ -525,6 +558,57 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("live", snapshot.mapping_state)
         self.assertEqual(64, len(snapshot.digest))
 
+    async def test_snapshot_ignores_empty_delete_markers(self):
+        for marker in (None, ""):
+            payload = {
+                "meeting_id": "meeting-1",
+                "registrant_id": "uid-1",
+                "_sdc_deleted_at": marker,
+            }
+            values = FakeKV(
+                {
+                    reconcile.registrant_key("uid-1"): Entry(
+                        reconcile.encode_payload(payload, "json"), 7
+                    )
+                }
+            )
+            mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"1", 3)})
+            snapshot = await reconcile.snapshot_candidate(
+                values, mappings, "meeting-1", "uid-1"
+            )
+            self.assertFalse(snapshot.deleted)
+
+    async def test_mapping_state_accepts_current_producer_formats(self):
+        values = (
+            b'{"uid":"uid-1","username":"","meeting_id":"meeting-1"}',
+            b"uid-1||meeting-1",
+        )
+        for value in values:
+            with self.subTest(value=value):
+                self.assertEqual("live", reconcile.mapping_state(value))
+
+    async def test_mismatched_mapping_identity_fails_closed(self):
+        payload = {"meeting_id": "meeting-1", "registrant_id": "uid-1"}
+        values = FakeKV(
+            {
+                reconcile.registrant_key("uid-1"): Entry(
+                    reconcile.encode_payload(payload, "json"), 7
+                )
+            }
+        )
+        mapping = b'{"uid":"uid-other","username":"","meeting_id":"meeting-2"}'
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(mapping, 3)})
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile.build_plan(
+                "meeting-1",
+                ENVIRONMENT,
+                TARGETS,
+                FakeDiscovery(["uid-1"]),
+                FakeAuthority([]),
+                values,
+                mappings,
+            )
+
     async def test_mismatched_payload_fails_closed(self):
         values = FakeKV(
             {
@@ -544,9 +628,10 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
     async def test_plan_is_deterministic_redacted_and_private(self):
         environment = ENVIRONMENT
         plan = reconcile.Plan(
-            version=1,
+            version=reconcile.PLAN_VERSION,
             meeting_id="meeting-1",
             environment=environment,
+            targets=TARGETS,
             candidates=[
                 reconcile.CandidateSnapshot(
                     "uid-1", "stale", 7, "json", "abc", "live", 3, False
@@ -562,6 +647,101 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("token", raw)
             self.assertEqual(0o600, os.stat(path).st_mode & 0o777)
 
+    async def test_dry_run_plan_pins_sanitized_targets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plan_path = Path(directory) / "plan.json"
+            config = reconcile.parse_args(
+                cli_args(
+                    "--opensearch-url",
+                    "https://search.example/base/",
+                    "--opensearch-index",
+                    "resources-prod",
+                    "--nats-url",
+                    "nats://nats.example:4222",
+                    "--plan",
+                    str(plan_path),
+                )
+            )
+            payload = {"meeting_id": "987", "registrant_id": "uid-1"}
+            await reconcile._run_dry(
+                config,
+                ENVIRONMENT,
+                FakeDiscovery(["uid-1"]),
+                FakeAuthority(["uid-1"]),
+                FakeKV(
+                    {
+                        reconcile.registrant_key("uid-1"): Entry(
+                            reconcile.encode_payload(payload, "json"), 7
+                        )
+                    }
+                ),
+                FakeKV({reconcile.mapping_key("uid-1"): Entry(b"1", 3)}),
+            )
+            raw = plan_path.read_text()
+        self.assertIn("https://search.example/base", raw)
+        self.assertIn("resources-prod", raw)
+        self.assertIn("nats://nats.example:4222", raw)
+
+    async def test_target_identity_rejects_credential_and_query_aliases(self):
+        for option, value in (
+            ("--opensearch-url", "https://user:secret@search.example"),
+            ("--nats-url", "nats://token@nats.example:4222"),
+            ("--opensearch-url", "https://search.example?cluster=other"),
+        ):
+            with self.subTest(option=option, value=value):
+                config = reconcile.parse_args(cli_args(option, value))
+                with self.assertRaises(reconcile.ReconciliationError):
+                    reconcile.target_identity(config)
+
+    async def test_apply_rejects_targets_different_from_reviewed_plan(self):
+        plan = reconcile.Plan(
+            reconcile.PLAN_VERSION,
+            "meeting-1",
+            ENVIRONMENT,
+            TARGETS,
+            [],
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "plan.json"
+            reconcile.write_plan(plan, path)
+            data = json.loads(path.read_text())
+            data["targets"] = {
+                "opensearch_url": "https://search.prod",
+                "opensearch_index": "resources",
+                "nats_url": "nats://nats.prod:4222",
+            }
+            path.write_text(json.dumps(data))
+            config = reconcile.parse_args(
+                cli_args(
+                    "--opensearch-url",
+                    "https://search.dev",
+                    "--nats-url",
+                    "nats://nats.dev:4222",
+                    "--plan",
+                    str(path),
+                    "--apply",
+                    "--confirm-meeting-id",
+                    "meeting-1",
+                    "--confirm-aws-account",
+                    "123",
+                    "--confirm-table-arn",
+                    "arn:table",
+                    "--confirm-stale-count",
+                    "0",
+                    meeting_id="meeting-1",
+                    table="reg",
+                )
+            )
+            with self.assertRaises(reconcile.PlanDriftError):
+                await reconcile._run_apply(
+                    config,
+                    ENVIRONMENT,
+                    FakeDiscovery([]),
+                    FakeAuthority([]),
+                    FakeKV({}),
+                    FakeKV({}),
+                )
+
     async def test_unknown_mapping_prevents_applicable_plan(self):
         payload = {"meeting_id": "meeting-1", "registrant_id": "uid-1"}
         values = FakeKV(
@@ -576,6 +756,7 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
             await reconcile.build_plan(
                 "meeting-1",
                 ENVIRONMENT,
+                TARGETS,
                 FakeDiscovery(["uid-1"]),
                 FakeAuthority([]),
                 values,
@@ -600,6 +781,7 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
                     await reconcile.build_plan(
                         "meeting-1",
                         ENVIRONMENT,
+                        TARGETS,
                         FakeDiscovery(["uid-1"]),
                         FakeAuthority([]),
                         values,
@@ -623,6 +805,7 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
         plan = await reconcile.build_plan(
             "meeting-1",
             ENVIRONMENT,
+            TARGETS,
             FakeDiscovery(["uid-1"]),
             FakeAuthority([]),
             values,
@@ -649,6 +832,7 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
             await reconcile.build_plan(
                 "meeting-1",
                 ENVIRONMENT,
+                TARGETS,
                 FakeDiscovery(["uid-1"]),
                 FakeAuthority(["uid-1"]),
                 values,
@@ -659,9 +843,10 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
 class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
     def make_plan(self, digest, revision=7, deleted=False):
         return reconcile.Plan(
-            version=1,
+            version=reconcile.PLAN_VERSION,
             meeting_id="meeting-1",
             environment=ENVIRONMENT,
+            targets=TARGETS,
             candidates=[
                 reconcile.CandidateSnapshot(
                     "uid-1",
@@ -774,9 +959,10 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
             }
         )
         plan = reconcile.Plan(
-            1,
+            reconcile.PLAN_VERSION,
             "meeting-1",
             ENVIRONMENT,
+            TARGETS,
             [
                 reconcile.CandidateSnapshot(
                     "uid-1",
@@ -900,6 +1086,7 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
         }
         raw = reconcile.encode_payload(payload, "msgpack")
         values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"!del", 3)})
         await reconcile.restore_candidate(
             "meeting-1",
             "uid-1",
@@ -907,6 +1094,7 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
             reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
             FakeAuthority(["uid-1"]),
             values,
+            mappings,
         )
         decoded, encoding = reconcile.decode_payload(values.updates[0][1])
         self.assertEqual("msgpack", encoding)
@@ -923,6 +1111,7 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
                 reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
                 FakeAuthority([]),
                 values,
+                FakeKV({}),
             )
         self.assertEqual([], values.updates)
 
@@ -931,6 +1120,7 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
             {"meeting_id": "meeting-1", "registrant_id": "uid-1"}, "json"
         )
         values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"!del", 3)})
         with self.assertRaises(reconcile.ReconciliationError):
             await reconcile.restore_candidate(
                 "meeting-1",
@@ -939,8 +1129,131 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
                 reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
                 FakeAuthority(["uid-1"]),
                 values,
+                mappings,
             )
         self.assertEqual([], values.updates)
+
+    async def test_restore_rejects_empty_delete_markers(self):
+        for marker in (None, ""):
+            payload = {
+                "meeting_id": "meeting-1",
+                "registrant_id": "uid-1",
+                "_sdc_deleted_at": marker,
+            }
+            raw = reconcile.encode_payload(payload, "json")
+            values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+            mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"!del", 3)})
+            with self.subTest(marker=marker):
+                with self.assertRaises(reconcile.ReconciliationError):
+                    await reconcile.restore_candidate(
+                        "meeting-1",
+                        "uid-1",
+                        ENVIRONMENT,
+                        reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
+                        FakeAuthority(["uid-1"]),
+                        values,
+                        mappings,
+                    )
+            self.assertEqual([], values.updates)
+
+    async def test_restore_rejects_missing_payload_registrant_id(self):
+        raw = reconcile.encode_payload(
+            {
+                "meeting_id": "meeting-1",
+                "_sdc_deleted_at": "2026-07-16T00:00:00Z",
+            },
+            "json",
+        )
+        values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"!del", 3)})
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile.restore_candidate(
+                "meeting-1",
+                "uid-1",
+                ENVIRONMENT,
+                reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
+                FakeAuthority(["uid-1"]),
+                values,
+                mappings,
+            )
+        self.assertEqual([], values.updates)
+
+    async def test_restore_requires_tombstoned_mapping_before_write(self):
+        raw = reconcile.encode_payload(
+            {
+                "meeting_id": "meeting-1",
+                "registrant_id": "uid-1",
+                "_sdc_deleted_at": "2026-07-16T00:00:00Z",
+            },
+            "json",
+        )
+        values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"1", 3)})
+        config = reconcile.parse_args(
+            cli_args(
+                "--restore",
+                "uid-1",
+                "--confirm-meeting-id",
+                "meeting-1",
+                "--confirm-aws-account",
+                "123",
+                "--confirm-table-arn",
+                "arn:table",
+                meeting_id="meeting-1",
+                table="reg",
+            )
+        )
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile._run_restore(
+                config,
+                ENVIRONMENT,
+                FakeDiscovery(["uid-1"]),
+                FakeAuthority(["uid-1"]),
+                values,
+                mappings,
+            )
+        self.assertEqual([], values.updates)
+
+    async def test_restore_verification_requires_newer_live_mapping_revision(self):
+        raw = reconcile.encode_payload(
+            {
+                "meeting_id": "meeting-1",
+                "registrant_id": "uid-1",
+                "_sdc_deleted_at": "2026-07-16T00:00:00Z",
+            },
+            "json",
+        )
+        config = reconcile.parse_args(
+            cli_args(
+                "--restore",
+                "uid-1",
+                "--confirm-meeting-id",
+                "meeting-1",
+                "--confirm-aws-account",
+                "123",
+                "--confirm-table-arn",
+                "arn:table",
+                "--verify-timeout",
+                "0.01",
+                "--verify-interval",
+                "0",
+                meeting_id="meeting-1",
+                table="reg",
+            )
+        )
+        mappings = SequencedGetKV(
+            reconcile.mapping_key("uid-1"),
+            [Entry(b"!del", 3), Entry(b"1", 3)],
+        )
+        with self.assertRaises(reconcile.VerificationError):
+            await reconcile._run_restore(
+                config,
+                ENVIRONMENT,
+                FakeDiscovery(["uid-1"]),
+                FakeAuthority(["uid-1"]),
+                FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)}),
+                mappings,
+            )
 
 
 class VerificationTests(unittest.IsolatedAsyncioTestCase):
@@ -980,6 +1293,7 @@ class VerificationTests(unittest.IsolatedAsyncioTestCase):
             "uid-1",
             discovery,
             mappings,
+            after_mapping_revision=3,
             timeout=0.05,
             interval=0,
         )
@@ -996,6 +1310,92 @@ class VerificationTests(unittest.IsolatedAsyncioTestCase):
                 interval=0,
             )
         self.assertEqual([], mappings.updates)
+
+    async def test_verification_passes_remaining_budget_to_discovery(self):
+        discovery = FakeDiscovery(["uid-1"])
+        delays = []
+
+        async def stop_after_sleep(delay):
+            delays.append(delay)
+            raise RuntimeError("stop")
+
+        with self.assertRaisesRegex(RuntimeError, "stop"):
+            await reconcile.verify_apply(
+                "meeting-1",
+                ["uid-1"],
+                discovery,
+                FakeKV({}),
+                timeout=0.05,
+                interval=10,
+                sleep=stop_after_sleep,
+            )
+        self.assertGreater(delays[0], 0)
+        self.assertLessEqual(delays[0], 0.05)
+        self.assertGreater(discovery.timeouts[0], 0)
+        self.assertLessEqual(discovery.timeouts[0], 0.05)
+
+    async def test_verification_bounds_blocking_mapping_read(self):
+        class BlockingKV:
+            async def get(self, key):
+                await asyncio.Event().wait()
+
+        discovery = FakeDiscovery([])
+        try:
+            await asyncio.wait_for(
+                reconcile.verify_apply(
+                    "meeting-1",
+                    ["uid-1"],
+                    discovery,
+                    BlockingKV(),
+                    timeout=0.01,
+                    interval=0,
+                ),
+                timeout=0.1,
+            )
+        except Exception as error:
+            self.assertIsInstance(error, reconcile.VerificationError)
+        else:
+            self.fail("blocking mapping read did not time out")
+
+    async def test_verification_bounds_blocking_discovery_call(self):
+        class BlockingDiscovery(FakeDiscovery):
+            def contains(self, meeting_id, uid, timeout=None):
+                time.sleep(0.2)
+                return True
+
+        started = time.monotonic()
+        with self.assertRaises(reconcile.VerificationError):
+            await reconcile.verify_apply(
+                "meeting-1",
+                ["uid-1"],
+                BlockingDiscovery(["uid-1"]),
+                FakeKV({}),
+                timeout=0.01,
+                interval=0,
+            )
+        self.assertLess(time.monotonic() - started, 0.1)
+
+
+class VerificationWallClockTests(unittest.TestCase):
+    def test_cli_runner_does_not_wait_for_timed_out_discovery_worker(self):
+        class BlockingDiscovery(FakeDiscovery):
+            def contains(self, meeting_id, uid, timeout=None):
+                time.sleep(0.2)
+                return True
+
+        started = time.monotonic()
+        with self.assertRaises(reconcile.VerificationError):
+            asyncio.run(
+                reconcile.verify_apply(
+                    "meeting-1",
+                    ["uid-1"],
+                    BlockingDiscovery(["uid-1"]),
+                    FakeKV({}),
+                    timeout=0.01,
+                    interval=0,
+                )
+            )
+        self.assertLess(time.monotonic() - started, 0.1)
 
 
 class OutputTests(unittest.TestCase):

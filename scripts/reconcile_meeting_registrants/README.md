@@ -60,6 +60,7 @@ python3 -m venv .venv
 Dry-run creates a mode-`0600` plan and prints a redacted summary. Review:
 
 - AWS account, region, table ARN, and discovered key schema
+- sanitized OpenSearch URL/index and NATS URL identities
 - every candidate UID and DynamoDB classification
 - NATS revisions, mapping states, encodings, and payload digests
 - active, stale, and candidate totals
@@ -90,9 +91,9 @@ plan:
 
 Before the first write, apply repeats candidate discovery, consistent DynamoDB
 classification, and all NATS reads. Any changed UID, classification, digest,
-mapping, revision, or AWS environment invalidates the plan. After writes, the
-tool waits for stale UIDs to leave OpenSearch and their mappings to become
-tombstoned.
+mapping, revision, AWS environment, or OpenSearch/NATS target invalidates the
+plan. After writes, the tool waits within the configured verification deadline
+for stale UIDs to leave OpenSearch and their mappings to become tombstoned.
 
 ## Restore
 
@@ -112,8 +113,9 @@ Restore one UID only after DynamoDB contains that exact row:
   --confirm-table-arn arn:aws:dynamodb:us-east-1:123456789012:table/example
 ```
 
-Restore removes only `_sdc_deleted_at` with an expected revision, then waits for
-the same UID to reappear in OpenSearch with a live mapping.
+Restore requires an existing tombstoned mapping, removes only
+`_sdc_deleted_at` with an expected revision, then waits for the same UID to
+reappear in OpenSearch with a newer live mapping revision.
 
 ## Failure recovery
 
