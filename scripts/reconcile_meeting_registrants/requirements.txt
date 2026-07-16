@@ -1,0 +1,4 @@
+boto3
+msgpack
+nats-py
+requests
