@@ -195,11 +195,49 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return true
 	}
 
-	// Determine action (created vs updated)
+	// Determine action (created vs updated) and retrieve the previously-stored username
+	// so we can detect when it has been cleared and revoke stale FGA access.
+	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient
+	// failure would make us treat this as a create, overwrite the mapping, and permanently
+	// lose the old username — exactly the stale-access condition we are trying to fix.
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+	oldUsername := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping, will retry")
+		return true
+	}
+
+	// For updates, use the raw source username to honour explicit clears.
+	// Enrichment (filling username from user_id) applies only on creates — an update
+	// that explicitly clears the username field must revoke FGA access even when user_id
+	// still resolves.
+	//
+	// When v1 removes a username, the CDC payload omits the "username" key entirely —
+	// the same shape as a sparse update that didn't touch the field. Since these two cases
+	// are indistinguishable by key-presence, always use the decoded value: absent key →
+	// empty string, which correctly triggers revocation of the previously-stored username.
+	if indexerAction == indexerConstants.ActionUpdated {
+		registrantData.Username = utils.GetString(v1Data["username"])
+	}
+
+	// If the username was removed or changed during an update, revoke the old FGA access
+	// before publishing the new state so the user never has more access than intended.
+	// Retry transient publish failures: if we continue and store the new mapping, the old
+	// username is lost and the stale tuple can never be recovered.
+	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != registrantData.Username {
+		payload, err := buildGenericMemberRemovePayload("v1_meeting", registrantData.MeetingID, oldUsername)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old username")
+			return false
+		}
+		if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old registrant username")
+			return isTransientError(err)
+		}
 	}
 
 	// Publish to indexer and FGA-sync
@@ -208,9 +246,14 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		return isTransientError(err)
 	}
 
-	// Store mapping
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	// Store uid, username, and meetingID in the mapping so future updates and deletes
+	// can recover them without an extra lookup. Retry transient write failures: the mapping
+	// is the only durable record of the current username, so losing it prevents future
+	// username-change detection.
+	mappingValue := buildRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
+		return isTransientError(err)
 	}
 
 	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
@@ -232,20 +275,33 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	funcLogger := h.logger.With("key", key, "registrant_uid", registrantUID)
 
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantUID)
-	if h.isTombstoned(ctx, mappingKey) {
-		funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
-		return false
-	}
 
-	// Extract username to conditionally send the access control message.
-	// Without a username, access control cannot identify which user to remove access for.
-	username := utils.GetString(v1Data["username"])
+	// Fetch the mapping once: check for tombstone and extract username/meetingID in one round-trip.
+	// Retry transient errors: if this fails and we fall through with empty username, we skip
+	// FGA removal and tombstone the mapping, making stale access unrecoverable.
+	username := ""
+	meetingID := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+		if entryIsTombstoned(entry) {
+			funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
+			return false
+		}
+		_, username, meetingID = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping on delete, will retry")
+		return true
+	}
+	if username == "" {
+		username = utils.GetString(v1Data["username"])
+	}
+	if meetingID == "" {
+		meetingID = utils.GetString(v1Data["meeting_id"])
+	}
 
 	var accessPayload []byte
 	var deleteAccessSubject string
 
 	if username != "" {
-		meetingID := utils.GetString(v1Data["meeting_id"])
 		var err error
 		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
@@ -253,7 +309,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 		}
 		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
 	} else {
-		funcLogger.DebugContext(ctx, "no username in v1Data, skipping access control message for registrant delete")
+		funcLogger.DebugContext(ctx, "no username in mapping or v1Data, skipping access control message for registrant delete")
 	}
 
 	return h.handleMeetingTypeDelete(ctx, key, registrantUID, accessPayload, meetingDeleteConfig{
@@ -594,4 +650,39 @@ func mapInviteResponseType(inviteResponseType string) (string, error) {
 		return "declined", nil
 	}
 	return "", fmt.Errorf("invalid invite response type: %s", inviteResponseType)
+}
+
+// registrantMappingData holds the encoded data for a registrant mapping.
+type registrantMappingData struct {
+	UID       string `json:"uid"`
+	Username  string `json:"username"`
+	MeetingID string `json:"meeting_id"`
+}
+
+// buildRegistrantMappingValue encodes uid, username, and meetingID as JSON
+// so they can be recovered on delete and on subsequent updates without an extra lookup.
+// Uses JSON encoding to safely handle usernames containing special characters like "|".
+func buildRegistrantMappingValue(uid, username, meetingID string) string {
+	b, _ := json.Marshal(registrantMappingData{UID: uid, Username: username, MeetingID: meetingID})
+	return string(b)
+}
+
+// parseRegistrantMappingValue decodes a value written by buildRegistrantMappingValue.
+// Supports JSON (primary) and legacy pipe-delimited format (uid|username|meetingID) for
+// backward compatibility. Returns empty strings for all fields when the value is in an
+// unrecognised format (e.g. the old "1" sentinel written before username tracking was added).
+func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
+	// Try JSON format first
+	if strings.HasPrefix(value, "{") {
+		var d registrantMappingData
+		if err := json.Unmarshal([]byte(value), &d); err == nil {
+			return d.UID, d.Username, d.MeetingID
+		}
+	}
+	// Legacy pipe-delimited: uid|username|meetingID
+	parts := strings.SplitN(value, "|", 3)
+	if len(parts) == 3 {
+		return parts[0], parts[1], parts[2]
+	}
+	return "", "", ""
 }
