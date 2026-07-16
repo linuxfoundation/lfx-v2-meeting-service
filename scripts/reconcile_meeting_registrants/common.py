@@ -1,3 +1,6 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
 """NATS KV and payload helpers adapted from existing migration scripts."""
 
 import hashlib

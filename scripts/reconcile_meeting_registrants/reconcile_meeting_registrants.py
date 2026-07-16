@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+
 """Reconcile indexed meeting registrants against authoritative DynamoDB rows."""
 
 import argparse
