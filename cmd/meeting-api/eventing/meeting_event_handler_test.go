@@ -48,3 +48,42 @@ func TestMeetingDBRawUnmarshalAutoEmailReminderTimeInvalid(t *testing.T) {
 		})
 	}
 }
+
+// updated_occurrences duration coercion: unknown JSON types (bool, object) are now
+// rejected rather than silently coerced to zero. This is a deliberate tightening over
+// the original switch which had no default case.
+func TestMeetingDBRawUnmarshalUpdatedOccurrenceDuration(t *testing.T) {
+	happyPath := []struct {
+		name    string
+		json    string
+		wantDur int
+	}{
+		{"int", `{"updated_occurrences":[{"duration":30}]}`, 30},
+		{"string", `{"updated_occurrences":[{"duration":"45"}]}`, 45},
+		{"float", `{"updated_occurrences":[{"duration":60.0}]}`, 60},
+		{"absent", `{"updated_occurrences":[{}]}`, 0},
+	}
+	for _, tt := range happyPath {
+		t.Run(tt.name, func(t *testing.T) {
+			var m MeetingDBRaw
+			require.NoError(t, json.Unmarshal([]byte(tt.json), &m))
+			require.Len(t, m.UpdatedOccurrences, 1)
+			assert.Equal(t, tt.wantDur, m.UpdatedOccurrences[0].Duration)
+		})
+	}
+
+	invalidTypes := []struct {
+		name string
+		json string
+	}{
+		{"bool", `{"updated_occurrences":[{"duration":true}]}`},
+		{"object", `{"updated_occurrences":[{"duration":{}}]}`},
+		{"non-numeric string", `{"updated_occurrences":[{"duration":"soon"}]}`},
+	}
+	for _, tt := range invalidTypes {
+		t.Run(tt.name, func(t *testing.T) {
+			var m MeetingDBRaw
+			require.Error(t, json.Unmarshal([]byte(tt.json), &m))
+		})
+	}
+}
