@@ -249,6 +249,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		LastBulkRegistrantsJobWarningCount        interface{}       `json:"last_bulk_registrants_job_warning_count"`
 		LastMailingListMembersSyncJobFailedCount  interface{}       `json:"last_mailing_list_members_sync_job_failed_count"`
 		LastMailingListMembersSyncJobWarningCount interface{}       `json:"last_mailing_list_members_sync_job_warning_count"`
+		AutoEmailReminderTime                     interface{}       `json:"auto_email_reminder_time"`
 		Occurrences                               []json.RawMessage `json:"occurrences"`
 		UpdatedOccurrences                        []json.RawMessage `json:"updated_occurrences"`
 		*Alias
@@ -399,6 +400,26 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 	default:
 		if v != nil {
 			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_warning_count: %T", v)
+		}
+	}
+
+	// Handle AutoEmailReminderTime
+	switch v := tmp.AutoEmailReminderTime.(type) {
+	case string:
+		if v != "" {
+			val, err := strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+			m.AutoEmailReminderTime = val
+		}
+	case float64:
+		m.AutoEmailReminderTime = int(v)
+	case int:
+		m.AutoEmailReminderTime = v
+	default:
+		if v != nil {
+			return fmt.Errorf("invalid type for auto_email_reminder_time: %T", v)
 		}
 	}
 
