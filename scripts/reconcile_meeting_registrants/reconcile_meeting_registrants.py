@@ -89,6 +89,9 @@ class Config:
     confirm_aws_account: str | None
     confirm_table_arn: str | None
     confirm_stale_count: int | None
+    confirm_opensearch_url: str | None
+    confirm_opensearch_index: str | None
+    confirm_nats_url: str | None
     request_timeout: float
     verify_timeout: float
     verify_interval: float
@@ -167,6 +170,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--confirm-aws-account")
     parser.add_argument("--confirm-table-arn")
     parser.add_argument("--confirm-stale-count", type=int)
+    parser.add_argument("--confirm-opensearch-url")
+    parser.add_argument("--confirm-opensearch-index")
+    parser.add_argument("--confirm-nats-url")
     parser.add_argument("--request-timeout", type=float, default=15.0)
     parser.add_argument("--verify-timeout", type=float, default=60.0)
     parser.add_argument("--verify-interval", type=float, default=2.0)
@@ -194,6 +200,9 @@ def parse_args(argv: list[str] | None = None) -> Config:
         confirm_aws_account=args.confirm_aws_account,
         confirm_table_arn=args.confirm_table_arn,
         confirm_stale_count=args.confirm_stale_count,
+        confirm_opensearch_url=args.confirm_opensearch_url,
+        confirm_opensearch_index=args.confirm_opensearch_index,
+        confirm_nats_url=args.confirm_nats_url,
         request_timeout=args.request_timeout,
         verify_timeout=args.verify_timeout,
         verify_interval=args.verify_interval,
@@ -257,6 +266,15 @@ def _validate_args(
         parser.error("write modes require meeting, account, and table confirmations")
     if mode == "apply" and args.confirm_stale_count is None:
         parser.error("apply requires --confirm-stale-count")
+    if mode == "restore" and any(
+        value is None
+        for value in (
+            args.confirm_opensearch_url,
+            args.confirm_opensearch_index,
+            args.confirm_nats_url,
+        )
+    ):
+        parser.error("restore requires OpenSearch and NATS target confirmations")
 
 
 class OpenSearchDiscovery:
@@ -1091,6 +1109,16 @@ async def _run_restore(
     mappings: KVStore,
 ) -> dict[str, Any]:
     uid = config.restore_uid or ""
+    confirmed_targets = target_identity(
+        replace(
+            config,
+            opensearch_url=config.confirm_opensearch_url or "",
+            opensearch_index=config.confirm_opensearch_index or "",
+            nats_url=config.confirm_nats_url or "",
+        )
+    )
+    if confirmed_targets != target_identity(config):
+        raise ReconciliationError("restore target confirmations do not match")
     confirmations = RestoreConfirmations(
         config.confirm_meeting_id or "",
         config.confirm_aws_account or "",

@@ -164,6 +164,21 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             reconcile.parse_args(cli_args("--apply"))
 
+    def test_restore_requires_target_confirmations(self):
+        with self.assertRaises(SystemExit):
+            reconcile.parse_args(
+                cli_args(
+                    "--restore",
+                    "uid-1",
+                    "--confirm-meeting-id",
+                    "987",
+                    "--confirm-aws-account",
+                    "123",
+                    "--confirm-table-arn",
+                    "arn:table",
+                )
+            )
+
     def test_literal_credentials_are_not_cli_options(self):
         parser = reconcile.build_parser()
         option_strings = {
@@ -1276,6 +1291,12 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
                 "123",
                 "--confirm-table-arn",
                 "arn:table",
+                "--confirm-opensearch-url",
+                "http://search",
+                "--confirm-opensearch-index",
+                "resources",
+                "--confirm-nats-url",
+                "nats://localhost:4222",
                 meeting_id="meeting-1",
                 table="reg",
             )
@@ -1288,6 +1309,39 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
                 FakeAuthority(["uid-1"]),
                 values,
                 mappings,
+            )
+        self.assertEqual([], values.updates)
+
+    async def test_restore_rejects_target_confirmation_mismatch_before_write(self):
+        config = reconcile.parse_args(
+            cli_args(
+                "--restore",
+                "uid-1",
+                "--confirm-meeting-id",
+                "meeting-1",
+                "--confirm-aws-account",
+                "123",
+                "--confirm-table-arn",
+                "arn:table",
+                "--confirm-opensearch-url",
+                "http://search",
+                "--confirm-opensearch-index",
+                "resources",
+                "--confirm-nats-url",
+                "nats://other.example:4222",
+                meeting_id="meeting-1",
+                table="reg",
+            )
+        )
+        values = FakeKV({})
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile._run_restore(
+                config,
+                ENVIRONMENT,
+                FakeDiscovery(["uid-1"]),
+                FakeAuthority(["uid-1"]),
+                values,
+                FakeKV({}),
             )
         self.assertEqual([], values.updates)
 
@@ -1310,6 +1364,12 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
                 "123",
                 "--confirm-table-arn",
                 "arn:table",
+                "--confirm-opensearch-url",
+                "http://search",
+                "--confirm-opensearch-index",
+                "resources",
+                "--confirm-nats-url",
+                "nats://localhost:4222",
                 "--verify-timeout",
                 "0.01",
                 "--verify-interval",

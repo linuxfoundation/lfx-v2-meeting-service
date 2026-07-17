@@ -115,12 +115,17 @@ Restore one UID only after DynamoDB contains that exact row:
   --restore <registrant-uid> \
   --confirm-meeting-id 98727043273 \
   --confirm-aws-account 123456789012 \
-  --confirm-table-arn arn:aws:dynamodb:us-east-1:123456789012:table/example
+  --confirm-table-arn arn:aws:dynamodb:us-east-1:123456789012:table/example \
+  --confirm-opensearch-url http://localhost:9200 \
+  --confirm-opensearch-index resources \
+  --confirm-nats-url nats://localhost:4222
 ```
 
 Restore requires an existing tombstoned mapping, removes only
 `_sdc_deleted_at` with an expected revision, then waits for the same UID to
-reappear in OpenSearch with a newer live mapping revision.
+reappear in OpenSearch with a newer live mapping revision. The confirmed
+OpenSearch URL/index and NATS URL must exactly match the sanitized runtime
+targets before restore can write.
 
 ## Failure recovery
 
