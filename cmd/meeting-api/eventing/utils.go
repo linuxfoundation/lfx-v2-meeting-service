@@ -99,7 +99,7 @@ func coerceInt(dest *int, v interface{}, field string) error {
 	case int:
 		*dest = val
 	case nil:
-		// leave as zero value
+		// leave dest unchanged
 	default:
 		return fmt.Errorf("invalid type for %s: %T", field, v)
 	}
@@ -126,7 +126,7 @@ func coerceInt64(dest *int64, v interface{}, field string) error {
 	case int:
 		*dest = int64(val)
 	case nil:
-		// leave as zero value
+		// leave dest unchanged
 	default:
 		return fmt.Errorf("invalid type for %s: %T", field, v)
 	}
