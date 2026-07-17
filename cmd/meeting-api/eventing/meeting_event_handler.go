@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"strings"
 	"time"
 
@@ -261,166 +260,46 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.Duration = val
-		}
-	case float64:
-		m.Duration = int(v)
-	case int:
-		m.Duration = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for duration: %T", v)
-		}
+	var err error
+
+	m.Duration, err = coerceInt(tmp.Duration, "duration")
+	if err != nil {
+		return err
 	}
 
-	// Handle EarlyJoinTime
-	switch v := tmp.EarlyJoinTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.EarlyJoinTime = val
-		}
-	case float64:
-		m.EarlyJoinTime = int(v)
-	case int:
-		m.EarlyJoinTime = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for early_join_time_minutes: %T", v)
-		}
+	m.EarlyJoinTime, err = coerceInt(tmp.EarlyJoinTime, "early_join_time")
+	if err != nil {
+		return err
 	}
 
-	// Handle LastEndTime (int64)
-	switch v := tmp.LastEndTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return err
-			}
-			m.LastEndTime = val
-		}
-	case float64:
-		m.LastEndTime = int64(v)
-	case int64:
-		m.LastEndTime = v
-	case int:
-		m.LastEndTime = int64(v)
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_end_time: %T", v)
-		}
+	m.LastEndTime, err = coerceInt64(tmp.LastEndTime, "last_end_time")
+	if err != nil {
+		return err
 	}
 
-	// Handle LastBulkRegistrantsJobFailedCount
-	switch v := tmp.LastBulkRegistrantsJobFailedCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastBulkRegistrantsJobFailedCount = val
-		}
-	case float64:
-		m.LastBulkRegistrantsJobFailedCount = int(v)
-	case int:
-		m.LastBulkRegistrantsJobFailedCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_bulk_registrants_job_failed_count: %T", v)
-		}
+	m.LastBulkRegistrantsJobFailedCount, err = coerceInt(tmp.LastBulkRegistrantsJobFailedCount, "last_bulk_registrants_job_failed_count")
+	if err != nil {
+		return err
 	}
 
-	// Handle LastBulkRegistrantsJobWarningCount
-	switch v := tmp.LastBulkRegistrantsJobWarningCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastBulkRegistrantsJobWarningCount = val
-		}
-	case float64:
-		m.LastBulkRegistrantsJobWarningCount = int(v)
-	case int:
-		m.LastBulkRegistrantsJobWarningCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_bulk_registrants_job_warning_count: %T", v)
-		}
+	m.LastBulkRegistrantsJobWarningCount, err = coerceInt(tmp.LastBulkRegistrantsJobWarningCount, "last_bulk_registrants_job_warning_count")
+	if err != nil {
+		return err
 	}
 
-	// Handle LastMailingListMembersSyncJobFailedCount
-	switch v := tmp.LastMailingListMembersSyncJobFailedCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastMailingListMembersSyncJobFailedCount = val
-		}
-	case float64:
-		m.LastMailingListMembersSyncJobFailedCount = int(v)
-	case int:
-		m.LastMailingListMembersSyncJobFailedCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_failed_count: %T", v)
-		}
+	m.LastMailingListMembersSyncJobFailedCount, err = coerceInt(tmp.LastMailingListMembersSyncJobFailedCount, "last_mailing_list_members_sync_job_failed_count")
+	if err != nil {
+		return err
 	}
 
-	// Handle LastMailingListMembersSyncJobWarningCount
-	switch v := tmp.LastMailingListMembersSyncJobWarningCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastMailingListMembersSyncJobWarningCount = val
-		}
-	case float64:
-		m.LastMailingListMembersSyncJobWarningCount = int(v)
-	case int:
-		m.LastMailingListMembersSyncJobWarningCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_warning_count: %T", v)
-		}
+	m.LastMailingListMembersSyncJobWarningCount, err = coerceInt(tmp.LastMailingListMembersSyncJobWarningCount, "last_mailing_list_members_sync_job_warning_count")
+	if err != nil {
+		return err
 	}
 
-	// Handle AutoEmailReminderTime
-	switch v := tmp.AutoEmailReminderTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.AutoEmailReminderTime = val
-		}
-	case float64:
-		m.AutoEmailReminderTime = int(v)
-	case int:
-		m.AutoEmailReminderTime = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for auto_email_reminder_time: %T", v)
-		}
+	m.AutoEmailReminderTime, err = coerceInt(tmp.AutoEmailReminderTime, "auto_email_reminder_time")
+	if err != nil {
+		return err
 	}
 
 	// Occurrences are recomputed from RRULE calculation; discard the raw field (already shadowed above).
@@ -452,19 +331,9 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 				Recurrence:      occTmp.Recurrence,
 				AllFollowing:    occTmp.AllFollowing,
 			}
-			switch v := occTmp.Duration.(type) {
-			case string:
-				if v != "" {
-					val, err := strconv.Atoi(v)
-					if err != nil {
-						return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
-					}
-					occ.Duration = val
-				}
-			case float64:
-				occ.Duration = int(v)
-			case int:
-				occ.Duration = v
+			occ.Duration, err = coerceInt(occTmp.Duration, "duration")
+			if err != nil {
+				return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
 			}
 			m.UpdatedOccurrences = append(m.UpdatedOccurrences, occ)
 		}
@@ -506,124 +375,37 @@ func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	var err error
+
 	// Handle Type (string from Meltano, int/float64 from other sources)
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid type format: %w", err)
-			}
-			r.Type = val
-		}
-	case float64:
-		r.Type = int(v)
-	case int:
-		r.Type = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for type: %T", v)
-		}
+	r.Type, err = coerceInt(tmp.Type, "type")
+	if err != nil {
+		return err
 	}
 
-	// Handle RepeatInterval
-	switch v := tmp.RepeatInterval.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid repeat_interval format: %w", err)
-			}
-			r.RepeatInterval = val
-		}
-	case float64:
-		r.RepeatInterval = int(v)
-	case int:
-		r.RepeatInterval = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for repeat_interval: %T", v)
-		}
+	r.RepeatInterval, err = coerceInt(tmp.RepeatInterval, "repeat_interval")
+	if err != nil {
+		return err
 	}
 
-	// Handle MonthlyDay
-	switch v := tmp.MonthlyDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_day format: %w", err)
-			}
-			r.MonthlyDay = val
-		}
-	case float64:
-		r.MonthlyDay = int(v)
-	case int:
-		r.MonthlyDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_day: %T", v)
-		}
+	r.MonthlyDay, err = coerceInt(tmp.MonthlyDay, "monthly_day")
+	if err != nil {
+		return err
 	}
 
-	// Handle MonthlyWeek
-	switch v := tmp.MonthlyWeek.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_week format: %w", err)
-			}
-			r.MonthlyWeek = val
-		}
-	case float64:
-		r.MonthlyWeek = int(v)
-	case int:
-		r.MonthlyWeek = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week: %T", v)
-		}
+	r.MonthlyWeek, err = coerceInt(tmp.MonthlyWeek, "monthly_week")
+	if err != nil {
+		return err
 	}
 
-	// Handle MonthlyWeekDay
-	switch v := tmp.MonthlyWeekDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_week_day format: %w", err)
-			}
-			r.MonthlyWeekDay = val
-		}
-	case float64:
-		r.MonthlyWeekDay = int(v)
-	case int:
-		r.MonthlyWeekDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week_day: %T", v)
-		}
+	r.MonthlyWeekDay, err = coerceInt(tmp.MonthlyWeekDay, "monthly_week_day")
+	if err != nil {
+		return err
 	}
 
-	// Handle EndTimes
-	switch v := tmp.EndTimes.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid end_times format: %w", err)
-			}
-			r.EndTimes = val
-		}
-	case float64:
-		r.EndTimes = int(v)
-	case int:
-		r.EndTimes = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for end_times: %T", v)
-		}
+	r.EndTimes, err = coerceInt(tmp.EndTimes, "end_times")
+	if err != nil {
+		return err
 	}
 
 	// Handle WeeklyDays

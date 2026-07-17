@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -162,55 +161,21 @@ func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for duration: %w", err)
-			}
-			p.Duration = val
-		}
-	case float64:
-		p.Duration = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for duration: %T", v)
+	var err error
+
+	p.Duration, err = coerceInt(tmp.Duration, "duration")
+	if err != nil {
+		return err
 	}
 
-	// Handle EarlyJoinTime
-	switch v := tmp.EarlyJoinTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for early_join_time: %w", err)
-			}
-			p.EarlyJoinTime = val
-		}
-	case float64:
-		p.EarlyJoinTime = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for early_join_time: %T", v)
+	p.EarlyJoinTime, err = coerceInt(tmp.EarlyJoinTime, "early_join_time")
+	if err != nil {
+		return err
 	}
 
-	// Handle Type
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for type: %w", err)
-			}
-			p.Type = val
-		}
-	case float64:
-		p.Type = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for type: %T", v)
+	p.Type, err = coerceInt(tmp.Type, "type")
+	if err != nil {
+		return err
 	}
 
 	return nil
