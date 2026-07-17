@@ -158,11 +158,83 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		}
 	}
 
-	// Determine action (created vs updated)
+	// Determine action (created vs updated) and retrieve the previously-stored username so we
+	// can detect when it has been cleared and revoke stale FGA access.
+	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient failure
+	// would make us treat this as a create, overwrite the mapping, and permanently lose the old
+	// username — exactly the stale-access condition we are trying to fix.
 	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", participantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+	oldUsername := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading invitee mapping, will retry")
+		return true
+	}
+
+	// If the username was cleared or changed, revoke the old FGA access before publishing the
+	// new state. Retry transient publish failures: continuing would overwrite the mapping and
+	// permanently lose the old username. But first check if an attendee record still exists
+	// for this user under the old username — if so, access is preserved via the attendee record.
+	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
+		// Check if sibling attendee exists
+		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
+			participantData.MeetingAndOccurrenceID, oldUsername)
+		attendeeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, attendeeXrefKey)
+		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking attendee sibling xref, will retry")
+			return true
+		}
+		siblingAttendeeExists := xrefErr == nil && !entryIsTombstoned(attendeeXrefEntry)
+
+		if siblingAttendeeExists {
+			// An attendee record still grants the old username access.
+			// Send a member_put with only the attendee's relations so stale invitee/host roles are cleared.
+			siblingAttendeeID := string(attendeeXrefEntry.Value())
+			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingAttendeeID)
+			if siblingErr != nil {
+				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
+					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling attendee for partial update, will retry")
+					return true
+				}
+				// Attendee is gone — fall through to full remove.
+				siblingAttendeeExists = false
+			} else {
+				siblingData, decErr := decodeData(siblingEntry.Value())
+				if decErr == nil {
+					siblingParticipant, convErr := convertMapToAttendeeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+					if convErr == nil {
+						siblingParticipant.IsInvited = false
+						siblingParticipant.IsAttended = true
+						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
+							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old invitee username")
+							return isTransientError(pubErr)
+						}
+					}
+				}
+			}
+		}
+		if !siblingAttendeeExists {
+			// No attendee record survives — fully revoke old username's access.
+			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
+			if err != nil {
+				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old invitee username")
+				return false
+			}
+			if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old invitee username")
+				return isTransientError(err)
+			}
+		}
+		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
+		oldInviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
+			participantData.MeetingAndOccurrenceID, oldUsername)
+		if _, err := h.v1MappingsKV.Put(ctx, oldInviteeXrefKey, []byte(tombstoneMarker)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old invitee xref, will retry")
+			return isTransientError(err)
+		}
 	}
 
 	// Publish to indexer and FGA-sync
@@ -171,10 +243,12 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		return isTransientError(err)
 	}
 
-	// Store invitee mapping and cross-reference (keyed by meeting+username so the attendee
-	// delete handler can determine whether an invitee record still exists).
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	// Store uid, username, and meeting and occurrence ID in the mapping so future updates and deletes can
+	// recover them without an extra lookup. Retry transient write failures.
+	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
+		return isTransientError(err)
 	}
 	if participantData.Username != "" {
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
@@ -202,13 +276,22 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 		return false
 	}
 
+	var username, meetingAndOccurrenceID string
 	if v1Data == nil {
-		funcLogger.WarnContext(ctx, "no v1Data available for invitee delete, skipping")
-		return false
+		// Hard NATS deletes arrive with nil v1Data; recover username and meeting ID
+		// from the rich mapping written by the update handler.
+		if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+			if !entryIsTombstoned(entry) {
+				_, username, meetingAndOccurrenceID = parseRegistrantMappingValue(string(entry.Value()))
+			}
+		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading invitee mapping on delete, will retry")
+			return true
+		}
+	} else {
+		username = utils.GetString(v1Data["lf_sso"])
+		meetingAndOccurrenceID = utils.GetString(v1Data["meeting_and_occurrence_id"])
 	}
-
-	username := utils.GetString(v1Data["lf_sso"])
-	meetingAndOccurrenceID := utils.GetString(v1Data["meeting_and_occurrence_id"])
 
 	// Check if an attendee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
@@ -482,11 +565,83 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		}
 	}
 
-	// Determine action (created vs updated)
+	// Determine action (created vs updated) and retrieve the previously-stored username so we
+	// can detect when it has been cleared and revoke stale FGA access.
+	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient failure
+	// would make us treat this as a create, overwrite the mapping, and permanently lose the old
+	// username — exactly the stale-access condition we are trying to fix.
 	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", participantData.UID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+	oldUsername := ""
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
+	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading attendee mapping, will retry")
+		return true
+	}
+
+	// If the username was cleared or changed, revoke the old FGA access before publishing the
+	// new state. Retry transient publish failures: continuing would overwrite the mapping and
+	// permanently lose the old username. But first check if an invitee record still exists
+	// for this user under the old username — if so, access is preserved via the invitee record.
+	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
+		// Check if sibling invitee exists
+		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
+			participantData.MeetingAndOccurrenceID, oldUsername)
+		inviteeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, inviteeXrefKey)
+		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking invitee sibling xref, will retry")
+			return true
+		}
+		siblingInviteeExists := xrefErr == nil && !entryIsTombstoned(inviteeXrefEntry)
+
+		if siblingInviteeExists {
+			// An invitee record still grants the old username access.
+			// Send a member_put with only the invitee's relations so stale attendee/host roles are cleared.
+			siblingInviteeID := string(inviteeXrefEntry.Value())
+			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-invitees."+siblingInviteeID)
+			if siblingErr != nil {
+				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
+					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling invitee for partial update, will retry")
+					return true
+				}
+				// Invitee is gone — fall through to full remove.
+				siblingInviteeExists = false
+			} else {
+				siblingData, decErr := decodeData(siblingEntry.Value())
+				if decErr == nil {
+					siblingParticipant, convErr := convertMapToInviteeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
+					if convErr == nil {
+						siblingParticipant.IsInvited = true
+						siblingParticipant.IsAttended = false
+						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
+							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old attendee username")
+							return isTransientError(pubErr)
+						}
+					}
+				}
+			}
+		}
+		if !siblingInviteeExists {
+			// No invitee record survives — fully revoke old username's access.
+			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
+			if err != nil {
+				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old attendee username")
+				return false
+			}
+			if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old attendee username")
+				return isTransientError(err)
+			}
+		}
+		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
+		oldAttendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
+			participantData.MeetingAndOccurrenceID, oldUsername)
+		if _, err := h.v1MappingsKV.Put(ctx, oldAttendeeXrefKey, []byte(tombstoneMarker)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old attendee xref, will retry")
+			return isTransientError(err)
+		}
 	}
 
 	// Publish to indexer and FGA-sync
@@ -495,10 +650,12 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		return isTransientError(err)
 	}
 
-	// Store attendee mapping and cross-reference (keyed by meeting+username so the invitee
-	// delete handler can determine whether an attendee record still exists).
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+	// Store uid, username, and meeting and occurrence ID in the mapping so future updates and deletes can
+	// recover them without an extra lookup. Retry transient write failures.
+	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
+	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
+		return isTransientError(err)
 	}
 	if participantData.Username != "" {
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
@@ -530,13 +687,22 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 		return false
 	}
 
+	var username, meetingAndOccurrenceID string
 	if v1Data == nil {
-		funcLogger.WarnContext(ctx, "no v1Data available for attendee delete, skipping")
-		return false
+		// Hard NATS deletes arrive with nil v1Data; recover username and meeting ID
+		// from the rich mapping written by the update handler.
+		if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+			if !entryIsTombstoned(entry) {
+				_, username, meetingAndOccurrenceID = parseRegistrantMappingValue(string(entry.Value()))
+			}
+		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading attendee mapping on delete, will retry")
+			return true
+		}
+	} else {
+		username = utils.GetString(v1Data["lf_sso"])
+		meetingAndOccurrenceID = utils.GetString(v1Data["meeting_and_occurrence_id"])
 	}
-
-	username := utils.GetString(v1Data["lf_sso"])
-	meetingAndOccurrenceID := utils.GetString(v1Data["meeting_and_occurrence_id"])
 
 	// Check if an invitee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
