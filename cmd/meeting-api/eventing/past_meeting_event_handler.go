@@ -161,20 +161,13 @@ func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
-	p.Duration, err = coerceInt(tmp.Duration, "duration")
-	if err != nil {
+	if err := coerceInt(&p.Duration, tmp.Duration, "duration"); err != nil {
 		return err
 	}
-
-	p.EarlyJoinTime, err = coerceInt(tmp.EarlyJoinTime, "early_join_time")
-	if err != nil {
+	if err := coerceInt(&p.EarlyJoinTime, tmp.EarlyJoinTime, "early_join_time"); err != nil {
 		return err
 	}
-
-	p.Type, err = coerceInt(tmp.Type, "type")
-	if err != nil {
+	if err := coerceInt(&p.Type, tmp.Type, "type"); err != nil {
 		return err
 	}
 

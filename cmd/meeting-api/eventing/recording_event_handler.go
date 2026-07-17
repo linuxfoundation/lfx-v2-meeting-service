@@ -105,18 +105,12 @@ func (r *RecordingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
-	r.RecordingCount, err = coerceInt(tmp.RecordingCount, "recording_count")
-	if err != nil {
+	if err := coerceInt(&r.RecordingCount, tmp.RecordingCount, "recording_count"); err != nil {
 		return err
 	}
-
-	r.TotalSize, err = coerceInt64(tmp.TotalSize, "total_size")
-	if err != nil {
+	if err := coerceInt64(&r.TotalSize, tmp.TotalSize, "total_size"); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -149,13 +143,9 @@ func (r *RecordingFileDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
-	r.FileSize, err = coerceInt64(tmp.FileSize, "file_size")
-	if err != nil {
+	if err := coerceInt64(&r.FileSize, tmp.FileSize, "file_size"); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -182,13 +172,9 @@ func (r *RecordingSessionDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
-	r.TotalSize, err = coerceInt64(tmp.TotalSize, "total_size")
-	if err != nil {
+	if err := coerceInt64(&r.TotalSize, tmp.TotalSize, "total_size"); err != nil {
 		return err
 	}
-
 	return nil
 }
 

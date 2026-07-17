@@ -54,9 +54,7 @@ func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	var err error
-	a.FileSize, err = coerceInt(tmp.FileSize, "file_size")
-	return err
+	return coerceInt(&a.FileSize, tmp.FileSize, "file_size")
 }
 
 // attachmentActorDBRaw represents the created_by/updated_by actor in raw attachment data.
@@ -287,9 +285,7 @@ func (a *PastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	var err error
-	a.FileSize, err = coerceInt(tmp.FileSize, "file_size")
-	return err
+	return coerceInt(&a.FileSize, tmp.FileSize, "file_size")
 }
 
 // handlePastMeetingAttachmentUpdate processes updates to past meeting attachments

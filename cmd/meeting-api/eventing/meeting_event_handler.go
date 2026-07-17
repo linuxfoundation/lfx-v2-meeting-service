@@ -260,45 +260,28 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
-	m.Duration, err = coerceInt(tmp.Duration, "duration")
-	if err != nil {
+	if err := coerceInt(&m.Duration, tmp.Duration, "duration"); err != nil {
 		return err
 	}
-
-	m.EarlyJoinTime, err = coerceInt(tmp.EarlyJoinTime, "early_join_time")
-	if err != nil {
+	if err := coerceInt(&m.EarlyJoinTime, tmp.EarlyJoinTime, "early_join_time"); err != nil {
 		return err
 	}
-
-	m.LastEndTime, err = coerceInt64(tmp.LastEndTime, "last_end_time")
-	if err != nil {
+	if err := coerceInt64(&m.LastEndTime, tmp.LastEndTime, "last_end_time"); err != nil {
 		return err
 	}
-
-	m.LastBulkRegistrantsJobFailedCount, err = coerceInt(tmp.LastBulkRegistrantsJobFailedCount, "last_bulk_registrants_job_failed_count")
-	if err != nil {
+	if err := coerceInt(&m.LastBulkRegistrantsJobFailedCount, tmp.LastBulkRegistrantsJobFailedCount, "last_bulk_registrants_job_failed_count"); err != nil {
 		return err
 	}
-
-	m.LastBulkRegistrantsJobWarningCount, err = coerceInt(tmp.LastBulkRegistrantsJobWarningCount, "last_bulk_registrants_job_warning_count")
-	if err != nil {
+	if err := coerceInt(&m.LastBulkRegistrantsJobWarningCount, tmp.LastBulkRegistrantsJobWarningCount, "last_bulk_registrants_job_warning_count"); err != nil {
 		return err
 	}
-
-	m.LastMailingListMembersSyncJobFailedCount, err = coerceInt(tmp.LastMailingListMembersSyncJobFailedCount, "last_mailing_list_members_sync_job_failed_count")
-	if err != nil {
+	if err := coerceInt(&m.LastMailingListMembersSyncJobFailedCount, tmp.LastMailingListMembersSyncJobFailedCount, "last_mailing_list_members_sync_job_failed_count"); err != nil {
 		return err
 	}
-
-	m.LastMailingListMembersSyncJobWarningCount, err = coerceInt(tmp.LastMailingListMembersSyncJobWarningCount, "last_mailing_list_members_sync_job_warning_count")
-	if err != nil {
+	if err := coerceInt(&m.LastMailingListMembersSyncJobWarningCount, tmp.LastMailingListMembersSyncJobWarningCount, "last_mailing_list_members_sync_job_warning_count"); err != nil {
 		return err
 	}
-
-	m.AutoEmailReminderTime, err = coerceInt(tmp.AutoEmailReminderTime, "auto_email_reminder_time")
-	if err != nil {
+	if err := coerceInt(&m.AutoEmailReminderTime, tmp.AutoEmailReminderTime, "auto_email_reminder_time"); err != nil {
 		return err
 	}
 
@@ -331,8 +314,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 				Recurrence:      occTmp.Recurrence,
 				AllFollowing:    occTmp.AllFollowing,
 			}
-			occ.Duration, err = coerceInt(occTmp.Duration, "duration")
-			if err != nil {
+			if err := coerceInt(&occ.Duration, occTmp.Duration, "duration"); err != nil {
 				return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
 			}
 			m.UpdatedOccurrences = append(m.UpdatedOccurrences, occ)
@@ -375,36 +357,23 @@ func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	var err error
-
 	// Handle Type (string from Meltano, int/float64 from other sources)
-	r.Type, err = coerceInt(tmp.Type, "type")
-	if err != nil {
+	if err := coerceInt(&r.Type, tmp.Type, "type"); err != nil {
 		return err
 	}
-
-	r.RepeatInterval, err = coerceInt(tmp.RepeatInterval, "repeat_interval")
-	if err != nil {
+	if err := coerceInt(&r.RepeatInterval, tmp.RepeatInterval, "repeat_interval"); err != nil {
 		return err
 	}
-
-	r.MonthlyDay, err = coerceInt(tmp.MonthlyDay, "monthly_day")
-	if err != nil {
+	if err := coerceInt(&r.MonthlyDay, tmp.MonthlyDay, "monthly_day"); err != nil {
 		return err
 	}
-
-	r.MonthlyWeek, err = coerceInt(tmp.MonthlyWeek, "monthly_week")
-	if err != nil {
+	if err := coerceInt(&r.MonthlyWeek, tmp.MonthlyWeek, "monthly_week"); err != nil {
 		return err
 	}
-
-	r.MonthlyWeekDay, err = coerceInt(tmp.MonthlyWeekDay, "monthly_week_day")
-	if err != nil {
+	if err := coerceInt(&r.MonthlyWeekDay, tmp.MonthlyWeekDay, "monthly_week_day"); err != nil {
 		return err
 	}
-
-	r.EndTimes, err = coerceInt(tmp.EndTimes, "end_times")
-	if err != nil {
+	if err := coerceInt(&r.EndTimes, tmp.EndTimes, "end_times"); err != nil {
 		return err
 	}
 

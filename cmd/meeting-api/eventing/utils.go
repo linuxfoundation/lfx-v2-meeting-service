@@ -81,52 +81,54 @@ func parseName(fullName string) (firstName, lastName string) {
 	return parts[0], strings.Join(parts[1:], " ")
 }
 
-// coerceInt converts an interface{} decoded from JSON into an int.
+// coerceInt decodes a JSON-decoded interface{} into *dest.
 // Accepts string (numeric or empty), float64, int, and nil; returns an error for any other type.
-func coerceInt(v interface{}, field string) (int, error) {
+func coerceInt(dest *int, v interface{}, field string) error {
 	switch val := v.(type) {
 	case string:
 		if val == "" {
-			return 0, nil
+			return nil
 		}
 		n, err := strconv.Atoi(val)
 		if err != nil {
-			return 0, fmt.Errorf("invalid value for %s: %w", field, err)
+			return fmt.Errorf("invalid value for %s: %w", field, err)
 		}
-		return n, nil
+		*dest = n
 	case float64:
-		return int(val), nil
+		*dest = int(val)
 	case int:
-		return val, nil
+		*dest = val
 	case nil:
-		return 0, nil
+		// leave as zero value
 	default:
-		return 0, fmt.Errorf("invalid type for %s: %T", field, v)
+		return fmt.Errorf("invalid type for %s: %T", field, v)
 	}
+	return nil
 }
 
-// coerceInt64 converts an interface{} decoded from JSON into an int64.
+// coerceInt64 decodes a JSON-decoded interface{} into *dest.
 // Accepts string (numeric or empty), float64, int64, int, and nil; returns an error for any other type.
-func coerceInt64(v interface{}, field string) (int64, error) {
+func coerceInt64(dest *int64, v interface{}, field string) error {
 	switch val := v.(type) {
 	case string:
 		if val == "" {
-			return 0, nil
+			return nil
 		}
 		n, err := strconv.ParseInt(val, 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("invalid value for %s: %w", field, err)
+			return fmt.Errorf("invalid value for %s: %w", field, err)
 		}
-		return n, nil
+		*dest = n
 	case float64:
-		return int64(val), nil
+		*dest = int64(val)
 	case int64:
-		return val, nil
+		*dest = val
 	case int:
-		return int64(val), nil
+		*dest = int64(val)
 	case nil:
-		return 0, nil
+		// leave as zero value
 	default:
-		return 0, fmt.Errorf("invalid type for %s: %T", field, v)
+		return fmt.Errorf("invalid type for %s: %T", field, v)
 	}
+	return nil
 }
