@@ -236,6 +236,14 @@ class OpenSearchTests(unittest.TestCase):
             client.discover("meeting-1")
         self.assertEqual(1, len(session.deletes))
 
+    def test_malformed_hits_container_fails_closed(self):
+        session = FakeHTTPSession(
+            [FakeResponse({"_scroll_id": "scroll-1", "hits": []})]
+        )
+        client = reconcile.OpenSearchDiscovery(session, "http://search", "resources", 5)
+        with self.assertRaises(reconcile.ReconciliationError):
+            client.discover("meeting-1")
+
     def test_contains_issues_one_scoped_query_without_scrolling(self):
         session = FakeHTTPSession(
             [FakeResponse({"hits": {"hits": [{"_source": {"object_id": "uid-1"}}]}})]
@@ -258,6 +266,12 @@ class OpenSearchTests(unittest.TestCase):
         session = FakeHTTPSession([FakeResponse({"hits": {"hits": []}})])
         client = reconcile.OpenSearchDiscovery(session, "http://search", "resources", 5)
         self.assertFalse(client.contains("meeting-1", "uid-1"))
+
+    def test_contains_rejects_malformed_hit(self):
+        session = FakeHTTPSession([FakeResponse({"hits": {"hits": [{}]}})])
+        client = reconcile.OpenSearchDiscovery(session, "http://search", "resources", 5)
+        with self.assertRaises(reconcile.ReconciliationError):
+            client.contains("meeting-1", "uid-1")
 
     def test_empty_result_returns_no_candidates(self):
         session = FakeHTTPSession(
@@ -687,11 +701,24 @@ class PayloadAndPlanTests(unittest.IsolatedAsyncioTestCase):
             ("--opensearch-url", "https://user:secret@search.example"),
             ("--nats-url", "nats://token@nats.example:4222"),
             ("--opensearch-url", "https://search.example?cluster=other"),
+            ("--opensearch-url", "ftp://search.example"),
+            ("--nats-url", "http://nats.example:4222"),
         ):
             with self.subTest(option=option, value=value):
                 config = reconcile.parse_args(cli_args(option, value))
                 with self.assertRaises(reconcile.ReconciliationError):
                     reconcile.target_identity(config)
+
+    async def test_run_rejects_invalid_target_before_aws_clients(self):
+        config = reconcile.parse_args(
+            cli_args("--nats-url", "nats://token@nats.example:4222")
+        )
+        with patch.object(
+            reconcile, "build_aws_clients", side_effect=RuntimeError("network")
+        ) as aws_clients:
+            with self.assertRaises(reconcile.ReconciliationError):
+                await reconcile.run(config)
+        aws_clients.assert_not_called()
 
     async def test_apply_rejects_targets_different_from_reviewed_plan(self):
         plan = reconcile.Plan(
@@ -1178,6 +1205,56 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual([], values.updates)
 
+    async def test_restore_rechecks_dynamo_immediately_before_write(self):
+        payload = {
+            "meeting_id": "meeting-1",
+            "registrant_id": "uid-1",
+            "_sdc_deleted_at": "2026-07-16T00:00:00Z",
+        }
+        raw = reconcile.encode_payload(payload, "json")
+        values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = FakeKV({reconcile.mapping_key("uid-1"): Entry(b"!del", 3)})
+        authority = Mock()
+        authority.classify.side_effect = [
+            {"uid-1": "active"},
+            {"uid-1": "stale"},
+        ]
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile.restore_candidate(
+                "meeting-1",
+                "uid-1",
+                ENVIRONMENT,
+                reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
+                authority,
+                values,
+                mappings,
+            )
+        self.assertEqual([], values.updates)
+
+    async def test_restore_rechecks_mapping_revision_before_write(self):
+        payload = {
+            "meeting_id": "meeting-1",
+            "registrant_id": "uid-1",
+            "_sdc_deleted_at": "2026-07-16T00:00:00Z",
+        }
+        raw = reconcile.encode_payload(payload, "json")
+        values = FakeKV({reconcile.registrant_key("uid-1"): Entry(raw, 9)})
+        mappings = SequencedGetKV(
+            reconcile.mapping_key("uid-1"),
+            [Entry(b"!del", 3), Entry(b"!del", 4)],
+        )
+        with self.assertRaises(reconcile.ReconciliationError):
+            await reconcile.restore_candidate(
+                "meeting-1",
+                "uid-1",
+                ENVIRONMENT,
+                reconcile.RestoreConfirmations("meeting-1", "123", "arn:table"),
+                FakeAuthority(["uid-1"]),
+                values,
+                mappings,
+            )
+        self.assertEqual([], values.updates)
+
     async def test_restore_requires_tombstoned_mapping_before_write(self):
         raw = reconcile.encode_payload(
             {
@@ -1243,7 +1320,7 @@ class ApplyRestoreTests(unittest.IsolatedAsyncioTestCase):
         )
         mappings = SequencedGetKV(
             reconcile.mapping_key("uid-1"),
-            [Entry(b"!del", 3), Entry(b"1", 3)],
+            [Entry(b"!del", 3), Entry(b"!del", 3), Entry(b"1", 3)],
         )
         with self.assertRaises(reconcile.VerificationError):
             await reconcile._run_restore(

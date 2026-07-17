@@ -204,20 +204,21 @@ def target_identity(config: Config) -> TargetIdentity:
     if not config.opensearch_index:
         raise ReconciliationError("OpenSearch index must not be empty")
     return TargetIdentity(
-        opensearch_url=_sanitize_endpoint(config.opensearch_url),
+        opensearch_url=_sanitize_endpoint(config.opensearch_url, {"http", "https"}),
         opensearch_index=config.opensearch_index,
-        nats_url=_sanitize_endpoint(config.nats_url),
+        nats_url=_sanitize_endpoint(config.nats_url, {"nats", "tls", "ws", "wss"}),
     )
 
 
-def _sanitize_endpoint(value: str) -> str:
+def _sanitize_endpoint(value: str, allowed_schemes: set[str]) -> str:
     try:
         parsed = urlsplit(value)
         hostname = parsed.hostname
         port = parsed.port
     except ValueError as error:
         raise ReconciliationError("target endpoint is malformed") from error
-    if not parsed.scheme or not hostname:
+    scheme = parsed.scheme.lower()
+    if scheme not in allowed_schemes or not hostname:
         raise ReconciliationError("target endpoint must include scheme and host")
     if (
         parsed.username is not None
@@ -230,7 +231,7 @@ def _sanitize_endpoint(value: str) -> str:
         )
     host = f"[{hostname.lower()}]" if ":" in hostname else hostname.lower()
     netloc = f"{host}:{port}" if port is not None else host
-    return urlunsplit((parsed.scheme.lower(), netloc, parsed.path.rstrip("/"), "", ""))
+    return urlunsplit((scheme, netloc, parsed.path.rstrip("/"), "", ""))
 
 
 def _validate_args(
@@ -305,7 +306,10 @@ class OpenSearchDiscovery:
             request_timeout=timeout,
             json=body,
         )
-        return bool(self._hits(payload))
+        uids = self._uids(self._hits(payload))
+        if any(result_uid != uid for result_uid in uids):
+            raise ReconciliationError("OpenSearch returned an unexpected object_id")
+        return bool(uids)
 
     def _first_page(self, meeting_id: str) -> dict[str, Any]:
         body = {
@@ -352,7 +356,10 @@ class OpenSearchDiscovery:
 
     @staticmethod
     def _hits(payload: dict[str, Any]) -> list[dict[str, Any]]:
-        hits = payload.get("hits", {}).get("hits")
+        container = payload.get("hits")
+        if not isinstance(container, dict):
+            raise ReconciliationError("OpenSearch response has malformed hits")
+        hits = container.get("hits")
         if not isinstance(hits, list):
             raise ReconciliationError("OpenSearch response has malformed hits")
         return hits
@@ -800,6 +807,14 @@ async def restore_candidate(
     if payload.get(DELETED_FIELD) in (None, ""):
         raise ReconciliationError("restore UID is not soft-deleted")
     del payload[DELETED_FIELD]
+    if authority.classify([uid]).get(uid) != "active":
+        raise ReconciliationError("DynamoDB no longer contains the restore UID")
+    current_mapping = await get_entry(mappings, mapping_key(uid))
+    if (
+        current_mapping.revision != mapping_entry.revision
+        or mapping_state(current_mapping.value) != "tombstoned"
+    ):
+        raise ReconciliationError("restore UID mapping changed before write")
     try:
         await values.update(
             registrant_key(uid),
@@ -810,7 +825,7 @@ async def restore_candidate(
         if isinstance(error, RevisionConflictError):
             raise
         raise ReconciliationError(f"NATS KV restore failed for {uid}") from error
-    return mapping_entry.revision
+    return current_mapping.revision
 
 
 async def verify_apply(
@@ -972,21 +987,22 @@ def _assume_role(session: Any, config: Config) -> Any:
 async def run(config: Config) -> dict[str, Any]:
     if requests is None:
         raise ReconciliationError("requests is not installed")
+    targets = target_identity(config)
     if config.mode == "apply":
         reviewed_plan = read_plan(config.plan_path)
-        if target_identity(config) != reviewed_plan.targets:
+        if targets != reviewed_plan.targets:
             raise PlanDriftError("runtime targets differ from the reviewed plan")
     sts, dynamodb = build_aws_clients(config)
     authority = DynamoAuthority(sts, dynamodb, config.dynamodb_table, config.aws_region)
     environment = authority.discover_environment()
     discovery = OpenSearchDiscovery(
         requests.Session(),
-        config.opensearch_url,
-        config.opensearch_index,
+        targets.opensearch_url,
+        targets.opensearch_index,
         config.request_timeout,
     )
     connection, values, mappings = await open_nats(
-        config.nats_url, config.request_timeout
+        targets.nats_url, config.request_timeout
     )
     try:
         if config.mode == "dry-run":

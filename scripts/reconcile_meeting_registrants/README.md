@@ -97,6 +97,11 @@ for stale UIDs to leave OpenSearch and their mappings to become tombstoned.
 
 ## Restore
 
+Restore is an optional emergency rollback, not part of the normal reconciliation
+workflow. Use it only to reverse an incorrect soft-delete after confirming that
+DynamoDB again contains the exact registrant; the standard workflow ends after
+dry-run, apply, and downstream verification.
+
 Restore one UID only after DynamoDB contains that exact row:
 
 ```bash
