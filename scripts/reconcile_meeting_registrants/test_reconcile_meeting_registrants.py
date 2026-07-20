@@ -156,6 +156,10 @@ class ConfigTests(unittest.TestCase):
         config = reconcile.parse_args(cli_args())
         self.assertEqual("dry-run", config.mode)
 
+    def test_default_aws_region_matches_itx(self):
+        config = reconcile.parse_args(cli_args())
+        self.assertEqual("us-west-2", config.aws_region)
+
     def test_apply_and_restore_are_mutually_exclusive(self):
         with self.assertRaises(SystemExit):
             reconcile.parse_args(cli_args("--apply", "--restore", "uid-1"))
@@ -520,8 +524,33 @@ class DynamoDBTests(unittest.TestCase):
         self.assertEqual(assumed_session.client("sts"), sts)
         self.assertEqual(assumed_session.client("dynamodb"), dynamo)
         fake_boto.Session.assert_any_call(
-            profile_name="readonly", region_name="us-east-1"
+            profile_name="readonly", region_name="us-west-2"
         )
+
+    def test_aws_client_builder_redacts_initialization_failure(self):
+        config = reconcile.parse_args(cli_args("--aws-profile", "readonly"))
+        fake_boto = Mock()
+        fake_boto.Session.side_effect = RuntimeError(
+            "credential-process secret details"
+        )
+        with patch.object(reconcile, "boto3", fake_boto):
+            with self.assertRaises(reconcile.ReconciliationError) as caught:
+                reconcile.build_aws_clients(config)
+        self.assertEqual("AWS client initialization failed", str(caught.exception))
+        self.assertNotIn("credential-process", str(caught.exception))
+
+    def test_aws_client_builder_preserves_assume_role_error(self):
+        config = reconcile.parse_args(
+            cli_args("--assume-role-arn", "arn:aws:iam::123:role/reconcile")
+        )
+        expected = reconcile.ReconciliationError("AWS role assumption failed")
+        with (
+            patch.object(reconcile.boto3, "Session", return_value=Mock()),
+            patch.object(reconcile, "_assume_role", side_effect=expected),
+            self.assertRaises(reconcile.ReconciliationError) as caught,
+        ):
+            reconcile.build_aws_clients(config)
+        self.assertIs(expected, caught.exception)
 
     def test_sts_or_table_failure_does_not_expose_dependency_details(self):
         sts = Mock()

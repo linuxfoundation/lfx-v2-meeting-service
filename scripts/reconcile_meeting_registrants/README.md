@@ -52,8 +52,8 @@ python3 -m venv .venv
   --opensearch-url http://localhost:9200 \
   --nats-url nats://localhost:4222 \
   --dynamodb-table itx-zoom-meetings-registrants-v2 \
-  --aws-region us-east-1 \
-  --aws-profile production-readonly \
+  --aws-region us-west-2 \
+  --aws-profile itx_prod \
   --plan ./meeting-98727043273-plan.json
 ```
 
@@ -79,13 +79,13 @@ plan:
   --opensearch-url http://localhost:9200 \
   --nats-url nats://localhost:4222 \
   --dynamodb-table itx-zoom-meetings-registrants-v2 \
-  --aws-region us-east-1 \
-  --aws-profile production-readonly \
+  --aws-region us-west-2 \
+  --aws-profile itx_prod \
   --plan ./meeting-98727043273-plan.json \
   --apply \
   --confirm-meeting-id 98727043273 \
   --confirm-aws-account 123456789012 \
-  --confirm-table-arn arn:aws:dynamodb:us-east-1:123456789012:table/example \
+  --confirm-table-arn arn:aws:dynamodb:us-west-2:123456789012:table/example \
   --confirm-stale-count 8
 ```
 
@@ -110,12 +110,12 @@ Restore one UID only after DynamoDB contains that exact row:
   --opensearch-url http://localhost:9200 \
   --nats-url nats://localhost:4222 \
   --dynamodb-table itx-zoom-meetings-registrants-v2 \
-  --aws-region us-east-1 \
-  --aws-profile production-readonly \
+  --aws-region us-west-2 \
+  --aws-profile itx_prod \
   --restore <registrant-uid> \
   --confirm-meeting-id 98727043273 \
   --confirm-aws-account 123456789012 \
-  --confirm-table-arn arn:aws:dynamodb:us-east-1:123456789012:table/example \
+  --confirm-table-arn arn:aws:dynamodb:us-west-2:123456789012:table/example \
   --confirm-opensearch-url http://localhost:9200 \
   --confirm-opensearch-index resources \
   --confirm-nats-url nats://localhost:4222

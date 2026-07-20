@@ -1,7 +1,8 @@
 # Copyright The Linux Foundation and each contributor to LFX.
 # SPDX-License-Identifier: MIT
 
-boto3
-msgpack
-nats-py
-requests
+boto3==1.43.49
+botocore[crt]==1.43.49
+msgpack==1.2.1
+nats-py==2.15.0
+requests==2.34.2

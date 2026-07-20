@@ -159,7 +159,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--opensearch-index", default="resources")
     parser.add_argument("--nats-url", required=True)
     parser.add_argument("--dynamodb-table", required=True)
-    parser.add_argument("--aws-region", default="us-east-1")
+    parser.add_argument("--aws-region", default="us-west-2")
     parser.add_argument("--aws-profile")
     parser.add_argument("--assume-role-arn")
     parser.add_argument("--plan", default="reconciliation-plan.json")
@@ -977,12 +977,17 @@ def _complete_future(
 def build_aws_clients(config: Config) -> tuple[Any, Any]:
     if boto3 is None:
         raise ReconciliationError("boto3 is not installed")
-    session = boto3.Session(
-        profile_name=config.aws_profile, region_name=config.aws_region
-    )
-    if config.assume_role_arn:
-        session = _assume_role(session, config)
-    return session.client("sts"), session.client("dynamodb")
+    try:
+        session = boto3.Session(
+            profile_name=config.aws_profile, region_name=config.aws_region
+        )
+        if config.assume_role_arn:
+            session = _assume_role(session, config)
+        return session.client("sts"), session.client("dynamodb")
+    except ReconciliationError:
+        raise
+    except Exception as error:
+        raise ReconciliationError("AWS client initialization failed") from error
 
 
 def _assume_role(session: Any, config: Config) -> Any:
