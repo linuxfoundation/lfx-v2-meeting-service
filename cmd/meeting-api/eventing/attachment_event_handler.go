@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -55,23 +54,7 @@ func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	switch v := tmp.FileSize.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for file_size: %w", err)
-			}
-			a.FileSize = val
-		}
-	case float64:
-		a.FileSize = int(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for file_size: %T", v)
-	}
-	return nil
+	return coerceInt(&a.FileSize, tmp.FileSize, "file_size")
 }
 
 // attachmentActorDBRaw represents the created_by/updated_by actor in raw attachment data.
@@ -302,23 +285,7 @@ func (a *PastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	switch v := tmp.FileSize.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for file_size: %w", err)
-			}
-			a.FileSize = val
-		}
-	case float64:
-		a.FileSize = int(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for file_size: %T", v)
-	}
-	return nil
+	return coerceInt(&a.FileSize, tmp.FileSize, "file_size")
 }
 
 // handlePastMeetingAttachmentUpdate processes updates to past meeting attachments
