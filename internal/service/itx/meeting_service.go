@@ -9,6 +9,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
@@ -16,13 +17,18 @@ import (
 type MeetingService struct {
 	meetingClient domain.ITXMeetingClient
 	idMapper      domain.IDMapper
+	userMetadata  domain.UserMetadataReader
 }
 
-// NewMeetingService creates a new ITX meeting service
-func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper) *MeetingService {
+// NewMeetingService creates a new ITX meeting service. userMetadata may be nil (e.g. when
+// NATS is disabled), in which case created_by on newly created meetings is limited to the
+// JWT-derived username/email (profile enrichment such as name/avatar is skipped) rather
+// than blocking creation.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *MeetingService {
 	return &MeetingService{
 		meetingClient: meetingClient,
 		idMapper:      idMapper,
+		userMetadata:  userMetadata,
 	}
 }
 
@@ -38,6 +44,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 	}
 
 	itxReq := s.transformToITXRequest(req)
+	itxReq.CreatedBy = s.buildCreatedBy(ctx)
 	resp, err := s.meetingClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
 		return nil, err
@@ -149,6 +156,41 @@ func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
 		return domain.NewValidationError("artifact_visibility is required when recording, transcript, or ai_summary is enabled")
 	}
 	return nil
+}
+
+// buildCreatedBy resolves the requesting user's identity (from the JWT principal stashed in
+// ctx by the auth middleware) into an itx.User to stamp as the meeting creator. Returns nil
+// when there is no principal to resolve, or when resolution isn't possible (never blocks
+// meeting creation on identity-resolution failures — degrades to nil, or to a minimal
+// {username, email} record when metadata lookup fails but we still have those from the JWT).
+func (s *MeetingService) buildCreatedBy(ctx context.Context) *itx.User {
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if principal == "" {
+		return nil
+	}
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+
+	if s.userMetadata == nil {
+		return &itx.User{Username: principal, Email: email}
+	}
+
+	profile, err := s.userMetadata.ResolveProfile(ctx, principal)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to resolve user profile for meeting created_by; stamping username/email only",
+			"username", principal, "err", err)
+		return &itx.User{Username: principal, Email: email}
+	}
+
+	createdBy := &itx.User{
+		Username:       principal,
+		Name:           profile.Name,
+		Email:          profile.Email,
+		ProfilePicture: profile.AvatarURL,
+	}
+	if createdBy.Email == "" {
+		createdBy.Email = email
+	}
+	return createdBy
 }
 
 // transformToITXRequest transforms domain request to ITX request format

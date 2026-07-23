@@ -8,8 +8,11 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	jose "gopkg.in/go-jose/go-jose.v2"
+	"gopkg.in/go-jose/go-jose.v2/jwt"
 )
 
 // TestHeimdallClaims_Validate tests the Validate method of HeimdallClaims
@@ -152,5 +155,58 @@ func TestParsePrincipal(t *testing.T) {
 				assert.Empty(t, principal)
 			})
 		}
+	})
+}
+
+// signHeimdallToken builds and HS256-signs a JWT carrying the given HeimdallClaims, for use
+// against a validator constructed with a matching HMAC keyFunc.
+func signHeimdallToken(t *testing.T, secret []byte, claims HeimdallClaims) string {
+	t.Helper()
+
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.HS256, Key: secret}, nil)
+	require.NoError(t, err)
+
+	token, err := jwt.Signed(signer).
+		Claims(jwt.Claims{Issuer: defaultIssuer, Audience: jwt.Audience{defaultAudience}}).
+		Claims(claims).
+		CompactSerialize()
+	require.NoError(t, err)
+
+	return token
+}
+
+// TestParsePrincipalAndEmail tests the ParsePrincipalAndEmail method, including the
+// successfully-validated-token path with an email claim (regression coverage for the
+// created_by identity resolution used by meeting creation).
+func TestParsePrincipalAndEmail(t *testing.T) {
+	secret := []byte("test-secret")
+	v, err := validator.New(
+		func(_ context.Context) (interface{}, error) { return secret, nil },
+		validator.HS256,
+		defaultIssuer,
+		[]string{defaultAudience},
+		validator.WithCustomClaims(customClaims),
+	)
+	require.NoError(t, err)
+	auth := &JWTAuth{validator: v}
+
+	t.Run("validated token with email claim returns principal and email", func(t *testing.T) {
+		token := signHeimdallToken(t, secret, HeimdallClaims{Principal: "user123", Email: "user123@example.com"})
+
+		principal, email, err := auth.ParsePrincipalAndEmail(context.Background(), token, slog.Default())
+
+		assert.NoError(t, err)
+		assert.Equal(t, "user123", principal)
+		assert.Equal(t, "user123@example.com", email)
+	})
+
+	t.Run("validated token without email claim returns empty email", func(t *testing.T) {
+		token := signHeimdallToken(t, secret, HeimdallClaims{Principal: "user123"})
+
+		principal, email, err := auth.ParsePrincipalAndEmail(context.Background(), token, slog.Default())
+
+		assert.NoError(t, err)
+		assert.Equal(t, "user123", principal)
+		assert.Empty(t, email)
 	})
 }

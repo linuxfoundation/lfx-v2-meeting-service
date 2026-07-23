@@ -108,6 +108,33 @@ func run() int {
 		}
 	}
 
+	natsURL := os.Getenv("NATS_URL")
+
+	// User metadata reader (LFXV2-2809): resolves the requesting principal's display
+	// profile (name/email/avatar) via the auth service, token-free, so newly created
+	// meetings can stamp created_by. Uses its own NATS connection since it's needed
+	// regardless of whether ID mapping or event processing are enabled; nil (and a
+	// warning) when NATS isn't configured or the connection fails, so meeting creation
+	// still works, just with created_by limited to the JWT-derived username/email
+	// (profile enrichment such as name/avatar is unavailable).
+	var userMetadataReader domain.UserMetadataReader
+	var userMetadataNatsConn *natsgo.Conn
+	if natsURL == "" {
+		slog.WarnContext(ctx, "NATS_URL not set; meeting created_by profile enrichment unavailable")
+	} else {
+		nc, err := natsgo.Connect(natsURL)
+		if err != nil {
+			slog.With(logging.ErrKey, err).WarnContext(ctx,
+				"failed to connect to NATS for user metadata reader; meeting created_by profile enrichment unavailable")
+		} else {
+			userMetadataNatsConn = nc
+			userMetadataReader = natsinfra.NewUserMetadataReader(nc, slog.Default())
+		}
+	}
+	if userMetadataNatsConn != nil {
+		defer userMetadataNatsConn.Close()
+	}
+
 	// Initialize ITX proxy client and services
 	itxProxyConfig := proxy.Config{
 		BaseURL:     env.ITXConfig.BaseURL,
@@ -118,7 +145,7 @@ func run() int {
 		Timeout:     30 * time.Second,
 	}
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
-	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper)
+	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper, userMetadataReader)
 	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
@@ -127,8 +154,6 @@ func run() int {
 	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxProxyClient)
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
-
-	natsURL := os.Getenv("NATS_URL")
 
 	// Start invite_accepted subscriber independently of KV event processing.
 	var inviteAcceptedSub *apieventing.InviteAcceptedSubscriber
