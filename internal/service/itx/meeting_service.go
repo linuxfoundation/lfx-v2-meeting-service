@@ -44,7 +44,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 	}
 
 	itxReq := s.transformToITXRequest(req)
-	itxReq.CreatedBy = s.buildCreatedBy(ctx)
+	itxReq.CreatedBy = s.buildRequestingUser(ctx)
 	resp, err := s.meetingClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
 		return nil, err
@@ -85,6 +85,10 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	}
 
 	itxReq := s.transformToITXRequest(req)
+	// Stamp updated_by from the authenticated principal. ITX only overwrites the stored
+	// updated_by / updated_by_list when this field is non-zero, so omitting it leaves a
+	// stale value on the record (typically the original creator or last PIS updater).
+	itxReq.UpdatedBy = s.buildRequestingUser(ctx)
 	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 	if err != nil {
 		return err
@@ -158,12 +162,14 @@ func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
 	return nil
 }
 
-// buildCreatedBy resolves the requesting user's identity (from the JWT principal stashed in
-// ctx by the auth middleware) into an itx.User to stamp as the meeting creator. Returns nil
-// when there is no principal to resolve, or when resolution isn't possible (never blocks
-// meeting creation on identity-resolution failures — degrades to nil, or to a minimal
-// {username, email} record when metadata lookup fails but we still have those from the JWT).
-func (s *MeetingService) buildCreatedBy(ctx context.Context) *itx.User {
+// buildRequestingUser resolves the requesting user's identity (from the JWT principal
+// stashed in ctx by the auth middleware) into an itx.User. Used to stamp the meeting
+// creator on create requests and the updater on update requests. Returns nil when there
+// is no principal to resolve, or when resolution isn't possible (never blocks meeting
+// create/update on identity-resolution failures — degrades to nil, or to a minimal
+// {username, email} record when metadata lookup fails but we still have those from the
+// JWT).
+func (s *MeetingService) buildRequestingUser(ctx context.Context) *itx.User {
 	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
 	if principal == "" {
 		return nil
@@ -176,21 +182,21 @@ func (s *MeetingService) buildCreatedBy(ctx context.Context) *itx.User {
 
 	profile, err := s.userMetadata.ResolveProfile(ctx, principal)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to resolve user profile for meeting created_by; stamping username/email only",
+		slog.WarnContext(ctx, "failed to resolve user profile for meeting created_by/updated_by; stamping username/email only",
 			"username", principal, "err", err)
 		return &itx.User{Username: principal, Email: email}
 	}
 
-	createdBy := &itx.User{
+	user := &itx.User{
 		Username:       principal,
 		Name:           profile.Name,
 		Email:          profile.Email,
 		ProfilePicture: profile.AvatarURL,
 	}
-	if createdBy.Email == "" {
-		createdBy.Email = email
+	if user.Email == "" {
+		user.Email = email
 	}
-	return createdBy
+	return user
 }
 
 // transformToITXRequest transforms domain request to ITX request format

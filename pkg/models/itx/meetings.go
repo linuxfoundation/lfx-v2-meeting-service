@@ -83,6 +83,12 @@ type CreateZoomMeetingRequest struct {
 	// whatever the caller sends, so this is never set on update requests).
 	CreatedBy *User `json:"created_by,omitempty"`
 
+	// UpdatedBy identifies the requesting user on update requests. ITX only overwrites the
+	// stored updated_by / updated_by_list when this field is non-zero, so it must be
+	// populated on every update to keep the meeting audit trail accurate. Leave nil on
+	// create requests.
+	UpdatedBy *User `json:"updated_by,omitempty"`
+
 	// Update notification
 	Note string `json:"note,omitempty"`
 }
