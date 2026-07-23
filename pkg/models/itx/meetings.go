@@ -79,6 +79,10 @@ type CreateZoomMeetingRequest struct {
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
 
+	// CreatedBy identifies the requesting user at creation time (create only; ITX persists
+	// whatever the caller sends, so this is never set on update requests).
+	CreatedBy *User `json:"created_by,omitempty"`
+
 	// Update notification
 	Note string `json:"note,omitempty"`
 }

@@ -128,11 +128,15 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 		return nil, createResponse(http.StatusServiceUnavailable, domain.NewUnavailableError("service unavailable"))
 	}
 
-	// Parse the Heimdall-authorized principal from the token.
-	principal, err := s.authService.ParsePrincipal(ctx, bearerToken, slog.Default())
+	// Parse the Heimdall-authorized principal (and, when present, email claim) from the token.
+	principal, email, err := s.authService.ParsePrincipalAndEmail(ctx, bearerToken, slog.Default())
 	if err != nil {
 		return ctx, err
 	}
-	// Return a new context containing the principal as a value.
-	return context.WithValue(ctx, constants.PrincipalContextID, principal), nil
+	// Return a new context containing the principal (and email, if any) as values.
+	ctx = context.WithValue(ctx, constants.PrincipalContextID, principal)
+	if email != "" {
+		ctx = context.WithValue(ctx, constants.EmailContextID, email)
+	}
+	return ctx, nil
 }

@@ -52,6 +52,12 @@ type contextUsername string
 // UsernameContextID is the context ID for the username
 const UsernameContextID contextUsername = "username"
 
+// contextEmail is the type for the email context key
+type contextEmail string
+
+// EmailContextID is the context ID for the JWT-claimed email of the authenticated principal
+const EmailContextID contextEmail = "email"
+
 // LFX app domain constants
 const (
 	// LFXDomainDev is the development domain

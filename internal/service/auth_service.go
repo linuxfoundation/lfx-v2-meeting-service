@@ -34,3 +34,13 @@ func (s *AuthService) ParsePrincipal(ctx context.Context, bearerToken string, lo
 
 	return s.auth.ParsePrincipal(ctx, bearerToken, logger)
 }
+
+// ParsePrincipalAndEmail parses the Heimdall-authorized principal and, when present, the
+// email claim from the bearer token. Email is optional and may be returned empty.
+func (s *AuthService) ParsePrincipalAndEmail(ctx context.Context, bearerToken string, logger *slog.Logger) (string, string, error) {
+	if !s.ServiceReady() {
+		return "", "", domain.NewUnavailableError("auth service not ready")
+	}
+
+	return s.auth.ParsePrincipalAndEmail(ctx, bearerToken, logger)
+}
