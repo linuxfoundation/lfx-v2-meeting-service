@@ -144,10 +144,13 @@ func main() {
 			slog.ErrorContext(ctx, "failed to connect to NATS", "error", err)
 			os.Exit(1)
 		}
-		defer nc.Close()
 	}
 
-	os.Exit(run(ctx, httpClient, nc, osURL, *update, *delete, *pageSize))
+	code := run(ctx, httpClient, nc, osURL, *update, *delete, *pageSize)
+	if nc != nil {
+		nc.Close()
+	}
+	os.Exit(code)
 }
 
 func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL string, update, delete bool, pageSize int) int {
