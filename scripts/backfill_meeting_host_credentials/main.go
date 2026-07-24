@@ -199,6 +199,14 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 				"failed", failed, "skipped", skipped)
 			return 1
 		}
+		// Flush NATS before scrubbing — nc.Publish is async (buffered). FlushTimeout
+		// sends a PING and blocks until PONG is received, confirming the server has
+		// processed all buffered messages. Without this, the scrub can run before the
+		// indexer has received the credentials documents, making host_key unrecoverable.
+		if err := nc.FlushTimeout(30 * time.Second); err != nil {
+			slog.ErrorContext(ctx, "NATS flush failed before host_key scrub; aborting to preserve source data", "error", err)
+			return 1
+		}
 		// update_by_query runs a fresh query against the current index state, not
 		// the scroll snapshot. Meetings created or rotated after the scroll opened
 		// may have their host_key removed before a credentials doc exists for them.

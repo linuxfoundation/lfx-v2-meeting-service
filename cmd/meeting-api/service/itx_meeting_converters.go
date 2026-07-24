@@ -98,7 +98,6 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		// Read-only response fields
 		NextOccurrenceStartTime: utils.StringPtrOmitEmpty(resp.NextOccurrenceStartTime),
 		ID:                      &resp.ID,
-		HostKey:                 &resp.HostKey,
 		Passcode:                &resp.Passcode,
 		Password:                &resp.Password,
 		PublicLink:              &resp.PublicLink,

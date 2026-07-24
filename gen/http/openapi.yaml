@@ -4330,10 +4330,6 @@ definitions:
                 description: Number of email delivery errors for the meeting
                 example: 5892644487825617938
                 format: int64
-            host_key:
-                type: string
-                description: 6-digit host key
-                example: "123456"
             id:
                 type: string
                 description: Zoom meeting ID from ITX
@@ -4509,7 +4505,6 @@ definitions:
             duration: 506
             early_join_time_minutes: 15
             email_delivery_error_count: 3190138087041244305
-            host_key: "123456"
             id: "1234567890"
             is_invite_responses_enabled: false
             last_bulk_registrant_job_status: Repellendus dolor.
