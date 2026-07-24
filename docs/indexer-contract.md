@@ -11,6 +11,7 @@ This document is the authoritative reference for all data the meeting service se
 ## Resource Types
 
 - [V1 Meeting](#v1-meeting)
+- [V1 Meeting Host Credentials](#v1-meeting-host-credentials)
 - [V1 Meeting Registrant](#v1-meeting-registrant)
 - [V1 Meeting RSVP](#v1-meeting-rsvp)
 - [V1 Past Meeting](#v1-past-meeting)
@@ -56,7 +57,6 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `duration` | int | Meeting duration in minutes |
 | `early_join_time_minutes` | int | Minutes before start time that attendees can join |
 | `last_end_time` | int64 | End time of the last occurrence (Unix timestamp) |
-| `host_key` | string | Six-digit Zoom host PIN (rotated weekly) |
 | `join_url` | string | LFX meeting join page URL |
 | `password` | string | UUID password for the join page |
 | `restricted` | bool | Whether only invited users can join |
@@ -199,6 +199,56 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 |---|---|
 | `project:{project_uid}` | Only when `project_uid` is non-empty |
 | `committee:{uid}` | For each entry in `committees` with a non-empty `uid` |
+
+---
+
+## V1 Meeting Host Credentials
+
+**Object type:** `v1_meeting_host_credentials`
+
+**NATS subject:** `lfx.index.v1_meeting_host_credentials`
+
+**Source struct:** `internal/domain/models/event_models.go` — `MeetingHostCredentialsEventData`
+
+**Indexed on:** create, update, delete of a meeting (sourced from the v1 meeting data). The host key was split out of `v1_meeting` into this separate permissioned object (LFXV2-2358) so it is only accessible to users with the `host` relation on the parent meeting.
+
+### Data Schema
+
+| Field | Type | Description |
+|---|---|---|
+| `meeting_id` | string | Meeting ID of the parent meeting |
+| `host_key` | string | Six-digit Zoom host PIN (rotated weekly) |
+
+### Tags
+
+| Tag Format | Example | Purpose |
+|---|---|---|
+| `{meeting_id}` | `93699735000` | Direct lookup by meeting ID |
+| `meeting_id:{meeting_id}` | `meeting_id:93699735000` | Namespaced lookup by meeting ID |
+
+### Access Control (IndexingConfig)
+
+| Field | Value |
+|---|---|
+| `access_check_object` | `v1_meeting:{meeting_id}` (access checked on the parent meeting) |
+| `access_check_relation` | `host` |
+| `history_check_object` | `v1_meeting:{meeting_id}` |
+| `history_check_relation` | `auditor` |
+| `public` | `false` (always) |
+
+### Search Behavior
+
+| Field | Value |
+|---|---|
+| `sort_name` | `""` (not searchable by name) |
+| `name_and_aliases` | `nil` |
+| `fulltext` | `""` |
+
+### Parent References
+
+| Ref | Condition |
+|---|---|
+| `v1_meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
 
 ---
 

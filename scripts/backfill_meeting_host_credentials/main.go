@@ -148,7 +148,7 @@ func main() {
 
 	code := run(ctx, httpClient, nc, osURL, *update, *delete, *pageSize)
 	if nc != nil {
-		nc.Close()
+		nc.Drain() //nolint:errcheck
 	}
 	os.Exit(code)
 }
@@ -159,7 +159,7 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 		slog.ErrorContext(ctx, "failed to open scroll", "error", err)
 		return 1
 	}
-	defer deleteScroll(ctx, httpClient, osURL, scrollID) //nolint:errcheck
+	defer func() { deleteScroll(ctx, httpClient, osURL, scrollID) }() //nolint:errcheck
 
 	slog.InfoContext(ctx, "found v1_meeting documents with host_key", "total", total)
 	if total == 0 {
@@ -187,7 +187,14 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 
 	// Remove host_key from all v1_meeting docs. Only runs when -delete is set,
 	// after credentials have been published so the new docs exist first.
+	// Abort if any publishes failed or were skipped (missing object_id) to avoid
+	// destroying the only recoverable source of a credential.
 	if delete {
+		if failed > 0 || skipped > 0 {
+			slog.ErrorContext(ctx, "aborting host_key scrub: credentials not fully published",
+				"failed", failed, "skipped", skipped)
+			return 1
+		}
 		removed, err := removeHostKeyFromMeetings(ctx, httpClient, osURL)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to remove host_key from v1_meeting documents", "error", err)
