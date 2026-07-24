@@ -474,7 +474,6 @@ func convertMapToMeetingData(
 		MeetingType:                              rawMeeting.MeetingType,
 		EarlyJoinTimeMinutes:                     rawMeeting.EarlyJoinTime,
 		LastEndTime:                              rawMeeting.LastEndTime,
-		HostKey:                                  rawMeeting.HostKey,
 		JoinURL:                                  rawMeeting.JoinURL,
 		Password:                                 rawMeeting.Password,
 		RecordingEnabled:                         rawMeeting.RecordingEnabled,
@@ -657,6 +656,18 @@ func (h *EventHandlers) handleMeetingUpdate(
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishMeetingEvent(ctx, string(indexerAction), meetingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting event")
+		return isTransientError(err)
+	}
+
+	// Publish host credentials as a separate permissioned object.
+	// This is done on every meeting update so the credentials doc stays in sync
+	// whenever the meeting is created or the host key is rotated.
+	hostCreds := &models.MeetingHostCredentialsEventData{
+		MeetingID: meetingData.ID,
+		HostKey:   utils.GetString(v1Data["host_key"]),
+	}
+	if err := h.publisher.PublishMeetingHostCredentialsEvent(ctx, string(indexerAction), hostCreds); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials event")
 		return isTransientError(err)
 	}
 

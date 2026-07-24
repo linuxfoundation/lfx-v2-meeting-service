@@ -207,11 +207,6 @@ type MeetingEventData struct {
 	// If the meeting is a non-recurring meeting, this is the end time of the one-time meeting.
 	LastEndTime int64 `json:"last_end_time"`
 
-	// HostKey is the host key of the Zoom user hosting the meeting.
-	// It is a six-digit PIN that is rotated weekly by our change-host-keys cron job.
-	// This host key is needed to be able to claim host during a meeting.
-	HostKey string `json:"host_key"`
-
 	// JoinUrl is the URL to the meeting join page maintained by the PCC team.
 	// The URL is specific to the meeting ID and the password.
 	// (e.g. https://zoom-lfx.dev.platform.linuxfoundation.org/meeting/93699735000?password=111)
@@ -423,6 +418,43 @@ func (m *MeetingEventData) ParentRefs() []string {
 		}
 	}
 	return refs
+}
+
+// MeetingHostCredentialsEventData holds the host key for a meeting and is indexed
+// as a separate, permissioned object so that only meeting organizers can retrieve it.
+// The ObjectID in the indexer is the meeting ID, so upserts overwrite the previous value.
+type MeetingHostCredentialsEventData struct {
+	// MeetingID is the ID of the meeting these credentials belong to.
+	MeetingID string `json:"meeting_id"`
+
+	// HostKey is the six-digit Zoom host PIN, rotated weekly by the change-host-keys cron job.
+	// It allows a registrant to claim host status during a live Zoom meeting.
+	HostKey string `json:"host_key"`
+}
+
+// SortName satisfies the indexer interface — credentials have no meaningful sort name.
+func (c *MeetingHostCredentialsEventData) SortName() string { return "" }
+
+// NameAndAliases satisfies the indexer interface.
+func (c *MeetingHostCredentialsEventData) NameAndAliases() []string { return nil }
+
+// FullText satisfies the indexer interface — host credentials are not full-text searchable.
+func (c *MeetingHostCredentialsEventData) FullText() string { return "" }
+
+// Tags returns the indexer tags for host credentials.
+func (c *MeetingHostCredentialsEventData) Tags() []string {
+	return []string{
+		c.MeetingID,
+		"meeting_id:" + c.MeetingID,
+	}
+}
+
+// ParentRefs returns the parent meeting reference so the credentials doc is scoped to its meeting.
+func (c *MeetingHostCredentialsEventData) ParentRefs() []string {
+	if c.MeetingID == "" {
+		return nil
+	}
+	return []string{"v1_meeting:" + c.MeetingID}
 }
 
 // Occurrence represents a single meeting occurrence
