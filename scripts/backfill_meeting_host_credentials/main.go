@@ -173,6 +173,19 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 		}
 	}
 
+	// Remove host_key from all v1_meeting docs. Do this after publishing credentials
+	// so the new docs exist before the field is scrubbed from meetings.
+	if !update {
+		slog.InfoContext(ctx, "[dry-run] would remove host_key from v1_meeting documents via update_by_query")
+	} else {
+		removed, err := removeHostKeyFromMeetings(ctx, httpClient, osURL)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to remove host_key from v1_meeting documents", "error", err)
+			return 1
+		}
+		slog.InfoContext(ctx, "removed host_key from v1_meeting documents", "updated", removed)
+	}
+
 	slog.InfoContext(ctx, "backfill_meeting_host_credentials complete",
 		"published", published,
 		"skipped", skipped,
@@ -183,6 +196,67 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 		return 1
 	}
 	return 0
+}
+
+// removeHostKeyFromMeetings issues a single update_by_query to remove the host_key field
+// from the data payload of every v1_meeting document that still has it.
+func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL string) (int, error) {
+	body, _ := json.Marshal(map[string]any{
+		"script": map[string]any{
+			"source": "ctx._source.data.remove('host_key')",
+			"lang":   "painless",
+		},
+		"query": map[string]any{
+			"bool": map[string]any{
+				"must": []any{
+					map[string]any{"term": map[string]any{"object_type": "v1_meeting"}},
+					map[string]any{"exists": map[string]any{"field": "data.host_key"}},
+				},
+				"must_not": []any{
+					map[string]any{"term": map[string]any{"data.host_key": ""}},
+				},
+			},
+		},
+	})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		fmt.Sprintf("%s/%s/_update_by_query", osURL, osIndex),
+		bytes.NewReader(body),
+	)
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close() //nolint:errcheck
+
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("read update_by_query response: %w", err)
+	}
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("opensearch returned %d: %s", resp.StatusCode, string(raw))
+	}
+
+	var result struct {
+		Updated  int `json:"updated"`
+		Failures []struct {
+			Cause struct {
+				Reason string `json:"reason"`
+			} `json:"cause"`
+		} `json:"failures"`
+	}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return 0, fmt.Errorf("unmarshal update_by_query response: %w", err)
+	}
+	if len(result.Failures) > 0 {
+		return result.Updated, fmt.Errorf("update_by_query reported %d failures; first: %s", len(result.Failures), result.Failures[0].Cause.Reason)
+	}
+	return result.Updated, nil
 }
 
 func processPage(ctx context.Context, nc *nats.Conn, hits []osHit, update bool) (published, skipped, failed int) {
