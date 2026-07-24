@@ -228,6 +228,7 @@ func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL s
 			"bool": map[string]any{
 				"must": []any{
 					map[string]any{"term": map[string]any{"object_type": "v1_meeting"}},
+					map[string]any{"term": map[string]any{"latest": true}},
 					map[string]any{"exists": map[string]any{"field": "data.host_key"}},
 				},
 				"must_not": []any{
@@ -346,6 +347,7 @@ func openScroll(ctx context.Context, client *http.Client, osURL string, pageSize
 			"bool": map[string]any{
 				"must": []any{
 					map[string]any{"term": map[string]any{"object_type": "v1_meeting"}},
+					map[string]any{"term": map[string]any{"latest": true}},
 					map[string]any{"exists": map[string]any{"field": "data.host_key"}},
 				},
 				"must_not": []any{

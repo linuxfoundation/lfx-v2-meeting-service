@@ -693,8 +693,7 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
 		return false
 	}
-	hostCreds := &models.MeetingHostCredentialsEventData{MeetingID: meetingID}
-	if err := h.publisher.PublishMeetingHostCredentialsEvent(ctx, string(indexerConstants.ActionDeleted), hostCreds); err != nil {
+	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_meeting_host_credentials", meetingID); err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials delete event", "meeting_id", meetingID)
 		return isTransientError(err)
 	}
