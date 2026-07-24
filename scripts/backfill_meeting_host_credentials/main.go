@@ -199,6 +199,11 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 				"failed", failed, "skipped", skipped)
 			return 1
 		}
+		// update_by_query runs a fresh query against the current index state, not
+		// the scroll snapshot. Meetings created or rotated after the scroll opened
+		// may have their host_key removed before a credentials doc exists for them.
+		// Run --delete during a quiescent window or immediately after --update.
+		slog.WarnContext(ctx, "running host_key scrub; ensure no meetings are being created or rotated during this window")
 		removed, err := removeHostKeyFromMeetings(ctx, httpClient, osURL)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to remove host_key from v1_meeting documents", "error", err)
@@ -266,7 +271,8 @@ func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL s
 	}
 
 	var result struct {
-		Updated  int `json:"updated"`
+		Updated  int  `json:"updated"`
+		TimedOut bool `json:"timed_out"`
 		Failures []struct {
 			Cause struct {
 				Reason string `json:"reason"`
@@ -275,6 +281,9 @@ func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL s
 	}
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return 0, fmt.Errorf("unmarshal update_by_query response: %w", err)
+	}
+	if result.TimedOut {
+		return result.Updated, fmt.Errorf("update_by_query timed out after updating %d documents; retry --delete to scrub remaining host_key fields", result.Updated)
 	}
 	if len(result.Failures) > 0 {
 		return result.Updated, fmt.Errorf("update_by_query reported %d failures; first: %s", len(result.Failures), result.Failures[0].Cause.Reason)
