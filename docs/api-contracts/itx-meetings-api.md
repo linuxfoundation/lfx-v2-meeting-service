@@ -108,7 +108,6 @@ Content-Type: application/json
     "end_times": 10
   },
   "id": "1234567890",
-  "host_key": "123456",
   "passcode": "abc123",
   "password": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
   "public_link": "https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890",
@@ -207,7 +206,6 @@ Content-Type: application/json
     "weekly_days": "1,3,5",
     "end_times": 10
   },
-  "host_key": "123456",
   "passcode": "abc123",
   "password": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
   "public_link": "https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890",
