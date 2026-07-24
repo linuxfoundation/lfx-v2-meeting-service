@@ -120,6 +120,10 @@ func main() {
 		slog.Error("-delete requires -update")
 		os.Exit(1)
 	}
+	if *pageSize <= 0 {
+		slog.Error("-page-size must be greater than zero")
+		os.Exit(1)
+	}
 
 	slog.Info("backfill_meeting_host_credentials starting",
 		"opensearch_url", osURL,
