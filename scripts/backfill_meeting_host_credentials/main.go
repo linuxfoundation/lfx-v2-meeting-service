@@ -18,6 +18,8 @@
 // Flags:
 //
 //	-update      Actually publish credentials documents to NATS (default: false, dry-run only)
+//	-delete      Remove host_key from v1_meeting documents via update_by_query (default: false)
+//	             Requires -update. Use when you are ready to scrub the field after verifying credentials.
 //	-page-size   Documents per scroll page (default: 200)
 //
 // Environment variables:
@@ -101,6 +103,7 @@ type indexerEnvelope struct {
 
 func main() {
 	update := flag.Bool("update", false, "publish credentials documents to NATS (default: dry-run, logs only)")
+	delete := flag.Bool("delete", false, "remove host_key from v1_meeting documents via update_by_query (requires -update)")
 	pageSize := flag.Int("page-size", scrollPageSize, "documents per scroll page")
 	flag.Parse()
 
@@ -113,10 +116,16 @@ func main() {
 		natsURL = nats.DefaultURL
 	}
 
+	if *delete && !*update {
+		slog.Error("-delete requires -update")
+		os.Exit(1)
+	}
+
 	slog.Info("backfill_meeting_host_credentials starting",
 		"opensearch_url", osURL,
 		"nats_url", natsURL,
 		"update", *update,
+		"delete", *delete,
 		"page_size", *pageSize,
 	)
 
@@ -138,10 +147,10 @@ func main() {
 		defer nc.Close()
 	}
 
-	os.Exit(run(ctx, httpClient, nc, osURL, *update, *pageSize))
+	os.Exit(run(ctx, httpClient, nc, osURL, *update, *delete, *pageSize))
 }
 
-func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL string, update bool, pageSize int) int {
+func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL string, update, delete bool, pageSize int) int {
 	scrollID, firstPage, total, err := openScroll(ctx, httpClient, osURL, pageSize)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open scroll", "error", err)
@@ -173,11 +182,9 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 		}
 	}
 
-	// Remove host_key from all v1_meeting docs. Do this after publishing credentials
-	// so the new docs exist before the field is scrubbed from meetings.
-	if !update {
-		slog.InfoContext(ctx, "[dry-run] would remove host_key from v1_meeting documents via update_by_query")
-	} else {
+	// Remove host_key from all v1_meeting docs. Only runs when -delete is set,
+	// after credentials have been published so the new docs exist first.
+	if delete {
 		removed, err := removeHostKeyFromMeetings(ctx, httpClient, osURL)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to remove host_key from v1_meeting documents", "error", err)
@@ -191,6 +198,7 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 		"skipped", skipped,
 		"failed", failed,
 		"update", update,
+		"delete", delete,
 	)
 	if failed > 0 {
 		return 1
