@@ -1134,8 +1134,6 @@ type ITXZoomMeetingResponse struct {
 	NextOccurrenceStartTime *string
 	// Zoom meeting ID from ITX
 	ID *string
-	// 6-digit host key
-	HostKey *string
 	// Zoom meeting passcode
 	Passcode *string
 	// UUID password for join page

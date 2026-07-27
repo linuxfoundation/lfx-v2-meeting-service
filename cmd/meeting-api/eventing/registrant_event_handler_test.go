@@ -55,6 +55,9 @@ type mockEventPublisher struct{ mock.Mock }
 func (m *mockEventPublisher) PublishMeetingEvent(_ context.Context, _ string, _ *models.MeetingEventData) error {
 	return nil
 }
+func (m *mockEventPublisher) PublishMeetingHostCredentialsEvent(_ context.Context, _ string, _ *models.MeetingHostCredentialsEventData) error {
+	return nil
+}
 func (m *mockEventPublisher) PublishRegistrantEvent(ctx context.Context, action string, r *models.RegistrantEventData) error {
 	return m.Called(ctx, action, r).Error(0)
 }

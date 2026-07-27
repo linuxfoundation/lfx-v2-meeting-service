@@ -555,8 +555,6 @@ type CreateItxMeetingResponseBody struct {
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -642,8 +640,6 @@ type GetItxMeetingResponseBody struct {
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -3862,7 +3858,6 @@ func NewCreateItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse)
 		LastMailingListMembersSyncJobWarningCount: res.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   res.NextOccurrenceStartTime,
 		ID:                                        res.ID,
-		HostKey:                                   res.HostKey,
 		Passcode:                                  res.Passcode,
 		Password:                                  res.Password,
 		PublicLink:                                res.PublicLink,
@@ -3930,7 +3925,6 @@ func NewGetItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingResponse) *G
 		LastMailingListMembersSyncJobWarningCount: res.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   res.NextOccurrenceStartTime,
 		ID:                                        res.ID,
-		HostKey:                                   res.HostKey,
 		Passcode:                                  res.Passcode,
 		Password:                                  res.Password,
 		PublicLink:                                res.PublicLink,

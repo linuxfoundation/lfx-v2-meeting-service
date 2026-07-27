@@ -16,6 +16,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -474,7 +475,6 @@ func convertMapToMeetingData(
 		MeetingType:                              rawMeeting.MeetingType,
 		EarlyJoinTimeMinutes:                     rawMeeting.EarlyJoinTime,
 		LastEndTime:                              rawMeeting.LastEndTime,
-		HostKey:                                  rawMeeting.HostKey,
 		JoinURL:                                  rawMeeting.JoinURL,
 		Password:                                 rawMeeting.Password,
 		RecordingEnabled:                         rawMeeting.RecordingEnabled,
@@ -660,6 +660,18 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return isTransientError(err)
 	}
 
+	// Publish host credentials as a separate permissioned object.
+	// This is done on every meeting update so the credentials doc stays in sync
+	// whenever the meeting is created or the host key is rotated.
+	hostCreds := &models.MeetingHostCredentialsEventData{
+		MeetingID: meetingData.ID,
+		HostKey:   utils.GetString(v1Data["host_key"]),
+	}
+	if err := h.publisher.PublishMeetingHostCredentialsEvent(ctx, string(indexerAction), hostCreds); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials event")
+		return isTransientError(err)
+	}
+
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
@@ -681,6 +693,10 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
 		return false
+	}
+	if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1MeetingHostCredentialsSubject, meetingID); err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials delete event", "meeting_id", meetingID)
+		return isTransientError(err)
 	}
 	return h.handleMeetingTypeDelete(ctx, key, meetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_meeting",
