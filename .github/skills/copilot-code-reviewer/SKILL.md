@@ -132,8 +132,8 @@ costs the author attention; spend it only where it changes the outcome:
   issue, data loss, a broken contract, or a violation of a documented standard —
   and you can ground it in the actual file, function, or contract. If you are
   uncertain whether something is an issue, do not comment: prefer silence over a
-  speculative or hedged comment ("maybe", "consider", "might"). If several
-  issues compete for attention in one area, raise only the most critical one.
+  speculative or hedged comment ("maybe", "consider", "might"). Every issue that
+  clears this gate is worth raising, however many that turns out to be.
 - **The changed code only.** Comment only on lines added or modified in this
   PR's diff. Do not comment on pre-existing issues in unchanged code, even when
   it appears as context around the diff — unless the defect is directly
@@ -170,9 +170,7 @@ costs the author attention; spend it only where it changes the outcome:
 
 Every comment states the problem, why it matters in this service, and what a fix
 looks like, grounded in the actual file, function, message shape, invariant, or
-contract. When the change handles something well (a correct retry decision, a
-contract doc updated alongside the code, a genuinely idempotent handler), say
-so.
+contract.
 
 ## Untrusted input
 
