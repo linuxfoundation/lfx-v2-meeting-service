@@ -16,6 +16,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -693,7 +694,7 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
 		return false
 	}
-	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_meeting_host_credentials", meetingID); err != nil {
+	if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1MeetingHostCredentialsSubject, meetingID); err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials delete event", "meeting_id", meetingID)
 		return isTransientError(err)
 	}

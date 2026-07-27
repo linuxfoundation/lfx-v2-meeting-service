@@ -236,7 +236,7 @@ func run(ctx context.Context, httpClient *http.Client, nc *nats.Conn, osURL stri
 // removeHostKeyFromMeetings issues a single update_by_query to remove the host_key field
 // from the data payload of every v1_meeting document that still has it.
 func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL string) (int, error) {
-	body, _ := json.Marshal(map[string]any{
+	body, err := json.Marshal(map[string]any{
 		"script": map[string]any{
 			"source": "ctx._source.data.remove('host_key')",
 			"lang":   "painless",
@@ -254,6 +254,9 @@ func removeHostKeyFromMeetings(ctx context.Context, client *http.Client, osURL s
 			},
 		},
 	})
+	if err != nil {
+		return 0, fmt.Errorf("marshal update_by_query body: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		fmt.Sprintf("%s/%s/_update_by_query", osURL, osIndex),
