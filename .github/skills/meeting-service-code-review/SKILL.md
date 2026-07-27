@@ -50,8 +50,9 @@ documented source in any standards finding:
   they give against the code, because both have drifted in places.
 
 Enforcement runs in both directions: code that violates a documented standard is
-a finding, and a documented standard the code has visibly outgrown is a finding
-against the docs.
+a finding, and where this change leaves a documented standard behind, the doc
+needs updating in the same PR. Pre-existing drift the change does not touch is
+not a finding.
 
 ## Quality dimensions
 
@@ -72,8 +73,8 @@ Run these on the changed code, scaled to the size of the change:
 - **Tests.** New or changed behavior needs tests that assert real behavior
   rather than that a mock was called. Converters, occurrence calculation, KV
   routing, and retry decisions are cheap to test and expensive to get wrong;
-  missing tests on a contract-bearing or security-sensitive path is always worth
-  flagging.
+  missing tests on a contract-bearing or security-sensitive path are worth a
+  finding when you can name the contract or security consequence left unguarded.
 - **Concurrency.** `make test` enables the race detector locally, but the CI
   test step does not, so do not assume a data race would have been caught before
   review. Shared state written from a handler, an unbounded fan-out over KV
@@ -93,26 +94,30 @@ Run these on the changed code, scaled to the size of the change:
   `gen/` will be silently overwritten, and a `design/` change whose regenerated
   code was never committed still passes CI while the released image compiles the
   committed `gen/`. Flag either.
-- **Auth is declared, not coded, per endpoint.** Every method in the design
-  except the two health checks attaches the JWT security scheme, which is what
-  causes the token to be verified and the principal to be placed on the context.
-  A new method that omits it is an unauthenticated endpoint, and nothing in the
-  handler will make that obvious. This is the single highest-value thing to
-  check on any new endpoint.
+- **Auth is declared, not coded, per endpoint.** Whether a route is
+  authenticated is set in the Goa DSL, not in the handler: attaching the JWT
+  security scheme is what causes the token to be verified and the principal to
+  be placed on the context. A method that omits it is an unauthenticated
+  endpoint, and nothing in the handler will make that obvious. Some routes are
+  deliberately public, so confirm that the exposure is intentional and that
+  something else — a signature check, the upstream gateway — covers it. This is
+  the single highest-value thing to check on any new endpoint.
 - **The ITX wire models are lossy by design.** Fields in `pkg/models/itx/` are
   frequently non-pointer with `omitempty`, so a deliberate zero, empty string,
-  or `false` is simply absent from the request. Updates go out as `PUT`s
-  carrying the same request struct as create, so a converter that maps an
-  "unset" the wrong way can silently clear, or fail to clear, a value in ITX.
+  or `false` is simply absent from the request. Updates go out as `PUT`s, some
+  reusing the create request struct and some carrying a dedicated update shape,
+  so check which one the endpoint under review uses before reasoning about
+  unset semantics: a converter that maps an "unset" the wrong way can silently
+  clear, or fail to clear, a value in ITX.
   Check new converter fields against the relevant `docs/api-contracts/` schema,
   and check that the pointer helpers in `pkg/utils/ptr.go` are used with the
   semantics their names imply.
-- **The retry/ack contract in the event pipeline.** KV handlers return a
-  boolean: true NAKs the message for redelivery with backoff, false ACKs it.
-  Returning false on a transient failure drops the event permanently; returning
-  true on a permanently malformed record burns redeliveries until the consumer's
-  max-deliver limit. Every new failure path in a handler is a decision between
-  those two, and it should be an explicit one.
+- **The retry/ack contract in the event pipeline.** Every failure path in a KV
+  handler is a choice between redelivering the message with backoff and
+  acknowledging it, and it should be an explicit one. Acknowledging a transient
+  failure drops the event permanently; redelivering a permanently malformed
+  record burns redeliveries until the consumer's max-deliver limit. Check which
+  one a new failure path selects and whether that matches the error it handles.
 - **At-least-once means idempotent.** Redelivery, consumer restarts, and KV
   re-writes all replay events. Any externally visible effect a handler
   performs — publishing to the indexer or fga-sync, writing an ID mapping,
@@ -142,9 +147,9 @@ exists. Report only high-confidence, concretely reachable findings, name the
 file and function, and say what an attacker controls.
 
 - **Meeting join credentials are data this service handles routinely.** Zoom
-  passcodes, the six-digit host key, the join URL, and the join-page password
-  flow through the ITX models, the event handlers, and the indexer payload —
-  the indexed meeting record deliberately carries them. That makes it normal for
+  passcodes, the host key, the join URL, and the join-page password flow through
+  the ITX models, the event handlers, and the indexer payload — the indexed
+  meeting record deliberately carries them. That makes it normal for
   them to appear in a diff and abnormal for them to appear anywhere new:
   in a log line, an error message, a trace attribute, a test fixture committed
   with a real value, or a response shape a caller was not already entitled to.

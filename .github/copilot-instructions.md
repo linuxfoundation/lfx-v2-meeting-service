@@ -17,11 +17,13 @@ method, including this service's security anchors.
 This repo is the LFX V2 meeting service, a Go service built with Goa v3. It has
 two distinct surfaces, and a change usually belongs to exactly one of them:
 
-- **A synchronous HTTP proxy in front of ITX.** The whole generated HTTP API
-  sits under `/itx/**`, plus the `/livez` and `/readyz` health endpoints. It
-  forwards meeting, registrant, occurrence, past-meeting, participant, summary
-  and attachment operations to the ITX Zoom API, translating between the Goa
-  payload shapes and the ITX wire models in `pkg/models/itx/`. The caller's
+- **A synchronous HTTP proxy in front of ITX.** The generated HTTP surface is
+  defined in `design/` and mostly proxies ITX resource families under
+  `/itx/**`, alongside a small number of deliberately unauthenticated health
+  and API-document routes. It forwards meeting, registrant, occurrence,
+  past-meeting, participant, summary and attachment operations to the ITX Zoom
+  API, translating between the Goa payload shapes and the ITX wire models in
+  `pkg/models/itx/`. The caller's
   Heimdall-issued JWT is verified here and the principal is put on the context,
   but the outbound call to ITX carries the *service's own* OAuth2 M2M
   credentials — the end user's identity does not cross that boundary.
