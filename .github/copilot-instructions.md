@@ -32,10 +32,12 @@ two distinct surfaces, and a change usually belongs to exactly one of them:
   and API-document routes. It forwards meeting, registrant, occurrence,
   past-meeting, participant, summary and attachment operations to the ITX Zoom
   API, translating between the Goa payload shapes and the ITX wire models in
-  `pkg/models/itx/`. The caller's
-  Heimdall-issued JWT is verified here and the principal is put on the context,
-  but the outbound call to ITX carries the *service's own* OAuth2 M2M
-  credentials — the end user's identity does not cross that boundary.
+  `pkg/models/itx/`. The caller's Heimdall-issued JWT is verified here and the
+  principal is put on the context, and the outbound call to ITX carries the
+  *service's own* OAuth2 M2M credentials, so the caller's token never leaves
+  the service. The caller's *identity* does leave it: username, email and
+  profile fields derived from the JWT are stamped into outbound request bodies.
+  The credential stops at this boundary; the identity crosses it as data.
 - **An asynchronous v1 → v2 event pipeline.** A NATS JetStream consumer watches
   the `v1-objects` KV bucket, transforms v1 records into v2 shapes (occurrence
   expansion, ID mapping, user enrichment), and publishes to the indexer

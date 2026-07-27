@@ -33,7 +33,11 @@ deliberately unauthenticated health and API-document routes. The security
 scheme is declared in the Goa DSL in `design/`, and the handler that implements
 it verifies the Heimdall-issued JWT and puts the principal on the request
 context. The outbound ITX call is then made with the *service's own* OAuth2 M2M
-credentials, so the end user's identity stops at this service. Per-object
+credentials, so the caller's token stops at this service — but the caller's
+identity does not: username, email and profile fields derived from the JWT are
+stamped into outbound request bodies. Only the credential is swapped at this
+boundary, which makes identity and PII propagation into ITX a live review
+surface rather than something the M2M swap takes care of. Per-object
 permission — whether a caller may touch a given meeting — is expected to be
 decided upstream, by Heimdall against the OpenFGA tuples, rather than here;
 check the diff before assuming either way. That makes this service's input
@@ -166,9 +170,14 @@ costs the author attention; spend it only where it changes the outcome:
   raise it once and note where else it applies. The event handlers and the ITX
   client methods are deliberately repetitive; a single comment naming the
   pattern beats one per copy.
-- **No generic advice.** A finding that could apply to any Go service does not
-  belong here; tie every comment to this service's shape, invariants, or
-  documented standards.
+- **No generic advice.** What does not belong here is abstract counsel that
+  could be pasted into any review — "add a nil check", "consider extracting a
+  helper", "add tests" — with nothing behind it. A defect you can point at in
+  this diff is a finding however ordinary its category: a nil dereference, an
+  off-by-one, a dropped error, a race each break this service as surely as they
+  would any other, and being a common kind of mistake is not a defense. Judge
+  the comment by whether it names something concrete here, not by how general
+  the category sounds.
 
 Every comment states the problem, why it matters in this service, and what a fix
 looks like, grounded in the actual file, function, message shape, invariant, or
