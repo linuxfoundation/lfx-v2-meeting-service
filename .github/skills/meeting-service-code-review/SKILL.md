@@ -13,8 +13,9 @@ description: >
 
 # Meeting Service Code Review
 
-The `/copilot-code-reviewer` skill owns the reviewer's scope and signal
-discipline; this skill owns the line-level method.
+Reviewer scope and the signal bar are owned by the `copilot-code-reviewer`
+skill (`.github/skills/copilot-code-reviewer/SKILL.md`); this skill assumes
+those and covers only the line-level method.
 
 A diff alone is not enough. For each non-trivial hunk, read the **whole changed
 function**, not just the diff lines, and read the layer either side of it: for a
