@@ -23,6 +23,28 @@ Client → V2 Proxy API (Unified Participants) → ITX API (Separate Invitees & 
 - Authorization: OAuth2 M2M (added automatically by proxy)
 - Separate invitee and attendee resources
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX invitee and attendee write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on invitee and attendee `POST` (create) requests. Also stamped when a `PUT` targets an invitee or attendee that doesn't yet exist and the proxy falls back to a create.
+- `updated_by` — stamped on invitee and attendee `PUT` (update) requests against an existing record.
+
+For a single `PUT /participants/{participant_id}` call that touches both invitee and attendee, the proxy resolves the requesting user once and reuses that value across both underlying ITX calls — the audit stamp is guaranteed to be identical on both records.
+
+Shape (identical for `created_by` and `updated_by`):
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ---
 
 ## Create Past Meeting Participant
@@ -152,11 +174,11 @@ The proxy creates invitee and/or attendee records based on the flags:
 
 **Method (Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
 
-Creates an invitee record when `is_invited: true`
+Creates an invitee record when `is_invited: true`. Body includes a proxy-added `created_by` field — see [Audit stamping](#audit-stamping).
 
 **Method (Attendee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/attendees`
 
-Creates an attendee record when `is_attended: true`
+Creates an attendee record when `is_attended: true`. Body includes a proxy-added `created_by` field — see [Audit stamping](#audit-stamping).
 
 ---
 
@@ -231,7 +253,7 @@ Response body is identical to Create Past Meeting Participant response.
 
 ### ITX API Endpoints
 
-Updates invitee and/or attendee records through the ITX API based on the provided fields.
+Updates invitee and/or attendee records through the ITX API based on the provided fields. `POST` (create) bodies include a proxy-added `created_by` field; `PUT` (update) bodies include a proxy-added `updated_by` field. See [Audit stamping](#audit-stamping).
 
 **Method (Create Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
 

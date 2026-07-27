@@ -13,13 +13,17 @@ import (
 
 // RegistrantService handles ITX Zoom registrant operations
 type RegistrantService struct {
+	auditStamper
 	registrantClient domain.ITXRegistrantClient
 	idMapper         domain.IDMapper
 }
 
-// NewRegistrantService creates a new ITX registrant service
-func NewRegistrantService(registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper) *RegistrantService {
+// NewRegistrantService creates a new ITX registrant service. userMetadata may be nil (e.g.
+// when NATS is disabled), in which case created_by / updated_by are limited to the
+// JWT-derived username/email rather than blocking the request.
+func NewRegistrantService(registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
 	return &RegistrantService{
+		auditStamper:     auditStamper{userMetadata: userMetadata},
 		registrantClient: registrantClient,
 		idMapper:         idMapper,
 	}
@@ -35,6 +39,11 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 		}
 		req.CommitteeID = v1SFID
 	}
+
+	// Stamp created_by from the authenticated principal so the registrant's audit
+	// trail reflects who added them via the v2 API (M2M token to ITX would otherwise
+	// leave this blank or attribute it to the service identity).
+	req.CreatedBy = s.buildRequestingUser(ctx)
 
 	resp, err := s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 	if err != nil {
@@ -90,6 +99,10 @@ func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, reg
 		}
 		req.CommitteeID = v1SFID
 	}
+
+	// Stamp updated_by from the authenticated principal so ITX overwrites the stored
+	// updated_by on the registrant record instead of preserving stale data.
+	req.UpdatedBy = s.buildRequestingUser(ctx)
 
 	return s.registrantClient.UpdateRegistrant(ctx, meetingID, registrantID, req)
 }

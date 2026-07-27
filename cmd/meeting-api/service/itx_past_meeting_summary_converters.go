@@ -27,7 +27,10 @@ func ConvertUpdatePastMeetingSummaryPayload(payload *meetingservice.UpdateItxPas
 	if payload.Approved != nil {
 		req.Approved = payload.Approved
 	}
-	// Note: ModifiedBy is derived from JWT token in the ITX service, not from payload
+	// ModifiedBy is stamped by PastMeetingSummaryService from the authenticated
+	// principal (see internal/service/itx/past_meeting_summary_service.go); we don't
+	// try to derive it from the JWT here because ITX persists whatever the caller
+	// sends and leaving it blank produces a null audit entry.
 
 	return req
 }
