@@ -12,12 +12,16 @@ import (
 
 // PastMeetingSummaryService handles ITX past meeting summary operations
 type PastMeetingSummaryService struct {
+	auditStamper
 	summaryClient domain.ITXPastMeetingSummaryClient
 }
 
-// NewPastMeetingSummaryService creates a new ITX past meeting summary service
-func NewPastMeetingSummaryService(summaryClient domain.ITXPastMeetingSummaryClient) *PastMeetingSummaryService {
+// NewPastMeetingSummaryService creates a new ITX past meeting summary service.
+// userMetadata may be nil (e.g. when NATS is disabled), in which case modified_by is
+// limited to the JWT-derived username/email rather than blocking the request.
+func NewPastMeetingSummaryService(summaryClient domain.ITXPastMeetingSummaryClient, userMetadata domain.UserMetadataReader) *PastMeetingSummaryService {
 	return &PastMeetingSummaryService{
+		auditStamper:  auditStamper{userMetadata: userMetadata},
 		summaryClient: summaryClient,
 	}
 }
@@ -29,5 +33,8 @@ func (s *PastMeetingSummaryService) GetPastMeetingSummary(ctx context.Context, p
 
 // UpdatePastMeetingSummary updates a past meeting summary via ITX proxy
 func (s *PastMeetingSummaryService) UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, summaryID string, req *itx.UpdatePastMeetingSummaryRequest) (*itx.PastMeetingSummaryResponse, error) {
+	// Stamp modified_by from the authenticated principal. ITX persists whatever the
+	// caller sends here; leaving it blank produces a null audit entry.
+	req.ModifiedBy = s.buildRequestingUser(ctx)
 	return s.summaryClient.UpdatePastMeetingSummary(ctx, pastMeetingID, summaryID, req)
 }

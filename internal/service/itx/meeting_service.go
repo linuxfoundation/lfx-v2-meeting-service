@@ -9,26 +9,25 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
+	auditStamper
 	meetingClient domain.ITXMeetingClient
 	idMapper      domain.IDMapper
-	userMetadata  domain.UserMetadataReader
 }
 
 // NewMeetingService creates a new ITX meeting service. userMetadata may be nil (e.g. when
-// NATS is disabled), in which case created_by on newly created meetings is limited to the
-// JWT-derived username/email (profile enrichment such as name/avatar is skipped) rather
-// than blocking creation.
+// NATS is disabled), in which case created_by / updated_by are limited to the JWT-derived
+// username/email (profile enrichment such as name/avatar is skipped) rather than blocking
+// the request.
 func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *MeetingService {
 	return &MeetingService{
+		auditStamper:  auditStamper{userMetadata: userMetadata},
 		meetingClient: meetingClient,
 		idMapper:      idMapper,
-		userMetadata:  userMetadata,
 	}
 }
 
@@ -140,6 +139,9 @@ func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID
 
 // UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
+	// Stamp updated_by from the authenticated principal so ITX overwrites the stored
+	// value on the occurrence record instead of preserving stale data.
+	req.UpdatedBy = s.buildRequestingUser(ctx)
 	return s.meetingClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
 }
 
@@ -162,42 +164,7 @@ func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
 	return nil
 }
 
-// buildRequestingUser resolves the requesting user's identity (from the JWT principal
-// stashed in ctx by the auth middleware) into an itx.User. Used to stamp the meeting
-// creator on create requests and the updater on update requests. Returns nil when there
-// is no principal to resolve, or when resolution isn't possible (never blocks meeting
-// create/update on identity-resolution failures — degrades to nil, or to a minimal
-// {username, email} record when metadata lookup fails but we still have those from the
-// JWT).
-func (s *MeetingService) buildRequestingUser(ctx context.Context) *itx.User {
-	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
-	if principal == "" {
-		return nil
-	}
-	email, _ := ctx.Value(constants.EmailContextID).(string)
-
-	if s.userMetadata == nil {
-		return &itx.User{Username: principal, Email: email}
-	}
-
-	profile, err := s.userMetadata.ResolveProfile(ctx, principal)
-	if err != nil {
-		slog.WarnContext(ctx, "failed to resolve user profile for meeting created_by/updated_by; stamping username/email only",
-			"username", principal, "err", err)
-		return &itx.User{Username: principal, Email: email}
-	}
-
-	user := &itx.User{
-		Username:       principal,
-		Name:           profile.Name,
-		Email:          profile.Email,
-		ProfilePicture: profile.AvatarURL,
-	}
-	if user.Email == "" {
-		user.Email = email
-	}
-	return user
-}
+// buildRequestingUser is provided by the embedded auditStamper; see audit.go.
 
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {

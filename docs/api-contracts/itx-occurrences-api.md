@@ -22,6 +22,23 @@ Client → LFX Meeting Service (Proxy) → ITX Service → Zoom API
 - Authorization: OAuth2 M2M (added automatically by proxy)
 - Header: `x-scope: manage:zoom`
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds an `updated_by` field to occurrence `PUT` requests so ITX records who made each change. This field is populated by the proxy from the authenticated JWT principal — clients do not send it in their proxy request; if provided, it is overwritten.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ---
 
 ## Update Occurrence
@@ -120,13 +137,35 @@ Content-Type: application/json
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `occurrence_id` (string, required) - The occurrence ID (Unix timestamp)
 
-**Request Body**: Identical to Proxy API
+**Request Body**: Identical to Proxy API, plus a proxy-added `updated_by` field:
+
+```json
+{
+  "start_time": "2024-01-15T10:00:00Z",
+  "duration": 60,
+  "topic": "Updated Weekly Team Sync",
+  "agenda": "Updated agenda for this specific occurrence",
+  "recurrence": {
+    "type": 2,
+    "repeat_interval": 1,
+    "weekly_days": "1,3,5"
+  },
+  "updated_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  }
+}
+```
+
+> **Proxy-added field**: `updated_by` is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 
 ### Field Mapping
 
-All fields are identical between Proxy and ITX API for occurrence updates.
+All fields are identical between Proxy and ITX API for occurrence updates. The proxy additionally stamps `updated_by` on `PUT` requests before forwarding to ITX; see [Audit stamping](#audit-stamping).
 
 ---
 

@@ -2,6 +2,23 @@
 
 This document details the API contracts for past meeting summaries (AI-generated meeting summaries) endpoints between the LFX v2 Meeting Service proxy API and the underlying ITX Zoom API.
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds a `modified_by` field (ITX uses `modified_by` here, not the more common `updated_by`) to summary `PUT` requests so ITX records who edited or approved each summary. This field is populated by the proxy from the authenticated JWT principal — clients do not send it in their proxy request; if provided, it is overwritten.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write. `created_by` is not stamped by the proxy — summary records are created by ITX from the Zoom AI Companion pipeline, not by proxy calls.
+
 ## Endpoints
 
 ### Get Past Meeting Summary
@@ -40,7 +57,7 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
 
 ### Update Summary Request
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 ```json
 {
   "edited_summary_overview": "This meeting covered Q4 planning and resource allocation.",
@@ -62,6 +79,32 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
   "approved": true
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `modified_by` field:
+
+```json
+{
+  "edited_summary_overview": "This meeting covered Q4 planning and resource allocation.",
+  "edited_summary_details": [
+    {
+      "label": "Key Discussion Points",
+      "summary": "Team discussed hiring plans and budget for Q4. Agreed on 3 new positions."
+    }
+  ],
+  "edited_next_steps": [
+    "Finance team to draft budget proposal by end of week"
+  ],
+  "approved": true,
+  "modified_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  }
+}
+```
+
+> **Proxy-added field**: `modified_by` is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Optional Fields**:
 - `edited_summary_overview` (string): Edited version of the AI-generated overview

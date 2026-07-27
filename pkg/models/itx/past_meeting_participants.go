@@ -41,6 +41,11 @@ type CreateInviteeRequest struct {
 	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
 	OrgIsMember           bool   `json:"org_is_member,omitempty"`           // Whether org has LF membership
 	OrgIsProjectMember    bool   `json:"org_is_project_member,omitempty"`   // Whether org has project membership
+
+	// CreatedBy identifies the requesting user at creation time. Populated by the
+	// service from the authenticated principal so ITX persists the correct audit
+	// trail instead of leaving it blank / attributing it to the M2M service identity.
+	CreatedBy *User `json:"created_by,omitempty"`
 }
 
 // UpdateInviteeRequest represents the request to update an invitee
@@ -57,6 +62,11 @@ type UpdateInviteeRequest struct {
 	JobTitle              string `json:"job_title,omitempty"`               // Job title
 	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
 	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+
+	// UpdatedBy identifies the requesting user on update requests. Populated by the
+	// service from the authenticated principal so ITX overwrites the stored value
+	// instead of preserving stale data.
+	UpdatedBy *User `json:"updated_by,omitempty"`
 }
 
 // AttendeeSession represents a join/leave session
@@ -109,6 +119,11 @@ type CreateAttendeeRequest struct {
 	OrgIsMember           bool              `json:"org_is_member,omitempty"`           // Whether org has LF membership
 	OrgIsProjectMember    bool              `json:"org_is_project_member,omitempty"`   // Whether org has project membership
 	Sessions              []AttendeeSession `json:"sessions,omitempty"`                // Array of session objects with join/leave times
+
+	// CreatedBy identifies the requesting user at creation time. Populated by the
+	// service from the authenticated principal so ITX persists the correct audit
+	// trail instead of leaving it blank / attributing it to the M2M service identity.
+	CreatedBy *User `json:"created_by,omitempty"`
 }
 
 // UpdateAttendeeRequest represents the request to update an attendee
@@ -118,4 +133,9 @@ type UpdateAttendeeRequest struct {
 	IsVerified            bool   `json:"is_verified,omitempty"`             // Whether the attendee has been verified
 	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
 	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+
+	// UpdatedBy identifies the requesting user on update requests. Populated by the
+	// service from the authenticated principal so ITX overwrites the stored value
+	// instead of preserving stale data.
+	UpdatedBy *User `json:"updated_by,omitempty"`
 }

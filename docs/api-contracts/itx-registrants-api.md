@@ -22,6 +22,26 @@ Client → LFX Meeting Service (Proxy) → ITX Service → Zoom API
 - Authorization: OAuth2 M2M (added automatically by proxy)
 - Header: `x-scope: manage:zoom`
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests.
+- `updated_by` — stamped on `PUT` (update) requests.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ---
 
 ## Create Registrant
@@ -166,9 +186,17 @@ Content-Type: application/json
   "job_title": "Senior Developer",
   "profile_picture": "https://example.com/avatar.jpg",
   "host": false,
-  "occurrence": "1666848600"
+  "occurrence": "1666848600",
+  "created_by": {
+    "username": "admin",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "profile_picture": "https://example.com/admin.jpg"
+  }
 }
 ```
+
+> **Proxy-added field**: `created_by` is stamped by the LFX Meeting Service proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Response**: `201 Created`
 
@@ -273,7 +301,7 @@ Content-Type: application/json
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `registrant_id` (string, required) - The registrant ID
 
-**Request Body**: Same as ITX Create Registrant request body
+**Request Body**: Same as ITX Create Registrant request body, except the proxy stamps `updated_by` (same shape as `created_by`) instead of `created_by`. See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 

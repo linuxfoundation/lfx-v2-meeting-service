@@ -1443,7 +1443,7 @@ func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingI
 		"method", http.MethodPost,
 		"url", url,
 		"meetingID", meetingID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -1473,7 +1473,7 @@ func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingI
 
 	slog.DebugContext(ctx, "ITX CreateMeetingAttachmentPresignURL response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1526,7 +1526,7 @@ func (c *Client) GetMeetingAttachmentDownloadURL(ctx context.Context, meetingID,
 
 	slog.DebugContext(ctx, "ITX GetMeetingAttachmentDownloadURL response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1556,7 +1556,7 @@ func (c *Client) CreatePastMeetingAttachmentPresignURL(ctx context.Context, meet
 		"method", http.MethodPost,
 		"url", url,
 		"meetingAndOccurrenceID", meetingAndOccurrenceID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -1586,7 +1586,7 @@ func (c *Client) CreatePastMeetingAttachmentPresignURL(ctx context.Context, meet
 
 	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachmentPresignURL response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1639,7 +1639,7 @@ func (c *Client) GetPastMeetingAttachmentDownloadURL(ctx context.Context, meetin
 
 	slog.DebugContext(ctx, "ITX GetPastMeetingAttachmentDownloadURL response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1669,7 +1669,7 @@ func (c *Client) CreateMeetingAttachment(ctx context.Context, meetingID string, 
 		"method", http.MethodPost,
 		"url", url,
 		"meetingID", meetingID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -1699,7 +1699,7 @@ func (c *Client) CreateMeetingAttachment(ctx context.Context, meetingID string, 
 
 	slog.DebugContext(ctx, "ITX CreateMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1752,7 +1752,7 @@ func (c *Client) GetMeetingAttachment(ctx context.Context, meetingID, attachment
 
 	slog.DebugContext(ctx, "ITX GetMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1783,7 +1783,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 		"url", url,
 		"meetingID", meetingID,
 		"attachmentID", attachmentID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -1813,7 +1813,7 @@ func (c *Client) UpdateMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	slog.DebugContext(ctx, "ITX UpdateMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1860,7 +1860,7 @@ func (c *Client) DeleteMeetingAttachment(ctx context.Context, meetingID, attachm
 
 	slog.DebugContext(ctx, "ITX DeleteMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1884,7 +1884,7 @@ func (c *Client) CreatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 		"method", http.MethodPost,
 		"url", url,
 		"meetingAndOccurrenceID", meetingAndOccurrenceID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -1914,7 +1914,7 @@ func (c *Client) CreatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	slog.DebugContext(ctx, "ITX CreatePastMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1967,7 +1967,7 @@ func (c *Client) GetPastMeetingAttachment(ctx context.Context, meetingAndOccurre
 
 	slog.DebugContext(ctx, "ITX GetPastMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -1998,7 +1998,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 		"url", url,
 		"meetingAndOccurrenceID", meetingAndOccurrenceID,
 		"attachmentID", attachmentID,
-		"request", string(jsonBody))
+		"request", requestJSONForLog(req))
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -2028,7 +2028,7 @@ func (c *Client) UpdatePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	slog.DebugContext(ctx, "ITX UpdatePastMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -2075,7 +2075,7 @@ func (c *Client) DeletePastMeetingAttachment(ctx context.Context, meetingAndOccu
 
 	slog.DebugContext(ctx, "ITX DeletePastMeetingAttachment response",
 		"statusCode", resp.StatusCode,
-		"response", string(respBody))
+		"response", responseJSONForLog(respBody))
 
 	// Handle non-2xx status codes
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
