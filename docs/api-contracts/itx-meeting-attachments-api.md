@@ -2,6 +2,25 @@
 
 This document details the API contracts for meeting attachments endpoints between the LFX v2 Meeting Service proxy API and the underlying ITX Zoom API.
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX attachment write requests so ITX records who touched each attachment. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests, including the presigned-upload-URL request (ITX persists an attachment record with `file_upload_status="ongoing"` at the presign step).
+- `updated_by` — stamped on `PUT` (update) requests.
+
+Shape (attachment endpoints use the reduced `{ username, name, email }` shape — no `profile_picture`):
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com"
+}
+```
+
+The name / email are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write. Prior to July 2026 the attachment endpoints only sent `{ username }`; the `name` / `email` enrichment was added to bring them in line with the meeting endpoints.
+
 ## Endpoints
 
 ### Create Meeting Attachment
@@ -106,7 +125,7 @@ Generates a presigned download URL for a file attachment.
 
 For external URL references (Google Docs, SharePoint, etc.):
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 ```json
 {
   "type": "link",
@@ -116,6 +135,25 @@ For external URL references (Google Docs, SharePoint, etc.):
   "link": "https://docs.google.com/document/d/abc123"
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `created_by` field:
+
+```json
+{
+  "type": "link",
+  "category": "meeting_agenda",
+  "name": "Q4 Planning Agenda",
+  "description": "Agenda for Q4 planning meeting",
+  "link": "https://docs.google.com/document/d/abc123",
+  "created_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com"
+  }
+}
+```
+
+> **Proxy-added field**: `created_by` is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Fields**:
 - `type` (string, required): Must be `"link"` for external URLs
@@ -130,7 +168,7 @@ For external URL references (Google Docs, SharePoint, etc.):
 
 For file uploads using presigned URL flow:
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 ```json
 {
   "type": "file",
@@ -138,6 +176,8 @@ For file uploads using presigned URL flow:
   "name": "Meeting Notes"
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `created_by` field (same shape as the Link Type example above — see [Audit stamping](#audit-stamping)).
 
 **Fields**:
 - `type` (string, required): Must be `"file"` for file attachments
@@ -154,7 +194,7 @@ For file uploads using presigned URL flow:
 
 ### Update Attachment Request
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 ```json
 {
   "type": "link",
@@ -165,6 +205,8 @@ For file uploads using presigned URL flow:
 }
 ```
 
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `updated_by` field (same shape as `created_by` — see [Audit stamping](#audit-stamping)).
+
 All fields are optional - only include fields you want to update.
 
 **Returns**: 204 No Content (no response body)
@@ -173,7 +215,7 @@ All fields are optional - only include fields you want to update.
 
 ### Create Presigned URL Request
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 ```json
 {
   "name": "Presentation.pptx",
@@ -183,6 +225,8 @@ All fields are optional - only include fields you want to update.
   "category": "presentation"
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `created_by` field. The presign step is treated as a create because ITX persists an attachment record with `file_upload_status="ongoing"` at this point. See [Audit stamping](#audit-stamping).
 
 **Fields**:
 - `name` (string, required): File name with extension

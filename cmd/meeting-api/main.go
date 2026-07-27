@@ -110,22 +110,23 @@ func run() int {
 
 	natsURL := os.Getenv("NATS_URL")
 
-	// User metadata reader (LFXV2-2809): resolves the requesting principal's display
-	// profile (name/email/avatar) via the auth service, token-free, so newly created
-	// meetings can stamp created_by. Uses its own NATS connection since it's needed
-	// regardless of whether ID mapping or event processing are enabled; nil (and a
-	// warning) when NATS isn't configured or the connection fails, so meeting creation
-	// still works, just with created_by limited to the JWT-derived username/email
-	// (profile enrichment such as name/avatar is unavailable).
+	// User metadata reader (LFXV2-2809 / LFXV2-2821): resolves the requesting principal's
+	// display profile (name/email/avatar) via the auth service, token-free, so ITX writes
+	// (meetings, registrants, past meetings, invitees, attendees, summaries, attachments)
+	// can stamp created_by / updated_by / modified_by. Uses its own NATS connection since
+	// it's needed regardless of whether ID mapping or event processing are enabled; nil
+	// (and a warning) when NATS isn't configured or the connection fails, so writes still
+	// work, just with audit fields limited to the JWT-derived username/email (profile
+	// enrichment such as name/avatar is unavailable).
 	var userMetadataReader domain.UserMetadataReader
 	var userMetadataNatsConn *natsgo.Conn
 	if natsURL == "" {
-		slog.WarnContext(ctx, "NATS_URL not set; meeting created_by profile enrichment unavailable")
+		slog.WarnContext(ctx, "NATS_URL not set; ITX audit-stamp profile enrichment unavailable (created_by/updated_by/modified_by limited to JWT username/email)")
 	} else {
 		nc, err := natsgo.Connect(natsURL)
 		if err != nil {
 			slog.With(logging.ErrKey, err).WarnContext(ctx,
-				"failed to connect to NATS for user metadata reader; meeting created_by profile enrichment unavailable")
+				"failed to connect to NATS for user metadata reader; ITX audit-stamp profile enrichment unavailable")
 		} else {
 			userMetadataNatsConn = nc
 			userMetadataReader = natsinfra.NewUserMetadataReader(nc, slog.Default())
@@ -146,12 +147,12 @@ func run() int {
 	}
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
 	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper, userMetadataReader)
-	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper)
-	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper)
-	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient)
-	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper)
-	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxProxyClient)
-	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxProxyClient)
+	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper, userMetadataReader)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper, userMetadataReader)
+	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient, userMetadataReader)
+	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper, userMetadataReader)
+	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxProxyClient, userMetadataReader)
+	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxProxyClient, userMetadataReader)
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
 

@@ -22,6 +22,26 @@ Client → LFX Meeting Service (Proxy) → ITX Service → Zoom API
 - Authorization: OAuth2 M2M (added automatically by proxy)
 - Header: `x-scope: manage:zoom`
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests.
+- `updated_by` — stamped on `PUT` (update) requests, including per-occurrence updates.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ---
 
 ## Create Meeting
@@ -171,9 +191,17 @@ Content-Type: application/json
     "monthly_week_day": 3,
     "end_times": 10,
     "end_date_time": "2024-12-31T23:59:59Z"
+  },
+  "created_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
   }
 }
 ```
+
+> **Proxy-added field**: `created_by` is stamped by the LFX Meeting Service proxy from the requesting user's authenticated JWT principal (username, enriched with name/email/avatar via the auth service). Clients do not send this field in their proxy request; if provided, it is ignored/overwritten. See [Audit stamping](#audit-stamping).
 
 **Response**: `201 Created`
 
@@ -326,7 +354,7 @@ Content-Type: application/json
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 
-**Request Body**: Same as ITX Create Meeting request body
+**Request Body**: Same as ITX Create Meeting request body, except `created_by` is not sent; instead, the proxy stamps `updated_by` with the requesting user (same shape as `created_by`). See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 

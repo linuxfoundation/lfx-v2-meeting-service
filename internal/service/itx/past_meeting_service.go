@@ -13,13 +13,17 @@ import (
 
 // PastMeetingService handles ITX past meeting operations
 type PastMeetingService struct {
+	auditStamper
 	pastMeetingClient domain.ITXPastMeetingClient
 	idMapper          domain.IDMapper
 }
 
-// NewPastMeetingService creates a new ITX past meeting service
-func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, idMapper domain.IDMapper) *PastMeetingService {
+// NewPastMeetingService creates a new ITX past meeting service. userMetadata may be nil
+// (e.g. when NATS is disabled), in which case created_by / updated_by are limited to the
+// JWT-derived username/email rather than blocking the request.
+func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *PastMeetingService {
 	return &PastMeetingService{
+		auditStamper:      auditStamper{userMetadata: userMetadata},
 		pastMeetingClient: pastMeetingClient,
 		idMapper:          idMapper,
 	}
@@ -46,6 +50,10 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 			req.Committees[i].ID = v1ID
 		}
 	}
+
+	// Stamp created_by from the authenticated principal so the past-meeting record's
+	// audit trail reflects who created it via the v2 API.
+	req.CreatedBy = s.buildRequestingUser(ctx)
 
 	resp, err := s.pastMeetingClient.CreatePastMeeting(ctx, req)
 	if err != nil {
@@ -134,6 +142,11 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingI
 			req.Committees[i].ID = v1ID
 		}
 	}
+
+	// Stamp updated_by from the authenticated principal so ITX overwrites the stored
+	// updated_by / updated_by_list on the past-meeting record instead of preserving
+	// stale data.
+	req.UpdatedBy = s.buildRequestingUser(ctx)
 
 	_, err := s.pastMeetingClient.UpdatePastMeeting(ctx, pastMeetingID, req)
 	if err != nil {

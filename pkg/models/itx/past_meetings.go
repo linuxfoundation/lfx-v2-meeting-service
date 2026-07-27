@@ -3,7 +3,9 @@
 
 package itx
 
-// CreatePastMeetingRequest represents the request to create a past meeting
+// CreatePastMeetingRequest represents the request to create or update a past meeting.
+// The same struct is reused for PUT; CreatedBy is only meaningful on POST and UpdatedBy
+// only on PUT (the service stamps whichever is appropriate).
 type CreatePastMeetingRequest struct {
 	// Required fields
 	MeetingID    string `json:"meeting_id"`    // Zoom meeting ID
@@ -26,6 +28,16 @@ type CreatePastMeetingRequest struct {
 	TranscriptEnabled bool              `json:"transcript_enabled,omitempty"` // Was transcription enabled
 	TranscriptAccess  ArtifactAccess    `json:"transcript_access,omitempty"`  // Who can access transcripts
 	Visibility        MeetingVisibility `json:"visibility,omitempty"`         // Meeting visibility (public/private)
+
+	// CreatedBy identifies the requesting user at creation time (POST only). Leave nil
+	// on updates.
+	CreatedBy *User `json:"created_by,omitempty"`
+
+	// UpdatedBy identifies the requesting user on update requests. ITX only overwrites
+	// the stored updated_by / updated_by_list when this field is non-zero, so it must
+	// be populated on every update to keep the audit trail accurate. Leave nil on
+	// create requests.
+	UpdatedBy *User `json:"updated_by,omitempty"`
 }
 
 // PastMeetingResponse represents the response from creating/retrieving a past meeting

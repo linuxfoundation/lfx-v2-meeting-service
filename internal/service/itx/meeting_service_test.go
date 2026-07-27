@@ -13,18 +13,19 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
-// fakeMeetingClient captures the CreateZoomMeetingRequest/UpdateZoomMeetingRequest it
-// receives so tests can assert on the outbound created_by field.
+// fakeMeetingClient captures the CreateZoomMeetingRequest / UpdateZoomMeetingRequest /
+// UpdateOccurrenceRequest it receives so tests can assert on the outbound audit fields.
 type fakeMeetingClient struct {
 	domain.ITXMeetingClient
-	lastCreateReq *itx.CreateZoomMeetingRequest
-	lastUpdateReq *itx.CreateZoomMeetingRequest
-	createResp    *itx.ZoomMeetingResponse
-	createErr     error
+	lastCreateReq          *itx.CreateZoomMeetingRequest
+	lastUpdateReq          *itx.CreateZoomMeetingRequest
+	lastUpdateOccurrenceID string
+	lastUpdateOccurrence   *itx.UpdateOccurrenceRequest
+	createResp             *itx.ZoomMeetingResponse
+	createErr              error
 }
 
 func (f *fakeMeetingClient) CreateZoomMeeting(_ context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error) {
@@ -43,37 +44,10 @@ func (f *fakeMeetingClient) UpdateZoomMeeting(_ context.Context, _ string, req *
 	return nil
 }
 
-// noOpIDMapper passes IDs through unchanged.
-type noOpIDMapper struct{ domain.IDMapper }
-
-func (noOpIDMapper) MapProjectV2ToV1(_ context.Context, v2UID string) (string, error) {
-	return v2UID, nil
-}
-func (noOpIDMapper) MapProjectV1ToV2(_ context.Context, v1SFID string) (string, error) {
-	return v1SFID, nil
-}
-
-// fakeUserMetadataReader returns a canned profile or error for ResolveProfile.
-type fakeUserMetadataReader struct {
-	profile *domain.UserProfile
-	err     error
-	calls   []string
-}
-
-func (f *fakeUserMetadataReader) ResolveProfile(_ context.Context, username string) (*domain.UserProfile, error) {
-	f.calls = append(f.calls, username)
-	if f.err != nil {
-		return nil, f.err
-	}
-	return f.profile, nil
-}
-
-func ctxWithPrincipal(principal, email string) context.Context {
-	ctx := context.WithValue(context.Background(), constants.PrincipalContextID, principal)
-	if email != "" {
-		ctx = context.WithValue(ctx, constants.EmailContextID, email)
-	}
-	return ctx
+func (f *fakeMeetingClient) UpdateOccurrence(_ context.Context, _, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
+	f.lastUpdateOccurrenceID = occurrenceID
+	f.lastUpdateOccurrence = req
+	return nil
 }
 
 func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
@@ -236,5 +210,32 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 		assert.Nil(t, client.lastUpdateReq.UpdatedBy)
 		assert.Nil(t, client.lastUpdateReq.CreatedBy)
 		assert.Empty(t, reader.calls, "resolver should not be called without a principal")
+	})
+}
+
+func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
+	t.Run("stamps updated_by from resolved profile", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		reader := &fakeUserMetadataReader{
+			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", Email: "alice@example.com"},
+		}
+		svc := NewMeetingService(client, noOpIDMapper{}, reader)
+
+		err := svc.UpdateOccurrence(ctxWithPrincipal("alice", ""), "meeting-1", "occ-1", &itx.UpdateOccurrenceRequest{Topic: "new topic"})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateOccurrence)
+		require.NotNil(t, client.lastUpdateOccurrence.UpdatedBy, "occurrence update must stamp updated_by so ITX doesn't preserve stale data")
+		assert.Equal(t, "alice", client.lastUpdateOccurrence.UpdatedBy.Username)
+		assert.Equal(t, "Alice Example", client.lastUpdateOccurrence.UpdatedBy.Name)
+	})
+
+	t.Run("omits updated_by when no principal in context", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateOccurrence(context.Background(), "meeting-1", "occ-1", &itx.UpdateOccurrenceRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateOccurrence)
+		assert.Nil(t, client.lastUpdateOccurrence.UpdatedBy)
 	})
 }

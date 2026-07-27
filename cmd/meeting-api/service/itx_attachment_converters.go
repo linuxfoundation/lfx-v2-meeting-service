@@ -12,16 +12,19 @@ import (
 // ============================================================================
 // Meeting Attachment Converters
 // ============================================================================
+//
+// Note: created_by / updated_by are stamped by the attachment services (see
+// internal/service/itx/{meeting,past_meeting}_attachment_service.go), not here.
+// That keeps the enrichment path (JWT principal → UserMetadataReader → full
+// profile) in the same place across all ITX endpoints; converters just shape
+// the payload.
 
 // ConvertGoaToITXCreateMeetingAttachment converts Goa payload to ITX request
-func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMeetingAttachmentPayload, username string) *itx.CreateMeetingAttachmentRequest {
+func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMeetingAttachmentPayload) *itx.CreateMeetingAttachmentRequest {
 	req := &itx.CreateMeetingAttachmentRequest{
 		Type:     payload.Type,
 		Category: payload.Category,
 		Name:     payload.Name,
-		CreatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Link != nil {
@@ -36,14 +39,11 @@ func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMee
 }
 
 // ConvertGoaToITXUpdateMeetingAttachment converts Goa payload to ITX request
-func ConvertGoaToITXUpdateMeetingAttachment(payload *meetingservice.UpdateItxMeetingAttachmentPayload, username string) *itx.UpdateMeetingAttachmentRequest {
+func ConvertGoaToITXUpdateMeetingAttachment(payload *meetingservice.UpdateItxMeetingAttachmentPayload) *itx.UpdateMeetingAttachmentRequest {
 	req := &itx.UpdateMeetingAttachmentRequest{
 		Type:     payload.Type,
 		Category: payload.Category,
 		Name:     payload.Name,
-		UpdatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Link != nil {
@@ -58,14 +58,11 @@ func ConvertGoaToITXUpdateMeetingAttachment(payload *meetingservice.UpdateItxMee
 }
 
 // ConvertGoaToITXCreateMeetingAttachmentPresign converts Goa payload to ITX request
-func ConvertGoaToITXCreateMeetingAttachmentPresign(payload *meetingservice.CreateItxMeetingAttachmentPresignPayload, username string) *itx.CreateAttachmentPresignRequest {
+func ConvertGoaToITXCreateMeetingAttachmentPresign(payload *meetingservice.CreateItxMeetingAttachmentPresignPayload) *itx.CreateAttachmentPresignRequest {
 	req := &itx.CreateAttachmentPresignRequest{
 		Name:     payload.Name,
 		FileSize: payload.FileSize,
 		FileType: payload.FileType,
-		CreatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Description != nil {
@@ -150,14 +147,11 @@ func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignR
 // ============================================================================
 
 // ConvertGoaToITXCreatePastMeetingAttachment converts Goa payload to ITX request
-func ConvertGoaToITXCreatePastMeetingAttachment(payload *meetingservice.CreateItxPastMeetingAttachmentPayload, username string) *itx.CreatePastMeetingAttachmentRequest {
+func ConvertGoaToITXCreatePastMeetingAttachment(payload *meetingservice.CreateItxPastMeetingAttachmentPayload) *itx.CreatePastMeetingAttachmentRequest {
 	req := &itx.CreatePastMeetingAttachmentRequest{
 		Type:     payload.Type,
 		Category: payload.Category,
 		Name:     payload.Name,
-		CreatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Link != nil {
@@ -172,14 +166,11 @@ func ConvertGoaToITXCreatePastMeetingAttachment(payload *meetingservice.CreateIt
 }
 
 // ConvertGoaToITXUpdatePastMeetingAttachment converts Goa payload to ITX request
-func ConvertGoaToITXUpdatePastMeetingAttachment(payload *meetingservice.UpdateItxPastMeetingAttachmentPayload, username string) *itx.UpdatePastMeetingAttachmentRequest {
+func ConvertGoaToITXUpdatePastMeetingAttachment(payload *meetingservice.UpdateItxPastMeetingAttachmentPayload) *itx.UpdatePastMeetingAttachmentRequest {
 	req := &itx.UpdatePastMeetingAttachmentRequest{
 		Type:     payload.Type,
 		Category: payload.Category,
 		Name:     payload.Name,
-		UpdatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Link != nil {
@@ -194,14 +185,11 @@ func ConvertGoaToITXUpdatePastMeetingAttachment(payload *meetingservice.UpdateIt
 }
 
 // ConvertGoaToITXCreatePastMeetingAttachmentPresign converts Goa payload to ITX request
-func ConvertGoaToITXCreatePastMeetingAttachmentPresign(payload *meetingservice.CreateItxPastMeetingAttachmentPresignPayload, username string) *itx.CreateAttachmentPresignRequest {
+func ConvertGoaToITXCreatePastMeetingAttachmentPresign(payload *meetingservice.CreateItxPastMeetingAttachmentPresignPayload) *itx.CreateAttachmentPresignRequest {
 	req := &itx.CreateAttachmentPresignRequest{
 		Name:     payload.Name,
 		FileSize: payload.FileSize,
 		FileType: payload.FileType,
-		CreatedBy: &itx.CreatedUpdatedBy{
-			Username: username,
-		},
 	}
 
 	if payload.Description != nil {

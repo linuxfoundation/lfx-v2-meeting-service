@@ -2,6 +2,26 @@
 
 This document details the API contracts for past meeting endpoints between the LFX v2 Meeting Service proxy API and the underlying ITX Zoom API.
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX past-meeting write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests.
+- `updated_by` — stamped on `PUT` (update) requests.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ## Endpoints
 
 ### Get Past Meeting
@@ -126,9 +146,17 @@ Deletes a past meeting record.
       "id": "committee-uuid-123",
       "filters": ["voting_rep", "observer"]
     }
-  ]
+  ],
+  "created_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  }
 }
 ```
+
+> **Proxy-added field**: `created_by` (on `POST`) or `updated_by` (on `PUT`, same shape) is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 ---
 
