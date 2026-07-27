@@ -23,8 +23,12 @@ ITX client method it ends up calling; for an event-pipeline change, the KV key
 that routes to the handler and the message the handler ultimately publishes.
 Then grep for **sibling implementations** of the same pattern — this codebase is
 deliberately repetitive, so the neighboring handler or client method is usually
-the reference answer, and drifting from it is a finding even when the code
-"works".
+the reference answer, and comparing against it is the fastest way to see what a
+hunk omits. Divergence is a lead, not a verdict: raise it when the sibling shows
+the change gets something wrong — a dropped error classification, a missing
+redaction, an ack where the neighbor retries, a field the contract expects —
+and let it go when the code simply reads differently and still behaves
+correctly.
 
 ## The house standards
 
@@ -99,9 +103,12 @@ Run these on the changed code, scaled to the size of the change:
   security scheme is what causes the token to be verified and the principal to
   be placed on the context. A method that omits it is an unauthenticated
   endpoint, and nothing in the handler will make that obvious. Some routes are
-  deliberately public, so confirm that the exposure is intentional and that
-  something else — a signature check, the upstream gateway — covers it. This is
-  the single highest-value thing to check on any new endpoint.
+  deliberately public and need no substitute guard — the `/livez` and `/readyz`
+  health checks and the served OpenAPI documents are all unauthenticated on
+  purpose. Raise the omission when an unauthenticated method reads or returns
+  data a caller should not see, or mutates state, and nothing else — a signature
+  check, the upstream gateway — stands in front of it. On a new endpoint that
+  touches meeting data, this is the single highest-value thing to check.
 - **The ITX wire models are lossy by design.** Fields in `pkg/models/itx/` are
   frequently non-pointer with `omitempty`, so a deliberate zero, empty string,
   or `false` is simply absent from the request. Updates go out as `PUT`s, some
@@ -193,9 +200,13 @@ file and function, and say what an attacker controls.
   a new log line, error, span attribute, or published message that emits raw PII
   where the surrounding code redacts it, or that widens which downstream service
   receives it.
-- **Committed secrets.** A credential, private key, token, or connection string
-  in the diff is a finding anywhere it appears, including tests, fixtures, chart
-  values, and workflow files, even when the code path that reads it is dead.
+- **Committed secrets.** A *real* credential, private key, token, or connection
+  string in the diff is a finding anywhere it appears — tests, fixtures, chart
+  values, workflow files — even when the code path that reads it is dead. The
+  tests here deliberately use obvious placeholders (`"test-user-token"`,
+  `[]byte("test-secret")`); those are fine and flagging them is noise. Judge
+  whether the value would actually authenticate somewhere, not whether the
+  variable is called a token.
 
 Do not raise generic hardening with no concrete vulnerability, denial of service
 or "add rate limiting" on its own, outdated third-party dependency versions,
@@ -209,9 +220,9 @@ an authorization finding rests on a missing check, not on unguessability.
   describing an abstract ideal.
 - **Do not propose rewrites of a sound approach**, and do not suggest change for
   its own sake; working, readable code needs no improvement.
-- **Know your limits.** Distinguish "this is wrong" from "this might be a
-  problem depending on context", and say which one you mean. When a judgment
-  depends on something you cannot see — the ITX API's actual behavior, the
-  OpenFGA model, the indexer's tolerance for a missing field, a deployed
-  configuration value — note the dependency rather than asserting a defect you
-  cannot confirm.
+- **Know your limits.** Report what you can show is wrong. When a judgment rests
+  on something you cannot see — the ITX API's actual behavior, the OpenFGA
+  model, the indexer's tolerance for a missing field, a deployed configuration
+  value — you cannot confirm the defect, so do not raise it. A conditional
+  finding still costs the author a full investigation and is the kind of comment
+  that teaches a team to skim reviews. Silence is the correct output.
