@@ -219,7 +219,6 @@ paths:
                                 duration: 468
                                 early_join_time_minutes: 44
                                 email_delivery_error_count: 7505338814097597537
-                                host_key: "123456"
                                 id: "1234567890"
                                 is_invite_responses_enabled: false
                                 last_bulk_registrant_job_status: Quia minus qui necessitatibus laborum dolorum.
@@ -480,7 +479,6 @@ paths:
                                 duration: 88
                                 early_join_time_minutes: 27
                                 email_delivery_error_count: 2655903836384373442
-                                host_key: "123456"
                                 id: "1234567890"
                                 is_invite_responses_enabled: true
                                 last_bulk_registrant_job_status: Facilis laboriosam veritatis in nulla suscipit.
@@ -6714,10 +6712,6 @@ components:
                     description: Number of email delivery errors for the meeting
                     example: 4531195238073691829
                     format: int64
-                host_key:
-                    type: string
-                    description: 6-digit host key
-                    example: "123456"
                 id:
                     type: string
                     description: Zoom meeting ID from ITX
@@ -6899,7 +6893,6 @@ components:
                 duration: 246
                 early_join_time_minutes: 48
                 email_delivery_error_count: 5985191137113014779
-                host_key: "123456"
                 id: "1234567890"
                 is_invite_responses_enabled: true
                 last_bulk_registrant_job_status: Ad molestias qui quia aut ex sunt.

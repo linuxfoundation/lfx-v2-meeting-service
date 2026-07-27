@@ -1038,7 +1038,6 @@ To add a new event type:
             "status": "available"
         }
     ],
-    "host_key": "123456",
     "passcode": "abc123",
     "public_link": "https://zoom.us/j/123456789",
     "created_at": "2024-01-10T08:00:00Z",

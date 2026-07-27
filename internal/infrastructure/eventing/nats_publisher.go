@@ -46,6 +46,7 @@ const (
 	IndexV1PastMeetingSummarySubject     = "lfx.index.v1_past_meeting_summary"
 	IndexV1MeetingAttachmentSubject      = "lfx.index.v1_meeting_attachment"
 	IndexV1PastMeetingAttachmentSubject  = "lfx.index.v1_past_meeting_attachment"
+	IndexV1MeetingHostCredentialsSubject = "lfx.index.v1_meeting_host_credentials"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -134,6 +135,41 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 
 	if err := p.publish(ctx, fgaconstants.GenericUpdateAccessSubject, accessMsg); err != nil {
 		return fmt.Errorf("failed to publish meeting access control: %w", err)
+	}
+
+	return nil
+}
+
+// PublishMeetingHostCredentialsEvent publishes a meeting_host_credentials event to the indexer.
+// The credentials object is a permissioned sub-document keyed by meeting ID — only organizers
+// (as enforced by FGA) can retrieve it from the indexer.
+func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, action string, credentials *models.MeetingHostCredentialsEventData) error {
+	p.logger.InfoContext(ctx, "publishing meeting host credentials event", "action", action, "meeting_id", credentials.MeetingID)
+
+	publicFalse := false
+	tags := credentials.Tags()
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    credentials,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             credentials.MeetingID,
+			Public:               &publicFalse,
+			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + credentials.MeetingID,
+			AccessCheckRelation:  "host",
+			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + credentials.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           credentials.ParentRefs(),
+			Tags:                 tags,
+			SortName:             credentials.SortName(),
+			NameAndAliases:       credentials.NameAndAliases(),
+			Fulltext:             credentials.FullText(),
+		},
+	}
+
+	if err := p.publish(ctx, IndexV1MeetingHostCredentialsSubject, indexerMsg); err != nil {
+		return fmt.Errorf("failed to publish meeting host credentials to indexer: %w", err)
 	}
 
 	return nil
