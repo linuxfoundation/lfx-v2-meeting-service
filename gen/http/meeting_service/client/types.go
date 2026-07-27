@@ -555,8 +555,6 @@ type CreateItxMeetingResponseBody struct {
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -642,8 +640,6 @@ type GetItxMeetingResponseBody struct {
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -4281,7 +4277,6 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		LastMailingListMembersSyncJobWarningCount: body.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   body.NextOccurrenceStartTime,
 		ID:                                        body.ID,
-		HostKey:                                   body.HostKey,
 		Passcode:                                  body.Passcode,
 		Password:                                  body.Password,
 		PublicLink:                                body.PublicLink,
@@ -4416,7 +4411,6 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		LastMailingListMembersSyncJobWarningCount: body.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   body.NextOccurrenceStartTime,
 		ID:                                        body.ID,
-		HostKey:                                   body.HostKey,
 		Passcode:                                  body.Passcode,
 		Password:                                  body.Password,
 		PublicLink:                                body.PublicLink,

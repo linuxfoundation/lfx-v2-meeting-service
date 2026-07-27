@@ -238,9 +238,6 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	Attribute("id", String, "Zoom meeting ID from ITX", func() {
 		Example("1234567890")
 	})
-	Attribute("host_key", String, "6-digit host key", func() {
-		Example("123456")
-	})
 	Attribute("passcode", String, "Zoom meeting passcode", func() {
 		Example("abc123")
 	})
