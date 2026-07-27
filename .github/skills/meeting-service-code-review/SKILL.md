@@ -72,9 +72,11 @@ Run these on the changed code, scaled to the size of the change:
   `internal/domain/errors.go`, and the API layer maps that classification onto
   the HTTP status. A new failure path that returns a bare `error`, or that
   classifies a caller mistake as internal (or an internal fault as a validation
-  error), produces the wrong status and the wrong client behavior. Nothing
-  should be swallowed, and no upstream ITX body or internal detail should be
-  passed through to the caller verbatim.
+  error), produces the wrong status and the wrong client behavior. Some paths
+  deliberately log and continue — best-effort enrichment and invite sending must
+  never block indexing — so the finding is an error dropped with neither a log
+  nor a stated reason, not every error that does not propagate. No upstream ITX
+  body or internal detail should reach the caller verbatim.
 - **Tests.** New or changed behavior needs tests that assert real behavior
   rather than that a mock was called. Converters, occurrence calculation, KV
   routing, and retry decisions are cheap to test and expensive to get wrong;
@@ -88,9 +90,9 @@ Run these on the changed code, scaled to the size of the change:
 - **Readability and structure.** The change should read like the surrounding
   code; names should say what a thing is; duplicated logic that traps the next
   editor wants a shared helper.
-- **Code truthfulness.** Comments, docs, and the PR description must match what
-  the code does. A stale comment, a dead branch, or a contract doc describing a
-  field the code no longer emits is a finding.
+- **Code truthfulness.** Comments and docs must match what the code does. A
+  stale comment, a dead branch, or a contract doc describing a field the code no
+  longer emits is a finding.
 
 ## Service specifics worth a second look
 
@@ -139,13 +141,15 @@ Run these on the changed code, scaled to the size of the change:
 - **Changed constants are behavior changes.** Timeouts, retry and backoff
   values, meeting duration and early-join caps, NATS subjects and queue groups,
   KV bucket and stream names, and the Helm chart's default values all change
-  runtime behavior even when the code still compiles. Ask whether the change is
-  stated and intentional and what its blast radius is; an unexplained constant
-  change is a finding.
-- **Deployment surface.** A new environment variable or configuration knob has
-  to reach the running service through the chart under
-  `charts/lfx-v2-meeting-service/`; config read in Go but never plumbed through
-  the chart is a change that works locally and not in a cluster.
+  runtime behavior even when the code still compiles. Work out the blast radius
+  before judging: the finding is a new value that breaks a documented limit, a
+  contract, or a downstream assumption.
+- **Deployment surface.** Config a cluster has to be able to set — one with no
+  safe default, or a value that differs per environment and is not derived in
+  code — has to reach the service through the chart under
+  `charts/lfx-v2-meeting-service/`. Some variables are deliberately absent from
+  the chart because `cmd/meeting-api/config.go` derives their defaults; check
+  there before calling an unplumbed variable a finding.
 
 ## Security anchors
 

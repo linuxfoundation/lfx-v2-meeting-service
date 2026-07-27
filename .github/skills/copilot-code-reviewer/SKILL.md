@@ -95,12 +95,12 @@ Three sources, each authoritative for its own domain:
 
 1. **Understand the intent.** From the PR title, body, commits, and the diff:
    what is this change trying to accomplish, and why? Work that out first, then
-   test the claim against the code. A diff that does more than its description
-   (an extra endpoint, a new NATS subject, a widened payload, a dependency added
-   in passing) deserves a finding even when each piece is individually fine,
-   because unreviewed intent is how scope creeps. If the stated intent and the
-   diff disagree, or you cannot work out what the change is for, that is a
-   finding.
+   read the code against it. New surface the change carries — an extra ITX
+   endpoint, a new NATS subject, a widened indexer payload — is judged on
+   whether it is necessary, owned, and safe (step 2), not on whether the
+   description mentioned it. Descriptions are routinely shorter than their
+   diffs, so an omission is not a finding. A change whose purpose you cannot
+   work out at all is.
 2. **Place the change.** In this service and in the platform:
    - Which of the two surfaces does it touch — the synchronous ITX proxy, the
      asynchronous event pipeline, or both? Logic that belongs to one leaking
