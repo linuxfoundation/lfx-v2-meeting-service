@@ -6,14 +6,14 @@ module github.com/linuxfoundation/lfx-v2-meeting-service
 go 1.25.12
 
 require (
-	github.com/auth0/go-auth0 v1.38.0
+	github.com/auth0/go-auth0 v1.45.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.1
-	github.com/go-chi/chi/v5 v5.2.4
+	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.0
-	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.20
-	github.com/linuxfoundation/lfx-v2-invite-service v0.1.5-0.20260605060750-cef0d5251933
-	github.com/nats-io/nats.go v1.51.0
+	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.5
+	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.25
+	github.com/linuxfoundation/lfx-v2-invite-service v0.1.10
+	github.com/nats-io/nats.go v1.52.0
 	github.com/remychantenay/slog-otel v1.3.5
 	github.com/stretchr/testify v1.11.1
 	github.com/teambition/rrule-go v1.8.2
@@ -32,9 +32,9 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.20.0
 	go.opentelemetry.io/otel/sdk/metric v1.44.0
 	go.opentelemetry.io/otel/trace v1.44.0
-	goa.design/goa/v3 v3.26.0
+	goa.design/goa/v3 v3.28.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.22.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
@@ -52,7 +52,7 @@ require (
 	github.com/gohugoio/hashstructure v0.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
-	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.3 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.6 // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.devnw.com/structs v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
