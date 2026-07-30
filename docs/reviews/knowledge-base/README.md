@@ -25,9 +25,31 @@ comments across 14 PRs (`#206`, `#208`, `#210`, `#212`, `#216`, `#217`, `#218`,
 
 Every quote, count and line anchor in these entries was **re-verified against
 `origin/main` at `4bb31d0`** (after the `#229`/`#230` dead-code cleanups), and
-all of them still hold. When re-auditing, re-derive the figures rather than
-trusting them — one count in this KB was wrong on first authoring precisely
-because it was inherited rather than re-counted.
+all of them hold. When re-auditing, re-derive the figures rather than trusting
+them — several figures here were wrong on first authoring precisely because they
+were inherited rather than re-counted.
+
+### Corrections on record
+
+Kept visible so the next maintainer can see what was wrong and how it was found,
+rather than re-litigating it:
+
+- `recordAndMapHTTPError` call sites: **33 → 42**. The 33 was inherited and was
+  never true at any commit; 42 has held since `dc70a88`. Found by this repo's own
+  local review cycle reviewing the commit that introduced this KB.
+- `reconcile_meeting_registrants`: **"a 1,497-line tool with 69 tests" → 1,376
+  lines of tool code and 72 tests**. The 1,497 figure matches no commit in that
+  file's history.
+- `.gitleaks.toml`: **"a four-line allowlist" → no detection rules at all**, one
+  `[allowlist]`, one `paths` entry, in a 9-line file. The substance was always
+  right; only the descriptor was wrong.
+
+**A failed check can mean the probe is wrong, not the claim.** The test count
+above first came back as 32 from `grep -c '^def test_\|    def test_'`, which
+silently missed 40 `async def test_` definitions. Correcting the KB down to 32
+would have destroyed a true claim on the strength of a broken one-liner. Inspect
+the source and validate the extractor before revising or removing any entry —
+and never delete a pattern solely because a first-pass script returned zero.
 
 Reviewer identity was verified rather than assumed: inline comments by login
 `Copilot` (user id `175728472`, type `Bot`, app
@@ -48,9 +70,10 @@ A candidate becomes an entry here only when all of these hold:
    `golangci-lint` runs defaults only (errcheck, gosimple, govet, ineffassign,
    staticcheck, unused) with no `gosec`; MegaLinter runs the **Go flavor**, so
    Python under `scripts/**` is linted and tested by nothing; `make verify`
-   checks `design/`↔`gen/` drift only; `.gitleaks.toml` is a four-line
-   allowlist that matches committed literals, not runtime dataflow. A pattern a
-   linter or CI job already blocks would be noise.
+   checks `design/`↔`gen/` drift only; `.gitleaks.toml` carries **no detection
+   rules at all** — a single `[allowlist]` whose only entry is
+   `paths = ["^gen/.*"]` — so it matches committed literals, never runtime
+   dataflow. A pattern a linter or CI job already blocks would be noise.
 4. **It adds something the PR-side review skills do not already state.**
    `.github/skills/**` covers contract drift, PII exposure, the retry/ack
    contract and code truthfulness qualitatively. An entry earns its place by

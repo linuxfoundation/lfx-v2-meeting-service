@@ -17,8 +17,11 @@ patterns are the clearest reason the KB exists at all:
   linters do not detect either semantic failure below. Python under `scripts/**`
   is linted and tested by **nothing** — MegaLinter runs the Go flavor, and no
   workflow or Makefile target runs `pytest`, leaving
-  `scripts/reconcile_meeting_registrants/` (a 1,497-line production data-repair
-  tool with 69 tests) unchecked.
+  `scripts/reconcile_meeting_registrants/` unchecked — at `4bb31d0` that is
+  1,376 lines of production data-repair code
+  (`reconcile_meeting_registrants.py` 1,198 + `common.py` 178) and a 1,590-line
+  suite of **72** tests (`grep -cE '^\s*(async )?def test_'`: 32 sync + 40
+  async), none of which any CI job runs.
 
 ---
 
