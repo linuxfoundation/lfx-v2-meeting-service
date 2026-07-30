@@ -31,7 +31,7 @@ Dependabot owns this channel, and `govulncheck` runs in CI.
 
 ## Rejected on outcome — the team will not pay for these
 
-### Generic "add tests for this" — never a finding
+### Generic *add tests for this* — never a finding
 
 The single most important rejection here, because raw recurrence made it look
 like the strongest pattern in the sample.
@@ -72,11 +72,11 @@ gate.
 
 ## Covered elsewhere — not this reviewer's lane
 
-### Generic in-file "doc comment contradicts adjacent code" — never a finding here
+### Generic in-file *doc comment contradicts adjacent code* — never a finding here
 
 Strong evidence (13 comments across 6 PRs, 12 fixed), but it restates the
 PR-side `meeting-service-code-review` skill's **Code truthfulness** section
-almost verbatim and has no mechanical detect beyond "read the comment". Only the
+almost verbatim and has no mechanical detect beyond *read the comment*. Only the
 cross-file half survives, and it lives in
 [`contract-and-config-drift.md`](contract-and-config-drift.md).
 

@@ -126,7 +126,7 @@ explanation, no second object, no repeated marker.
         "source": "docs/reviews/knowledge-base/event-pipeline-reliability.md",
         "pattern": "kv-get-error-treated-as-absent",
         "detect": "In cmd/meeting-api/eventing/**, a v1MappingsKV or v1ObjectsKV .Get whose only success test is err == nil, with no else-if arm on !errors.Is(err, jetstream.ErrKeyNotFound) returning true, where the branch decides ActionCreated vs ActionUpdated, recovers a username or ID used to build an FGA payload, or gates a member_remove.",
-        "quote": "Only `jetstream.ErrKeyNotFound` may mean \"absent\". Any other error from a KV read is a transient infrastructure failure and must return the retry decision."
+        "quote": "Only `jetstream.ErrKeyNotFound` may be treated as a missing key. Any other error from a KV read is a transient infrastructure failure and must return the retry decision."
       }
     }
   ],

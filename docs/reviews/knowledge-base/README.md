@@ -60,10 +60,17 @@ Reviewer identity was verified rather than assumed: inline comments by login
 
 A candidate becomes an entry here only when all of these hold:
 
-1. **A developer fixed it.** A finding that was argued down, reverted, or
-   silently ignored is rejection evidence, not a pattern. Recurrence alone is
-   not enough — check the present-day state of `main` and look for a revert
-   before crediting a fix.
+1. **A developer fixed it, on a merged PR.** A finding that was argued down,
+   reverted, or silently ignored is rejection evidence, not a pattern. Recurrence
+   alone is not enough — check the present-day state of `main` and look for a
+   revert before crediting a fix.
+
+   **This gate applies to every count in this KB, including any produced by a
+   widened or re-run probe.** Broadening a search does not relax it: matches on
+   open or unmerged PRs, and matches whose fix never landed, are never counted
+   toward promotion. Where an entry has more than one detect tier, publish a
+   separate reproducible count per tier and say which gate each passed —
+   never one total across an unstated boundary.
 2. **It is mechanically detectable.** The entry must state a `detect` condition
    a reviewer can evaluate against a diff, not a theme it can nod along to.
 3. **No tooling already catches it.** This repo has no `.golangci.yml`, so

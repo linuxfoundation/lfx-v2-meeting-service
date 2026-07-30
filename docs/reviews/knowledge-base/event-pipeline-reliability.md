@@ -19,9 +19,9 @@ assigned and **is** compared to `nil`.
 
 ## `kv-get-error-treated-as-absent`
 
-**Rule:** Only `jetstream.ErrKeyNotFound` may mean "absent". Any other error
-from a KV read is a transient infrastructure failure and must return the retry
-decision.
+**Rule:** Only `jetstream.ErrKeyNotFound` may be treated as a missing key. Any
+other error from a KV read is a transient infrastructure failure and must return
+the retry decision.
 
 **Severity:** `high`
 

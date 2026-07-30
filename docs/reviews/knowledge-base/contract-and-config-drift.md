@@ -19,7 +19,7 @@ detail section.
 
 **Severity:** `high`
 
-**Detect:** Three OR'd arms, each a same-diff co-change check. (1) The diff
+**Detect — core arms (1–3), OR'd**, each a same-diff co-change check. (1) The diff
 touches `member_put`/`member_remove`/`update_access`/`delete_access` publication
 in `cmd/meeting-api/eventing/**` or `internal/infrastructure/eventing/**` and has
 no `docs/fga-contract.md` hunk. (2) The diff changes an indexer object, subject,
@@ -29,12 +29,25 @@ schema or access-check relation (`internal/domain/models/event_models.go`,
 hunk. (3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`,
 `pkg/models/itx/**`, field injection in `internal/service/itx/**`) and has no
 matching `docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md`
-hunk. A fourth arm fires when the doc *is* updated in the diff but only in a
+hunk.
+
+**Detect — variant arm (4):** the doc *is* updated in the diff, but only in a
 detail section, leaving its own summary/subject table or Triggers table
 describing the old behaviour.
 
-**Evidence:** Raised 10× across three distinct PRs — `#218`, `#224`, `#226` —
-and fixed every time.
+**Evidence — counts are reported per tier, and both apply the same eligibility
+gate: only findings on merged PRs that a developer actually fixed are counted.**
+
+- **Core arms (1–3): 10 qualifying findings across three distinct PRs** —
+  `#218`, `#224`, `#226` — every one fixed and the fix still present on
+  `origin/main`. Reproduce by listing Copilot inline comments on those PRs whose
+  fixing commit touches a `docs/` contract file.
+- **Variant arm (4): 0 qualifying findings.** It carries **no recurrence
+  evidence at all** and is not part of the count above. It rests solely on the
+  live anchor below — a partial update visible on `origin/main` today. Treat it
+  as the weaker arm accordingly: it earns a finding only when the diff plainly
+  leaves a summary or Triggers table contradicting the detail section it just
+  changed.
 
 - `#224` comment `discussion_r3646862161`, on
   `internal/domain/models/event_models.go:426`: *"The repository's indexer
@@ -85,7 +98,13 @@ chart because their defaults are derived there.
 sampling configuration stopped working while both the chart and the code
 remained internally valid.
 
-**Evidence:** `#206` comment `discussion_r3507937313`, on
+**Evidence — 1 qualifying finding (merged and developer-fixed), on `#206`.** The
+same review's *docs* arm (`discussion_r3507937384`) was never actioned, so it is
+**not** counted toward promotion; it appears below only as a live anchor. This
+entry qualifies on the chart arm plus the cross-arm shape, not on a recurrence
+total spanning fixed and unfixed matches.
+
+`#206` comment `discussion_r3507937313`, on
 `charts/lfx-v2-meeting-service/templates/deployment.yaml:92`: *"The chart now
 renders OTEL_TRACES_SAMPLER/OTEL_TRACES_SAMPLER_ARG, but the application code
 reads OTEL_TRACES_SAMPLE_RATIO and configures the sampler via
