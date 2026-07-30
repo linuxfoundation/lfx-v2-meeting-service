@@ -70,17 +70,25 @@ used core NATS; or a revision-gated precondition on the write.
 ## `scripts-false-success-exit-and-unvalidated-bounds`
 
 **Rule:** A `scripts/**` entrypoint must not report success for work it did not
-do: a numeric bound that can disable the work loop must be validated, and the
-exit path must account for skipped records, not only failed ones.
+do: a numeric bound that can disable the work loop must be validated before that
+loop runs.
 
 **Severity:** `high`
 
-**Detect:** Either (a) a numeric CLI flag bounding a worker pool, page size or
-batch size is used without a `< 1` / `<= 0` guard before the work loop; or (b)
-the terminal exit path returns 0 while a `skipped` or `notFound` counter is
-non-zero and only `failed` is checked.
+**Detect — bounds arm (a), the evidenced one:** a numeric CLI flag bounding a
+worker pool, page size or batch size is used without a `< 1` / `<= 0` guard
+before the work loop.
 
-**Evidence — two distinct PRs, both arms fixed:**
+**Detect — exit-path arm (b), not independently finding-bearing:** the terminal
+exit path returns 0 while a `skipped` or `notFound` counter is non-zero and only
+`failed` is checked. This is reported **only when arm (a) has already matched in
+the same diff**, in which case the false-success exit is part of that one
+finding — the two compound, as the note below describes. On its own it is not a
+finding: its only review citation was never actioned (see the anchor below), and
+this KB's promotion gate does not admit an unevidenced standalone detector.
+
+**Evidence — 2 qualifying findings across two distinct PRs, both on arm (a).**
+Arm (b) has **no** developer-fixed evidence and is not counted here.
 
 - `#218` (`discussion_r3573751709`, `discussion_r3574076352`): `-workers=0`
   starts no goroutines and exits 0. Fixed in `f6c341e`:

@@ -101,10 +101,14 @@ Then:
   back; the rest of the floor is untouched by this rule.
 - A waiver the patch **removes** stops applying — the patch is un-suppressing a
   finding, which is the safe direction.
-- **If you cannot reconstruct the pre-patch floor reliably** — the hunks are
-  ambiguous, the file is new in this patch, or the diff for that path is
-  unreadable — return `INCOMPLETE` with an error saying so. Never fall back to
-  the post-patch waiver silently.
+- **If the patch creates the file**, the pre-patch floor is **empty** — that is
+  fully reconstructable, not a failure. Apply no waivers at all. This is the
+  safe direction and the strongest form of the rule: a branch that introduces
+  the floor cannot use it to suppress findings about itself. Do **not** report
+  `INCOMPLETE` for this case.
+- **If you cannot reconstruct the pre-patch floor reliably** — the hunks for
+  that path are ambiguous or its diff is unreadable — return `INCOMPLETE` with
+  an error saying so. Never fall back to the post-patch waiver silently.
 
 Say in the finding's title or evidence when a candidate survived only because
 the floor was evaluated pre-patch, so the reader knows a waiver in this very

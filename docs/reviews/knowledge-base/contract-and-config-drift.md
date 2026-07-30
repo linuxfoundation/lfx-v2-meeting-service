@@ -112,7 +112,13 @@ lives in the detect and guard prose rather than in the quoted rule — do not
 
 **Detect — chart↔code arm (the evidenced one).** Fully scriptable. Build the
 chart-side set from **both** places the chart names variables, then compare it
-against `os.Getenv\("([A-Z0-9_]+)"\)` extracted from `**/*.go`:
+against `os.Getenv\("([A-Z0-9_]+)"\)` extracted from the **service** Go code
+only — `cmd/**`, `internal/**` and `pkg/**`, excluding `*_test.go`. Do not scan
+`**/*.go`: `internal/logging/logging_test.go` reads `LOG_LEVEL`/`LOG_ADD_SOURCE`
+to save and restore them, and the three standalone programs under `scripts/**`
+read their own operator-supplied variables (`OPENSEARCH_URL`, `NATS_URL`) that
+the service chart is not meant to render. Including either produces phantom
+"code reads what the chart cannot set" findings.
 
 1. Literals in the templates — `- name: [A-Z0-9_]+` under `charts/**/templates/`.
    At `9cc00c9` this yields only the 11 `OTEL_*` names.
