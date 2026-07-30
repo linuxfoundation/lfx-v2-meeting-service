@@ -81,29 +81,29 @@ func (r *ZoomMeetingRecurrence) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.Type, tmp.Type, "type"); err != nil {
+	if err := coerceInt(&r.Type, tmp.Type, "type"); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.RepeatInterval, tmp.RepeatInterval, "repeat_interval"); err != nil {
+	if err := coerceInt(&r.RepeatInterval, tmp.RepeatInterval, "repeat_interval"); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.MonthlyDay, tmp.MonthlyDay, "monthly_day"); err != nil {
+	if err := coerceInt(&r.MonthlyDay, tmp.MonthlyDay, "monthly_day"); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.MonthlyWeek, tmp.MonthlyWeek, "monthly_week"); err != nil {
+	if err := coerceInt(&r.MonthlyWeek, tmp.MonthlyWeek, "monthly_week"); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.MonthlyWeekDay, tmp.MonthlyWeekDay, "monthly_week_day"); err != nil {
+	if err := coerceInt(&r.MonthlyWeekDay, tmp.MonthlyWeekDay, "monthly_week_day"); err != nil {
 		return err
 	}
-	if err := coerceRecurrenceInt(&r.EndTimes, tmp.EndTimes, "end_times"); err != nil {
+	if err := coerceInt(&r.EndTimes, tmp.EndTimes, "end_times"); err != nil {
 		return err
 	}
 	return nil
 }
 
-// coerceRecurrenceInt coerces a JSON-decoded interface{} into *dest, accepting string, float64, int, or nil.
-func coerceRecurrenceInt(dest *int, v interface{}, field string) error {
+// coerceInt coerces a JSON-decoded interface{} into *dest, accepting string, float64, int, or nil.
+func coerceInt(dest *int, v interface{}, field string) error {
 	switch val := v.(type) {
 	case string:
 		if val == "" {
