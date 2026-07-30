@@ -24,20 +24,28 @@ something because it looks wrong.
 
 ## The knowledge base
 
-`references/knowledge-base/` in this skill's directory:
+This skill carries the review **method**; the empirical patterns live in the
+repo's own KB at `docs/reviews/knowledge-base/`, versioned with the code they
+describe. There is exactly one copy of that KB and this skill does not duplicate
+it.
 
 | File | Patterns |
 |---|---|
-| [`README.md`](references/knowledge-base/README.md) | how the KB is built, the promotion gate, and the entry format |
-| [`contract-and-config-drift.md`](references/knowledge-base/contract-and-config-drift.md) | `contract-doc-not-updated-with-message-or-api-shape-change`, `env-var-contract-split-across-chart-code-docs` |
-| [`event-pipeline-reliability.md`](references/knowledge-base/event-pipeline-reliability.md) | `kv-get-error-treated-as-absent`, `swallowed-failure-before-state-destroying-write`, `unsafe-mapping-value-encoding` |
-| [`sensitive-data-exposure.md`](references/knowledge-base/sensitive-data-exposure.md) | `sensitive-identity-data-in-logs-errors-and-telemetry` |
-| [`operational-scripts.md`](references/knowledge-base/operational-scripts.md) | `scripts-destructive-step-ungated-on-publish-success`, `scripts-false-success-exit-and-unvalidated-bounds` |
-| [`known-false-positives.md`](references/knowledge-base/known-false-positives.md) | the floor — findings this repo has explicitly rejected |
+| `docs/reviews/knowledge-base/README.md` | how the KB is built, the promotion gate, and the entry format |
+| `docs/reviews/knowledge-base/contract-and-config-drift.md` | `contract-doc-not-updated-with-message-or-api-shape-change`, `env-var-contract-split-across-chart-code-docs` |
+| `docs/reviews/knowledge-base/event-pipeline-reliability.md` | `kv-get-error-treated-as-absent`, `swallowed-failure-before-state-destroying-write`, `unsafe-mapping-value-encoding` |
+| `docs/reviews/knowledge-base/sensitive-data-exposure.md` | `sensitive-identity-data-in-logs-errors-and-telemetry` |
+| `docs/reviews/knowledge-base/operational-scripts.md` | `scripts-destructive-step-ungated-on-publish-success`, `scripts-false-success-exit-and-unvalidated-bounds` |
+| `docs/reviews/knowledge-base/known-false-positives.md` | the floor — findings this repo has explicitly rejected |
 
-Read the KB from the snapshot, at the path this skill is loaded from. Read
-`README.md` and then the category files whose patterns the patch could plausibly
-touch; you do not need to read every file on every run.
+Read the KB **from the snapshot**, at `docs/reviews/knowledge-base/` relative to
+the snapshot root — not from this skill's directory, and not from the caller's
+working tree. Read `README.md` and then the category files whose patterns the
+patch could plausibly touch; you do not need to read every file on every run.
+
+If that directory is missing from the snapshot, you cannot do your job: report
+`INCOMPLETE` with an `error` saying the knowledge base was not found, rather than
+reporting no findings.
 
 ## What you may read
 
@@ -64,9 +72,9 @@ the repo at the target commit.
    genuinely absent. Several entries name the exact helper that satisfies them
    (`isTransientError`, `redaction.Redact`, `requestJSONForLog`,
    `nc.FlushTimeout`); if the patch uses it, the pattern does not fire.
-5. **Apply [`known-false-positives.md`](references/knowledge-base/known-false-positives.md)
-   last**, after everything else. It is a floor: a candidate it names is dropped
-   even when a pattern's detect condition fired.
+5. **Apply `docs/reviews/knowledge-base/known-false-positives.md` last**, after
+   everything else. It is a floor: a candidate it names is dropped even when a
+   pattern's detect condition fired.
 6. Emit only what survives, at confidence 80 or above.
 
 Severity is the entry's own `severity` unless the concrete instance is plainly
@@ -115,7 +123,7 @@ explanation, no second object, no repeated marker.
         "excerpt": "entry, err := h.v1MappingsKV.Get(ctx, key)\nif err == nil {\n\taction = models.ActionUpdated\n}"
       },
       "knowledge_base": {
-        "source": ".claude/skills/meeting-service-learnings-reviewer/references/knowledge-base/event-pipeline-reliability.md",
+        "source": "docs/reviews/knowledge-base/event-pipeline-reliability.md",
         "pattern": "kv-get-error-treated-as-absent",
         "detect": "In cmd/meeting-api/eventing/**, a v1MappingsKV or v1ObjectsKV .Get whose only success test is err == nil, with no else-if arm on !errors.Is(err, jetstream.ErrKeyNotFound) returning true, where the branch decides ActionCreated vs ActionUpdated, recovers a username or ID used to build an FGA payload, or gates a member_remove.",
         "quote": "Only `jetstream.ErrKeyNotFound` may mean \"absent\". Any other error from a KV read is a transient infrastructure failure and must return the retry decision."

@@ -6,7 +6,9 @@
 Patterns extracted from **real GitHub Copilot review comments on this
 repository that a developer actually fixed**. This is the rulebook for the
 `repo_learnings` role of `lfx-local-review/v1`; the brain that loads it is
-[`../../SKILL.md`](../../SKILL.md).
+[`.claude/skills/meeting-service-learnings-reviewer/SKILL.md`](../../../.claude/skills/meeting-service-learnings-reviewer/SKILL.md),
+which carries the review method and points here. This directory is the single
+copy of the empirical KB — the skill does not duplicate it.
 
 It is deliberately *not* a general review checklist. Correctness, security and
 test quality in the abstract belong to the central `general` reviewer, and this

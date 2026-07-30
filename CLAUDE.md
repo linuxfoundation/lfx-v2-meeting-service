@@ -122,9 +122,12 @@ in-repo and are versioned with the code they describe:
   repo's written rule surface (`CLAUDE.md`, the FGA/indexer/event-processing/ITX
   contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes
   the rule it cites.
-- `.claude/skills/meeting-service-learnings-reviewer/` — matches a patch against
-  `references/knowledge-base/`, this repo's patterns mined from real past PR
-  review comments. Every finding quotes its knowledge-base entry.
+- `.claude/skills/meeting-service-learnings-reviewer/` — carries the empirical
+  review method and matches a patch against `docs/reviews/knowledge-base/`, this
+  repo's patterns mined from real past PR review comments. Every finding quotes
+  its knowledge-base entry. The KB lives under `docs/` because it is repo-owned
+  knowledge versioned with the code it describes, and there is exactly one copy
+  of it.
 
 The generic `local-code-review` and `local-learnings-review` names beside them
 are symlinks; they exist so the launcher's discovery is deterministic, and both

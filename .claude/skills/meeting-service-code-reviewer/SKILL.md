@@ -204,8 +204,8 @@ doc, is a finding.
 - Pre-existing drift the patch does not touch.
 - Correctness, security or performance reasoning that stands on its own without
   a repo rule — that is the `general` reviewer's lane.
-- An empirical pattern from `docs/reviews/` or the learnings skill's knowledge
-  base — that is the `repo_learnings` reviewer's lane.
+- An empirical pattern from `docs/reviews/knowledge-base/` — that is the
+  `repo_learnings` reviewer's lane.
 - Rewrites of a sound approach, or change for its own sake.
 - A judgment resting on something you cannot see — ITX's real behaviour, the
   OpenFGA model, a deployed configuration value. If you cannot show it, do not
