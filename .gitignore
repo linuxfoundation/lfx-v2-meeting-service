@@ -121,19 +121,18 @@ jetstream/
 .claude/*
 !.claude/skills/
 .claude/skills/*
+# Re-include only markdown, never `**`. Git applies patterns in file order and
+# last match wins, so a recursive `!dir/**` here would sit *after* the *.key,
+# *.pem, .env, *.p12 and *.pfx rules above and silently beat all of them,
+# re-including any credential dropped into a skill directory. An allowlist cannot
+# do that, and — unlike re-asserting the secret patterns by hand — it cannot go
+# stale when a new one is added above. These brains are prose; if a skill ever
+# needs a non-markdown file, add that extension here deliberately.
 !.claude/skills/meeting-service-code-reviewer/
-!.claude/skills/meeting-service-code-reviewer/**
+!.claude/skills/meeting-service-code-reviewer/**/
+!.claude/skills/meeting-service-code-reviewer/**/*.md
 !.claude/skills/meeting-service-learnings-reviewer/
-!.claude/skills/meeting-service-learnings-reviewer/**
+!.claude/skills/meeting-service-learnings-reviewer/**/
+!.claude/skills/meeting-service-learnings-reviewer/**/*.md
 !.claude/skills/local-code-review
 !.claude/skills/local-learnings-review
-
-# The recursive negations above re-include everything under those two skill
-# directories, which silently overrides the *.key / *.pem / .env rules earlier in
-# this file (later patterns win). Re-assert them here, last, so a credential
-# dropped into a skill directory stays ignored.
-.claude/skills/**/*.key
-.claude/skills/**/*.pem
-.claude/skills/**/*private.key*
-.claude/skills/**/.env
-.claude/skills/**/*.env
