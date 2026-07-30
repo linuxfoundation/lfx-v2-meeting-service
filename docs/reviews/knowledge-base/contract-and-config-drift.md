@@ -31,9 +31,17 @@ hunk. (3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`
 matching `docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md`
 hunk.
 
-**Detect — variant arm (4):** the doc *is* updated in the diff, but only in a
-detail section, leaving its own summary/subject table or Triggers table
-describing the old behaviour.
+**Detect — variant arm (4), dependent:** fires **only when a core arm has
+already matched** — that is, the diff changes published shape *and* the matching
+contract doc was touched, but only in a detail section, leaving that doc's own
+summary/subject table or Triggers table describing the old behaviour. It is a
+refinement of arms 1–3, never a standalone detector: on a docs-only diff that
+changes no published shape, it does not fire at all.
+
+This dependency is deliberate. The arm has no developer-fixed evidence of its
+own (see the counts below), and this KB's promotion gate does not admit an
+unevidenced standalone detector. Tying it to a core arm keeps every finding it
+produces anchored to the well-evidenced pattern it refines.
 
 **Evidence — counts are reported per tier, and both apply the same eligibility
 gate: only findings on merged PRs that a developer actually fixed are counted.**
@@ -87,12 +95,22 @@ arm without the others silently breaks configuration that still appears to work.
 
 **Severity:** `high`
 
-**Detect:** Fully scriptable. Extract `- name: [A-Z0-9_]+` from
-`charts/**/templates/`, `os.Getenv\("([A-Z0-9_]+)"\)` from `**/*.go`, and
-env-var names from `README.md` and `docs/`; flag a non-empty symmetric
-difference introduced by the diff. Before reporting, check
-`cmd/meeting-api/config.go` — some variables are deliberately absent from the
+**Detect — chart↔code arm (the evidenced one).** Fully scriptable. Extract
+`- name: [A-Z0-9_]+` from `charts/**/templates/` and
+`os.Getenv\("([A-Z0-9_]+)"\)` from `**/*.go`; flag a non-empty symmetric
+difference **introduced by the diff** — a name the chart renders that no code
+reads, or a name code reads that the chart cannot set. Before reporting, check
+`cmd/meeting-api/config.go`: some variables are deliberately absent from the
 chart because their defaults are derived there.
+
+**Docs arm — not independently finding-bearing.** Documentation naming a
+variable (`README.md`, `docs/`) is checked **only when the same diff already
+matched the chart↔code arm for that variable**, in which case the stale doc is
+part of the one finding. A doc that merely drifted from code is *not* a finding
+on its own: the originating review raised exactly that
+(`discussion_r3507937384`) and it was never actioned, so promoting it would
+manufacture a reviewer this team has already shown it will not act on. Such
+drift belongs in a ticket, and the live instance is recorded as an anchor below.
 
 **Severity note:** the failure is silent. In the originating case Helm-based
 sampling configuration stopped working while both the chart and the code
