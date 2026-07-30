@@ -478,14 +478,17 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("failed to unmarshal invite response data: %w", err)
 	}
 
+	// Filter out mailer daemon emails — these are bounce auto-replies, not real RSVPs.
+	// Check before required-field validation so incomplete bounce payloads are also silently skipped.
+	// Match only the local part to avoid false positives like user+mailer-daemon@example.org.
+	emailLocal := strings.ToLower(strings.SplitN(rawResponse.Email, "@", 2)[0])
+	if emailLocal == "mailer-daemon" {
+		return nil, nil
+	}
+
 	// Validate required fields
 	if rawResponse.ID == "" || rawResponse.MeetingID == "" {
 		return nil, fmt.Errorf("missing required fields: id or meeting_id")
-	}
-
-	// Filter out mailer daemon emails — these are bounce auto-replies, not real RSVPs.
-	if strings.Contains(strings.ToLower(rawResponse.Email), "mailer-daemon@") {
-		return nil, nil
 	}
 
 	// If username is blank but we have a v1 Platform ID (user_id), lookup the username.
