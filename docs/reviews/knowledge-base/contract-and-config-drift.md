@@ -31,17 +31,23 @@ hunk. (3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`
 matching `docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md`
 hunk.
 
-**Detect — variant arm (4), dependent:** fires **only when a core arm has
-already matched** — that is, the diff changes published shape *and* the matching
-contract doc was touched, but only in a detail section, leaving that doc's own
-summary/subject table or Triggers table describing the old behaviour. It is a
-refinement of arms 1–3, never a standalone detector: on a docs-only diff that
-changes no published shape, it does not fire at all.
+**Detect — variant arm (4), dependent:** shares the **trigger** of arms 1–3 — a
+diff that changes published or exposed shape — and covers the case those arms do
+not, because the matching contract doc **was** touched: it fires when that doc
+was updated only in a detail section, leaving its own summary/subject table or
+Triggers table describing the old behaviour. It is never a standalone detector —
+a diff that changes no published shape does not reach it, so a docs-only diff
+cannot fire it.
 
-This dependency is deliberate. The arm has no developer-fixed evidence of its
-own (see the counts below), and this KB's promotion gate does not admit an
-unevidenced standalone detector. Tying it to a core arm keeps every finding it
-produces anchored to the well-evidenced pattern it refines.
+The dependency is on that shared trigger, **not** on a core arm having produced a
+finding: arms 1–3 fire only when the contract doc is *absent* from the diff,
+which is the exact opposite of this arm's precondition, so the two are mutually
+exclusive by construction.
+
+The scoping is deliberate. The arm has no developer-fixed evidence of its own
+(see the counts below), and this KB's promotion gate does not admit an
+unevidenced standalone detector. Binding it to the same trigger keeps every
+finding it produces anchored to the well-evidenced pattern it refines.
 
 **Evidence — counts are reported per tier, and both apply the same eligibility
 gate: only findings on merged PRs that a developer actually fixed are counted.**
