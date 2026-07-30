@@ -23,6 +23,12 @@ plus `#143` — against `origin/main` at **`4ce62f6`**. 142 Copilot inline
 comments across 14 PRs (`#206`, `#208`, `#210`, `#212`, `#216`, `#217`, `#218`,
 `#220`, `#221`, `#222`, `#224`, `#225`, `#226`, `#143`) were read in full.
 
+Every quote, count and line anchor in these entries was **re-verified against
+`origin/main` at `4bb31d0`** (after the `#229`/`#230` dead-code cleanups), and
+all of them still hold. When re-auditing, re-derive the figures rather than
+trusting them — one count in this KB was wrong on first authoring precisely
+because it was inherited rather than re-counted.
+
 Reviewer identity was verified rather than assumed: inline comments by login
 `Copilot` (user id `175728472`, type `Bot`, app
 `copilot-pull-request-reviewer`). `coderabbitai[bot]`,

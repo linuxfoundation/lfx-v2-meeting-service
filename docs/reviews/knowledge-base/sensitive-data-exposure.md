@@ -50,9 +50,9 @@ Fixed in `2cc508e`:
 
 Live on `origin/main`, and the same status-only form now guards all **42** call
 sites of `c.recordAndMapHTTPError(` in
-`internal/infrastructure/proxy/client.go` (counted at `4ce62f6`; the helper is
-defined at line 1157 and has had 42 call sites since it was introduced in
-`dc70a88`). Note the shape of the fix: the detailed error still goes to the
+`internal/infrastructure/proxy/client.go` (counted at `4ce62f6`, still 42 at
+`4bb31d0`; the helper is defined at line 1157 and has had 42 call sites since it
+was introduced in `dc70a88`). Note the shape of the fix: the detailed error still goes to the
 caller; only the telemetry is reduced to a status.
 
 **Guards that satisfy it — infrastructure these reviews created:**
