@@ -44,8 +44,10 @@ before merge** in `03a32cd9`:
 > "Tests added significant review overhead (~1k lines) for a small bug fix.
 > Removing to keep the PR focused."
 
-On `origin/main` there is no `participant_event_handler_test.go`, and
-`registrant_event_handler_test.go` carries only two update cases.
+On `origin/main` there is no
+`cmd/meeting-api/eventing/participant_event_handler_test.go`, and
+`cmd/meeting-api/eventing/registrant_event_handler_test.go` carries only two
+update cases.
 
 **The promotion gate is durable change, not recurrence.** High recurrence with a
 reverted outcome means the finding class costs more than this team will pay;

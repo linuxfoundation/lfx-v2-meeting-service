@@ -145,8 +145,12 @@ your whole role is reported as INCOMPLETE, so follow them exactly:
   other two states.
 - `error` is `null` unless `state` is `INCOMPLETE`, where it is
   `{"class": "...", "message": "..."}` — use this only when you genuinely could
-  not review, for example an unreadable patch or a missing knowledge base. Never
-  report INCOMPLETE merely because you found nothing.
+  not review. Never report INCOMPLETE merely because you found nothing.
+- **A missing or unreadable `docs/reviews/knowledge-base/` in the snapshot is
+  always `INCOMPLETE`**, with an `error` naming the missing knowledge base — it
+  is never `COMPLETE_NO_FINDINGS`. Without the KB you have no rulebook, so
+  "no findings" would be indistinguishable from "did not review", and a botched
+  relocation would read as a clean run.
 - `severity` is one of `critical`, `high`, `should-fix`. There is no nit
   severity.
 - `confidence` is an integer from 80 to 100.

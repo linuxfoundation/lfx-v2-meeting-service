@@ -59,9 +59,12 @@ discrimination that returns the retry decision for every other error. This is
 also the classification `docs/event-processing.md` documents.
 
 **Live anchors** (context, not work items): the un-discriminated form remains on
-`main` at `attachment_event_handler.go:146,346`, `meeting_event_handler.go:653`,
-`past_meeting_event_handler.go:252`, `recording_event_handler.go:227`,
-`registrant_event_handler.go:609`, and `summary_event_handler.go:177`.
+`main` at `cmd/meeting-api/eventing/attachment_event_handler.go:146,346`,
+`cmd/meeting-api/eventing/meeting_event_handler.go:653`,
+`cmd/meeting-api/eventing/past_meeting_event_handler.go:252`,
+`cmd/meeting-api/eventing/recording_event_handler.go:227`,
+`cmd/meeting-api/eventing/registrant_event_handler.go:609`, and
+`cmd/meeting-api/eventing/summary_event_handler.go:177`.
 
 ---
 
@@ -77,12 +80,12 @@ that the failed step was the only record of.
 `h.publisher.Publish*` or `h.v1MappingsKV.Put` is logged without
 `return isTransientError(err)` or `return true`, **and** a later statement in the
 same function overwrites the mapping, xref or tombstone that the failed step was
-the only record of — so `event_processor.go` ACKs the message on the `false`
-return and the event is gone.
+the only record of — so `cmd/meeting-api/eventing/event_processor.go` ACKs the
+message on the `false` return and the event is gone.
 
 **Evidence:** `#218` comment `discussion_r3572525956`, on
-`registrant_event_handler.go:245`: *"When this publish fails, execution continues
-and stores the new username, permanently discarding the only record of which
+`cmd/meeting-api/eventing/registrant_event_handler.go:245`: *"When this publish
+fails, execution continues and stores the new username, permanently discarding the only record of which
 tuple still needs removal. A transient NATS outage therefore reproduces the
 stale-access bug. Return the retry decision here, as the delete handler already
 does for `PublishAccessDelete`."*
@@ -98,8 +101,8 @@ continue on purpose, and those are not this pattern — the pattern requires a
 *later state-destroying write in the same function*.
 
 **Live anchors** (context, not work items): the xref writes at
-`participant_event_handler.go:256-258` and `663-665` still log without
-returning — the same shape, never separately raised.
+`cmd/meeting-api/eventing/participant_event_handler.go:256-258` and `663-665`
+still log without returning — the same shape, never separately raised.
 
 ---
 
@@ -130,9 +133,10 @@ without a `scripts/` backfill; or a change to `buildRegistrantMappingValue` or
   arbitrary field contents, such as JSON."* Fixed in `43c95e6` — a
   `registrantMappingData` struct, `json.Marshal` in
   `buildRegistrantMappingValue`, and a JSON-first parse with legacy pipe
-  fallback. Live on `origin/main:registrant_event_handler.go:655-684`, and the
+  fallback. Live on
+  `origin/main:cmd/meeting-api/eventing/registrant_event_handler.go:655-684`, and the
   `auth0|guest` premise still holds
-  (`registrant_event_handler_test.go:258,267,273,286`).
+  (`cmd/meeting-api/eventing/registrant_event_handler_test.go:258,267,273,286`).
 - `#220` comment `discussion_r3598000819`, on
   `scripts/reconcile_meeting_registrants/common.py:106`: *"Current live
   registrant mappings are not the literal `\"1\"`: the meeting event handler

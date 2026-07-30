@@ -58,6 +58,16 @@ source. They are the pull-request review method, owned separately. You may read
 them to avoid contradicting them, but never cite them as `repo_rule` and never
 audit a patch against them.
 
+**`docs/reviews/knowledge-base/**` is not your rule source either.** It sits
+under `docs/`, so it is easy to mistake for one, but it is the sibling
+`repo_learnings` reviewer's empirical knowledge base. Never cite any file under
+that directory as a `repo_rule.source`, and never audit a patch against a KB
+pattern. Only the `repo_learnings` role may cite it, and only through
+`knowledge_base`. If the rule you want to cite exists *only* there, it is not
+yours to raise — say nothing and let the learnings reviewer find it. Citing it
+would put the same empirical pattern into the wrong lane under the wrong
+citation type, and the run would report one finding twice.
+
 Where `CLAUDE.md` or `README.md` has drifted from the code, the code is the
 truth about behaviour — confirm a specific against the code before citing a doc
 that asserts it.
@@ -205,7 +215,7 @@ doc, is a finding.
 - Correctness, security or performance reasoning that stands on its own without
   a repo rule — that is the `general` reviewer's lane.
 - An empirical pattern from `docs/reviews/knowledge-base/` — that is the
-  `repo_learnings` reviewer's lane.
+  `repo_learnings` reviewer's lane, and that path is never a `repo_rule.source`.
 - Rewrites of a sound approach, or change for its own sake.
 - A judgment resting on something you cannot see — ITX's real behaviour, the
   OpenFGA model, a deployed configuration value. If you cannot show it, do not
@@ -281,6 +291,10 @@ your whole role is reported as INCOMPLETE, so follow them exactly:
   verbatim `quote`.
 - **Never emit a `knowledge_base` key** — that belongs to the `repo_learnings`
   reviewer, and including it invalidates your result.
+- **`repo_rule.source` is never a path under `docs/reviews/knowledge-base/`.**
+  That directory is the learnings reviewer's evidence, cited only through
+  `knowledge_base`; sourcing a finding to it puts an empirical pattern in the
+  wrong lane under the wrong citation type.
 - `id` is a short stable slug describing the finding.
 - Emit no key that is not shown above.
 

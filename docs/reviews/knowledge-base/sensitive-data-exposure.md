@@ -68,8 +68,9 @@ caller; only the telemetry is reduced to a status.
 
 **Why it is not tooling's job:** gitleaks matches committed literals, not runtime
 dataflow; there is no `gosec` and no taint analysis. The only automated guard is
-this repo's own `client_otel_test.go` assertion that
-`exception.message == "HTTP 500"` — itself written because of these reviews.
+this repo's own `internal/infrastructure/proxy/client_otel_test.go` assertion
+that `exception.message == "HTTP 500"` — itself written because of these
+reviews.
 
 **Not this pattern:** the deliberate placeholder credentials in tests
 (`"test-user-token"`, `[]byte("test-secret")`) are fine. See
