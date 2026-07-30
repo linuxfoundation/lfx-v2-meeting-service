@@ -139,7 +139,7 @@ without a `scripts/` backfill; or a change to `buildRegistrantMappingValue` or
   (`cmd/meeting-api/eventing/registrant_event_handler_test.go:258,267,273,286`).
 - `#220` comment `discussion_r3598000819`, on
   `scripts/reconcile_meeting_registrants/common.py:106`: *"Current live
-  registrant mappings are not the literal `\"1\"`: the meeting event handler
+  registrant mappings are not the literal `"1"`: the meeting event handler
   writes JSON via `buildRegistrantMappingValue` … Consequently every normal
   current mapping is reported as `unknown`, and `_validate_candidate_state`
   aborts the dry-run before a plan can be produced."* Fixed in `e933d4b` —

@@ -129,9 +129,11 @@ jetstream/
 # stale when a new one is added above. These brains are prose; if a skill ever
 # needs a non-markdown file, add that extension here deliberately.
 !.claude/skills/meeting-service-code-reviewer/
+.claude/skills/meeting-service-code-reviewer/**
 !.claude/skills/meeting-service-code-reviewer/**/
 !.claude/skills/meeting-service-code-reviewer/**/*.md
 !.claude/skills/meeting-service-learnings-reviewer/
+.claude/skills/meeting-service-learnings-reviewer/**
 !.claude/skills/meeting-service-learnings-reviewer/**/
 !.claude/skills/meeting-service-learnings-reviewer/**/*.md
 !.claude/skills/local-code-review

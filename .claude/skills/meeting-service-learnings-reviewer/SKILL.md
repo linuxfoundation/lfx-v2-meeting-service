@@ -74,8 +74,41 @@ the repo at the target commit.
    `nc.FlushTimeout`); if the patch uses it, the pattern does not fire.
 5. **Apply `docs/reviews/knowledge-base/known-false-positives.md` last**, after
    everything else. It is a floor: a candidate it names is dropped even when a
-   pattern's detect condition fired.
+   pattern's detect condition fired. When the patch itself changes that file,
+   apply the **pre-patch** floor — see below.
 6. Emit only what survives, at confidence 80 or above.
+
+### When the patch changes the false-positive floor
+
+If the patch touches `docs/reviews/knowledge-base/known-false-positives.md`, you
+must apply the floor **as it stood before the patch**, never the post-patch
+version in the snapshot. Otherwise a patch that adds or widens a waiver
+suppresses findings about itself, and the suppression lands before any human has
+reviewed the waiver.
+
+Derive the pre-patch floor from the frozen evidence you already have:
+
+- The patch file is a diff. Read its hunks for that path and **reverse** them —
+  a line the patch adds is not in the pre-patch floor; a line it removes still
+  is.
+- The snapshot holds the post-patch content, so pre-patch content = snapshot
+  content with those hunks reversed. Reconstruct only the waiver entries you
+  actually need in order to judge a candidate.
+
+Then:
+
+- **Unchanged entries apply normally.** Only added or widened waivers are held
+  back; the rest of the floor is untouched by this rule.
+- A waiver the patch **removes** stops applying — the patch is un-suppressing a
+  finding, which is the safe direction.
+- **If you cannot reconstruct the pre-patch floor reliably** — the hunks are
+  ambiguous, the file is new in this patch, or the diff for that path is
+  unreadable — return `INCOMPLETE` with an error saying so. Never fall back to
+  the post-patch waiver silently.
+
+Say in the finding's title or evidence when a candidate survived only because
+the floor was evaluated pre-patch, so the reader knows a waiver in this very
+patch would otherwise have hidden it.
 
 Severity is the entry's own `severity` unless the concrete instance is plainly
 milder, in which case go lower — never higher than the entry states.
@@ -151,6 +184,9 @@ your whole role is reported as INCOMPLETE, so follow them exactly:
   is never `COMPLETE_NO_FINDINGS`. Without the KB you have no rulebook, so
   "no findings" would be indistinguishable from "did not review", and a botched
   relocation would read as a clean run.
+- **A false-positive floor you cannot reconstruct pre-patch is also
+  `INCOMPLETE`**, when the patch changes `known-false-positives.md` — never
+  fall back to the patch's own waiver.
 - `severity` is one of `critical`, `high`, `should-fix`. There is no nit
   severity.
 - `confidence` is an integer from 80 to 100.
