@@ -89,9 +89,10 @@ failure mode the fourth detect arm catches.
 
 ## `env-var-contract-split-across-chart-code-docs`
 
-**Rule:** An environment variable is a three-arm contract across the Helm chart,
-the Go code that reads it, and the documentation that names it; a change to one
-arm without the others silently breaks configuration that still appears to work.
+**Rule:** An environment variable is a contract between the Helm chart and the Go
+code that reads it; changing one of those two arms without the other silently
+breaks configuration that still appears to work, and documentation naming that
+variable must be corrected in the same diff.
 
 **Severity:** `high`
 
