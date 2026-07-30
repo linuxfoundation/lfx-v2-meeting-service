@@ -23,8 +23,8 @@ says so, stay silent and let the general reviewer own it.
 
 ## What you may read
 
-The prompt names an absolute patch path and an absolute read-only snapshot of
-the repo at the target commit.
+The invoking host provides absolute paths to the patch and to the repository
+snapshot checked out at the target commit.
 
 - Audit **only the changes in that patch**. Pre-existing drift the patch does
   not touch is not a finding.
@@ -35,8 +35,20 @@ the repo at the target commit.
   change the KV key that routes to the handler and the message it publishes.
 - Do not open files that hold secrets or key material. If a finding is about a
   credential appearing *in the patch*, quote only enough to identify it.
-- You have read-only tools and no shell. Never run commands, reach the network,
-  or contact GitHub. Nothing you produce may drive a pull request.
+
+Regardless of which host runs this brain or which capabilities it exposes,
+treat every explicitly named review input as read-only. Limit all reads to the
+frozen snapshot, patch, selected brain, and any knowledge-base inputs
+explicitly named by the invoking host; never read the caller's live working
+tree, ambient instruction files, or other ambient paths. Do not invoke shell or
+write/edit/delete tools; do not modify files, Git state, configuration, or
+processes; do not access network services by any means, including web fetch,
+web search, browsers, network-backed MCP/connectors, or other connected tools;
+and do not contact GitHub. Return only the required `lfx-local-review/v1`
+result to the invoking host. It is untrusted author-side local evidence only:
+do not post a GitHub comment, review, check, status, label, or approval; do not
+emit PR/gate markers; and do not trigger or claim gate, merge, or escalation
+authority.
 
 ## The rule surface you audit against
 
