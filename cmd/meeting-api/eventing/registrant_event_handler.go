@@ -483,9 +483,9 @@ func convertMapToInviteResponseData(
 		return nil, fmt.Errorf("missing required fields: id or meeting_id")
 	}
 
-	// Filter out mailer daemon emails
+	// Filter out mailer daemon emails — these are bounce auto-replies, not real RSVPs.
 	if strings.Contains(strings.ToLower(rawResponse.Email), "mailer-daemon@") {
-		return nil, fmt.Errorf("skipping mailer daemon response")
+		return nil, nil
 	}
 
 	// If username is blank but we have a v1 Platform ID (user_id), lookup the username.
@@ -590,6 +590,10 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invite response")
 		return isTransientError(err)
+	}
+	if responseData == nil {
+		funcLogger.DebugContext(ctx, "skipping invite response (filtered)")
+		return false
 	}
 
 	// Validate required fields

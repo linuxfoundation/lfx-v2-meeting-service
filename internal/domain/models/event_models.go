@@ -4,6 +4,9 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -59,6 +62,68 @@ type ZoomMeetingRecurrence struct {
 
 	// EndDateTime is the date and time in RFC3339 format that the recurrence pattern will end.
 	EndDateTime string `json:"end_date_time,omitempty"`
+}
+
+// UnmarshalJSON coerces int fields that may arrive as JSON strings from the NATS v1 data source.
+func (r *ZoomMeetingRecurrence) UnmarshalJSON(data []byte) error {
+	type Alias ZoomMeetingRecurrence
+	tmp := struct {
+		Type           interface{} `json:"type"`
+		RepeatInterval interface{} `json:"repeat_interval"`
+		MonthlyDay     interface{} `json:"monthly_day"`
+		MonthlyWeek    interface{} `json:"monthly_week"`
+		MonthlyWeekDay interface{} `json:"monthly_week_day"`
+		EndTimes       interface{} `json:"end_times"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.Type, tmp.Type, "type"); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.RepeatInterval, tmp.RepeatInterval, "repeat_interval"); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.MonthlyDay, tmp.MonthlyDay, "monthly_day"); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.MonthlyWeek, tmp.MonthlyWeek, "monthly_week"); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.MonthlyWeekDay, tmp.MonthlyWeekDay, "monthly_week_day"); err != nil {
+		return err
+	}
+	if err := coerceRecurrenceInt(&r.EndTimes, tmp.EndTimes, "end_times"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// coerceRecurrenceInt coerces a JSON-decoded interface{} into *dest, accepting string, float64, int, or nil.
+func coerceRecurrenceInt(dest *int, v interface{}, field string) error {
+	switch val := v.(type) {
+	case string:
+		if val == "" {
+			return nil
+		}
+		n, err := strconv.Atoi(val)
+		if err != nil {
+			return fmt.Errorf("invalid value for %s: %w", field, err)
+		}
+		*dest = n
+	case float64:
+		*dest = int(val)
+	case int:
+		*dest = val
+	case nil:
+		// leave dest unchanged
+	default:
+		return fmt.Errorf("invalid type for %s: %T", field, v)
+	}
+	return nil
 }
 
 // UpdatedOccurrence is the schema for an updated meeting occurrence
