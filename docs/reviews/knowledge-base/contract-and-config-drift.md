@@ -91,8 +91,8 @@ failure mode the fourth detect arm catches.
 
 **Rule:** An environment variable is a contract between the Helm chart and the Go
 code that reads it; changing one of those two arms without the other silently
-breaks configuration that still appears to work, and documentation naming that
-variable must be corrected in the same diff.
+breaks configuration that still appears to work, and repairing such a mismatch
+must also correct any documentation that names the variable.
 
 **Severity:** `high`
 
