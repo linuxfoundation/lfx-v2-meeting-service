@@ -113,3 +113,17 @@ jetstream/
 
 # Claude AI local files
 .claude/
+
+# Commit the repo-owned local-review skills while keeping other local Claude
+# state ignored. Each level has to be re-opened explicitly: git will not descend
+# into an excluded directory, so a leaf negation alone would never be consulted.
+!.claude/
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/meeting-service-code-reviewer/
+!.claude/skills/meeting-service-code-reviewer/**
+!.claude/skills/meeting-service-learnings-reviewer/
+!.claude/skills/meeting-service-learnings-reviewer/**
+!.claude/skills/local-code-review
+!.claude/skills/local-learnings-review

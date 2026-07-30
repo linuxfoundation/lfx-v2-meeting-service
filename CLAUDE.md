@@ -104,6 +104,44 @@ The service follows a clean architecture pattern with:
 - **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
 - Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.example.yaml charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
+## Local work cycle — post-commit and pre-PR review
+
+This repo runs a local cross-model code review before a PR exists. It is an
+author-side workflow only: it never touches GitHub, PRs, labels, statuses, or any
+merge gate.
+
+- **After every commit while still pre-PR**, run `/lfx-skills:lfx-local-review`.
+- **Before opening a PR**, run `/lfx-skills:lfx-local-review branch` for the
+  full-branch sweep, ahead of the pr-readiness and preflight steps.
+
+The skill runs three reviewers in parallel against a snapshot of the committed
+target — the central `general` brain plus this repo's two own brains, which live
+in-repo and are versioned with the code they describe:
+
+- `.claude/skills/meeting-service-code-reviewer/` — audits a patch against this
+  repo's written rule surface (`CLAUDE.md`, the FGA/indexer/event-processing/ITX
+  contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes
+  the rule it cites.
+- `.claude/skills/meeting-service-learnings-reviewer/` — matches a patch against
+  `references/knowledge-base/`, this repo's patterns mined from real past PR
+  review comments. Every finding quotes its knowledge-base entry.
+
+The generic `local-code-review` and `local-learnings-review` names beside them
+are symlinks; they exist so the launcher's discovery is deterministic, and both
+resolve to the two physical skills above. `.agents/skills/` links to the same
+files for non-Claude agents. There is exactly one copy of each brain.
+
+Consume the result in the foreground: the run lives and dies with the session,
+produces no report file, and retains nothing. Its only states are
+`COMPLETE_WITH_FINDINGS`, `COMPLETE_NO_FINDINGS`, and `INCOMPLETE`. **An
+`INCOMPLETE` run is not a passing run** — rerun the whole same harness rather
+than patching up one role. A run that fell back to Claude subagents because Pi
+was unavailable is honestly reported as such and is not cross-model evidence.
+
+The cycle **stops at PR open**. Once a PR exists, review is the PR-side
+Copilot surface's job (`.github/copilot-instructions.md` and
+`.github/skills/**`); nothing in the local cycle changes or feeds it.
+
 ## Development Guidelines
 
 ### Code Generation
