@@ -127,3 +127,13 @@ jetstream/
 !.claude/skills/meeting-service-learnings-reviewer/**
 !.claude/skills/local-code-review
 !.claude/skills/local-learnings-review
+
+# The recursive negations above re-include everything under those two skill
+# directories, which silently overrides the *.key / *.pem / .env rules earlier in
+# this file (later patterns win). Re-assert them here, last, so a credential
+# dropped into a skill directory stays ignored.
+.claude/skills/**/*.key
+.claude/skills/**/*.pem
+.claude/skills/**/*private.key*
+.claude/skills/**/.env
+.claude/skills/**/*.env

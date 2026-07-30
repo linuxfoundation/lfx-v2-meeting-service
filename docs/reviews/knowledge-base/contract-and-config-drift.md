@@ -25,8 +25,11 @@ in `cmd/meeting-api/eventing/**` or `internal/infrastructure/eventing/**` and ha
 no `docs/fga-contract.md` hunk. (2) The diff changes an indexer object, subject,
 schema or access-check relation (`internal/domain/models/event_models.go`,
 `internal/infrastructure/eventing/nats_publisher.go`) and has no
-`docs/indexer-contract.md` hunk and no `docs/event-processing.md` payload-example
-hunk. (3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`,
+`docs/indexer-contract.md` hunk. A `docs/event-processing.md` payload-example
+hunk does **not** substitute for it — the rule names the contract document, and
+the evidenced fix (`caf3897`) updated `docs/indexer-contract.md`. When the change
+also alters a documented payload example, both files must be updated.
+(3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`,
 `pkg/models/itx/**`, field injection in `internal/service/itx/**`) and has no
 matching `docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md`
 hunk.
@@ -107,13 +110,25 @@ lives in the detect and guard prose rather than in the quoted rule — do not
 
 **Severity:** `high`
 
-**Detect — chart↔code arm (the evidenced one).** Fully scriptable. Extract
-`- name: [A-Z0-9_]+` from `charts/**/templates/` and
-`os.Getenv\("([A-Z0-9_]+)"\)` from `**/*.go`; flag a non-empty symmetric
-difference **introduced by the diff** — a name the chart renders that no code
-reads, or a name code reads that the chart cannot set. Before reporting, check
-`cmd/meeting-api/config.go`: some variables are deliberately absent from the
-chart because their defaults are derived there.
+**Detect — chart↔code arm (the evidenced one).** Fully scriptable. Build the
+chart-side set from **both** places the chart names variables, then compare it
+against `os.Getenv\("([A-Z0-9_]+)"\)` extracted from `**/*.go`:
+
+1. Literals in the templates — `- name: [A-Z0-9_]+` under `charts/**/templates/`.
+   At `9cc00c9` this yields only the 11 `OTEL_*` names.
+2. **Keys under `app.environment` and `app.extraEnv` in `charts/**/values.yaml`**,
+   which `deployment.yaml:41-42` renders through
+   `{{- range $name, $config := .Values.app.environment }}` / `- name: {{ $name }}`.
+   This is where `LOG_LEVEL`, `JWKS_URL`, `JWT_AUDIENCE`, `LFX_ENVIRONMENT` and
+   the rest of the service's real configuration surface live.
+
+A literals-only extractor misses essentially every variable documented in
+`CLAUDE.md`'s Environment Variables section, so step 2 is not optional.
+
+Flag a non-empty symmetric difference **introduced by the diff** — a name the
+chart renders that no code reads, or a name code reads that the chart cannot set.
+Before reporting, check `cmd/meeting-api/config.go`: some variables are
+deliberately absent from the chart because their defaults are derived there.
 
 **Docs arm — not independently finding-bearing.** Documentation naming a
 variable (`README.md`, `docs/`) is checked **only when the same diff already
