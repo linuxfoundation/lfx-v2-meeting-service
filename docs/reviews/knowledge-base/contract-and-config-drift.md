@@ -90,9 +90,14 @@ failure mode the fourth detect arm catches.
 ## `env-var-contract-split-across-chart-code-docs`
 
 **Rule:** An environment variable is a contract between the Helm chart and the Go
-code that reads it; changing one of those two arms without the other silently
-breaks configuration that still appears to work, and repairing such a mismatch
-must also correct any documentation that names the variable.
+code that reads it; a diff that changes one of those two arms without the other
+silently breaks configuration that still appears to work.
+
+This sentence deliberately states only the chart↔code arm, because it is the
+text a finding quotes verbatim and it must assert nothing the detect condition
+below does not test. The documentation obligation is real but conditional, so it
+lives in the detect and guard prose rather than in the quoted rule — do not
+"restore" it here.
 
 **Severity:** `high`
 
