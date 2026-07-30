@@ -49,6 +49,21 @@ func TestMeetingDBRawUnmarshalAutoEmailReminderTimeInvalid(t *testing.T) {
 	}
 }
 
+// v1 sends updated_occurrences recurrence int fields as strings; RecurrenceDBRaw.UnmarshalJSON must coerce them.
+func TestMeetingDBRawUnmarshalUpdatedOccurrenceRecurrence(t *testing.T) {
+	input := `{"updated_occurrences":[{"recurrence":{"type":"2","repeat_interval":"1","monthly_week":"3","monthly_week_day":"5","end_times":"10"}}]}`
+	var m MeetingDBRaw
+	require.NoError(t, json.Unmarshal([]byte(input), &m))
+	require.Len(t, m.UpdatedOccurrences, 1)
+	rec := m.UpdatedOccurrences[0].Recurrence
+	require.NotNil(t, rec)
+	assert.Equal(t, 2, rec.Type)
+	assert.Equal(t, 1, rec.RepeatInterval)
+	assert.Equal(t, 3, rec.MonthlyWeek)
+	assert.Equal(t, 5, rec.MonthlyWeekDay)
+	assert.Equal(t, 10, rec.EndTimes)
+}
+
 // updated_occurrences duration coercion: unknown JSON types (bool, object) are now
 // rejected rather than silently coerced to zero. This is a deliberate tightening over
 // the original switch which had no default case.
