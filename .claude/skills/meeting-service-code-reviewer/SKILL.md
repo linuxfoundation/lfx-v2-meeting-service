@@ -203,9 +203,12 @@ used — every `utils.*Ptr` call in the meeting converters is inside a
 (`utils.BoolPtr`) or an omit-zero one (`utils.BoolPtrOmitFalse`,
 `utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`) according to what the proxy
 response contract promises the client. **Taking the address directly carries
-always-present semantics**, and is correct only where the contract wants that:
-`&resp.Field` is equivalent to `utils.BoolPtr(resp.Field)`, never to an
-omit-zero helper. The omit-zero helpers return `nil` at the zero value —
+always-present semantics**, and is correct only where the contract wants that.
+For a bool that makes it exactly `utils.BoolPtr(resp.Flag)`; for a string or an
+int it is the *only* always-present form, because `BoolPtr` is the sole
+always-present helper in `pkg/utils` and takes a `bool` — do not "convert"
+`&resp.Name` or `&resp.Duration` into it. What never holds, at any type, is
+equivalence to an omit-zero helper. Those return `nil` at the zero value —
 `BoolPtrOmitFalse(false)`, `StringPtrOmitEmpty("")` and `IntPtrOmitZero(0)` are
 all `nil` — so `&resp.Flag` emits a `false` the field's contract may not want
 emitted, and `&resp.Name` emits `""` where the contract may want the key
