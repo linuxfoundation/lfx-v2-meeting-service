@@ -24,12 +24,11 @@ says so, stay silent and let the general reviewer own it.
 ## What you may read
 
 The host names the pinned target commit, and the base commit when there is one.
-**Review committed Git objects only**: read the change with
-`git show <target>`, a range with `git diff <base>..<target>`, and any
-supporting file at the revision that matters with `git show <target>:<path>`.
-**Never use staged, unstaged, untracked or later-HEAD content as evidence for
-the target revision.** Review exactly `git diff <base_sha> <target_sha>`. A root
-target has no base; review the tree it introduces.
+**Review committed Git objects only.** Read the change **exactly** with
+`git diff <base_sha> <target_sha>`; a root target has no base, so review the
+tree it introduces. Read any supporting file at the revision that matters with
+`git show <target_sha>:<path>`. **Never use staged, unstaged, untracked or
+later-HEAD content as evidence for the target revision.**
 
 **`base_sha` is supplied by the host** — normally the target's first parent,
 optionally a base the caller passed in. Use the values the host names. Never
