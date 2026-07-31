@@ -38,6 +38,12 @@ is in scope, and then the finding is the logging or the span, not the return.
 `requestJSONForLog`/`responseJSONForLog`, without a `LogValue()` on the type, or
 — for spans — without being exactly `fmt.Errorf("HTTP %d", statusCode)`.
 
+**`LogValue()` satisfies a `slog` attribute and nothing else.** It governs `slog`
+serialization only; it does not redact a value passed to
+`span.RecordError`/`span.SetStatus` or built into an error message. Do not accept
+it as a guard outside a `slog` attribute — spans need the status-only form, and
+an error that is logged needs explicit redaction.
+
 An `fmt.Errorf`/`fmt.Sprintf`/`domain.New*Error` message counts **only when that
 error value is then logged or recorded on a span** without redaction. An error
 constructed and returned to the caller is not a match on its own.
@@ -73,7 +79,7 @@ caller; only the telemetry is reduced to a status.
 - `internal/infrastructure/proxy/logredact.go` — `requestJSONForLog` (6 call
   sites), `responseJSONForLog` (12), and
   `auditFieldsForResponseRedaction = [created_by, updated_by, modified_by, file_uploaded_by]`.
-- `LogValue() slog.Value` on `itx.User`.
+- `LogValue() slog.Value` on `itx.User` — satisfies `slog` attributes only.
 - For spans: exactly `fmt.Errorf("HTTP %d", statusCode)`.
 - The whole `internal/infrastructure/transport/` package was deleted as part of
   this work.

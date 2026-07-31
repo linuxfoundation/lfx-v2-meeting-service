@@ -38,7 +38,14 @@ producing phase in the same entrypoint** (`_update_by_query`, `_delete_by_query`
 KV `Delete`/`Purge`, a field-removal, or a soft-delete write) reachable without
 (a) a check that the producing phase's `failed` **and** `skipped` counters are
 both zero, and (b) — when the producer used core-NATS `nc.Publish` — an
-intervening `nc.Flush`, `nc.FlushTimeout` or `nc.Drain`.
+intervening **barrier that is error-checked and actually completed**.
+
+**A bare barrier call is not a guard.** `nc.Flush` and `nc.FlushTimeout` return an
+error, and an ignored one lets the script destroy while publishes are still
+unconfirmed — so the barrier must abort the run before the destructive step when
+it fails. `nc.Drain` is **asynchronous**: it returns immediately and the
+connection closes later, so a bare `nc.Drain()` proves nothing on its own and
+counts only when the script waits for the drain to complete before destroying.
 
 **The producing phase is a prerequisite, not an assumption.** This pattern is
 about a destructive step outrunning work it depends on. A standalone delete,
@@ -72,8 +79,9 @@ producing phase. It is recorded here only so it is not re-cited; this pattern
 rests on the `#224` evidence above.
 
 **Guards that satisfy it:** a combined `failed`/`skipped` zero check before the
-destructive step, plus `nc.FlushTimeout`/`nc.Flush`/`nc.Drain` when the producer
-used core NATS. **A revision or tombstone precondition on the write does not
+destructive step, plus — when the producer used core NATS — an **error-checked**
+`nc.FlushTimeout`/`nc.Flush` that aborts on failure, or a `nc.Drain` the script
+waits out to completion. **A revision or tombstone precondition on the write does not
 satisfy this pattern** — it gates *what* is written, not whether the producing
 work completed, so a publish-then-delete script would otherwise bypass the
 outcome check and the flush.
