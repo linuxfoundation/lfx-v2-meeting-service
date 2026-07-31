@@ -28,10 +28,12 @@ The host names the pinned target commit, and the base commit when there is one.
 `git show <target>`, a range with `git diff <base>..<target>`, and any
 supporting file at the revision that matters with `git show <target>:<path>`.
 **Never use staged, unstaged, untracked or later-HEAD content as evidence for
-the target revision.** In branch mode the host has already run a single
-`git fetch origin`, pinned the origin tip and computed the merge-base before
-launching you — use the values it names rather than fetching or resolving your
-own.
+the target revision.** Review exactly `git diff <base_sha> <target_sha>`. A root
+target has no base; review the tree it introduces.
+
+**`base_sha` is supplied by the host** — normally the target's first parent,
+optionally a base the caller passed in. Use the values the host names. Never
+fetch, never resolve a remote ref, and never derive a base of your own.
 
 **Git evidence stays pinned, and so does check evidence.** Run a working-tree
 check only while the checkout still represents the pinned target closely enough

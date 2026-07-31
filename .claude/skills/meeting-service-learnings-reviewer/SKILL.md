@@ -58,10 +58,12 @@ The host names the pinned target commit, and the base commit when there is one.
 `git show <target>`, a range with `git diff <base>..<target>`, and any
 supporting file at the revision that matters with `git show <target>:<path>`.
 **Never use staged, unstaged, untracked or later-HEAD content as evidence for
-the target revision.** In branch mode the host has already run a single
-`git fetch origin`, pinned the origin tip and computed the merge-base before
-launching you — use the values it names rather than fetching or resolving your
-own.
+the target revision.** Review exactly `git diff <base_sha> <target_sha>`. A root
+target has no base; review the tree it introduces.
+
+**`base_sha` is supplied by the host** — normally the target's first parent,
+optionally a base the caller passed in. Use the values the host names. Never
+fetch, never resolve a remote ref, and never derive a base of your own.
 
 **Git evidence stays pinned, and so does check evidence.** Run a working-tree
 check only while the checkout still represents the pinned target closely enough
@@ -166,30 +168,24 @@ byte-diff floor entries against each other:
 
 **When a newly added waiver starts applying** — recorded precisely so nobody
 reads the delay as a defect and "fixes" it, and nobody mistakes the later case
-for a loophole. The single rule is **a waiver cannot suppress anything in a range
-whose base predates it**; because the base differs by mode — the first parent
-post-commit, the merge-base in branch mode — that one rule lands differently on
-different ranges:
+for a loophole. The rule is **a waiver cannot suppress anything in a range whose
+supplied base does not already carry it**:
 
-- **It suppresses nothing where the base predates it.** That covers the commit
-  that adds the waiver, whose first parent lacks it, and the final cumulative
-  branch sweep, whose merge-base predates the whole branch. This is the property
-  that matters: **the cumulative branch range can never approve itself.**
-- **It can apply to a later post-commit review whose first parent already
-  contains it** — no merge required — **but only if that delta's target still
-  carries semantically matching coverage too.** The intersection rule above is
-  not suspended here: a later commit that deletes or narrows the waiver has it at
-  the base and not at the target, so it suppresses nothing, which is exactly the
-  withdrawal case. Where both revisions do carry it, suppressing is correct
-  rather than a leak: relative to that delta the waiver is pre-existing and is
-  suppressing a finding about **a change other than the one that introduced it**.
-  It still suppresses nothing in the cumulative branch range.
-- **After merge**, a later branch that carries the waiver at both its merge-base
-  and its target applies it normally. A branch that removes it does not — the
-  same intersection test, not an exemption earned by merging.
+- **A change can never waive a finding about itself.** The commit that adds
+  waiver coverage does not carry it at its base, so it suppresses nothing in that
+  range.
+- **A waiver can apply to a later range whose supplied base already carries it**
+  — **but only if that range's target still carries semantically matching
+  coverage too.** The intersection rule above is not suspended here: a range that
+  deletes or narrows the waiver has it at the base and not at the target, so it
+  suppresses nothing, which is exactly the withdrawal case. Where both revisions
+  carry it, suppressing is correct rather than a leak: relative to that range the
+  waiver is pre-existing and is suppressing a finding about **a change other than
+  the one that introduced it**.
 
-Never compress this into "it applies only after merge" — the second case
-disagrees, before any merge.
+Both cases are the same two-floor test, applied to whatever base the host
+supplied. There is no separate timing rule to learn and no point at which a
+waiver becomes exempt from the intersection.
 
 This applies to the floor only. **Ordinary KB pattern entries are still read at
 the target revision alone**; the two-revision rule is not a general principle to

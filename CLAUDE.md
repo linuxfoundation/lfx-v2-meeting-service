@@ -114,13 +114,16 @@ to GitHub, opens or gates a PR, or touches a merge check.
   `/lfx-skills:lfx-local-review`. It runs the `general`, `repo_code` and
   `repo_learnings` reviewers in parallel against the committed target and returns
   **ordinary Markdown** reports.
+- **It reviews the newest commit only.** The default range is `HEAD^..HEAD` —
+  the diff that commit introduced against its first parent. A caller may supply a
+  direct base range parameter instead; the reviewers use whatever base the host
+  supplies and never derive one themselves.
 - **Read the reports in this session and address the findings yourself.** The
   reviewers never edit code. Fixes are normal signed conventional commits —
   `fix(<scope>): …` or `fix: …` as appropriate — after which you **rerun the
   complete trio**.
-- **Before opening a PR**, drain the reviews, then run
-  `/lfx-skills:lfx-local-review branch` for the full-branch sweep, then the
-  repo's normal readiness and preflight checks.
+- **Before opening a PR**, drain the reviews, then run the repo's normal
+  readiness and preflight checks.
 
 The trio is the central `general` brain plus this repo's two own brains, which
 live in-repo and are versioned with the code they describe:
