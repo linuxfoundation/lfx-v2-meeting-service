@@ -111,7 +111,9 @@ your Markdown review to the invoking host.**
    `nc.FlushTimeout`); if the change uses it, the pattern does not fire.
 5. **Apply the false-positive floor last**, after everything else. It is a
    floor: a candidate it names is dropped even when a pattern's detect condition
-   fired. **Read it at the base revision** — see below.
+   fired. **Read and classify it independently at both revisions — the base and
+   the target — and drop a candidate only when both floors waive it** — see
+   below.
 6. Emit only what survives, at confidence 80 or above.
 
 ### The false-positive floor is the intersection of two revisions
