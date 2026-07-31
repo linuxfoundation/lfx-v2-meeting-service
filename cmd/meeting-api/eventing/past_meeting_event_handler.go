@@ -556,7 +556,11 @@ func getCommitteesForPastMeeting(
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
-				logger.With(logging.ErrKey, err).InfoContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				if domain.GetErrorType(err) != domain.ErrorTypeValidation {
+					logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				} else {
+					logger.With(logging.ErrKey, err).InfoContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				}
 				continue
 			}
 
