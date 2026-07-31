@@ -5,11 +5,11 @@ package eventing
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -20,11 +20,15 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-// encodeParticipantUsername encodes an LFSSO username (typically an email address containing @)
-// into a NATS JetStream KV-safe string using raw URL base64 (RFC 4648 §5, no padding).
-// NATS keys allow only [-\w/.>*]; @ and other special chars are invalid.
+// encodeParticipantUsername encodes an LFSSO username for use as a NATS JetStream KV key segment.
+// NATS keys allow only [-a-zA-Z0-9_.]; @ and + are invalid (the latter appears in email aliases).
+// Characters that are already NATS-safe are passed through unchanged, so the common case
+// (e.g. "john.doe") produces an identical string and is backward-compatible with existing KV entries.
+// Only @ and + are replaced with _at_ and _pl_ respectively.
 func encodeParticipantUsername(username string) string {
-	return base64.RawURLEncoding.EncodeToString([]byte(username))
+	s := strings.ReplaceAll(username, "@", "_at_")
+	s = strings.ReplaceAll(s, "+", "_pl_")
+	return s
 }
 
 // =============================================================================
