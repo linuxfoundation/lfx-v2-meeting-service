@@ -162,23 +162,27 @@ byte-diff floor entries against each other:
   **Does not suppress.** The waiver is being withdrawn; findings it used to cover
   are live again.
 
-**The accepted consequence**, stated plainly so nobody "fixes" it back: a newly
-added waiver does not take effect for suppression in the range that adds it. When
-it *does* begin to suppress depends on the range being reviewed, and there is no
-single answer — work it out from the two floors each time:
+**When a newly added waiver starts applying** — recorded precisely so nobody
+reads the delay as a defect and "fixes" it, and nobody mistakes the later case
+for a loophole. The single rule is **a waiver cannot suppress anything in a range
+whose base predates it**; because the base differs by mode — the first parent
+post-commit, the merge-base in branch mode — that one rule lands differently on
+different ranges:
 
-- **The range that adds the waiver** — base lacks it, target has it. It
-  suppresses nothing in this review.
-- **A later post-commit delta on this same branch** — that delta's parent already
-  carries the waiver, so base and target both have it. Here it **does** suppress
-  a covered candidate, with no merge required.
-- **The final cumulative branch sweep** — the merge-base predates the
-  branch-added waiver, so base lacks it while target has it. It **still**
-  suppresses nothing anywhere in the cumulative branch range.
+- **It suppresses nothing where the base predates it.** That covers the commit
+  that adds the waiver, whose first parent lacks it, and the final cumulative
+  branch sweep, whose merge-base predates the whole branch. This is the property
+  that matters: **the cumulative branch range can never approve itself.**
+- **It does apply to a later post-commit review whose first parent already
+  contains it** — no merge required. That is correct rather than a leak:
+  relative to that delta the waiver is pre-existing, both revisions carry it, and
+  it is suppressing a finding about **a change other than the one that
+  introduced it**. It still suppresses nothing in the cumulative branch range.
+- **After merge**, future branches inherit it at both revisions and it applies
+  normally.
 
-Never compress this into "it applies to the rest of the PR" or "it applies only
-after merge". Both are false: the second and third cases above disagree with each
-other while the branch is still open.
+Never compress this into "it applies only after merge" — the second case
+disagrees, before any merge.
 
 This applies to the floor only. **Ordinary KB pattern entries are still read at
 the target revision alone**; the two-revision rule is not a general principle to
