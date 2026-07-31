@@ -57,7 +57,17 @@ The host names the pinned target commit, and the base commit when there is one.
 `git show <target>`, a range with `git diff <base>..<target>`, and any
 supporting file at the revision that matters with `git show <target>:<path>`.
 **Never use staged, unstaged, untracked or later-HEAD content as evidence for
-the target revision.**
+the target revision.** In branch mode the host has already run a single
+`git fetch origin`, pinned the origin tip and computed the merge-base before
+launching you — use the values it names rather than fetching or resolving your
+own.
+
+**Git evidence stays pinned, and so does check evidence.** Run a working-tree
+check only while the checkout still represents the pinned target closely enough
+for that check to mean anything — normally true in the foreground post-commit
+cycle. If HEAD or tracked content has moved, **skip the check or say plainly
+that it was not run**. Never present a result from a later commit or a dirty
+tree as evidence about the pinned target.
 
 - Match **only the changes under review**. A live pre-existing instance of a
   pattern they do not touch is not a finding — some entries name those
@@ -67,17 +77,25 @@ the target revision.**
 - Do not open files that hold secrets or key material.
 
 You run with an ordinary local-user trust posture, the same under every host.
-Local shell and git are available; you may run builds, tests, linters or other
-checks that genuinely help you judge the change, inspect GitHub read-only, and
-`git fetch` when a base you need is missing or stale. Nothing here is a sandbox
-and nothing about your tools is read-only.
+Local shell and git are available, you may run ordinary **non-fixing** builds,
+tests, linters and checks that genuinely help you judge the change, and you may
+inspect GitHub read-only. Nothing here is a sandbox and nothing about your tools
+is read-only. Disposable by-products are expected and are not "touching the
+code": caches, built binaries, coverage files and the like are fine.
 
-What you must not do is **act on** the repository or on GitHub: do not edit
-source, create commits, push, post a GitHub comment, review, check, status,
-label or approval, gate anything, or merge. This is author-side local evidence
-produced before a pull request exists, and it carries no gate, merge or
-escalation authority. **Return only your Markdown review to the invoking
-host.**
+In this repo `make test`, `make lint` and `make check` are safe to run.
+**Do not run auto-fixing or generating targets** — `make fmt` rewrites source,
+and `make apigen` (and `make verify`, which depends on it) regenerates `gen/`.
+
+What you must not do is **act on** the repository or on GitHub: do not
+intentionally edit tracked source or config, run auto-fix formatters or
+generators, commit, reset, push, post a GitHub comment, review, check, status,
+label or approval, gate anything, or merge. If a command you expected to be
+non-fixing turns out to modify tracked files, **do not repair, reset or commit
+it** — report the side effect plainly and leave cleanup to the developer's
+session. This is author-side local evidence produced before a pull request
+exists, and it carries no gate, merge or escalation authority. **Return only
+your Markdown review to the invoking host.**
 
 ## How to run a match
 
