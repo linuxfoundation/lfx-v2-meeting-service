@@ -111,7 +111,7 @@ your Markdown review to the invoking host.**
    (`isTransientError`, `redaction.Redact`, `requestJSONForLog`,
    `nc.FlushTimeout`); if the change uses it, the pattern does not fire.
 5. **Apply the false-positive floor last**, after everything else. It is a
-   floor: a candidate it names is dropped even when a pattern's detect condition
+   floor: a candidate it waives is dropped even when a pattern's detect condition
    fired. **Read and classify it independently at both revisions — the base and
    the target — and drop a candidate only when both floors waive it** — see
    below.
@@ -201,7 +201,9 @@ milder, in which case go lower — never higher than the entry states.
 ## What never becomes a finding
 
 - Anything with no KB entry behind it. That is the whole discipline of this role.
-- Anything the known-false-positives floor names.
+- Anything the known-false-positives floor waives at **both** the supplied base
+  and target revisions. Coverage present at only one revision does not suppress —
+  see the intersection rule above.
 - A repo convention or contract rule with no KB entry — the `repo_code` reviewer
   owns the written rule surface.
 - General correctness, security or performance reasoning — the `general`

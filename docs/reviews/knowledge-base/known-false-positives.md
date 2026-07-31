@@ -3,10 +3,16 @@
 
 # Known false positives — the floor
 
-**Apply this file last, after every other match.** A candidate named here is
-dropped even when a pattern's detect condition fired. These are not "lower
+**Apply this file last, after every other match.** These are not "lower
 priority" — they are findings this repository's own history shows to be wrong,
 already enforced elsewhere, or reliably ignored.
+
+**This file is one revision's classification, not the suppression decision.** A
+reviewer reads it at the supplied base *and* target revisions and drops a
+candidate only when **both** waive it. Coverage present at only one revision does
+not suppress — that is what stops a change from waiving a finding about itself,
+and what keeps a withdrawn waiver from still suppressing. An entry here means
+"this revision waives it", not "this candidate is dropped".
 
 Each entry records why, so the decision can be re-audited rather than re-argued.
 
