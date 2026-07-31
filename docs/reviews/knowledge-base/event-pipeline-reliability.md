@@ -4,9 +4,12 @@
 # Event pipeline reliability
 
 Three patterns from the v1→v2 KV event pipeline, all mined from PR `#218` and
-its follow-ups. They share one consequence: a transient infrastructure failure
-is converted into **permanent** data loss, because the handler destroys the only
-record it would have needed to recover.
+its follow-ups. All three end in **permanent** data loss because the handler
+destroys the only record it would have needed to recover, but they do not share
+a trigger. The first two convert a *transient infrastructure failure* into that
+loss; `unsafe-mapping-value-encoding` needs no outage at all — it corrupts
+deterministically, through delimiter collision and Go/Python representation
+drift.
 
 PR `#218` is titled *"fix: remove stale FGA access when registrant username is
 cleared on update"*. These findings are what stopped that fix from being
@@ -77,7 +80,8 @@ that the failed step was the only record of.
 **Severity:** `Important`
 
 **Detect:** In a handler returning `(retry bool)`, a failed
-`h.publisher.Publish*` or `h.v1MappingsKV.Put` is logged without
+`h.publisher.Publish*` or **any state-destroying KV write** — `h.v1MappingsKV.Put`
+and the participant tombstone `Put` calls among them — is logged without
 `return isTransientError(err)` or `return true`, **and** a later statement in the
 same function overwrites the mapping, xref or tombstone that the failed step was
 the only record of — so `cmd/meeting-api/eventing/event_processor.go` ACKs the
