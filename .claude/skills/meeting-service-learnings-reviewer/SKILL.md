@@ -173,13 +173,18 @@ different ranges:
   that adds the waiver, whose first parent lacks it, and the final cumulative
   branch sweep, whose merge-base predates the whole branch. This is the property
   that matters: **the cumulative branch range can never approve itself.**
-- **It does apply to a later post-commit review whose first parent already
-  contains it** — no merge required. That is correct rather than a leak:
-  relative to that delta the waiver is pre-existing, both revisions carry it, and
-  it is suppressing a finding about **a change other than the one that
-  introduced it**. It still suppresses nothing in the cumulative branch range.
-- **After merge**, future branches inherit it at both revisions and it applies
-  normally.
+- **It can apply to a later post-commit review whose first parent already
+  contains it** — no merge required — **but only if that delta's target still
+  carries semantically matching coverage too.** The intersection rule above is
+  not suspended here: a later commit that deletes or narrows the waiver has it at
+  the base and not at the target, so it suppresses nothing, which is exactly the
+  withdrawal case. Where both revisions do carry it, suppressing is correct
+  rather than a leak: relative to that delta the waiver is pre-existing and is
+  suppressing a finding about **a change other than the one that introduced it**.
+  It still suppresses nothing in the cumulative branch range.
+- **After merge**, a later branch that carries the waiver at both its merge-base
+  and its target applies it normally. A branch that removes it does not — the
+  same intersection test, not an exemption earned by merging.
 
 Never compress this into "it applies only after merge" — the second case
 disagrees, before any merge.
