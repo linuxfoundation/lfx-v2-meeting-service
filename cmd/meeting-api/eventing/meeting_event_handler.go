@@ -835,7 +835,7 @@ func getCommitteesForMeeting(
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
-				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
+				logger.With(logging.ErrKey, err).InfoContext(ctx, "failed to map committee ID", "v1_id", committeeID)
 				continue
 			}
 
@@ -871,7 +871,7 @@ func resolveParentMeetingCommittees(
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map primary committee ID for parent meeting (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "primary committee mapping not found for parent meeting", "v1_id", primaryCommitteeSFID)
+			logger.With(logging.ErrKey, mapErr).InfoContext(ctx, "primary committee mapping not found for parent meeting", "v1_id", primaryCommitteeSFID)
 		} else if uid != "" {
 			committees = []models.Committee{{UID: uid}}
 		}

@@ -318,7 +318,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		return true
 	}
 	if projSFID == "" {
-		funcLogger.WarnContext(ctx, "skipping attachment: parent past meeting not found or has no project")
+		funcLogger.InfoContext(ctx, "skipping attachment: parent past meeting not found or has no project")
 		return false
 	}
 	attachmentData.ProjectSlug = projectSlug

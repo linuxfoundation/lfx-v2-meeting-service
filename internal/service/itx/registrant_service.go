@@ -55,7 +55,7 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 	if resp.CommitteeID != "" {
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
-			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
+			slog.InfoContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
 				"v1_id", resp.CommitteeID, "err", err)
 			resp.CommitteeID = ""
 		} else {
@@ -78,7 +78,7 @@ func (s *RegistrantService) GetRegistrant(ctx context.Context, meetingID, regist
 	if resp.CommitteeID != "" {
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
-			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
+			slog.InfoContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
 				"v1_id", resp.CommitteeID, "err", err)
 			resp.CommitteeID = ""
 		} else {

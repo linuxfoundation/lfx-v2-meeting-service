@@ -862,7 +862,7 @@ func convertMapToInviteeParticipantData(
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
+			logger.With(logging.ErrKey, mapErr).InfoContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
 		} else {
 			committeeUID = uid
 		}
@@ -990,7 +990,7 @@ func convertMapToAttendeeParticipantData(
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
+			logger.With(logging.ErrKey, mapErr).InfoContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
 		} else {
 			committeeUID = uid
 		}
