@@ -30,9 +30,12 @@ hunk does **not** substitute for it — the rule names the contract document, an
 the evidenced fix (`caf3897`) updated `docs/indexer-contract.md`. When the change
 also alters a documented payload example, both files must be updated.
 (3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`,
-`pkg/models/itx/**`, field injection in `internal/service/itx/**`) and has no
-matching `docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md`
-hunk.
+`pkg/models/itx/**`, field injection in `internal/service/itx/**`, or
+`cmd/meeting-api/service/itx_*_converters.go`) and has no matching
+`docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md` hunk. The
+converters belong in that list because they map Goa payloads directly into ITX
+requests: starting or stopping populating an already-defined field there changes
+the wire contract without touching any of the other three surfaces.
 
 **Detect — variant arm (4), dependent:** shares the **trigger** of arms 1–3 — a
 diff that changes published or exposed shape — and covers the case those arms do
@@ -122,17 +125,31 @@ the service chart is not meant to render. Including either produces phantom
 
 1. Literals in the templates — `- name: [A-Z0-9_]+` under `charts/**/templates/`.
    At `9cc00c9` this yields only the 11 `OTEL_*` names.
-2. **Keys under `app.environment` and `app.extraEnv` in `charts/**/values.yaml`**,
-   which `deployment.yaml:41-42` renders through
+2. **Keys under `app.environment` in `charts/**/values.yaml`**, which
+   `deployment.yaml:41-42` renders through
    `{{- range $name, $config := .Values.app.environment }}` / `- name: {{ $name }}`.
    This is where `LOG_LEVEL`, `JWKS_URL`, `JWT_AUDIENCE`, `LFX_ENVIRONMENT` and
    the rest of the service's real configuration surface live.
+
+   **`app.extraEnv` is not a key source and must not be extracted as one.** It
+   defaults to `[]` and `deployment.yaml:50-52` injects it verbatim with
+   `{{- toYaml . }}`. It is a **wildcard escape hatch**: an operator can set any
+   variable through it without that name appearing anywhere in `values.yaml`.
 
 A literals-only extractor misses essentially every variable documented in
 `CLAUDE.md`'s Environment Variables section, so step 2 is not optional.
 
 Flag a non-empty symmetric difference **introduced by the diff** — a name the
-chart renders that no code reads, or a name code reads that the chart cannot set.
+chart renders that no code reads, or a name code reads that has **no dedicated
+chart knob and no documentation**.
+
+**Never phrase the second half as "the chart cannot set it".** Because
+`app.extraEnv` is a wildcard, that claim is false for every variable: any name
+can be set through the chart. The defect is the missing first-class setting and
+the missing documentation, which is a real maintainability problem — not an
+impossibility. A finding that asserts impossibility is wrong on its face and
+will be rejected.
+
 Before reporting, check `cmd/meeting-api/config.go`: some variables are
 deliberately absent from the chart because their defaults are derived there.
 

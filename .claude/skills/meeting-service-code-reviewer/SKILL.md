@@ -127,9 +127,13 @@ When the doc *is* updated, check the summary/subject and Triggers tables too,
 not only the detail section: a detail-only update leaves the doc internally
 inconsistent.
 
-For a client-visible or ITX-outbound shape change (`design/`,
-`pkg/models/itx/**`, field injection in `internal/service/itx/**`), the matching
-source is the relevant `docs/api-contracts/itx-*.md`.
+For a client-visible or ITX-outbound shape change, the matching source is the
+relevant `docs/api-contracts/itx-*.md`. The surfaces that carry such a change are
+`design/`, `pkg/models/itx/**`, field injection in `internal/service/itx/**`,
+**and `cmd/meeting-api/service/itx_*_converters.go`** — the converters map Goa
+payloads straight into ITX requests, so starting or stopping populating an
+already-defined field there alters the wire contract without touching any of the
+other three.
 
 ### 2. The KV error classification is a documented contract
 
@@ -162,13 +166,29 @@ corresponding regenerated `gen/` edit in the same change: `make verify` asserts
 
 ### 4. ITX converters use the pointer helpers with their stated semantics
 
-`CLAUDE.md` — *"**Important**: Always use appropriate pointer conversion helpers
-(`ptrIfNotZero` for ints, `ptrIfNotEmpty` for strings, `ptrIfTrue` for bools)."*
+`CLAUDE.md` — *"**Important**: Always use appropriate pointer conversion
+helpers"*. The obligation is current; **the helper names in that sentence are
+not**. `CLAUDE.md` and `docs/itx-proxy-implementation.md` still name
+`ptrIfNotZero` / `ptrIfNotEmpty` / `ptrIfTrue`, and **no such symbol exists in
+this repo**. The real helpers live in `pkg/utils/ptr.go`:
+
+| Helper | Semantics |
+|---|---|
+| `utils.StringPtrOmitEmpty` | pointer unless the string is empty |
+| `utils.IntPtrOmitZero`, `utils.Int64PtrOmitZero` | pointer unless the value is zero |
+| `utils.BoolPtr` | **always** a pointer, so a deliberate `false` survives |
+| `utils.BoolPtrOmitFalse` | pointer only when true |
+
+**Never raise a finding that demands a `ptrIf*` name** — that would ask for code
+that cannot compile. Cite the obligation, then name the helper the field
+actually needs from the table above.
 
 The ITX wire models are lossy: non-pointer fields with `omitempty` drop a
 deliberate zero, empty string or `false`. A new converter field that takes the
-address of a value directly, or uses a helper whose name does not match the
-semantics the field needs, can silently clear or fail to clear a value in ITX.
+address of a value directly, or uses a helper whose semantics do not match the
+field, can silently clear or fail to clear a value in ITX. The
+`utils.BoolPtr` versus `utils.BoolPtrOmitFalse` choice is the one that most
+often matters: a field that must be able to send `false` needs the former.
 Check the field against the relevant `docs/api-contracts/itx-*.md` schema.
 
 ### 5. Errors carry the repo's semantic classification
@@ -192,10 +212,16 @@ sets them. Quote the specific documented variable line you are citing.
 
 A change that adds, renames or removes a variable in one of the three arms
 without the others is a finding — a chart that renders a name no code reads, or
-code reading a name the chart cannot set and the docs do not mention. Some
-variables are deliberately absent from the chart because
-`cmd/meeting-api/config.go` derives their defaults; check there before calling
-an unplumbed variable a finding.
+code reading a name that has **no dedicated chart knob** and is undocumented.
+
+**Do not claim the chart "cannot set" a variable.** `values.yaml` exposes
+`app.extraEnv` as an arbitrary list and `templates/deployment.yaml` injects it
+verbatim with `toYaml`, so **any** name can be set through the chart without
+appearing in the default values. The finding is the missing first-class chart
+setting and the missing documentation, not an impossibility. Some variables are
+also deliberately absent from the chart because `cmd/meeting-api/config.go`
+derives their defaults; check there before calling an unplumbed variable a
+finding.
 
 ### 7. ID mapping degrades to pass-through
 
