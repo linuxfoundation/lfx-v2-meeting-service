@@ -132,7 +132,16 @@ relevant `docs/api-contracts/itx-*.md`. **Judge this structurally, not by a path
 list**: the rule fires wherever an `itx.*Request` literal is constructed or
 populated, an `itx.*` model field is assigned, or a client-visible response is
 built — a change that starts or stops populating an already-defined field alters
-the wire contract regardless of which file it sits in. Known sites, as
+the wire contract regardless of which file it sits in.
+
+**Structural is not "any mention of an `itx.*` type".** The construction or
+assignment must actually flow into the outbound proxy serialization or into a
+client-visible response encoding. Constructions that never reach the wire are
+**not** findings: test fixtures building `itx.*Request` values, and the
+logging/redaction copies in `internal/infrastructure/proxy/logredact.go`, which
+clone a request and blank fields solely so the clone can be logged. If you
+cannot trace the changed field to a request the client actually sends or a
+response it actually receives, do not raise it. Known sites, as
 **examples rather than an exhaustive set**: `design/`, `pkg/models/itx/**`,
 `internal/service/itx/**`, `cmd/meeting-api/service/itx_*_converters.go`, and
 API handlers that build requests inline such as
@@ -193,9 +202,15 @@ used — every `utils.*Ptr` call in the meeting converters is inside a
 `ConvertITX…ToGoa` function. Choose an always-present pointer
 (`utils.BoolPtr`) or an omit-zero one (`utils.BoolPtrOmitFalse`,
 `utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`) according to what the proxy
-response contract promises the client. **Taking the address directly is not a
-defect here**: `&resp.Field` and `utils.BoolPtr(resp.Field)` both preserve a
-`false`. Do not flag direct address-taking in this direction.
+response contract promises the client. **Taking the address directly carries
+always-present semantics**, and is correct only where the contract wants that:
+`&resp.Field` is equivalent to `utils.BoolPtr(resp.Field)`, never to an
+omit-zero helper. The omit-zero helpers return `nil` at the zero value —
+`BoolPtrOmitFalse(false)`, `StringPtrOmitEmpty("")` and `IntPtrOmitZero(0)` are
+all `nil` — so `&resp.Flag` emits a `false` the field's contract may not want
+emitted, and `&resp.Name` emits `""` where the contract may want the key
+omitted. Judge address-taking against that one field's contract, exactly as you
+judge a helper choice; do not treat it as always fine or always wrong.
 
 **Goa → ITX (outbound serialization).** The loss condition lives in the **ITX
 model field type and JSON tag**, not in the helper. A non-pointer field with

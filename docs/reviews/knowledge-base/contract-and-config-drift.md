@@ -35,7 +35,16 @@ also alters a documented payload example, both files must be updated.
 `itx.*Request` literal is constructed or populated, an `itx.*` model field is
 assigned, or a client-visible response is built — because a change that starts or
 stops populating an already-defined field alters the wire contract regardless of
-which file it sits in. Known sites, as **examples not an exhaustive set**:
+which file it sits in.
+
+**Structural is not "any mention of an `itx.*` type."** The construction or
+assignment must flow into the outbound proxy serialization or a client-visible
+response encoding. Excluded, because they never reach the wire: test fixtures
+constructing `itx.*Request` values, and the logging/redaction copies in
+`internal/infrastructure/proxy/logredact.go`, which clone a request and blank
+fields solely so the clone can be logged. Untraceable to a sent request or a
+returned response means no finding. Known sites, as
+**examples not an exhaustive set**:
 `design/*.go`, `pkg/models/itx/**`, `internal/service/itx/**`,
 `cmd/meeting-api/service/itx_*_converters.go`, and API handlers that build
 requests inline such as `cmd/meeting-api/api_itx_meetings.go`. A path-list
@@ -110,11 +119,15 @@ code that reads it; a diff that changes one arm without the other leaves either 
 chart rendering a name no code reads, or a variable the service depends on with
 no first-class chart setting and no documentation.
 
-This sentence deliberately states only the chart↔code arm, because it is the
-text a finding quotes verbatim and it must assert nothing the detect condition
-below does not test. The documentation obligation is real but conditional, so it
-lives in the detect and guard prose rather than in the quoted rule — do not
-"restore" it here.
+The documentation clause in that sentence is **conditional and one-directional**,
+and it is written that way on purpose: it qualifies only the second limb ("a
+variable the service depends on with **no first-class chart setting and no
+documentation**"), matching the directed detector at the `codeNames −
+dedicatedChartNames − documentedNames` check below. It is not a general
+obligation to document every variable, and it does not attach to the
+`chartNames − codeNames` direction at all. Do not broaden it into an
+unconditional documentation requirement, and do not strip it back out — either
+edit puts the quotable Rule out of step with what the detect actually tests.
 
 **Severity:** `Important` — for the `chart − code` direction because dead
 configuration surface misleads operators, and for the `code − chart` direction
