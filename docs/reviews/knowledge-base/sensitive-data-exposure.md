@@ -32,17 +32,24 @@ is in scope, and then the finding is the logging or the span, not the return.
 **Severity:** `Important`
 
 **Detect:** An email, SFID, username, `host_key`, raw `respBody`, `*url.Error`,
-`itx.User` or `itx.CreatedUpdatedBy` value reaching a `slog` attribute
-(including via `logging.ErrKey`) or `span.RecordError`/`span.SetStatus`, without
-`redaction.Redact` or `redaction.RedactEmail`, without
-`requestJSONForLog`/`responseJSONForLog`, without a `LogValue()` on the type, or
-— for spans — without being exactly `fmt.Errorf("HTTP %d", statusCode)`.
+`itx.User` or `itx.CreatedUpdatedBy` value reaching one of two sinks. **The two
+sinks have different guard sets and must be evaluated separately** — a guard
+listed under one never satisfies the other:
 
-**`LogValue()` satisfies a `slog` attribute and nothing else.** It governs `slog`
-serialization only; it does not redact a value passed to
-`span.RecordError`/`span.SetStatus` or built into an error message. Do not accept
-it as a guard outside a `slog` attribute — spans need the status-only form, and
-an error that is logged needs explicit redaction.
+- **A `slog` attribute**, including via `logging.ErrKey` — flag it unless the
+  value passes an approved guard: `redaction.Redact`, `redaction.RedactEmail`,
+  `requestJSONForLog`/`responseJSONForLog`, or a `LogValue()` on the type.
+- **`span.RecordError` or `span.SetStatus`** — flag it unless the recorded value
+  is exactly `fmt.Errorf("HTTP %d", statusCode)`. **Nothing else satisfies a
+  span.** The redaction helpers, the JSON log helpers and `LogValue()` are
+  `slog`-only; none of them makes an identifier or an upstream body acceptable
+  on a span, because the rule for spans is status-only rather than
+  redacted-payload.
+
+**A `LogValue()` is lost the moment the value is formatted.** Once an identifier
+is interpolated into an `fmt.Errorf`/`fmt.Sprintf`/`domain.New*Error` message it
+is a plain string and the type's `LogValue()` no longer governs it; logging that
+error needs explicit redaction.
 
 An `fmt.Errorf`/`fmt.Sprintf`/`domain.New*Error` message counts **only when that
 error value is then logged or recorded on a span** without redaction. An error
