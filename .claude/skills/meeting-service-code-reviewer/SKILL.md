@@ -235,9 +235,13 @@ Check the field against the relevant `docs/api-contracts/itx-*.md` schema.
 `internal/domain/errors.go`"* and *"Standard HTTP error responses defined in Goa
 design"*.
 
-A new failure path on the proxy surface that returns a bare `error`, or that
-classifies a caller mistake as internal (or an internal fault as validation),
-produces the wrong HTTP status. Note that some paths deliberately log and
+A new failure path on the proxy surface whose **semantic classification is
+wrong** — a caller mistake classified as internal, or an internal fault as
+validation — produces the wrong HTTP status. A bare `error` is not itself the
+defect: `internal/domain/errors.go` maps every non-`DomainError` to
+`ErrorTypeInternal`, so a genuinely internal fault returned bare still becomes a
+correct 500. Flag a bare `error` only where the correct classification is
+something other than internal. Note that some paths deliberately log and
 continue — best-effort enrichment must not block indexing — so the finding is an
 error dropped with neither a log nor a stated reason, not every error that does
 not propagate.
