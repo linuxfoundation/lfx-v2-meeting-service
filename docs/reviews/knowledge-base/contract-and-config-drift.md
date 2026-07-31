@@ -4,8 +4,10 @@
 # Contract and configuration drift
 
 Two patterns about a change landing in one arm of a multi-arm contract and not
-the others. Both were fixed repeatedly by developers here, and neither is
-detectable by any tool this repo runs.
+the others. Both were fixed by developers here — the contract-doc pattern
+repeatedly, the environment-variable pattern once — and neither is detectable by
+any tool this repo runs. Each entry's own Evidence section carries the exact
+counts.
 
 ---
 

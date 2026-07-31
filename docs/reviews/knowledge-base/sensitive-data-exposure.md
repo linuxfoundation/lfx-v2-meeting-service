@@ -17,18 +17,30 @@ repo now uses. That is why this entry is worth having even though
 ## `sensitive-identity-data-in-logs-errors-and-telemetry`
 
 **Rule:** An email address, SFID, username, host key, or an upstream response
-body must not reach a log attribute, an error string, or an OpenTelemetry span
-without passing through this repo's redaction helpers; spans carry status only.
+body must not reach a **log attribute or an OpenTelemetry span** without passing
+through this repo's redaction helpers; spans carry status only.
+
+**The error returned to the caller is out of scope and must stay that way.** The
+evidenced fix's whole shape is that the detailed error still reaches the caller
+while telemetry is reduced to a status — `mapHTTPError`
+(`internal/infrastructure/proxy/client.go:1126-1151`) deliberately derives
+`DomainError.Message` from the upstream body and returns it through
+`domain.New*Error`. Flagging that would contradict the fix this entry is built
+on. Only an error value that is **also logged or recorded on a span** unredacted
+is in scope, and then the finding is the logging or the span, not the return.
 
 **Severity:** `Important`
 
 **Detect:** An email, SFID, username, `host_key`, raw `respBody`, `*url.Error`,
 `itx.User` or `itx.CreatedUpdatedBy` value reaching a `slog` attribute
-(including via `logging.ErrKey`), an `fmt.Errorf`/`fmt.Sprintf`/`domain.New*Error`
-message, or `span.RecordError`/`span.SetStatus`, without `redaction.Redact` or
-`redaction.RedactEmail`, without `requestJSONForLog`/`responseJSONForLog`,
-without a `LogValue()` on the type, or — for spans — without being exactly
-`fmt.Errorf("HTTP %d", statusCode)`.
+(including via `logging.ErrKey`) or `span.RecordError`/`span.SetStatus`, without
+`redaction.Redact` or `redaction.RedactEmail`, without
+`requestJSONForLog`/`responseJSONForLog`, without a `LogValue()` on the type, or
+— for spans — without being exactly `fmt.Errorf("HTTP %d", statusCode)`.
+
+An `fmt.Errorf`/`fmt.Sprintf`/`domain.New*Error` message counts **only when that
+error value is then logged or recorded on a span** without redaction. An error
+constructed and returned to the caller is not a match on its own.
 
 **Evidence:** distinct PRs `#210`, `#217`, `#226`; 8 findings, 8 fixed.
 

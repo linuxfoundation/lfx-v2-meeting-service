@@ -33,11 +33,18 @@ core-NATS publishes, an explicit flush or drain.
 
 **Severity:** `Critical`
 
-**Detect:** In `scripts/**`, a destructive operation (`_update_by_query`,
-`_delete_by_query`, KV `Delete`/`Purge`, a field-removal, or a soft-delete write)
-reachable without (a) a check that the producing phase's `failed` **and**
-`skipped` counters are both zero, and (b) — when the producer used core-NATS
-`nc.Publish` — an intervening `nc.Flush`, `nc.FlushTimeout` or `nc.Drain`.
+**Detect:** In `scripts/**`, **a destructive operation that runs after a
+producing phase in the same entrypoint** (`_update_by_query`, `_delete_by_query`,
+KV `Delete`/`Purge`, a field-removal, or a soft-delete write) reachable without
+(a) a check that the producing phase's `failed` **and** `skipped` counters are
+both zero, and (b) — when the producer used core-NATS `nc.Publish` — an
+intervening `nc.Flush`, `nc.FlushTimeout` or `nc.Drain`.
+
+**The producing phase is a prerequisite, not an assumption.** This pattern is
+about a destructive step outrunning work it depends on. A standalone delete,
+purge, field-removal or soft-delete script with no producing phase ahead of it
+has no counters to check and **does not match** — do not fire merely because
+producer counters are absent.
 
 **Evidence:** `#224` comment `discussion_r3646887342`, on
 `scripts/backfill_meeting_host_credentials/main.go:215`: *"This destructive query
@@ -57,13 +64,19 @@ verify the indexer actually *stored* the documents, was **not implemented**. A
 flush confirms only that the NATS server received the messages. Requiring
 end-to-end storage verification is outside this pattern.
 
-Second distinct PR: `#220` `discussion_r3598000902` — a restore wrote without a
-tombstoned precondition; fixed in `e933d4b` plus `77c4612` (revision-gated
-verify).
+**Not evidence for this pattern:** `#220` `discussion_r3598000902` (a restore
+writing without a tombstoned precondition, fixed in `e933d4b` plus `77c4612`) was
+previously cited here. It does not satisfy this detector — it concerned a
+compare-and-set precondition on a write, not a destructive step outrunning a
+producing phase. It is recorded here only so it is not re-cited; this pattern
+rests on the `#224` evidence above.
 
 **Guards that satisfy it:** a combined `failed`/`skipped` zero check before the
 destructive step, plus `nc.FlushTimeout`/`nc.Flush`/`nc.Drain` when the producer
-used core NATS; or a revision-gated precondition on the write.
+used core NATS. **A revision or tombstone precondition on the write does not
+satisfy this pattern** — it gates *what* is written, not whether the producing
+work completed, so a publish-then-delete script would otherwise bypass the
+outcome check and the flush.
 
 ---
 
