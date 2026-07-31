@@ -107,23 +107,30 @@ The service follows a clean architecture pattern with:
 ## Local work cycle — post-commit and pre-PR review
 
 This repo runs a local cross-model code review before a PR exists. It is an
-author-side workflow only: it never touches GitHub, PRs, labels, statuses, or any
-merge gate.
+author-side workflow: it produces evidence for the developer, and it never posts
+to GitHub, opens or gates a PR, or touches a merge check.
 
-- **After every commit while still pre-PR**, run `/lfx-skills:lfx-local-review`.
-- **Before opening a PR**, run `/lfx-skills:lfx-local-review branch` for the
-  full-branch sweep, ahead of the pr-readiness and preflight steps.
+- **After every normal signed commit while still pre-PR**, run
+  `/lfx-skills:lfx-local-review`. It runs the `general`, `repo_code` and
+  `repo_learnings` reviewers in parallel against the committed target and returns
+  **ordinary Markdown** reports.
+- **Read the reports in this session and address the findings yourself.** The
+  reviewers never edit code. Fixes are normal signed conventional commits —
+  `fix(<scope>): …` or `fix: …` as appropriate — after which you **rerun the
+  complete trio**.
+- **Before opening a PR**, drain the reviews, then run
+  `/lfx-skills:lfx-local-review branch` for the full-branch sweep, then the
+  repo's normal readiness and preflight checks.
 
-The skill runs three reviewers in parallel against a snapshot of the committed
-target — the central `general` brain plus this repo's two own brains, which live
-in-repo and are versioned with the code they describe:
+The trio is the central `general` brain plus this repo's two own brains, which
+live in-repo and are versioned with the code they describe:
 
-- `.claude/skills/meeting-service-code-reviewer/` — audits a patch against this
+- `.claude/skills/meeting-service-code-reviewer/` — audits a change against this
   repo's written rule surface (`CLAUDE.md`, the FGA/indexer/event-processing/ITX
   contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes
   the rule it cites.
 - `.claude/skills/meeting-service-learnings-reviewer/` — carries the empirical
-  review method and matches a patch against `docs/reviews/knowledge-base/`, this
+  review method and matches a change against `docs/reviews/knowledge-base/`, this
   repo's patterns mined from real past PR review comments. Every finding quotes
   its knowledge-base entry. The KB lives under `docs/` because it is repo-owned
   knowledge versioned with the code it describes, and there is exactly one copy
@@ -134,16 +141,18 @@ are symlinks; they exist so the launcher's discovery is deterministic, and both
 resolve to the two physical skills above. `.agents/skills/` links to the same
 files for non-Claude agents. There is exactly one copy of each brain.
 
-Consume the result in the foreground: the run lives and dies with the session,
-produces no report file, and retains nothing. Its only states are
-`COMPLETE_WITH_FINDINGS`, `COMPLETE_NO_FINDINGS`, and `INCOMPLETE`. **An
-`INCOMPLETE` run is not a passing run** — rerun the whole same harness rather
-than patching up one role. A run that fell back to Claude subagents because Pi
-was unavailable is honestly reported as such and is not cross-model evidence.
+**An incomplete cycle is not a passing cycle.** If any reviewer's report starts
+`INCOMPLETE — <reason>`, or the host reports a failed or empty reviewer, the
+**whole cycle** is incomplete — successful reports from the other roles do not
+rescue it. Resolve the cause and **rerun the complete trio under one harness**:
+never rerun or replace a single role, and never assemble one cycle out of mixed
+Pi and Claude evidence. A run that fell back to Claude because Pi was
+unavailable is honestly reported as such and is not cross-model evidence.
 
-The cycle **stops at PR open**. Once a PR exists, review is the PR-side
-Copilot surface's job (`.github/copilot-instructions.md` and
-`.github/skills/**`); nothing in the local cycle changes or feeds it.
+The cycle **stops at PR open**. After verification the branch may be pushed and
+the PR opened under the coordinator's release instruction; from that point review
+is the PR-side Copilot surface's job (`.github/copilot-instructions.md` and
+`.github/skills/**`), and nothing in the local cycle changes or feeds it.
 
 ## Development Guidelines
 

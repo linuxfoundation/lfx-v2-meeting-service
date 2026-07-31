@@ -5,7 +5,7 @@
 
 Patterns extracted from **real GitHub Copilot review comments on this
 repository that a developer actually fixed**. This is the rulebook for the
-`repo_learnings` role of `lfx-local-review/v1`; the brain that loads it is
+`repo_learnings` role of this repo's local pre-PR review; the brain that loads it is
 [`.claude/skills/meeting-service-learnings-reviewer/SKILL.md`](../../../.claude/skills/meeting-service-learnings-reviewer/SKILL.md),
 which carries the review method and points here. This directory is the single
 copy of the empirical KB — the skill does not duplicate it.
@@ -100,19 +100,20 @@ Two consequences worth stating plainly, because both are counter-intuitive:
 
 Each entry carries:
 
-- **Pattern id** — the stable slug a finding cites as `knowledge_base.pattern`.
-- **Rule** — a single quotable sentence. This is what a finding puts verbatim
-  in `knowledge_base.quote`.
-- **Severity** — the ceiling for a finding on this pattern.
-- **Detect** — the condition evaluated against the diff, quoted verbatim into
-  `knowledge_base.detect`.
+- **Pattern id** — the stable slug a finding names when it cites this entry.
+- **Rule** — a single quotable sentence. This is what a finding quotes verbatim
+  when citing the entry.
+- **Severity** — the ceiling for a finding on this pattern, `Critical` or
+  `Important`.
+- **Detect** — the condition evaluated against the change under review, which a
+  finding restates verbatim when citing the entry.
 - **Evidence** — the originating comment, the fixing commit, and the state of
   `main` today.
 - **Guards that satisfy it** — the helper or shape whose presence means the
   pattern does not fire.
 - **Live anchors** — where the shape exists on `main` today. These are context
   that keeps the pattern honest, **not** work items: a pre-existing instance the
-  patch does not touch is never a finding.
+  change under review does not touch is never a finding.
 
 ## Maintaining this KB
 

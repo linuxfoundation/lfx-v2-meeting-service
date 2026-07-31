@@ -20,7 +20,7 @@ repo now uses. That is why this entry is worth having even though
 body must not reach a log attribute, an error string, or an OpenTelemetry span
 without passing through this repo's redaction helpers; spans carry status only.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect:** An email, SFID, username, `host_key`, raw `respBody`, `*url.Error`,
 `itx.User` or `itx.CreatedUpdatedBy` value reaching a `slog` attribute

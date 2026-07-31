@@ -17,7 +17,7 @@ request/response shape — must update the matching contract document in the sam
 diff, and must update that document's summary and Triggers tables, not only its
 detail section.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect — core arms (1–3), OR'd**, each a same-diff co-change check. (1) The diff
 touches `member_put`/`member_remove`/`update_access`/`delete_access` publication
@@ -108,7 +108,7 @@ below does not test. The documentation obligation is real but conditional, so it
 lives in the detect and guard prose rather than in the quoted rule — do not
 "restore" it here.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect — chart↔code arm (the evidenced one).** Fully scriptable. Build the
 chart-side set from **both** places the chart names variables, then compare it

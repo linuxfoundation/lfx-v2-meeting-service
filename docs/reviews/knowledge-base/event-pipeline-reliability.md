@@ -23,7 +23,7 @@ assigned and **is** compared to `nil`.
 other error from a KV read is a transient infrastructure failure and must return
 the retry decision.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect:** In `cmd/meeting-api/eventing/**`, a `v1MappingsKV` or `v1ObjectsKV`
 `.Get` whose only success test is `err == nil`, with no
@@ -74,7 +74,7 @@ also the classification `docs/event-processing.md` documents.
 decision before any later statement overwrites the mapping, xref or tombstone
 that the failed step was the only record of.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect:** In a handler returning `(retry bool)`, a failed
 `h.publisher.Publish*` or `h.v1MappingsKV.Put` is logged without
@@ -112,7 +112,7 @@ still log without returning — the same shape, never separately raised.
 contents, because the usernames this service handles contain the delimiter —
 invite acceptance forwards identities such as `auth0|guest`.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect:** A KV mapping value built with `fmt.Sprintf("%s|%s|…")` or parsed with
 `strings.Split*(value, "|", n)` where a field can hold an LF SSO username

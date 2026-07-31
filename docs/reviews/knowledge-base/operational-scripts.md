@@ -31,7 +31,7 @@ patterns are the clearest reason the KB exists at all:
 work is verified complete and flushed — zero failures, zero skips, and, for
 core-NATS publishes, an explicit flush or drain.
 
-**Severity:** `critical`
+**Severity:** `Critical`
 
 **Detect:** In `scripts/**`, a destructive operation (`_update_by_query`,
 `_delete_by_query`, KV `Delete`/`Purge`, a field-removal, or a soft-delete write)
@@ -73,7 +73,7 @@ used core NATS; or a revision-gated precondition on the write.
 do: a numeric bound that can disable the work loop must be validated before that
 loop runs.
 
-**Severity:** `high`
+**Severity:** `Important`
 
 **Detect — bounds arm (a), the evidenced one:** a numeric CLI flag bounding a
 worker pool, page size or batch size is used without a `< 1` / `<= 0` guard
