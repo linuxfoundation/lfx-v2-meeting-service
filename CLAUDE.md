@@ -106,9 +106,11 @@ The service follows a clean architecture pattern with:
 
 ## Local work cycle — post-commit and pre-PR review
 
-This repo runs a local cross-model code review before a PR exists. It is an
-author-side workflow: it produces evidence for the developer, and it never posts
-to GitHub, opens or gates a PR, or touches a merge check.
+This repo runs a local code review before a PR exists. It is an author-side
+workflow: it produces evidence for the developer, and it never posts to GitHub,
+opens or gates a PR, or touches a merge check. It is a **cross-model** review
+only on the Pi path; when Pi is unavailable the trio falls back to Claude, which
+is reported as such and is not cross-model evidence.
 
 - **After every normal signed commit while still pre-PR**, run
   `/lfx-skills:lfx-local-review`. It runs the `general`, `repo_code` and
@@ -122,8 +124,10 @@ to GitHub, opens or gates a PR, or touches a merge check.
   reviewers never edit code. Fixes are normal signed conventional commits —
   `fix(<scope>): …` or `fix: …` as appropriate — after which you **rerun the
   complete trio**.
-- **Before opening a PR**, drain the reviews, then run the repo's normal
-  readiness and preflight checks.
+- **Before opening a PR**, drain the reviews, then run this repo's native
+  checks: `make check` (gofmt, `golangci-lint`, license headers) and `make test`
+  (`-race -cover`). Run `make deps` first if `golangci-lint` is not installed.
+  There is no separate readiness or preflight skill in this repo.
 
 The trio is the central `general` brain plus this repo's two own brains, which
 live in-repo and are versioned with the code they describe:
