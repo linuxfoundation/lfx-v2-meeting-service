@@ -128,12 +128,15 @@ not only the detail section: a detail-only update leaves the doc internally
 inconsistent.
 
 For a client-visible or ITX-outbound shape change, the matching source is the
-relevant `docs/api-contracts/itx-*.md`. The surfaces that carry such a change are
-`design/`, `pkg/models/itx/**`, field injection in `internal/service/itx/**`,
-**and `cmd/meeting-api/service/itx_*_converters.go`** — the converters map Goa
-payloads straight into ITX requests, so starting or stopping populating an
-already-defined field there alters the wire contract without touching any of the
-other three.
+relevant `docs/api-contracts/itx-*.md`. **Judge this structurally, not by a path
+list**: the rule fires wherever an `itx.*Request` literal is constructed or
+populated, an `itx.*` model field is assigned, or a client-visible response is
+built — a change that starts or stops populating an already-defined field alters
+the wire contract regardless of which file it sits in. Known sites, as
+**examples rather than an exhaustive set**: `design/`, `pkg/models/itx/**`,
+`internal/service/itx/**`, `cmd/meeting-api/service/itx_*_converters.go`, and
+API handlers that build requests inline such as
+`cmd/meeting-api/api_itx_meetings.go`.
 
 ### 2. The KV error classification is a documented contract
 
@@ -180,15 +183,31 @@ this repo**. The real helpers live in `pkg/utils/ptr.go`:
 | `utils.BoolPtrOmitFalse` | pointer only when true |
 
 **Never raise a finding that demands a `ptrIf*` name** — that would ask for code
-that cannot compile. Cite the obligation, then name the helper the field
-actually needs from the table above.
+that cannot compile.
 
-The ITX wire models are lossy: non-pointer fields with `omitempty` drop a
-deliberate zero, empty string or `false`. A new converter field that takes the
-address of a value directly, or uses a helper whose semantics do not match the
-field, can silently clear or fail to clear a value in ITX. The
-`utils.BoolPtr` versus `utils.BoolPtrOmitFalse` choice is the one that most
-often matters: a field that must be able to send `false` needs the former.
+**Judge the two directions separately; they fail differently and the helpers
+belong to only one of them.**
+
+**ITX → Goa (response conversion).** This is where the helpers are actually
+used — every `utils.*Ptr` call in the meeting converters is inside a
+`ConvertITX…ToGoa` function. Choose an always-present pointer
+(`utils.BoolPtr`) or an omit-zero one (`utils.BoolPtrOmitFalse`,
+`utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`) according to what the proxy
+response contract promises the client. **Taking the address directly is not a
+defect here**: `&resp.Field` and `utils.BoolPtr(resp.Field)` both preserve a
+`false`. Do not flag direct address-taking in this direction.
+
+**Goa → ITX (outbound serialization).** The loss condition lives in the **ITX
+model field type and JSON tag**, not in the helper. A non-pointer field with
+`omitempty` — for example `Host bool \`json:"host,omitempty"\`` in
+`pkg/models/itx/meeting_registrants.go`, or `AutoEmailReminderEnabled` in
+`meetings.go` — silently drops a deliberate `false`, and a helper cannot be
+assigned to it without changing the model type. When an explicit zero, empty
+string or `false` must reach ITX, the fix is a **pointer field in the ITX
+model** (as `Approved *bool` already is in `past_meeting_summaries.go`).
+Dereferencing an optional Goa value into a non-pointer `omitempty` field is the
+outbound defect to look for.
+
 Check the field against the relevant `docs/api-contracts/itx-*.md` schema.
 
 ### 5. Errors carry the repo's semantic classification
@@ -210,9 +229,11 @@ not propagate.
 variables the service reads; `charts/lfx-v2-meeting-service/` is how a cluster
 sets them. Quote the specific documented variable line you are citing.
 
-A change that adds, renames or removes a variable in one of the three arms
-without the others is a finding — a chart that renders a name no code reads, or
-code reading a name that has **no dedicated chart knob** and is undocumented.
+Two **directed** checks, not one symmetric difference — a chart that renders a
+name no service code reads, or code reading a name that has **neither a
+dedicated chart knob nor documentation**. The documentation condition applies to
+the second direction only: a code-only variable that *is* documented is not a
+finding.
 
 **Do not claim the chart "cannot set" a variable.** `values.yaml` exposes
 `app.extraEnv` as an arbitrary list and `templates/deployment.yaml` injects it

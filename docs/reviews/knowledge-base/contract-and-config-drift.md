@@ -29,13 +29,17 @@ schema or access-check relation (`internal/domain/models/event_models.go`,
 hunk does **not** substitute for it — the rule names the contract document, and
 the evidenced fix (`caf3897`) updated `docs/indexer-contract.md`. When the change
 also alters a documented payload example, both files must be updated.
-(3) The diff changes a client-visible or ITX-outbound shape (`design/*.go`,
-`pkg/models/itx/**`, field injection in `internal/service/itx/**`, or
-`cmd/meeting-api/service/itx_*_converters.go`) and has no matching
-`docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md` hunk. The
-converters belong in that list because they map Goa payloads directly into ITX
-requests: starting or stopping populating an already-defined field there changes
-the wire contract without touching any of the other three surfaces.
+(3) The diff changes a client-visible or ITX-outbound shape and has no matching
+`docs/api-contracts/itx-*.md` or `docs/itx-proxy-implementation.md` hunk.
+**Define this structurally, not by a path list**: it fires wherever an
+`itx.*Request` literal is constructed or populated, an `itx.*` model field is
+assigned, or a client-visible response is built — because a change that starts or
+stops populating an already-defined field alters the wire contract regardless of
+which file it sits in. Known sites, as **examples not an exhaustive set**:
+`design/*.go`, `pkg/models/itx/**`, `internal/service/itx/**`,
+`cmd/meeting-api/service/itx_*_converters.go`, and API handlers that build
+requests inline such as `cmd/meeting-api/api_itx_meetings.go`. A path-list
+detector will keep going stale as new construction sites appear.
 
 **Detect — variant arm (4), dependent:** shares the **trigger** of arms 1–3 — a
 diff that changes published or exposed shape — and covers the case those arms do
@@ -102,8 +106,9 @@ failure mode the fourth detect arm catches.
 ## `env-var-contract-split-across-chart-code-docs`
 
 **Rule:** An environment variable is a contract between the Helm chart and the Go
-code that reads it; a diff that changes one of those two arms without the other
-silently breaks configuration that still appears to work.
+code that reads it; a diff that changes one arm without the other leaves either a
+chart rendering a name no code reads, or a variable the service depends on with
+no first-class chart setting and no documentation.
 
 This sentence deliberately states only the chart↔code arm, because it is the
 text a finding quotes verbatim and it must assert nothing the detect condition
@@ -111,7 +116,11 @@ below does not test. The documentation obligation is real but conditional, so it
 lives in the detect and guard prose rather than in the quoted rule — do not
 "restore" it here.
 
-**Severity:** `Important`
+**Severity:** `Important` — for the `chart − code` direction because dead
+configuration surface misleads operators, and for the `code − chart` direction
+because a variable reachable only through `app.extraEnv` is undiscoverable to
+anyone reading the chart or the docs. Neither direction is a runtime break;
+`app.extraEnv` keeps every name settable. Do not raise either as breakage.
 
 **Detect — chart↔code arm (the evidenced one).** Fully scriptable. Build the
 chart-side set from **both** places the chart names variables, then compare it
@@ -139,9 +148,16 @@ the service chart is not meant to render. Including either produces phantom
 A literals-only extractor misses essentially every variable documented in
 `CLAUDE.md`'s Environment Variables section, so step 2 is not optional.
 
-Flag a non-empty symmetric difference **introduced by the diff** — a name the
-chart renders that no code reads, or a name code reads that has **no dedicated
-chart knob and no documentation**.
+These are **two directed checks, not one symmetric difference** — they have
+different conditions and must not be collapsed. Flag either, when **introduced by
+the diff**:
+
+- **`chartNames − codeNames`** — the chart renders a name no service code reads.
+  Dead configuration surface.
+- **`codeNames − dedicatedChartNames − documentedNames`** — code reads a name
+  that has neither a first-class chart setting nor documentation. The
+  documentation condition applies to **this direction only**; a code-only
+  variable that *is* documented is not a finding.
 
 **Never phrase the second half as "the chart cannot set it".** Because
 `app.extraEnv` is a wildcard, that claim is false for every variable: any name
