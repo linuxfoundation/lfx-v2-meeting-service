@@ -275,7 +275,7 @@ func (s *MeetingService) mapResponseV1ToV2(ctx context.Context, resp *itx.ZoomMe
 					slog.WarnContext(ctx, "failed to map committee ID in meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				} else {
-					slog.InfoContext(ctx, "failed to map committee ID in meeting response; returning empty committee UID",
+					slog.InfoContext(ctx, "committee ID mapping not found in meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				}
 				resp.Committees[i].ID = ""

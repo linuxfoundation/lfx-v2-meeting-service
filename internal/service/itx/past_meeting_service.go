@@ -79,7 +79,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 					slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				} else {
-					slog.InfoContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
+					slog.InfoContext(ctx, "committee ID mapping not found in past meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				}
 				resp.Committees[i].ID = ""
@@ -118,7 +118,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 					slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				} else {
-					slog.InfoContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
+					slog.InfoContext(ctx, "committee ID mapping not found in past meeting response; returning empty committee UID",
 						"v1_id", resp.Committees[i].ID, "err", err)
 				}
 				resp.Committees[i].ID = ""
