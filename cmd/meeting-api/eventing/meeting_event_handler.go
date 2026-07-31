@@ -972,8 +972,8 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
 	meetingEntry, err := h.v1ObjectsKV.Get(ctx, meetingKey)
 	if err != nil {
-		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "meeting not found during retrigger")
-		return false // Meeting might be deleted
+		h.logger.With(logging.ErrKey, err).InfoContext(ctx, "meeting not found during retrigger; it may have been deleted")
+		return false
 	}
 
 	meetingData, err := decodeData(meetingEntry.Value())

@@ -5,6 +5,7 @@ package eventing
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,13 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
+
+// encodeParticipantUsername encodes an LFSSO username (typically an email address containing @)
+// into a NATS JetStream KV-safe string using raw URL base64 (RFC 4648 §5, no padding).
+// NATS keys allow only [-\w/.>*]; @ and other special chars are invalid.
+func encodeParticipantUsername(username string) string {
+	return base64.RawURLEncoding.EncodeToString([]byte(username))
+}
 
 // =============================================================================
 // Past Meeting Invitee Event Handler
@@ -111,7 +119,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
-	funcLogger := h.logger.With("key", key, "handler", "past_meeting_invitee")
+	funcLogger := h.logger.With("event_key", key, "handler", "past_meeting_invitee")
 	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
 
 	// Convert v1Data to participant event data
@@ -137,7 +145,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	// values that the attendee handler already set (e.g. is_unknown, is_ai_reconciled).
 	if participantData.Username != "" {
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(participantData.Username))
 		if xrefEntry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(xrefEntry) {
 			participantData.IsAttended = true
 			attendeeID := string(xrefEntry.Value())
@@ -181,7 +189,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
 		// Check if sibling attendee exists
 		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(oldUsername))
 		attendeeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, attendeeXrefKey)
 		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
 			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking attendee sibling xref, will retry")
@@ -230,7 +238,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		}
 		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
 		oldInviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(oldUsername))
 		if _, err := h.v1MappingsKV.Put(ctx, oldInviteeXrefKey, []byte(tombstoneMarker)); err != nil {
 			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old invitee xref, will retry")
 			return isTransientError(err)
@@ -252,9 +260,9 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	}
 	if participantData.Username != "" {
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(participantData.Username))
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee cross-reference mapping")
+			funcLogger.With(logging.ErrKey, err, "nats_key", xrefKey).WarnContext(ctx, "failed to store invitee cross-reference mapping")
 		}
 	}
 
@@ -268,7 +276,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 // than member_remove, so the participant retains access from their attendee record.
 func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
 	inviteeID := extractIDFromKey(key, "itx-zoom-past-meetings-invitees.")
-	funcLogger := h.logger.With("key", key, "invitee_id", inviteeID)
+	funcLogger := h.logger.With("event_key", key, "invitee_id", inviteeID)
 
 	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID)
 	if h.isTombstoned(ctx, mappingKey) {
@@ -295,7 +303,7 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 
 	// Check if an attendee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
-		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
+		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username))
 		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			survivingAttendeeID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active attendee record; applying partial invitee delete",
@@ -333,7 +341,7 @@ func (h *EventHandlers) fullDeleteInvitee(
 		tombstoneKeyFmts:    []string{"v1_past_meeting_invitees.%s"},
 	})
 	if !result && username != "" && meetingAndOccurrenceID != "" {
-		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username))
+		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username)))
 	}
 	return result
 }
@@ -385,7 +393,7 @@ func (h *EventHandlers) handlePartialInviteeDelete(
 
 	// Tombstone the invitee mapping and cross-reference; the attendee's records remain active.
 	h.tombstoneMapping(ctx, fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID))
-	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
+	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username))
 	h.tombstoneMapping(ctx, xrefKey)
 
 	funcLogger.InfoContext(ctx, "successfully applied partial invitee delete (attendee record remains active)")
@@ -534,7 +542,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
-	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attendee")
+	funcLogger := h.logger.With("event_key", key, "handler", "past_meeting_attendee")
 	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
 
 	// Convert v1Data to participant event data
@@ -559,7 +567,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	// so a late-arriving attendee upsert doesn't reset a flag the invitee handler already set.
 	if participantData.Username != "" {
 		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(participantData.Username))
 		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			participantData.IsInvited = true
 		}
@@ -588,7 +596,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
 		// Check if sibling invitee exists
 		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(oldUsername))
 		inviteeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, inviteeXrefKey)
 		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
 			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking invitee sibling xref, will retry")
@@ -637,7 +645,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		}
 		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
 		oldAttendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(oldUsername))
 		if _, err := h.v1MappingsKV.Put(ctx, oldAttendeeXrefKey, []byte(tombstoneMarker)); err != nil {
 			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old attendee xref, will retry")
 			return isTransientError(err)
@@ -659,9 +667,9 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	}
 	if participantData.Username != "" {
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
+			participantData.MeetingAndOccurrenceID, encodeParticipantUsername(participantData.Username))
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee cross-reference mapping")
+			funcLogger.With(logging.ErrKey, err, "nats_key", xrefKey).WarnContext(ctx, "failed to store attendee cross-reference mapping")
 		}
 	}
 
@@ -679,7 +687,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 	v1Data map[string]interface{},
 ) (retry bool) {
 	attendeeID := extractIDFromKey(key, "itx-zoom-past-meetings-attendees.")
-	funcLogger := h.logger.With("key", key, "attendee_id", attendeeID)
+	funcLogger := h.logger.With("event_key", key, "attendee_id", attendeeID)
 
 	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID)
 	if h.isTombstoned(ctx, mappingKey) {
@@ -706,7 +714,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 
 	// Check if an invitee record still exists for this participant.
 	if username != "" && meetingAndOccurrenceID != "" {
-		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
+		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username))
 		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
 			survivingInviteeID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active invitee record; applying partial attendee delete",
@@ -746,7 +754,7 @@ func (h *EventHandlers) fullDeleteAttendee(
 		tombstoneKeyFmts:    []string{"v1_past_meeting_attendees.%s"},
 	})
 	if !result && username != "" && meetingAndOccurrenceID != "" {
-		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username))
+		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username)))
 	}
 	return result
 }
@@ -798,7 +806,7 @@ func (h *EventHandlers) handlePartialAttendeeDelete(
 
 	// Tombstone the attendee mapping and cross-reference; the invitee's records remain active.
 	h.tombstoneMapping(ctx, fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID))
-	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
+	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, encodeParticipantUsername(username))
 	h.tombstoneMapping(ctx, xrefKey)
 
 	funcLogger.InfoContext(ctx, "successfully applied partial attendee delete (invitee record remains active)")
