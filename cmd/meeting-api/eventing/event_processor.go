@@ -193,7 +193,9 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 	done := make(chan struct{})
 	go func() {
 		if ep.nc != nil {
-			ep.nc.Drain()
+			if err := ep.nc.Drain(); err != nil {
+				ep.logger.Warn("failed to drain NATS connection on shutdown", "err", err)
+			}
 		}
 		close(done)
 	}()
