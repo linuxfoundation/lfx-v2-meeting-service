@@ -29,9 +29,15 @@ Enforced three times over: the blocking
 `copilot-code-reviewer` skill already names it a non-finding verbatim. Pure
 noise.
 
-### Outdated third-party dependency versions — never a finding
+### Outdated third-party dependency versions — age alone is never a finding
 
-Dependabot owns this channel, and `govulncheck` runs in CI.
+Dependabot owns routine version currency, and `govulncheck` runs in CI, so
+*"this dependency is behind latest"* is noise here.
+
+**This waives staleness only.** It does not waive a change that introduces a
+dependency version with a known vulnerability, or one that is unsupported or
+end-of-life. Those are findings on their own terms — the guard is the absence of
+a *newly introduced* problem, not the presence of Dependabot.
 
 ---
 
