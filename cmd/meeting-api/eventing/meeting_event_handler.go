@@ -555,7 +555,11 @@ func convertMapToMeetingData(
 	if rawMeeting.Committee != "" {
 		committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, rawMeeting.Committee)
 		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
+			if domain.GetErrorType(err) != domain.ErrorTypeValidation {
+				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
+			} else {
+				logger.With(logging.ErrKey, err).InfoContext(ctx, "primary committee mapping not found", "v1_id", rawMeeting.Committee)
+			}
 		} else {
 			meeting.CommitteeUID = committeeUID
 		}

@@ -349,7 +349,11 @@ func convertMapToPastMeetingData(
 	if rawPastMeeting.Committee != "" {
 		mapped, err := idMapper.MapCommitteeV1ToV2(ctx, rawPastMeeting.Committee)
 		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawPastMeeting.Committee)
+			if domain.GetErrorType(err) != domain.ErrorTypeValidation {
+				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawPastMeeting.Committee)
+			} else {
+				logger.With(logging.ErrKey, err).InfoContext(ctx, "primary committee mapping not found", "v1_id", rawPastMeeting.Committee)
+			}
 		} else {
 			primaryCommitteeUID = mapped
 		}
@@ -702,7 +706,7 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger, may be deleted")
+			h.logger.With(logging.ErrKey, err).InfoContext(ctx, "past meeting not found during retrigger; it may have been deleted")
 			return false
 		}
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching past meeting during retrigger")
