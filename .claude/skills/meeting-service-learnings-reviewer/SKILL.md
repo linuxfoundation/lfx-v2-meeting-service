@@ -43,8 +43,9 @@ Read the KB **at the target revision** — `git show <target>:docs/reviews/knowl
 and then the category files whose patterns the change could plausibly touch; you
 do not need to read every file on every run.
 
-**The one exception is the false-positive floor**, which is read at the *base*
-revision — see below.
+**The one exception is the false-positive floor**, which is read at *both* the
+base and the target revision and suppresses only where the two agree — see
+below.
 
 If the knowledge base cannot be read at the target revision, you cannot do your
 job: make your first line `INCOMPLETE — <reason>` naming the missing knowledge
@@ -113,43 +114,67 @@ your Markdown review to the invoking host.**
    fired. **Read it at the base revision** — see below.
 6. Emit only what survives, at confidence 80 or above.
 
-### The false-positive floor is read at the base revision
+### The false-positive floor is the intersection of two revisions
 
-The floor lives at `docs/reviews/knowledge-base/known-false-positives.md`, and
-you read it **at the base revision the host named**, never at the target:
+The floor lives at `docs/reviews/knowledge-base/known-false-positives.md`. You
+read and classify it **independently at both revisions the host named** — the
+base and the target — and a candidate is suppressed **only when both floors
+waive it**.
+
+Resolve each revision's floor as an object first, then read that object. Do not
+read the working tree, and do not reconstruct a floor by reversing a diff:
 
 ```text
-git show <base>:docs/reviews/knowledge-base/known-false-positives.md
+git ls-tree <rev> -- docs/reviews/knowledge-base/known-false-positives.md
+git cat-file blob <object-sha>
 ```
 
-**Only waivers present at the base suppress a finding.** That single rule gives
-both directions you need:
+Accept the entry only at **mode `100644`, type `blob`**. Run this for `<rev>` =
+base and again for `<rev>` = target, and keep the two results apart.
 
-- A waiver **added or widened in the change under review does not suppress**
-  anything — otherwise a change could waive findings about itself, before any
-  human has reviewed the waiver.
-- A waiver **removed in the change under review still applies**, because it was
-  present at the base. Deleting a waiver does not retroactively resurrect
-  findings inside the same change.
+**Classify each revision independently:**
 
-The cases, exactly:
+- **Valid absence** — `ls-tree` succeeds and returns no entry for the path. That
+  is a **legitimate empty floor**: it waives nothing. It is **not** a failure and
+  **not** `INCOMPLETE`. This covers the change that introduces the file for the
+  first time (absent at base) and the change that deletes it (absent at target).
+- **Root base** — no parent, so no base revision exists. Empty floor, same as
+  valid absence.
+- **Wrong type, unreadable content, or ambiguous absence** — a non-blob or
+  non-`100644` entry, content you cannot read or parse, or any case where you
+  cannot tell a real absence apart from an inspection error. Make your first line
+  `INCOMPLETE — <reason>` and **say which revision failed**, base or target.
+  "I could not tell" must never be reported as "there was nothing there".
 
-- **No base** — a root commit has no parent, so there is no floor. Apply no
-  waivers.
-- **Floor absent at a valid base** — a **legitimate empty floor**, including
-  when the change under review introduces the file for the first time. Apply no
-  waivers. This is **not** a failure and **not** `INCOMPLETE`.
-- **Floor present but unreadable, the wrong type, or ambiguous** — or you cannot
-  tell absence apart from an inspection error — make your first line
-  `INCOMPLETE — <reason>`. "I could not tell" must never be reported as "there
-  was nothing there".
+**Never substitute one revision's floor for the other.** A failure at either
+revision is `INCOMPLETE`; it is never grounds for falling back, forward, or
+through to the floor you *were* able to read.
 
-**Never fall forward to the target revision's floor**, and never reconstruct the
-floor by reversing a diff. Read the base object directly or report incomplete.
+**Evaluate suppression per candidate, against each floor separately**, and
+compare *semantically* — what the entry actually covers. Never text-diff or
+byte-diff floor entries against each other:
 
-Say in the finding when a candidate survived only because the floor was read at
-the base, so the reader knows a waiver added in this very change would otherwise
-have hidden it.
+- **Both floors waive it** — unchanged semantic overlap. **Suppress.**
+- **Only the target floor waives it** — coverage added or widened in this very
+  range. **Does not suppress**, or a change could waive findings about itself
+  before any human has reviewed the waiver.
+- **Only the base floor waives it** — coverage removed or narrowed in this range.
+  **Does not suppress.** The waiver is being withdrawn; findings it used to cover
+  are live again.
+
+**The accepted consequence**, stated plainly so nobody "fixes" it back: a newly
+added waiver does not take effect for suppression in the range that adds it. It
+begins suppressing once it is part of **both** the pre-change and the target
+floor — normally a later branch, after this one merges.
+
+This applies to the floor only. **Ordinary KB pattern entries are still read at
+the target revision alone**; the two-revision rule is not a general principle to
+extend to them. And after any floor error, the rule above holds without
+exception: report incomplete rather than falling forward.
+
+Say in the finding when a candidate survived only because the floors disagreed,
+and which way, so the reader can see whether a waiver was being added or
+withdrawn in this very change.
 
 Severity is the entry's own severity unless the concrete instance is plainly
 milder, in which case go lower — never higher than the entry states.
@@ -206,7 +231,8 @@ INCOMPLETE — <reason>
 
 Use it when you cannot read the named target or base Git object, when the
 knowledge base cannot be read at the target revision, or when the floor is
-present but unreadable, the wrong type, or ambiguous. **Never pair an
+unreadable, the wrong type, or ambiguously absent **at either the base or the
+target revision** — name which one in the reason. **Never pair an
 `INCOMPLETE` first line with a no-findings conclusion**: without the knowledge
 base you have no rulebook, so "no findings" would be indistinguishable from
 "did not review", and a botched relocation would read as a clean run.
