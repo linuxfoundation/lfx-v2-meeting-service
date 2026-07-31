@@ -163,9 +163,22 @@ byte-diff floor entries against each other:
   are live again.
 
 **The accepted consequence**, stated plainly so nobody "fixes" it back: a newly
-added waiver does not take effect for suppression in the range that adds it. It
-begins suppressing once it is part of **both** the pre-change and the target
-floor — normally a later branch, after this one merges.
+added waiver does not take effect for suppression in the range that adds it. When
+it *does* begin to suppress depends on the range being reviewed, and there is no
+single answer — work it out from the two floors each time:
+
+- **The range that adds the waiver** — base lacks it, target has it. It
+  suppresses nothing in this review.
+- **A later post-commit delta on this same branch** — that delta's parent already
+  carries the waiver, so base and target both have it. Here it **does** suppress
+  a covered candidate, with no merge required.
+- **The final cumulative branch sweep** — the merge-base predates the
+  branch-added waiver, so base lacks it while target has it. It **still**
+  suppresses nothing anywhere in the cumulative branch range.
+
+Never compress this into "it applies to the rest of the PR" or "it applies only
+after merge". Both are false: the second and third cases above disagree with each
+other while the branch is still open.
 
 This applies to the floor only. **Ordinary KB pattern entries are still read at
 the target revision alone**; the two-revision rule is not a general principle to
