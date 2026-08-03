@@ -194,7 +194,7 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 	go func() {
 		if ep.nc != nil {
 			if err := ep.nc.Drain(); err != nil {
-				ep.logger.Warn("failed to drain NATS connection on shutdown", "err", err)
+				ep.logger.Warn("failed to drain NATS connection on shutdown", logging.ErrKey, err)
 			}
 		}
 		close(done)
