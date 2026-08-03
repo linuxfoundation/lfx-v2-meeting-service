@@ -111,7 +111,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
-	funcLogger := h.logger.With("event_key", key, "handler", "past_meeting_invitee")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_invitee")
 	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
 
 	// Convert v1Data to participant event data
@@ -268,7 +268,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 // than member_remove, so the participant retains access from their attendee record.
 func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
 	inviteeID := extractIDFromKey(key, "itx-zoom-past-meetings-invitees.")
-	funcLogger := h.logger.With("event_key", key, "invitee_id", inviteeID)
+	funcLogger := h.logger.With("key", key, "invitee_id", inviteeID)
 
 	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID)
 	if h.isTombstoned(ctx, mappingKey) {
@@ -534,7 +534,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
-	funcLogger := h.logger.With("event_key", key, "handler", "past_meeting_attendee")
+	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attendee")
 	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
 
 	// Convert v1Data to participant event data
@@ -679,7 +679,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 	v1Data map[string]interface{},
 ) (retry bool) {
 	attendeeID := extractIDFromKey(key, "itx-zoom-past-meetings-attendees.")
-	funcLogger := h.logger.With("event_key", key, "attendee_id", attendeeID)
+	funcLogger := h.logger.With("key", key, "attendee_id", attendeeID)
 
 	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID)
 	if h.isTombstoned(ctx, mappingKey) {
