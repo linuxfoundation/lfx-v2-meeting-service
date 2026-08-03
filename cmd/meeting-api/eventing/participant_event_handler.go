@@ -259,7 +259,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err, "nats_key", xrefKey).WarnContext(ctx, "failed to store invitee cross-reference mapping")
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee cross-reference mapping")
 		}
 	}
 
@@ -671,7 +671,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err, "nats_key", xrefKey).WarnContext(ctx, "failed to store attendee cross-reference mapping")
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee cross-reference mapping")
 		}
 	}
 
