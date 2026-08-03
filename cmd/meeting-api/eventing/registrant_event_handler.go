@@ -92,11 +92,7 @@ func convertMapToRegistrantData(
 	if rawRegistrant.CommitteeID != "" {
 		committeeUID, err = idMapper.MapCommitteeV1ToV2(ctx, rawRegistrant.CommitteeID)
 		if err != nil {
-			if domain.GetErrorType(err) != domain.ErrorTypeValidation {
-				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", rawRegistrant.CommitteeID)
-			} else {
-				logger.With(logging.ErrKey, err).InfoContext(ctx, "committee ID mapping not found", "v1_id", rawRegistrant.CommitteeID)
-			}
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", rawRegistrant.CommitteeID)
 			// Don't fail - just omit committee
 		}
 	}

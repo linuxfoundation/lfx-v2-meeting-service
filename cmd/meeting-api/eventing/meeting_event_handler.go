@@ -555,11 +555,7 @@ func convertMapToMeetingData(
 	if rawMeeting.Committee != "" {
 		committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, rawMeeting.Committee)
 		if err != nil {
-			if domain.GetErrorType(err) != domain.ErrorTypeValidation {
-				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
-			} else {
-				logger.With(logging.ErrKey, err).InfoContext(ctx, "primary committee mapping not found", "v1_id", rawMeeting.Committee)
-			}
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map primary committee ID", "v1_id", rawMeeting.Committee)
 		} else {
 			meeting.CommitteeUID = committeeUID
 		}
@@ -839,11 +835,7 @@ func getCommitteesForMeeting(
 		if committeeID != "" {
 			committeeUID, err := idMapper.MapCommitteeV1ToV2(ctx, committeeID)
 			if err != nil {
-				if domain.GetErrorType(err) != domain.ErrorTypeValidation {
-					logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
-				} else {
-					logger.With(logging.ErrKey, err).InfoContext(ctx, "committee ID mapping not found", "v1_id", committeeID)
-				}
+				logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to map committee ID", "v1_id", committeeID)
 				continue
 			}
 
@@ -879,7 +871,7 @@ func resolveParentMeetingCommittees(
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map primary committee ID for parent meeting (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).InfoContext(ctx, "primary committee mapping not found for parent meeting", "v1_id", primaryCommitteeSFID)
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "primary committee mapping not found for parent meeting", "v1_id", primaryCommitteeSFID)
 		} else if uid != "" {
 			committees = []models.Committee{{UID: uid}}
 		}
@@ -981,7 +973,7 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	meetingEntry, err := h.v1ObjectsKV.Get(ctx, meetingKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			h.logger.With(logging.ErrKey, err).InfoContext(ctx, "meeting not found during retrigger; it may have been deleted")
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "meeting not found during retrigger; it may have been deleted")
 			return false
 		}
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching meeting during retrigger")

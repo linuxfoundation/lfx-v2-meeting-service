@@ -265,19 +265,14 @@ func (s *MeetingService) mapResponseV1ToV2(ctx context.Context, resp *itx.ZoomMe
 		resp.Project = v2UID
 	}
 
-	// Map committee SFIDs (v1) to committee UIDs (v2). On mapping-not-found (validation error),
-	// leave the committee UID empty and continue. On transient failures, log a warning.
+	// Map committee SFIDs (v1) to committee UIDs (v2). On any mapping failure, log a warning,
+	// leave the committee UID empty, and continue so the caller still receives the full response.
 	for i := range resp.Committees {
 		if resp.Committees[i].ID != "" {
 			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
 			if err != nil {
-				if domain.GetErrorType(err) != domain.ErrorTypeValidation {
-					slog.WarnContext(ctx, "failed to map committee ID in meeting response; returning empty committee UID",
-						"v1_id", resp.Committees[i].ID, "err", err)
-				} else {
-					slog.InfoContext(ctx, "committee ID mapping not found in meeting response; returning empty committee UID",
-						"v1_id", resp.Committees[i].ID, "err", err)
-				}
+				slog.WarnContext(ctx, "failed to map committee ID in meeting response; returning empty committee UID",
+					"v1_id", resp.Committees[i].ID, "err", err)
 				resp.Committees[i].ID = ""
 				continue
 			}

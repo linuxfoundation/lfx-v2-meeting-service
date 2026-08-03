@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -187,7 +186,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	entry, kvErr := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if kvErr != nil {
 		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			funcLogger.InfoContext(ctx, "skipping summary: parent past meeting not found")
+			funcLogger.WarnContext(ctx, "skipping summary: parent past meeting not found")
 			return false
 		}
 		funcLogger.With(logging.ErrKey, kvErr).WarnContext(ctx, "transient error fetching parent past meeting, will retry")
@@ -207,11 +206,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	if projSFID != "" {
 		projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
 		if mapErr != nil {
-			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
-				funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for summary")
-			} else {
-				funcLogger.With(logging.ErrKey, mapErr).InfoContext(ctx, "project mapping not found for summary", "v1_id", projSFID)
-			}
+			funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for summary")
 			return isTransientError(mapErr)
 		}
 		summaryData.ProjectUID = projectUID
@@ -219,7 +214,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 
 	// Skip if project is not yet mapped to v2
 	if summaryData.ProjectUID == "" {
-		funcLogger.InfoContext(ctx, "skipping summary: project not yet in v2")
+		funcLogger.WarnContext(ctx, "skipping summary: project not yet in v2")
 		return false
 	}
 

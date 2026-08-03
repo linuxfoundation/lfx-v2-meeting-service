@@ -10,7 +10,6 @@ import (
 	"time"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
@@ -112,20 +111,16 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 			funcLogger.WarnContext(ctx, "parent meeting not yet in KV, will retry attachment")
 			return true
 		}
-		funcLogger.InfoContext(ctx, "skipping attachment: parent meeting exists but has no project")
+		funcLogger.WarnContext(ctx, "skipping attachment: parent meeting exists but has no project")
 		return false
 	}
 	projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
 	if mapErr != nil {
-		if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
-			funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
-		} else {
-			funcLogger.With(logging.ErrKey, mapErr).InfoContext(ctx, "project mapping not found for attachment", "v1_id", projSFID)
-		}
+		funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
 		return isTransientError(mapErr)
 	}
 	if projectUID == "" {
-		funcLogger.InfoContext(ctx, "skipping attachment: project not yet in v2")
+		funcLogger.WarnContext(ctx, "skipping attachment: project not yet in v2")
 		return false
 	}
 	attachmentData.ProjectUID = projectUID
@@ -323,21 +318,17 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		return true
 	}
 	if projSFID == "" {
-		funcLogger.InfoContext(ctx, "skipping attachment: parent past meeting not found or has no project")
+		funcLogger.WarnContext(ctx, "skipping attachment: parent past meeting not found or has no project")
 		return false
 	}
 	attachmentData.ProjectSlug = projectSlug
 	projectUID, mapErr := h.idMapper.MapProjectV1ToV2(ctx, projSFID)
 	if mapErr != nil {
-		if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
-			funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
-		} else {
-			funcLogger.With(logging.ErrKey, mapErr).InfoContext(ctx, "project mapping not found for attachment", "v1_id", projSFID)
-		}
+		funcLogger.With(logging.ErrKey, mapErr).WarnContext(ctx, "error mapping project v1 to v2 for attachment")
 		return isTransientError(mapErr)
 	}
 	if projectUID == "" {
-		funcLogger.InfoContext(ctx, "skipping attachment: project not yet in v2")
+		funcLogger.WarnContext(ctx, "skipping attachment: project not yet in v2")
 		return false
 	}
 	attachmentData.ProjectUID = projectUID
