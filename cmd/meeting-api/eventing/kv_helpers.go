@@ -33,7 +33,7 @@ func lookupProjectFromMeeting(
 	entry, kvErr := v1ObjectsKV.Get(ctx, meetingKey)
 	if kvErr != nil {
 		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			logger.InfoContext(ctx, "parent meeting not found in KV for project lookup", "key", meetingKey)
+			logger.WarnContext(ctx, "parent meeting not found in KV for project lookup", "key", meetingKey)
 			return "", "", nil
 		}
 		return "", "", domain.NewUnavailableError("transient error fetching parent meeting", kvErr)
@@ -62,7 +62,7 @@ func lookupProjectFromPastMeeting(
 	entry, kvErr := v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if kvErr != nil {
 		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			logger.InfoContext(ctx, "parent past_meeting not found for project lookup", "key", pastMeetingKey)
+			logger.WarnContext(ctx, "parent past_meeting not found for project lookup", "key", pastMeetingKey)
 			return "", "", "", nil
 		}
 		return "", "", "", domain.NewUnavailableError("transient error fetching parent past_meeting", kvErr)
