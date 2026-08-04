@@ -294,17 +294,31 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		m.UpdatedOccurrences = make([]models.UpdatedOccurrence, 0, len(tmp.UpdatedOccurrences))
 		for _, raw := range tmp.UpdatedOccurrences {
 			var occTmp struct {
-				OldOccurrenceID string                        `json:"old_occurrence_id"`
-				NewOccurrenceID string                        `json:"new_occurrence_id"`
-				Timezone        string                        `json:"timezone"`
-				Duration        interface{}                   `json:"duration"`
-				Title           string                        `json:"title"`
-				Description     string                        `json:"description"`
-				Recurrence      *models.ZoomMeetingRecurrence `json:"recurrence"`
-				AllFollowing    bool                          `json:"all_following"`
+				OldOccurrenceID string           `json:"old_occurrence_id"`
+				NewOccurrenceID string           `json:"new_occurrence_id"`
+				Timezone        string           `json:"timezone"`
+				Duration        interface{}      `json:"duration"`
+				Title           string           `json:"title"`
+				Description     string           `json:"description"`
+				Recurrence      *RecurrenceDBRaw `json:"recurrence"`
+				AllFollowing    bool             `json:"all_following"`
 			}
 			if err := json.Unmarshal(raw, &occTmp); err != nil {
 				return fmt.Errorf("failed to unmarshal updated_occurrence: %w", err)
+			}
+			var rec *models.ZoomMeetingRecurrence
+			if occTmp.Recurrence != nil {
+				r := occTmp.Recurrence
+				rec = &models.ZoomMeetingRecurrence{
+					Type:           r.Type,
+					RepeatInterval: r.RepeatInterval,
+					WeeklyDays:     r.WeeklyDays,
+					MonthlyDay:     r.MonthlyDay,
+					MonthlyWeek:    r.MonthlyWeek,
+					MonthlyWeekDay: r.MonthlyWeekDay,
+					EndTimes:       r.EndTimes,
+					EndDateTime:    r.EndDateTime,
+				}
 			}
 			occ := models.UpdatedOccurrence{
 				OldOccurrenceID: occTmp.OldOccurrenceID,
@@ -312,7 +326,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 				Timezone:        occTmp.Timezone,
 				Title:           occTmp.Title,
 				Description:     occTmp.Description,
-				Recurrence:      occTmp.Recurrence,
+				Recurrence:      rec,
 				AllFollowing:    occTmp.AllFollowing,
 			}
 			if err := coerceInt(&occ.Duration, occTmp.Duration, "duration"); err != nil {

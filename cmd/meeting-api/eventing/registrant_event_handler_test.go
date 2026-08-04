@@ -130,6 +130,38 @@ func (s *stubAcceptanceClient) AcceptInvite(_ context.Context, email, username s
 	return s.err
 }
 
+// TestConvertMapToInviteResponseData_MailerDaemon verifies that mailer-daemon bounce emails
+// are silently filtered (nil, nil) before required-field validation or any KV lookup occurs.
+// Addresses where "mailer-daemon" appears only in the domain or as a subaddress suffix are
+// not filtered; those cases require a real KV stub and are covered by integration tests.
+func TestConvertMapToInviteResponseData_MailerDaemon(t *testing.T) {
+	cases := []struct {
+		name  string
+		email string
+	}{
+		{"standard lowercase", "mailer-daemon@example.com"},
+		{"uppercase", "MAILER-DAEMON@example.com"},
+		{"mixed case", "Mailer-Daemon@example.com"},
+		// Payload missing required id/meeting_id — still filtered before validation runs.
+		{"missing required fields", "mailer-daemon@bounce.example.org"},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			v1Data := map[string]interface{}{
+				"id":         "resp-1",
+				"meeting_id": "mtg-1",
+				"email":      tt.email,
+				"response":   "accepted",
+			}
+			// v1ObjectsKV is nil — the filter must return before any KV call is made.
+			result, err := convertMapToInviteResponseData(context.Background(), v1Data, stubV1UserLookup{}, stubIDMapper{}, nil, slog.Default())
+			require.NoError(t, err)
+			assert.Nil(t, result)
+		})
+	}
+}
+
 func TestMaybeSendInvite(t *testing.T) {
 	const (
 		registrantUID = "reg-123"

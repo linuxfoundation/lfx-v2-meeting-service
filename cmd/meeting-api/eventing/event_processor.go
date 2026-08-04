@@ -190,19 +190,25 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 	drainCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	done := make(chan struct{})
+	done := make(chan error, 1)
 	go func() {
 		if ep.nc != nil {
-			ep.nc.Drain()
+			done <- ep.nc.Drain()
+		} else {
+			done <- nil
 		}
-		close(done)
 	}()
 
+	var drainErr error
 	select {
 	case <-drainCtx.Done():
 		ep.logger.Warn("drain timeout exceeded, force closing")
-	case <-done:
-		ep.logger.Info("drain completed")
+	case drainErr = <-done:
+		if drainErr != nil {
+			ep.logger.Warn("failed to drain NATS connection on shutdown", logging.ErrKey, drainErr)
+		} else {
+			ep.logger.Info("drain completed")
+		}
 	}
 
 	// Close publisher
@@ -216,7 +222,7 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 	}
 
 	ep.logger.Info("event processor stopped")
-	return nil
+	return drainErr
 }
 
 // setupConsumerWithRetry calls setupConsumer with exponential backoff until it

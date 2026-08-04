@@ -251,6 +251,11 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		return isTransientError(err)
 	}
 	if participantData.Username != "" {
+		// Known limitation: NATS JetStream KV keys only allow [-a-zA-Z0-9_.], so usernames
+		// containing spaces or other special characters (e.g. "John Doe") will fail this Put
+		// with "nats: invalid key". We accept this as a pre-existing gap rather than encoding
+		// the key (which would make it unreadable). The WARN log captures the failure and
+		// the key field on funcLogger identifies the source record for Datadog diagnosis.
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
@@ -658,6 +663,11 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		return isTransientError(err)
 	}
 	if participantData.Username != "" {
+		// Known limitation: NATS JetStream KV keys only allow [-a-zA-Z0-9_.], so usernames
+		// containing spaces or other special characters (e.g. "John Doe") will fail this Put
+		// with "nats: invalid key". We accept this as a pre-existing gap rather than encoding
+		// the key (which would make it unreadable). The WARN log captures the failure and
+		// the key field on funcLogger identifies the source record for Datadog diagnosis.
 		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
 			participantData.MeetingAndOccurrenceID, participantData.Username)
 		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
