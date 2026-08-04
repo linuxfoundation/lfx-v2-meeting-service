@@ -28,6 +28,13 @@ import (
 // MessageAction represents the type of action performed on an object
 type MessageAction string
 
+// objectType constants for v1 indexer access-check strings.
+// These were removed from lfx-v2-indexer-service v0.4.25, so we define them locally.
+const (
+	objectTypeV1Meeting     = "v1_meeting"
+	objectTypeV1PastMeeting = "v1_past_meeting"
+)
+
 const (
 	ActionCreated MessageAction = "created"
 	ActionUpdated MessageAction = "updated"
@@ -85,9 +92,9 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             meeting.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + meeting.ID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + meeting.ID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
@@ -156,9 +163,9 @@ func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, 
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             credentials.MeetingID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + credentials.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + credentials.MeetingID,
 			AccessCheckRelation:  "host",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + credentials.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + credentials.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           credentials.ParentRefs(),
 			Tags:                 tags,
@@ -189,9 +196,9 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             registrant.UID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + registrant.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + registrant.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           registrant.ParentRefs(),
 			Tags:                 tags,
@@ -249,9 +256,9 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             response.ID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + response.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + response.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           response.ParentRefs(),
 			Tags:                 tags,
@@ -286,9 +293,9 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             meeting.MeetingAndOccurrenceID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
@@ -399,9 +406,9 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             participant.UID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           participant.ParentRefs(),
 			Tags:                 tags,
@@ -463,9 +470,9 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             recording.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "recording_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           recording.ParentRefs(),
 			Tags:                 tags,
@@ -499,9 +506,9 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             transcript.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "transcript_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           transcript.ParentRefs(),
 			Tags:                 tags,
@@ -535,9 +542,9 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             summary.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "ai_summary_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           summary.ParentRefs(),
 			Tags:                 tags,
@@ -570,9 +577,9 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             attachment.UID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + attachment.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + attachment.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
@@ -603,9 +610,9 @@ func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, a
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             attachment.UID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
