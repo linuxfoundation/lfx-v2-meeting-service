@@ -25,6 +25,13 @@ DISABLE_ERRORS_LINTERS:
   - REPOSITORY_CHECKOV
   - REPOSITORY_DEVSKIM
 YAML_YAMLLINT_CONFIG_FILE: .yamllint
+# zizmor's artipacked audit requires GitHub API access which is unavailable on
+# Dependabot PRs (401 Unauthorized). Run offline to skip API-dependent checks
+# while keeping all static security audits (template-injection, excessive-
+# permissions, dangerous-triggers, etc.). All actions are already pinned by SHA
+# so artipacked would pass anyway.
+# yamllint disable-line rule:line-length
+ACTION_ZIZMOR_ARGUMENTS: --offline
 # yamllint disable-line rule:line-length
 REPOSITORY_KICS_ARGUMENTS: scan --no-progress --exclude-severities="medium,low,info,trace" --exclude-paths="./gen/*" --exclude-paths="cmd/meeting-api/kodata/*"
 SPELL_CSPELL_ANALYZE_FILE_NAMES: false
