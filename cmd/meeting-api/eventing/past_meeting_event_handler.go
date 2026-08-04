@@ -698,7 +698,7 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger, may be deleted")
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger; it may have been deleted")
 			return false
 		}
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching past meeting during retrigger")
