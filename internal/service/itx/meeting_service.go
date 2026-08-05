@@ -185,7 +185,7 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		YoutubeUploadEnabled:     req.YoutubeUploadEnabled,
 		ZoomAIEnabled:            req.AISummaryEnabled,
 		RequireAISummaryApproval: req.RequireAISummaryApproval,
-		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled,
+		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled, // nil = omitted, ITX preserves the stored reminder
 		AutoEmailReminderTime:    req.AutoEmailReminderTime,
 		Note:                     req.UpdateNote,
 	}

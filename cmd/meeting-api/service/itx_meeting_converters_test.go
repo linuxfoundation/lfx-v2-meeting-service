@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -30,13 +31,23 @@ func TestConvertCreateITXMeetingPayloadToDomain_AutoEmailReminder(t *testing.T) 
 		p.AutoEmailReminderTime = utils.IntPtrOmitZero(150)
 
 		req := ConvertCreateITXMeetingPayloadToDomain(p)
-		assert.True(t, req.AutoEmailReminderEnabled)
+		require.NotNil(t, req.AutoEmailReminderEnabled)
+		assert.True(t, *req.AutoEmailReminderEnabled)
 		assert.Equal(t, 150, req.AutoEmailReminderTime)
 	})
 
-	t.Run("defaults to disabled with zero time when fields are absent", func(t *testing.T) {
+	t.Run("maps explicit false distinctly from omission", func(t *testing.T) {
+		p := basePayload()
+		p.AutoEmailReminderEnabled = utils.BoolPtr(false)
+
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		require.NotNil(t, req.AutoEmailReminderEnabled)
+		assert.False(t, *req.AutoEmailReminderEnabled)
+	})
+
+	t.Run("preserves omission as nil when fields are absent", func(t *testing.T) {
 		req := ConvertCreateITXMeetingPayloadToDomain(basePayload())
-		assert.False(t, req.AutoEmailReminderEnabled)
+		assert.Nil(t, req.AutoEmailReminderEnabled)
 		assert.Equal(t, 0, req.AutoEmailReminderTime)
 	})
 }

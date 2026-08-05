@@ -269,7 +269,7 @@ Content-Type: application/json
 | `description` | `agenda` | Meeting description |
 | `artifact_visibility` | `recording_access` | Recording access level |
 | `early_join_time_minutes` | `early_join_time` | Minutes users can join early |
-| `auto_email_reminder_enabled` | `auto_email_reminder_enabled` | Whether a reminder email is sent to participants; always serialized to ITX (an explicit `false` is required to disable — ITX preserves the stored pair when the field is absent) |
+| `auto_email_reminder_enabled` | `auto_email_reminder_enabled` | Whether a reminder email is sent to participants. Optional: when the proxy request omits it, it is also omitted from the ITX request and ITX preserves the stored reminder pair; an explicit `false` is forwarded as-is and disables the reminder (ITX resets the stored time to 0) |
 | `auto_email_reminder_time` | `auto_email_reminder_time` | Minutes before start to send the reminder (120-1440, proxy-validated); omitted when zero — ITX defaults to 1440 when enabled without a time and resets to 0 on explicit disable |
 | `committees[].uid` | `committees[].id` | Committee identifier |
 | `committees[].allowed_voting_statuses` | `committees[].filters` | Voting status filters |

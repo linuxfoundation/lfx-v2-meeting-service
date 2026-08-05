@@ -29,7 +29,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		AISummaryEnabled:         utils.BoolValue(p.AiSummaryEnabled),
 		RequireAISummaryApproval: utils.BoolValue(p.RequireAiSummaryApproval),
 		ArtifactVisibility:       itx.ArtifactAccess(utils.StringValue(p.ArtifactVisibility)),
-		AutoEmailReminderEnabled: utils.BoolValue(p.AutoEmailReminderEnabled),
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    utils.IntValue(p.AutoEmailReminderTime),
 	}
 
