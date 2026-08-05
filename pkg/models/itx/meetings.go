@@ -71,9 +71,13 @@ type CreateZoomMeetingRequest struct {
 	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
-	// Email reminders
-	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
-	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"`
+	// Email reminders. Enabled is a pointer so presence is preserved on the wire: nil is
+	// omitted (ITX preserves the stored reminder pair), while a non-nil false still
+	// serializes (omitempty never drops a non-nil pointer) so an explicit disable reaches
+	// ITX and resets the stored time to 0. Time stays a plain omitempty int because 0 is
+	// never a valid set-value (ITX range is 120-1440).
+	AutoEmailReminderEnabled *bool `json:"auto_email_reminder_enabled,omitempty"`
+	AutoEmailReminderTime    int   `json:"auto_email_reminder_time,omitempty"`
 
 	// Advanced
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`

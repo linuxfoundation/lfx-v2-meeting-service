@@ -91,6 +91,8 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `use_unique_ics_uid` | string | UUID used as the unique ICS UID for calendar events (empty string when not set) |
 | `show_meeting_attendees` | bool | Whether attendee data is visible to other attendees |
 | `organizers` | []string | Auth0 sub-format usernames of meeting organizers |
+| `auto_email_reminder_enabled` | bool | Whether an automatic reminder email is sent to participants before the meeting starts |
+| `auto_email_reminder_time` | int | Minutes before the meeting start time that the reminder email is sent (120-1440; `0` when reminders are disabled) |
 
 #### Committee Schema
 

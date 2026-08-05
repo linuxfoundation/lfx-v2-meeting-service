@@ -29,6 +29,8 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		AISummaryEnabled:         utils.BoolValue(p.AiSummaryEnabled),
 		RequireAISummaryApproval: utils.BoolValue(p.RequireAiSummaryApproval),
 		ArtifactVisibility:       itx.ArtifactAccess(utils.StringValue(p.ArtifactVisibility)),
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    utils.IntValue(p.AutoEmailReminderTime),
 	}
 
 	// Convert committees

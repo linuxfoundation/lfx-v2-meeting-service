@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // fakeMeetingClient captures the CreateZoomMeetingRequest / UpdateZoomMeetingRequest /
@@ -210,6 +212,83 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 		assert.Nil(t, client.lastUpdateReq.UpdatedBy)
 		assert.Nil(t, client.lastUpdateReq.CreatedBy)
 		assert.Empty(t, reader.calls, "resolver should not be called without a principal")
+	})
+}
+
+func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ID:                       "meeting-1",
+			ProjectUID:               "proj-1",
+			Title:                    "Test Meeting",
+			StartTime:                "2026-01-01T00:00:00Z",
+			Duration:                 30,
+			Visibility:               itx.MeetingVisibilityPublic,
+			AutoEmailReminderEnabled: utils.BoolPtr(true),
+			AutoEmailReminderTime:    1440,
+		}
+	}
+
+	t.Run("create forwards reminder fields to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		require.NotNil(t, client.lastCreateReq.AutoEmailReminderEnabled)
+		assert.True(t, *client.lastCreateReq.AutoEmailReminderEnabled)
+		assert.Equal(t, 1440, client.lastCreateReq.AutoEmailReminderTime)
+	})
+
+	t.Run("update forwards reminder fields to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		require.NotNil(t, client.lastUpdateReq.AutoEmailReminderEnabled)
+		assert.True(t, *client.lastUpdateReq.AutoEmailReminderEnabled)
+		assert.Equal(t, 1440, client.lastUpdateReq.AutoEmailReminderTime)
+	})
+
+	t.Run("explicit false serializes on the wire so ITX resets the stored pair", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.AutoEmailReminderEnabled = utils.BoolPtr(false)
+		req.AutoEmailReminderTime = 0
+		_, err := svc.CreateMeeting(context.Background(), req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+
+		// A non-nil false must survive omitempty so an explicit disable reaches ITX,
+		// while the zero time is omitted.
+		body, err := json.Marshal(client.lastCreateReq)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), `"auto_email_reminder_enabled":false`)
+		assert.NotContains(t, string(body), `"auto_email_reminder_time"`)
+	})
+
+	t.Run("omitted reminder field stays off the wire so ITX preserves the stored pair", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.AutoEmailReminderEnabled = nil
+		req.AutoEmailReminderTime = 0
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+
+		// An update from a client that never sends the reminder fields must not disable an
+		// existing reminder: nil serializes as absent and ITX leaves the stored pair untouched.
+		body, err := json.Marshal(client.lastUpdateReq)
+		require.NoError(t, err)
+		assert.NotContains(t, string(body), `"auto_email_reminder_enabled"`)
+		assert.NotContains(t, string(body), `"auto_email_reminder_time"`)
 	})
 }
 

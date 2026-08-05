@@ -54,6 +54,10 @@ type CreateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
 }
 
 // UpdateItxMeetingRequestBody is the type of the "Meeting Service" service
@@ -96,6 +100,10 @@ type UpdateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
@@ -3844,6 +3852,8 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 		AiSummaryEnabled:         p.AiSummaryEnabled,
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    p.AutoEmailReminderTime,
 	}
 	if p.Committees != nil {
 		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
@@ -3881,6 +3891,8 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		AiSummaryEnabled:         p.AiSummaryEnabled,
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    p.AutoEmailReminderTime,
 		UpdateNote:               p.UpdateNote,
 	}
 	if p.Committees != nil {
@@ -7568,6 +7580,16 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime < 120 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
+		}
+	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime > 1440 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
+		}
+	}
 	if body.NextOccurrenceStartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.next_occurrence_start_time", *body.NextOccurrenceStartTime, goa.FormatDateTime))
 	}
@@ -7649,6 +7671,16 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 	if body.Recurrence != nil {
 		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime < 120 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
+		}
+	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime > 1440 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
 	}
 	if body.NextOccurrenceStartTime != nil {

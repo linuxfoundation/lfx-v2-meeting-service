@@ -56,6 +56,8 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
 		Recurrence:               p.Recurrence,
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    p.AutoEmailReminderTime,
 	})
 
 	req.ID = p.MeetingID

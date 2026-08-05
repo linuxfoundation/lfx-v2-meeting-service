@@ -102,7 +102,10 @@ func AutoEmailReminderEnabledAttribute() {
 }
 
 func AutoEmailReminderTimeAttribute() {
-	Attribute("auto_email_reminder_time", Int, "Time in minutes before the meeting to send the automatic email reminder")
+	Attribute("auto_email_reminder_time", Int, "Time in minutes before the meeting to send the automatic email reminder", func() {
+		Minimum(120)
+		Maximum(1440)
+	})
 }
 
 func LastBulkRegistrantJobStatusAttribute() {
