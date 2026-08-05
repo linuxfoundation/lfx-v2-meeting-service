@@ -213,6 +213,57 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	})
 }
 
+func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ID:                       "meeting-1",
+			ProjectUID:               "proj-1",
+			Title:                    "Test Meeting",
+			StartTime:                "2026-01-01T00:00:00Z",
+			Duration:                 30,
+			Visibility:               itx.MeetingVisibilityPublic,
+			AutoEmailReminderEnabled: true,
+			AutoEmailReminderTime:    1440,
+		}
+	}
+
+	t.Run("create forwards reminder fields to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		assert.True(t, client.lastCreateReq.AutoEmailReminderEnabled)
+		assert.Equal(t, 1440, client.lastCreateReq.AutoEmailReminderTime)
+	})
+
+	t.Run("update forwards reminder fields to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		assert.True(t, client.lastUpdateReq.AutoEmailReminderEnabled)
+		assert.Equal(t, 1440, client.lastUpdateReq.AutoEmailReminderTime)
+	})
+
+	t.Run("disabled reminder forwards zero values so ITX omits them", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.AutoEmailReminderEnabled = false
+		req.AutoEmailReminderTime = 0
+		_, err := svc.CreateMeeting(context.Background(), req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		assert.False(t, client.lastCreateReq.AutoEmailReminderEnabled)
+		assert.Equal(t, 0, client.lastCreateReq.AutoEmailReminderTime)
+	})
+}
+
 func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 	t.Run("stamps updated_by from resolved profile", func(t *testing.T) {
 		client := &fakeMeetingClient{}

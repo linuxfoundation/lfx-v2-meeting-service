@@ -240,6 +240,10 @@ type CreateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int
 }
 
 // CreateItxPastMeetingAttachmentPayload is the payload type of the Meeting
@@ -1392,6 +1396,10 @@ type UpdateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string

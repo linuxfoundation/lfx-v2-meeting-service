@@ -41,6 +41,8 @@ type CreateITXMeetingRequest struct {
 	RequireAISummaryApproval bool
 	ArtifactVisibility       itx.ArtifactAccess
 	Recurrence               *ITXRecurrence
+	AutoEmailReminderEnabled bool
+	AutoEmailReminderTime    int // Minutes before the meeting start time (120-1440)
 	UpdateNote               string
 }
 

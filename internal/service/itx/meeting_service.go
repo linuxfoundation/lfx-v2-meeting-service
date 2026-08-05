@@ -185,6 +185,8 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		YoutubeUploadEnabled:     req.YoutubeUploadEnabled,
 		ZoomAIEnabled:            req.AISummaryEnabled,
 		RequireAISummaryApproval: req.RequireAISummaryApproval,
+		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    req.AutoEmailReminderTime,
 		Note:                     req.UpdateNote,
 	}
 

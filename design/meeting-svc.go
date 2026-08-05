@@ -74,6 +74,8 @@ var _ = Service("Meeting Service", func() {
 			RequireAiSummaryApprovalAttribute()
 			ArtifactVisibilityAttribute()
 			RecurrenceAttribute()
+			AutoEmailReminderEnabledAttribute()
+			AutoEmailReminderTimeAttribute()
 			Required("project_uid", "title", "start_time", "duration", "timezone", "visibility")
 		})
 
@@ -206,6 +208,8 @@ var _ = Service("Meeting Service", func() {
 			RequireAiSummaryApprovalAttribute()
 			ArtifactVisibilityAttribute()
 			RecurrenceAttribute()
+			AutoEmailReminderEnabledAttribute()
+			AutoEmailReminderTimeAttribute()
 			UpdateNoteAttribute()
 			Required("meeting_id", "project_uid", "title", "start_time", "duration", "timezone", "visibility")
 		})
