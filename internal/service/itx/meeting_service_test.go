@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -249,7 +250,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 		assert.Equal(t, 1440, client.lastUpdateReq.AutoEmailReminderTime)
 	})
 
-	t.Run("disabled reminder forwards zero values so ITX omits them", func(t *testing.T) {
+	t.Run("disabled reminder serializes an explicit false so ITX resets the stored pair", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
@@ -261,6 +262,13 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 		require.NotNil(t, client.lastCreateReq)
 		assert.False(t, client.lastCreateReq.AutoEmailReminderEnabled)
 		assert.Equal(t, 0, client.lastCreateReq.AutoEmailReminderTime)
+
+		// ITX preserves the stored reminder pair when the enabled field is absent, so the wire
+		// format must carry an explicit false (no omitempty) while the zero time is omitted.
+		body, err := json.Marshal(client.lastCreateReq)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), `"auto_email_reminder_enabled":false`)
+		assert.NotContains(t, string(body), `"auto_email_reminder_time"`)
 	})
 }
 

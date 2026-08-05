@@ -71,8 +71,11 @@ type CreateZoomMeetingRequest struct {
 	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
-	// Email reminders
-	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
+	// Email reminders. Enabled is serialized unconditionally (no omitempty) like the other
+	// feature toggles: ITX preserves the stored pair when the field is absent, so an explicit
+	// false is required to disable reminders on update. Time stays omitempty because 0 is
+	// never a valid set-value (ITX range is 120-1440) and ITX resets it on explicit disable.
+	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled"`
 	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"`
 
 	// Advanced
