@@ -284,7 +284,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.MeetingAndOccurrenceID)
 
 	tags := meeting.Tags()
-	publicFalse := false
+	isPublic := meeting.Visibility == "public"
 	indexerMsg := indexerTypes.IndexerMessageEnvelope{
 		Action:  indexerConstants.MessageAction(action),
 		Headers: map[string]string{"authorization": authorizationHeaderValue},
@@ -292,7 +292,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Tags:    tags,
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             meeting.MeetingAndOccurrenceID,
-			Public:               &publicFalse,
+			Public:               &isPublic,
 			AccessCheckObject:    objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
 			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
@@ -373,7 +373,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Operation:  "update_access",
 		Data: fgatypes.GenericAccessData{
 			UID:        meeting.MeetingAndOccurrenceID,
-			Public:     false,
+			Public:     isPublic,
 			Relations:  pastMeetingRelations,
 			References: pastMeetingRefs,
 			// host/invitee/attendee are managed by PublishPastMeetingParticipantEvent

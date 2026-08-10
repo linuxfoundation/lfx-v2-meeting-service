@@ -481,7 +481,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `access_check_relation` | `viewer` |
 | `history_check_object` | `v1_past_meeting:{id}` |
 | `history_check_relation` | `auditor` |
-| `public` | `false` (always) |
+| `public` | `true` when `visibility == "public"`, `false` otherwise |
 
 ### Search Behavior
 
