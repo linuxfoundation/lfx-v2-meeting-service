@@ -116,7 +116,7 @@ Published to `lfx.fga-sync.update_access` on past meeting create or update.
 | Field | Value |
 |---|---|
 | `object_type` | `v1_past_meeting` |
-| `public` | `false` (always) |
+| `public` | `true` when `Visibility == "public"`, otherwise `false` |
 
 #### Relations
 
