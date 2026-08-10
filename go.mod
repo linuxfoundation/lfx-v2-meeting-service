@@ -6,11 +6,11 @@ module github.com/linuxfoundation/lfx-v2-meeting-service
 go 1.25.12
 
 require (
-	github.com/auth0/go-auth0 v1.45.0
+	github.com/auth0/go-auth0 v1.46.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.1
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.6
+	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.7
 	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.25
 	github.com/linuxfoundation/lfx-v2-invite-service v0.1.10
 	github.com/nats-io/nats.go v1.52.0
