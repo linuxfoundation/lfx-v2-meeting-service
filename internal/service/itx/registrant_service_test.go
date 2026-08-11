@@ -59,6 +59,53 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 	})
 }
 
+func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
+	t.Run("sets email from context and type direct", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+			Username: "alice", Name: "Alice", Email: "alice@example.com",
+		}}
+		svc := NewRegistrantService(client, noOpIDMapper{}, reader)
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "alice@example.com", client.lastCreateReq.Email)
+		assert.Equal(t, itx.RegistrantTypeDirect, client.lastCreateReq.Type)
+		require.NotNil(t, client.lastCreateReq.CreatedBy)
+		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
+	})
+
+	t.Run("returns validation error when email absent from context", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := NewRegistrantService(client, noOpIDMapper{}, nil)
+
+		// Context has a principal but no email — simulates an M2M or misconfigured OIDC token.
+		ctx := ctxWithPrincipal("svc-account", "")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Nil(t, client.lastCreateReq, "ITX client must not be called when email is missing")
+	})
+
+	t.Run("does not accept email from request body", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := NewRegistrantService(client, noOpIDMapper{}, nil)
+
+		ctx := ctxWithPrincipal("bob", "bob@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			Email: "attacker@evil.com",
+		})
+		require.NoError(t, err)
+		// The context email must win; the body email is overwritten.
+		assert.Equal(t, "bob@example.com", client.lastCreateReq.Email)
+	})
+}
+
 func TestRegistrantService_UpdateRegistrant_StampsUpdatedByNotCreatedBy(t *testing.T) {
 	t.Run("stamps only updated_by on update", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
