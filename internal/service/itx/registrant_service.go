@@ -79,7 +79,9 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	if email == "" {
 		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
 	}
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
 	req.Email = email
+	req.Username = principal
 	req.Type = itx.RegistrantTypeDirect
 	req.CreatedBy = s.buildRequestingUser(ctx)
 

@@ -555,7 +555,7 @@ Content-Type: application/json
 | `job_title` | string | No | Job title |
 | `occurrence` | string | No | Specific occurrence ID (blank = all) |
 
-> **Note**: `email` is intentionally absent from the request body. It is extracted from the authenticated user's JWT claims by the service and cannot be overridden by the caller.
+> **Note**: `email` and `username` are intentionally absent from the request body. Both are extracted from the authenticated user's JWT claims by the service and cannot be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
 
 **Response**: `201 Created`
 

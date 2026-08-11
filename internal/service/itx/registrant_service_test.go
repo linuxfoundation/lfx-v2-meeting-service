@@ -74,6 +74,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "alice@example.com", client.lastCreateReq.Email)
+		assert.Equal(t, "alice", client.lastCreateReq.Username)
 		assert.Equal(t, itx.RegistrantTypeDirect, client.lastCreateReq.Type)
 		require.NotNil(t, client.lastCreateReq.CreatedBy)
 		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)

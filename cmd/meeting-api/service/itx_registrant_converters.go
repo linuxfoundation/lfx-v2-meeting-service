@@ -46,7 +46,8 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 }
 
 // ConvertSelfRegisterPayloadToITX converts a self-registration Goa payload to an ITX registrant.
-// The email field is intentionally absent — it is set by the service layer from the JWT principal.
+// Email and username are intentionally absent — both are set by the service layer from the JWT principal
+// so the caller cannot self-register under a different identity.
 func ConvertSelfRegisterPayloadToITX(p *meetingservice.SelfRegisterItxMeetingPayload) *itx.ZoomMeetingRegistrant {
 	return &itx.ZoomMeetingRegistrant{
 		FirstName:  utils.StringValue(p.FirstName),
