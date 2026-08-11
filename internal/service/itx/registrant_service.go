@@ -17,16 +17,18 @@ import (
 type RegistrantService struct {
 	auditStamper
 	registrantClient domain.ITXRegistrantClient
+	meetingClient    domain.ITXMeetingClient
 	idMapper         domain.IDMapper
 }
 
 // NewRegistrantService creates a new ITX registrant service. userMetadata may be nil (e.g.
 // when NATS is disabled), in which case created_by / updated_by are limited to the
 // JWT-derived username/email rather than blocking the request.
-func NewRegistrantService(registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
+func NewRegistrantService(registrantClient domain.ITXRegistrantClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
 	return &RegistrantService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		registrantClient: registrantClient,
+		meetingClient:    meetingClient,
 		idMapper:         idMapper,
 	}
 }
@@ -75,6 +77,14 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
 	// Derive email from the authenticated principal rather than accepting it from the
 	// request body — prevents a caller from self-registering under a different identity.
+	meeting, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
+	if err != nil {
+		return nil, err
+	}
+	if meeting.Visibility != itx.MeetingVisibilityPublic {
+		return nil, domain.NewForbiddenError("self-registration is only available for public meetings")
+	}
+
 	email, _ := ctx.Value(constants.EmailContextID).(string)
 	if email == "" {
 		return nil, domain.NewValidationError("authenticated user email is required for self-registration")

@@ -1676,7 +1676,7 @@ paths:
             tags:
                 - Meeting Service
             summary: self-register-itx-meeting Meeting Service
-            description: Register the authenticated user for a public meeting through ITX API proxy. Requires viewer access on the meeting (satisfied by user:* for non-restricted public meetings).
+            description: Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.
             operationId: Meeting Service#self-register-itx-meeting
             parameters:
                 - name: v
@@ -1696,6 +1696,9 @@ paths:
                   required: true
                   schema:
                     $ref: '#/definitions/MeetingServiceSelfRegisterItxMeetingRequestBody'
+                    required:
+                        - first_name
+                        - last_name
             responses:
                 "201":
                     description: Created response.
@@ -5443,6 +5446,9 @@ definitions:
             last_name: Smith
             occurrence: "1666848600"
             org: google
+        required:
+            - first_name
+            - last_name
     MeetingServiceSubmitItxMeetingResponseRequestBody:
         title: MeetingServiceSubmitItxMeetingResponseRequestBody
         type: object

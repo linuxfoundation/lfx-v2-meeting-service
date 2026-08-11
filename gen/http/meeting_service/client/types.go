@@ -162,9 +162,9 @@ type CreateItxRegistrantRequestBody struct {
 // service "self-register-itx-meeting" endpoint HTTP request body.
 type SelfRegisterItxMeetingRequestBody struct {
 	// First name
-	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
 	// Last name
-	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
 	// Organization
 	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
 	// Job title

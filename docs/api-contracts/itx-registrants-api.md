@@ -524,7 +524,7 @@ Allows any authenticated user with at least `viewer` access to a meeting to regi
 
 **Request Headers**:
 
-```
+```text
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
@@ -549,13 +549,15 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `first_name` | string | No | Registrant first name |
-| `last_name` | string | No | Registrant last name |
+| `first_name` | string | Yes | Registrant first name (required by ITX when email is set) |
+| `last_name` | string | Yes | Registrant last name (required by ITX when email is set) |
 | `org` | string | No | Organization name |
 | `job_title` | string | No | Job title |
 | `occurrence` | string | No | Specific occurrence ID (blank = all) |
 
 > **Note**: `email` and `username` are intentionally absent from the request body. Both are extracted from the authenticated user's JWT claims by the service and cannot be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
+>
+> **Note**: Only meetings with `visibility: public` are eligible for self-registration. Attempting to self-register for a private meeting returns `403 Forbidden` even if the caller has viewer access.
 
 **Response**: `201 Created`
 

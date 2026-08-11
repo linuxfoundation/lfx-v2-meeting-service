@@ -316,7 +316,7 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	Method("self-register-itx-meeting", func() {
-		Description("Register the authenticated user for a public meeting through ITX API proxy. Requires viewer access on the meeting (satisfied by user:* for non-restricted public meetings).")
+		Description("Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.")
 
 		Security(JWTAuth)
 
@@ -341,14 +341,14 @@ var _ = Service("Meeting Service", func() {
 			Attribute("occurrence", String, "Specific occurrence ID to register for (blank = all occurrences)", func() {
 				Example("1666848600")
 			})
-			Required("meeting_id")
+			Required("meeting_id", "first_name", "last_name")
 		})
 
 		Result(ITXZoomMeetingRegistrant)
 
 		Error("BadRequest", BadRequestError, "Bad request")
 		Error("Unauthorized", UnauthorizedError, "Unauthorized")
-		Error("Forbidden", ForbiddenError, "Meeting is not accessible")
+		Error("Forbidden", ForbiddenError, "Meeting is not public or is not accessible")
 		Error("NotFound", NotFoundError, "Meeting not found")
 		Error("Conflict", ConflictError, "Already registered for this meeting")
 		Error("InternalServerError", InternalServerError, "Internal server error")

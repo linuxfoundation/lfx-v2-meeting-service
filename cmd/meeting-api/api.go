@@ -100,6 +100,8 @@ func handleError(err error) error {
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
 		return createResponse(http.StatusServiceUnavailable, err)
+	case domain.ErrorTypeForbidden:
+		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
 		return createResponse(http.StatusInternalServerError, err)
 	default:

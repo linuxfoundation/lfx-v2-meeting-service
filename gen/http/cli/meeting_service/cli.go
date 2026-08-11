@@ -657,7 +657,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    update-itx-meeting: Update a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-registrant: Create a meeting registrant through ITX API proxy`)
-	fmt.Fprintln(os.Stderr, `    self-register-itx-meeting: Register the authenticated user for a public meeting through ITX API proxy. Requires viewer access on the meeting (satisfied by user:* for non-restricted public meetings).`)
+	fmt.Fprintln(os.Stderr, `    self-register-itx-meeting: Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.`)
 	fmt.Fprintln(os.Stderr, `    get-itx-registrant: Get a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-registrant: Update a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-registrant: Delete a meeting registrant through ITX API proxy`)
@@ -877,7 +877,7 @@ func meetingServiceSelfRegisterItxMeetingUsage() {
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Register the authenticated user for a public meeting through ITX API proxy. Requires viewer access on the meeting (satisfied by user:* for non-restricted public meetings).`)
+	fmt.Fprintln(os.Stderr, `Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -body JSON: `)

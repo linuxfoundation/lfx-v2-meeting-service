@@ -32,13 +32,32 @@ func (f *fakeRegistrantClient) UpdateRegistrant(_ context.Context, _, _ string, 
 	return nil
 }
 
+// fakeRegistrantMeetingClient returns a canned meeting response for visibility checks
+// in registrant service tests. Kept separate from meeting_service_test.go's fakeMeetingClient.
+type fakeRegistrantMeetingClient struct {
+	domain.ITXMeetingClient
+	visibility itx.MeetingVisibility
+	getErr     error
+}
+
+func (f *fakeRegistrantMeetingClient) GetZoomMeeting(_ context.Context, _ string) (*itx.ZoomMeetingResponse, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
+	return &itx.ZoomMeetingResponse{Visibility: f.visibility}, nil
+}
+
+func newSvcWithMeeting(registrant *fakeRegistrantClient, visibility itx.MeetingVisibility, reader domain.UserMetadataReader) *RegistrantService {
+	return NewRegistrantService(registrant, &fakeRegistrantMeetingClient{visibility: visibility}, noOpIDMapper{}, reader)
+}
+
 func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 	t.Run("stamps full profile on create", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := NewRegistrantService(client, noOpIDMapper{}, reader)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader)
 
 		_, err := svc.CreateRegistrant(ctxWithPrincipal("alice", ""), "mtg-1", &itx.ZoomMeetingRegistrant{Email: "invitee@example.com"})
 		require.NoError(t, err)
@@ -51,7 +70,7 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 
 	t.Run("omits created_by without principal", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := NewRegistrantService(client, noOpIDMapper{}, nil)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, nil)
 
 		_, err := svc.CreateRegistrant(context.Background(), "mtg-1", &itx.ZoomMeetingRegistrant{})
 		require.NoError(t, err)
@@ -60,12 +79,12 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 }
 
 func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
-	t.Run("sets email from context and type direct", func(t *testing.T) {
+	t.Run("sets email and username from context, type direct, for public meeting", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := NewRegistrantService(client, noOpIDMapper{}, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -80,9 +99,24 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
 	})
 
+	t.Run("returns forbidden error for private meeting", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPrivate, nil)
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice", LastName: "Liddell",
+		})
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.Nil(t, client.lastCreateReq, "ITX registrant client must not be called for private meetings")
+	})
+
 	t.Run("returns validation error when email absent from context", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := NewRegistrantService(client, noOpIDMapper{}, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
 
 		// Context has a principal but no email — simulates an M2M or misconfigured OIDC token.
 		ctx := ctxWithPrincipal("svc-account", "")
@@ -90,12 +124,13 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		require.Error(t, err)
 		var de *domain.DomainError
 		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
 		assert.Nil(t, client.lastCreateReq, "ITX client must not be called when email is missing")
 	})
 
 	t.Run("does not accept email from request body", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := NewRegistrantService(client, noOpIDMapper{}, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
 
 		ctx := ctxWithPrincipal("bob", "bob@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -111,7 +146,7 @@ func TestRegistrantService_UpdateRegistrant_StampsUpdatedByNotCreatedBy(t *testi
 	t.Run("stamps only updated_by on update", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "bob", Email: "bob@example.com"}}
-		svc := NewRegistrantService(client, noOpIDMapper{}, reader)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader)
 
 		err := svc.UpdateRegistrant(ctxWithPrincipal("bob", ""), "mtg-1", "reg-1", &itx.ZoomMeetingRegistrant{})
 		require.NoError(t, err)

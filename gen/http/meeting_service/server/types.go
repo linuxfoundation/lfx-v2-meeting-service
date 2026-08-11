@@ -7510,8 +7510,8 @@ func NewCreateItxRegistrantPayload(body *CreateItxRegistrantRequestBody, meeting
 // self-register-itx-meeting endpoint payload.
 func NewSelfRegisterItxMeetingPayload(body *SelfRegisterItxMeetingRequestBody, meetingID string, version *string, bearerToken *string) *meetingservice.SelfRegisterItxMeetingPayload {
 	v := &meetingservice.SelfRegisterItxMeetingPayload{
-		FirstName:  body.FirstName,
-		LastName:   body.LastName,
+		FirstName:  *body.FirstName,
+		LastName:   *body.LastName,
 		Org:        body.Org,
 		JobTitle:   body.JobTitle,
 		Occurrence: body.Occurrence,
@@ -8279,6 +8279,18 @@ func ValidateCreateItxRegistrantRequestBody(body *CreateItxRegistrantRequestBody
 		if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingRequestBody runs the validations defined on
+// Self-Register-Itx-MeetingRequestBody
+func ValidateSelfRegisterItxMeetingRequestBody(body *SelfRegisterItxMeetingRequestBody) (err error) {
+	if body.FirstName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
+	}
+	if body.LastName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("last_name", "body"))
 	}
 	return
 }

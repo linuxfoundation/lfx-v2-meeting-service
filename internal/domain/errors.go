@@ -14,6 +14,7 @@ const (
 	ErrorTypeConflict                     // Resource conflict errors (409 Conflict)
 	ErrorTypeInternal                     // Internal server errors (500 Internal Server Error)
 	ErrorTypeUnavailable                  // Service unavailable errors (503 Service Unavailable)
+	ErrorTypeForbidden                    // Business-logic forbidden errors (403 Forbidden)
 )
 
 // DomainError represents an error with semantic type information
@@ -62,6 +63,10 @@ func NewInternalError(message string, err ...error) *DomainError {
 
 func NewUnavailableError(message string, err ...error) *DomainError {
 	return &DomainError{Type: ErrorTypeUnavailable, Message: message, Err: errors.Join(err...)}
+}
+
+func NewForbiddenError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeForbidden, Message: message, Err: errors.Join(err...)}
 }
 
 // ErrUserNotFound is returned by UserReader when no registered user matches the lookup.

@@ -241,7 +241,7 @@ func (c *Client) CreateItxRegistrant(ctx context.Context, p *CreateItxRegistrant
 // SelfRegisterItxMeeting may return the following errors:
 //   - "BadRequest" (type *BadRequestError): Bad request
 //   - "Unauthorized" (type *UnauthorizedError): Unauthorized
-//   - "Forbidden" (type *ForbiddenError): Meeting is not accessible
+//   - "Forbidden" (type *ForbiddenError): Meeting is not public or is not accessible
 //   - "NotFound" (type *NotFoundError): Meeting not found
 //   - "Conflict" (type *ConflictError): Already registered for this meeting
 //   - "InternalServerError" (type *InternalServerError): Internal server error

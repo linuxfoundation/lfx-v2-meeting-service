@@ -1098,6 +1098,10 @@ func DecodeSelfRegisterItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.R
 			}
 			return payload, goa.DecodePayloadError(err.Error())
 		}
+		err = ValidateSelfRegisterItxMeetingRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
 
 		var (
 			meetingID   string

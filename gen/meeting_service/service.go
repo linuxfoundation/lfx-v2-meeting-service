@@ -32,9 +32,9 @@ type Service interface {
 	GetItxMeetingCount(context.Context, *GetItxMeetingCountPayload) (res *ITXMeetingCountResponse, err error)
 	// Create a meeting registrant through ITX API proxy
 	CreateItxRegistrant(context.Context, *CreateItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
-	// Register the authenticated user for a public meeting through ITX API proxy.
-	// Requires viewer access on the meeting (satisfied by user:* for
-	// non-restricted public meetings).
+	// Register the authenticated user for a meeting through ITX API proxy. Only
+	// public meetings are supported; private meetings return 403. Requires viewer
+	// access on the meeting.
 	SelfRegisterItxMeeting(context.Context, *SelfRegisterItxMeetingPayload) (res *ITXZoomMeetingRegistrant, err error)
 	// Get a meeting registrant through ITX API proxy
 	GetItxRegistrant(context.Context, *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
@@ -1288,9 +1288,9 @@ type SelfRegisterItxMeetingPayload struct {
 	// The ID of the meeting
 	MeetingID string
 	// First name
-	FirstName *string
+	FirstName string
 	// Last name
-	LastName *string
+	LastName string
 	// Organization
 	Org *string
 	// Job title

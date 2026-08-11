@@ -147,7 +147,7 @@ func run() int {
 	}
 	itxProxyClient := proxy.NewClient(itxProxyConfig)
 	itxMeetingService := itxservice.NewMeetingService(itxProxyClient, idMapper, userMetadataReader)
-	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, idMapper, userMetadataReader)
+	itxRegistrantService := itxservice.NewRegistrantService(itxProxyClient, itxProxyClient, idMapper, userMetadataReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxProxyClient, idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxProxyClient, userMetadataReader)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxProxyClient, idMapper, userMetadataReader)
