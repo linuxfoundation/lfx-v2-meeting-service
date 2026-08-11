@@ -315,6 +315,60 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("self-register-itx-meeting", func() {
+		Description("Register the authenticated user for a public meeting through ITX API proxy. Requires viewer access on the meeting (satisfied by user:* for non-restricted public meetings).")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("first_name", String, "First name", func() {
+				Example("Bob")
+			})
+			Attribute("last_name", String, "Last name", func() {
+				Example("Smith")
+			})
+			Attribute("org", String, "Organization", func() {
+				Example("google")
+			})
+			Attribute("job_title", String, "Job title", func() {
+				Example("developer")
+			})
+			Attribute("occurrence", String, "Specific occurrence ID to register for (blank = all occurrences)", func() {
+				Example("1666848600")
+			})
+			Required("meeting_id")
+		})
+
+		Result(ITXZoomMeetingRegistrant)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Meeting is not accessible")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("Conflict", ConflictError, "Already registered for this meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			POST("/itx/meetings/{meeting_id}/registrants/self")
+			Param("version:v")
+			Header("bearer_token:Authorization")
+			Response(StatusCreated)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("Conflict", StatusConflict)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("get-itx-registrant", func() {
 		Description("Get a meeting registrant through ITX API proxy")
 

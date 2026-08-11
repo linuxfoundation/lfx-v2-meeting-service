@@ -45,6 +45,18 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 	return req
 }
 
+// ConvertSelfRegisterPayloadToITX converts a self-registration Goa payload to an ITX registrant.
+// The email field is intentionally absent — it is set by the service layer from the JWT principal.
+func ConvertSelfRegisterPayloadToITX(p *meetingservice.SelfRegisterItxMeetingPayload) *itx.ZoomMeetingRegistrant {
+	return &itx.ZoomMeetingRegistrant{
+		FirstName:  utils.StringValue(p.FirstName),
+		LastName:   utils.StringValue(p.LastName),
+		Org:        utils.StringValue(p.Org),
+		JobTitle:   utils.StringValue(p.JobTitle),
+		Occurrence: utils.StringValue(p.Occurrence),
+	}
+}
+
 // ConvertITXRegistrantToGoa converts ITX registrant to Goa response
 func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.ITXZoomMeetingRegistrant {
 	goaResp := &meetingservice.ITXZoomMeetingRegistrant{

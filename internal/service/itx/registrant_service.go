@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
@@ -64,6 +65,24 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 	}
 
 	return resp, nil
+}
+
+// SelfRegisterForMeeting registers the authenticated user as a meeting registrant.
+// The caller's email is sourced from the JWT principal on ctx (EmailContextID), not from req.
+// All other fields in req (first_name, last_name, org, job_title, occurrence) are used as-is.
+// Returns an error if the user is already registered (ITX returns 409 Conflict).
+func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
+	// Derive email from the authenticated principal rather than accepting it from the
+	// request body — prevents a caller from self-registering under a different identity.
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if email == "" {
+		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
+	}
+	req.Email = email
+	req.Type = itx.RegistrantTypeDirect
+	req.CreatedBy = s.buildRequestingUser(ctx)
+
+	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 }
 
 // GetRegistrant retrieves a meeting registrant via ITX proxy
