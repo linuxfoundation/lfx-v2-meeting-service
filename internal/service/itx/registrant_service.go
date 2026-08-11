@@ -92,7 +92,6 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
 	req.Email = email
 	req.Username = principal
-	req.Type = itx.RegistrantTypeDirect
 	req.CreatedBy = s.buildRequestingUser(ctx)
 
 	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)

@@ -79,7 +79,7 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 }
 
 func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
-	t.Run("sets email and username from context, type direct, for public meeting", func(t *testing.T) {
+	t.Run("sets email and username from context for public meeting", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
@@ -94,7 +94,8 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "alice@example.com", client.lastCreateReq.Email)
 		assert.Equal(t, "alice", client.lastCreateReq.Username)
-		assert.Equal(t, itx.RegistrantTypeDirect, client.lastCreateReq.Type)
+		// Type is read-only on ITX create — must not be set on the outbound request.
+		assert.Empty(t, client.lastCreateReq.Type)
 		require.NotNil(t, client.lastCreateReq.CreatedBy)
 		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
 	})
