@@ -80,6 +80,11 @@ func createResponse(code int, err error) error {
 			Code:    strconv.Itoa(code),
 			Message: err.Error(),
 		}
+	case http.StatusForbidden:
+		return &meetingsvc.ForbiddenError{
+			Code:    strconv.Itoa(code),
+			Message: err.Error(),
+		}
 	default:
 		return nil
 	}
