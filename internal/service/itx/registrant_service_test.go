@@ -135,7 +135,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
 
-		// Context has a principal but no email — simulates an M2M or misconfigured OIDC token.
+		// Context has a principal but no email — simulates a misconfigured OIDC token.
 		ctx := ctxWithPrincipal("svc-account", "")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
 		require.Error(t, err)
@@ -143,6 +143,20 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		require.ErrorAs(t, err, &de)
 		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
 		assert.Nil(t, client.lastCreateReq, "ITX client must not be called when email is missing")
+	})
+
+	t.Run("returns validation error for M2M client token", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+
+		// M2M principals carry the "@clients" suffix — self-registration requires a human identity.
+		ctx := ctxWithPrincipal("6cjgEeimLcnqcHtqmRYqmOSt6s5spXNP@clients", "svc@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
+		assert.Nil(t, client.lastCreateReq, "ITX client must not be called for M2M tokens")
 	})
 
 	t.Run("does not accept email from request body", func(t *testing.T) {

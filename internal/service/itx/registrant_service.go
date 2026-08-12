@@ -6,6 +6,7 @@ package itx
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
@@ -89,9 +90,14 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	if email == "" {
 		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
 	}
-	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	username, _ := ctx.Value(constants.PrincipalContextID).(string)
+	// M2M client principals carry an @clients suffix (e.g. "<id>@clients") and have no
+	// associated LFX user account. Self-registration requires a human identity.
+	if strings.HasSuffix(username, "@clients") {
+		return nil, domain.NewValidationError("self-registration requires a user token, not an M2M client token")
+	}
 	req.Email = email
-	req.Username = principal
+	req.Username = username
 
 	// Resolve the user profile once and reuse it for both field enrichment and the
 	// audit stamp. Each ResolveProfile call is a NATS request with a 2s timeout;
@@ -100,9 +106,9 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	// timed-out profile B).
 	var resolvedProfile *domain.UserProfile
 	if s.userMetadata != nil {
-		if profile, err := s.userMetadata.ResolveProfile(ctx, principal); err != nil {
+		if profile, err := s.userMetadata.ResolveProfile(ctx, username); err != nil {
 			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
-				"username", principal, "err", err)
+				"username", username, "err", err)
 		} else {
 			resolvedProfile = profile
 		}
