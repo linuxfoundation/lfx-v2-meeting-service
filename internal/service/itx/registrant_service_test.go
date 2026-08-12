@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -140,6 +141,68 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		require.NoError(t, err)
 		// The context email must win; the body email is overwritten.
 		assert.Equal(t, "bob@example.com", client.lastCreateReq.Email)
+	})
+
+	t.Run("auth service profile overrides request payload fields", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+			Username:     "alice",
+			FirstName:    "Alice",
+			LastName:     "Smith",
+			JobTitle:     "Engineer",
+			Organization: "Linux Foundation",
+		}}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Al",
+			LastName:  "S",
+			JobTitle:  "Dev",
+			Org:       "ACME",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", client.lastCreateReq.FirstName)
+		assert.Equal(t, "Smith", client.lastCreateReq.LastName)
+		assert.Equal(t, "Engineer", client.lastCreateReq.JobTitle)
+		assert.Equal(t, "Linux Foundation", client.lastCreateReq.Org)
+	})
+
+	t.Run("request payload used as fallback when auth service fields are empty", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		// Profile has name/email for audit stamp but no enrichment fields.
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+			Username: "alice", Name: "Alice", Email: "alice@example.com",
+		}}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+			JobTitle:  "Engineer",
+			Org:       "ACME",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", client.lastCreateReq.FirstName)
+		assert.Equal(t, "Liddell", client.lastCreateReq.LastName)
+		assert.Equal(t, "Engineer", client.lastCreateReq.JobTitle)
+		assert.Equal(t, "ACME", client.lastCreateReq.Org)
+	})
+
+	t.Run("proceeds with request payload when auth service lookup fails", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		reader := &fakeUserMetadataReader{err: fmt.Errorf("nats timeout")}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", client.lastCreateReq.FirstName)
+		assert.Equal(t, "Liddell", client.lastCreateReq.LastName)
 	})
 }
 

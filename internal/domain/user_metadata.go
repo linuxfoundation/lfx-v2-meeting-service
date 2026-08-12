@@ -11,10 +11,18 @@ type UserProfile struct {
 	Username string
 	// Name is the user's display name (falls back to given+family name when unset).
 	Name string
+	// FirstName is the user's given name.
+	FirstName string
+	// LastName is the user's family name.
+	LastName string
 	// Email is the user's primary email address, when resolvable.
 	Email string
 	// AvatarURL is the user's profile picture URL, when set.
 	AvatarURL string
+	// JobTitle is the user's job title, when set.
+	JobTitle string
+	// Organization is the user's organization name, when set.
+	Organization string
 }
 
 // UserMetadataReader resolves a user's display profile (name, email, avatar) from their

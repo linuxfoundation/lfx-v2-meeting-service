@@ -40,10 +40,12 @@ type userMetadataResponse struct {
 	Success *bool  `json:"success"`
 	Error   string `json:"error,omitempty"`
 	Data    struct {
-		Name       string `json:"name"`
-		GivenName  string `json:"given_name"`
-		FamilyName string `json:"family_name"`
-		Picture    string `json:"picture"`
+		Name         string `json:"name"`
+		GivenName    string `json:"given_name"`
+		FamilyName   string `json:"family_name"`
+		Picture      string `json:"picture"`
+		JobTitle     string `json:"job_title"`
+		Organization string `json:"organization"`
 	} `json:"data"`
 }
 
@@ -98,9 +100,13 @@ func (r *NATSUserMetadataReader) ResolveProfile(ctx context.Context, username st
 	}
 
 	profile := &domain.UserProfile{
-		Username:  username,
-		Name:      name,
-		AvatarURL: meta.Data.Picture,
+		Username:     username,
+		Name:         name,
+		FirstName:    meta.Data.GivenName,
+		LastName:     meta.Data.FamilyName,
+		AvatarURL:    meta.Data.Picture,
+		JobTitle:     meta.Data.JobTitle,
+		Organization: meta.Data.Organization,
 	}
 
 	email, err := r.resolveEmail(reqCtx, username)

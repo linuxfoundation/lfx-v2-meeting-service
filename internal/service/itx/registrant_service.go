@@ -92,6 +92,30 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
 	req.Email = email
 	req.Username = principal
+
+	// Enrich registrant fields from the auth service profile. Auth service data is
+	// authoritative over what the client sent; the request payload serves as fallback
+	// when a field is absent from the profile or the lookup fails entirely.
+	if s.userMetadata != nil {
+		if profile, err := s.userMetadata.ResolveProfile(ctx, principal); err != nil {
+			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
+				"username", principal, "err", err)
+		} else if profile != nil {
+			if profile.FirstName != "" {
+				req.FirstName = profile.FirstName
+			}
+			if profile.LastName != "" {
+				req.LastName = profile.LastName
+			}
+			if profile.JobTitle != "" {
+				req.JobTitle = profile.JobTitle
+			}
+			if profile.Organization != "" {
+				req.Org = profile.Organization
+			}
+		}
+	}
+
 	req.CreatedBy = s.buildRequestingUser(ctx)
 
 	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)

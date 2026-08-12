@@ -50,8 +50,8 @@ func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistran
 // so the caller cannot self-register under a different identity.
 func ConvertSelfRegisterPayloadToITX(p *meetingservice.SelfRegisterItxMeetingPayload) *itx.ZoomMeetingRegistrant {
 	return &itx.ZoomMeetingRegistrant{
-		FirstName:  p.FirstName,
-		LastName:   p.LastName,
+		FirstName:  utils.StringValue(p.FirstName),
+		LastName:   utils.StringValue(p.LastName),
 		Org:        utils.StringValue(p.Org),
 		JobTitle:   utils.StringValue(p.JobTitle),
 		Occurrence: utils.StringValue(p.Occurrence),
