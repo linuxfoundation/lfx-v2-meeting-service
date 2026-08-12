@@ -131,11 +131,11 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		assert.Nil(t, client.lastCreateReq, "ITX registrant client must not be called for private meetings")
 	})
 
-	t.Run("returns validation error when email absent from context", func(t *testing.T) {
+	t.Run("returns validation error when email absent from JWT and profile", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
+		// No userMetadata reader and no JWT email — both sources are empty.
 		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
 
-		// Context has a principal but no email — simulates a misconfigured OIDC token.
 		ctx := ctxWithPrincipal("svc-account", "")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
 		require.Error(t, err)
@@ -143,6 +143,20 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		require.ErrorAs(t, err, &de)
 		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
 		assert.Nil(t, client.lastCreateReq, "ITX client must not be called when email is missing")
+	})
+
+	t.Run("uses profile email when JWT email is absent", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+			Username: "alice", Name: "Alice", Email: "alice@example.com",
+		}}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		// No JWT email — should fall back to profile.Email.
+		ctx := ctxWithPrincipal("alice", "")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
+		require.NoError(t, err)
+		assert.Equal(t, "alice@example.com", client.lastCreateReq.Email)
 	})
 
 	t.Run("returns validation error for M2M client token", func(t *testing.T) {
