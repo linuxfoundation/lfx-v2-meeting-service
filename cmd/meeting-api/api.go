@@ -80,6 +80,11 @@ func createResponse(code int, err error) error {
 			Code:    strconv.Itoa(code),
 			Message: err.Error(),
 		}
+	case http.StatusForbidden:
+		return &meetingsvc.ForbiddenError{
+			Code:    strconv.Itoa(code),
+			Message: err.Error(),
+		}
 	default:
 		return nil
 	}
@@ -100,6 +105,8 @@ func handleError(err error) error {
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
 		return createResponse(http.StatusServiceUnavailable, err)
+	case domain.ErrorTypeForbidden:
+		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
 		return createResponse(http.StatusInternalServerError, err)
 	default:

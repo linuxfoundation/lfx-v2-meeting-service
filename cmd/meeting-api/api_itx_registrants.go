@@ -20,6 +20,17 @@ func (s *MeetingsAPI) CreateItxRegistrant(ctx context.Context, p *meetingsvc.Cre
 	return service.ConvertITXRegistrantToGoa(resp), nil
 }
 
+// SelfRegisterItxMeeting registers the authenticated user as a meeting registrant.
+// The user's email is sourced from their bearer token JWT, not from the request body.
+func (s *MeetingsAPI) SelfRegisterItxMeeting(ctx context.Context, p *meetingsvc.SelfRegisterItxMeetingPayload) (*meetingsvc.ITXZoomMeetingRegistrant, error) {
+	req := service.ConvertSelfRegisterPayloadToITX(p)
+	resp, err := s.itxRegistrantService.SelfRegisterForMeeting(ctx, p.MeetingID, req)
+	if err != nil {
+		return nil, handleError(err)
+	}
+	return service.ConvertITXRegistrantToGoa(resp), nil
+}
+
 // GetItxRegistrant retrieves a meeting registrant via ITX proxy
 func (s *MeetingsAPI) GetItxRegistrant(ctx context.Context, p *meetingsvc.GetItxRegistrantPayload) (*meetingsvc.ITXZoomMeetingRegistrant, error) {
 	resp, err := s.itxRegistrantService.GetRegistrant(ctx, p.MeetingID, p.RegistrantID)

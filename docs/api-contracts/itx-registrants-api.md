@@ -512,11 +512,71 @@ Structure is identical in both APIs:
 
 ---
 
+## Self-Register Registrant
+
+Allows any authenticated user with at least `viewer` access to a meeting to register themselves. The caller's email is sourced from their JWT bearer token — it is **not** accepted in the request body, preventing a caller from self-registering under a different identity.
+
+### Proxy API Endpoint
+
+**Method**: `POST /itx/meetings/{meeting_id}/registrants/self`
+
+**Authorization**: Requires `viewer` permission on the meeting
+
+**Request Headers**:
+
+```text
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters**:
+
+- `meeting_id` (string, required) - The Zoom meeting ID
+
+**Request Body**:
+
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "org": "Example Corp",
+  "job_title": "Senior Developer",
+  "occurrence": "1666848600"
+}
+```
+
+**Request Fields**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `first_name` | string | Yes | Registrant first name (required by ITX when email is set) |
+| `last_name` | string | Yes | Registrant last name (required by ITX when email is set) |
+| `org` | string | No | Organization name |
+| `job_title` | string | No | Job title |
+| `occurrence` | string | No | Specific occurrence ID (blank = all) |
+
+> **Note**: `email` and `username` are intentionally absent from the request body. Both are extracted from the authenticated user's JWT claims by the service and cannot be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
+>
+> **Note**: Only meetings with `visibility: public` are eligible for self-registration. Attempting to self-register for a private meeting returns `403 Forbidden` even if the caller has viewer access.
+
+**Response**: `201 Created`
+
+Same response shape as [Create Registrant](#create-registrant). The `type` field will always be `"direct"`.
+
+**Error Responses**:
+
+- `400 Bad Request` — Authenticated user's JWT does not contain an email claim
+- `403 Forbidden` — Caller lacks viewer access, or the meeting is private (visibility ≠ public)
+- `409 Conflict` — User is already registered for this meeting
+
+---
+
 ## Authorization Requirements
 
 | Endpoint | Required Permission |
 |----------|-------------------|
 | Create Registrant | `organizer` on meeting |
+| Self-Register Registrant | `viewer` on meeting |
 | Get Registrant | `auditor` on meeting |
 | Update Registrant | `organizer` on meeting |
 | Delete Registrant | `organizer` on meeting |

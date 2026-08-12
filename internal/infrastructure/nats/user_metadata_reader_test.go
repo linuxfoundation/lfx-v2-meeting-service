@@ -45,9 +45,23 @@ func TestNATSUserMetadataReader_ResolveProfile(t *testing.T) {
 			metadataReply: replyMsg([]byte(`{"success":true,"data":{"given_name":"Alice","family_name":"Example"}}`)),
 			emailsReply:   replyMsg([]byte(`{"success":true,"data":{"primary_email":"alice@example.com"}}`)),
 			wantProfile: &domain.UserProfile{
-				Username: "alice",
-				Name:     "Alice Example",
-				Email:    "alice@example.com",
+				Username:  "alice",
+				Name:      "Alice Example",
+				FirstName: "Alice",
+				LastName:  "Example",
+				Email:     "alice@example.com",
+			},
+		},
+		{
+			name:          "job_title and organization mapped from data envelope",
+			metadataReply: replyMsg([]byte(`{"success":true,"data":{"name":"Alice","job_title":"Engineer","organization":"Linux Foundation"}}`)),
+			emailsReply:   replyMsg([]byte(`{"success":true,"data":{"primary_email":"alice@example.com"}}`)),
+			wantProfile: &domain.UserProfile{
+				Username:     "alice",
+				Name:         "Alice",
+				JobTitle:     "Engineer",
+				Organization: "Linux Foundation",
+				Email:        "alice@example.com",
 			},
 		},
 		{

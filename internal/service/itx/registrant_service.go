@@ -6,25 +6,30 @@ package itx
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // RegistrantService handles ITX Zoom registrant operations
 type RegistrantService struct {
 	auditStamper
 	registrantClient domain.ITXRegistrantClient
+	meetingClient    domain.ITXMeetingClient
 	idMapper         domain.IDMapper
 }
 
 // NewRegistrantService creates a new ITX registrant service. userMetadata may be nil (e.g.
 // when NATS is disabled), in which case created_by / updated_by are limited to the
 // JWT-derived username/email rather than blocking the request.
-func NewRegistrantService(registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
+func NewRegistrantService(registrantClient domain.ITXRegistrantClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
 	return &RegistrantService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		registrantClient: registrantClient,
+		meetingClient:    meetingClient,
 		idMapper:         idMapper,
 	}
 }
@@ -56,7 +61,7 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", resp.CommitteeID, "err", err)
+				"v1_id", redaction.Redact(resp.CommitteeID), "err", err)
 			resp.CommitteeID = ""
 		} else {
 			resp.CommitteeID = v2UID
@@ -64,6 +69,72 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 	}
 
 	return resp, nil
+}
+
+// SelfRegisterForMeeting registers the authenticated user as a meeting registrant.
+// The caller's email is sourced from the JWT principal on ctx (EmailContextID), not from req.
+// All other fields in req (first_name, last_name, org, job_title, occurrence) are used as-is.
+// Returns an error if the user is already registered (ITX returns 409 Conflict).
+func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
+	// Derive email from the authenticated principal rather than accepting it from the
+	// request body — prevents a caller from self-registering under a different identity.
+	meeting, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
+	if err != nil {
+		return nil, err
+	}
+	if meeting.Visibility != itx.MeetingVisibilityPublic {
+		return nil, domain.NewForbiddenError("self-registration is only available for public meetings")
+	}
+
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if email == "" {
+		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
+	}
+	username, _ := ctx.Value(constants.PrincipalContextID).(string)
+	// M2M client principals carry an @clients suffix (e.g. "<id>@clients") and have no
+	// associated LFX user account. Self-registration requires a human identity.
+	if strings.HasSuffix(username, "@clients") {
+		return nil, domain.NewValidationError("self-registration requires a user token, not an M2M client token")
+	}
+	req.Email = email
+	req.Username = username
+
+	// Resolve the user profile once and reuse it for both field enrichment and the
+	// audit stamp. Each ResolveProfile call is a NATS request with a 2s timeout;
+	// calling it twice would double the latency and could yield an inconsistent stamp
+	// (enrichment fields from profile A, CreatedBy username/email only from a
+	// timed-out profile B).
+	var resolvedProfile *domain.UserProfile
+	if s.userMetadata != nil {
+		if profile, err := s.userMetadata.ResolveProfile(ctx, username); err != nil {
+			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
+				"username", username, "err", err)
+		} else {
+			resolvedProfile = profile
+		}
+	}
+
+	// Auth service data is authoritative over what the client sent; the request
+	// payload serves as fallback when a field is absent from the profile or the
+	// lookup failed entirely.
+	if resolvedProfile != nil {
+		if resolvedProfile.FirstName != "" {
+			req.FirstName = resolvedProfile.FirstName
+		}
+		if resolvedProfile.LastName != "" {
+			req.LastName = resolvedProfile.LastName
+		}
+		if resolvedProfile.JobTitle != "" {
+			req.JobTitle = resolvedProfile.JobTitle
+		}
+		if resolvedProfile.Organization != "" {
+			req.Org = resolvedProfile.Organization
+		}
+	}
+
+	req.CreatedBy = s.buildRequestingUserFromProfile(ctx, resolvedProfile)
+
+	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 }
 
 // GetRegistrant retrieves a meeting registrant via ITX proxy
@@ -79,7 +150,7 @@ func (s *RegistrantService) GetRegistrant(ctx context.Context, meetingID, regist
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", resp.CommitteeID, "err", err)
+				"v1_id", redaction.Redact(resp.CommitteeID), "err", err)
 			resp.CommitteeID = ""
 		} else {
 			resp.CommitteeID = v2UID

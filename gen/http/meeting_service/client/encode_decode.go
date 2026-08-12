@@ -1242,6 +1242,209 @@ func DecodeCreateItxRegistrantResponse(decoder func(*http.Response) goahttp.Deco
 	}
 }
 
+// BuildSelfRegisterItxMeetingRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "self-register-itx-meeting" endpoint
+func (c *Client) BuildSelfRegisterItxMeetingRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID string
+	)
+	{
+		p, ok := v.(*meetingservice.SelfRegisterItxMeetingPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "self-register-itx-meeting", "*meetingservice.SelfRegisterItxMeetingPayload", v)
+		}
+		meetingID = p.MeetingID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: SelfRegisterItxMeetingMeetingServicePath(meetingID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "self-register-itx-meeting", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeSelfRegisterItxMeetingRequest returns an encoder for requests sent to
+// the Meeting Service self-register-itx-meeting server.
+func EncodeSelfRegisterItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.SelfRegisterItxMeetingPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "self-register-itx-meeting", "*meetingservice.SelfRegisterItxMeetingPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		body := NewSelfRegisterItxMeetingRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("Meeting Service", "self-register-itx-meeting", err)
+		}
+		return nil
+	}
+}
+
+// DecodeSelfRegisterItxMeetingResponse returns a decoder for responses
+// returned by the Meeting Service self-register-itx-meeting endpoint.
+// restoreBody controls whether the response body should be restored after
+// having been read.
+// DecodeSelfRegisterItxMeetingResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Conflict" (type *meetingservice.ConflictError): http.StatusConflict
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeSelfRegisterItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (any, error) {
+		if restoreBody {
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body SelfRegisterItxMeetingResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			res := NewSelfRegisterItxMeetingITXZoomMeetingRegistrantCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body SelfRegisterItxMeetingBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingBadRequest(&body)
+		case http.StatusConflict:
+			var (
+				body SelfRegisterItxMeetingConflictResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingConflictResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingConflict(&body)
+		case http.StatusForbidden:
+			var (
+				body SelfRegisterItxMeetingForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body SelfRegisterItxMeetingInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body SelfRegisterItxMeetingNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body SelfRegisterItxMeetingServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body SelfRegisterItxMeetingUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			err = ValidateSelfRegisterItxMeetingUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-register-itx-meeting", err)
+			}
+			return nil, NewSelfRegisterItxMeetingUnauthorized(&body)
+		default:
+			body, _ := io.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "self-register-itx-meeting", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildGetItxRegistrantRequest instantiates a HTTP request object with method
 // and path set to call the "Meeting Service" service "get-itx-registrant"
 // endpoint
