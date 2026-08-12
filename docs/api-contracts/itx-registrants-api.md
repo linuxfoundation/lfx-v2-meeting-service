@@ -555,7 +555,7 @@ Content-Type: application/json
 | `job_title` | string | No | Job title |
 | `occurrence` | string | No | Specific occurrence ID (blank = all) |
 
-> **Note**: `email` and `username` are intentionally absent from the request body. Both are extracted from the authenticated user's JWT claims by the service and cannot be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
+> **Note**: `email` and `username` are intentionally absent from the request body. The service sources email from the JWT claim first; if the JWT omits the email claim (e.g. `use_oidc_contextualizer` is disabled in the environment), it falls back to the auth-service profile resolved via NATS. Neither value can be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
 >
 > **Note**: Only meetings with `visibility: public` are eligible for self-registration. Attempting to self-register for a private meeting returns `403 Forbidden` even if the caller has viewer access.
 
