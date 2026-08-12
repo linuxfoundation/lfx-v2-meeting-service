@@ -86,18 +86,12 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 		return nil, domain.NewForbiddenError("self-registration is only available for public meetings")
 	}
 
-	email, _ := ctx.Value(constants.EmailContextID).(string)
-	if email == "" {
-		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
-	}
 	username, _ := ctx.Value(constants.PrincipalContextID).(string)
 	// M2M client principals carry an @clients suffix (e.g. "<id>@clients") and have no
 	// associated LFX user account. Self-registration requires a human identity.
 	if strings.HasSuffix(username, "@clients") {
 		return nil, domain.NewValidationError("self-registration requires a user token, not an M2M client token")
 	}
-	req.Email = email
-	req.Username = username
 
 	// Resolve the user profile once and reuse it for both field enrichment and the
 	// audit stamp. Each ResolveProfile call is a NATS request with a 2s timeout;
@@ -113,6 +107,20 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 			resolvedProfile = profile
 		}
 	}
+
+	// Email must come from an authoritative source — JWT claim or auth-service profile —
+	// not from the request body, to prevent a caller from self-registering under a
+	// different identity. The JWT email claim is omitempty; fall back to the profile
+	// email when the token doesn't carry the claim (e.g. local dev, older tokens).
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if email == "" && resolvedProfile != nil {
+		email = resolvedProfile.Email
+	}
+	if email == "" {
+		return nil, domain.NewValidationError("authenticated user email is required for self-registration")
+	}
+	req.Email = email
+	req.Username = username
 
 	// Auth service data is authoritative over what the client sent; the request
 	// payload serves as fallback when a field is absent from the profile or the
