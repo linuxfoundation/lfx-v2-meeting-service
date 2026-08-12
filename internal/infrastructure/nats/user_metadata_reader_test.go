@@ -53,6 +53,18 @@ func TestNATSUserMetadataReader_ResolveProfile(t *testing.T) {
 			},
 		},
 		{
+			name:          "job_title and organization mapped from data envelope",
+			metadataReply: replyMsg([]byte(`{"success":true,"data":{"name":"Alice","job_title":"Engineer","organization":"Linux Foundation"}}`)),
+			emailsReply:   replyMsg([]byte(`{"success":true,"data":{"primary_email":"alice@example.com"}}`)),
+			wantProfile: &domain.UserProfile{
+				Username:     "alice",
+				Name:         "Alice",
+				JobTitle:     "Engineer",
+				Organization: "Linux Foundation",
+				Email:        "alice@example.com",
+			},
+		},
+		{
 			name:          "email lookup failure degrades to empty email, not an error",
 			metadataReply: replyMsg([]byte(`{"success":true,"data":{"name":"Alice Example"}}`)),
 			emailsErr:     errors.New("nats: timeout"),

@@ -101,6 +101,21 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
 	})
 
+	t.Run("propagates GetZoomMeeting error before any registrant call", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+		// Swap to a client that returns an error on GetZoomMeeting.
+		svc.meetingClient = &fakeRegistrantMeetingClient{getErr: domain.NewNotFoundError("meeting not found")}
+
+		ctx := ctxWithPrincipal("alice", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeNotFound, de.Type)
+		assert.Nil(t, client.lastCreateReq, "ITX client must not be called when meeting lookup fails")
+	})
+
 	t.Run("returns forbidden error for private meeting", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPrivate, nil)

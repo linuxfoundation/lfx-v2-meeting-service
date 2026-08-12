@@ -566,7 +566,7 @@ Same response shape as [Create Registrant](#create-registrant). The `type` field
 **Error Responses**:
 
 - `400 Bad Request` — Authenticated user's JWT does not contain an email claim
-- `403 Forbidden` — Caller does not have viewer access to the meeting
+- `403 Forbidden` — Caller lacks viewer access, or the meeting is private (visibility ≠ public)
 - `409 Conflict` — User is already registered for this meeting
 
 ---

@@ -93,30 +93,40 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	req.Email = email
 	req.Username = principal
 
-	// Enrich registrant fields from the auth service profile. Auth service data is
-	// authoritative over what the client sent; the request payload serves as fallback
-	// when a field is absent from the profile or the lookup fails entirely.
+	// Resolve the user profile once and reuse it for both field enrichment and the
+	// audit stamp. Each ResolveProfile call is a NATS request with a 2s timeout;
+	// calling it twice would double the latency and could yield an inconsistent stamp
+	// (enrichment fields from profile A, CreatedBy username/email only from a
+	// timed-out profile B).
+	var resolvedProfile *domain.UserProfile
 	if s.userMetadata != nil {
 		if profile, err := s.userMetadata.ResolveProfile(ctx, principal); err != nil {
 			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
 				"username", principal, "err", err)
-		} else if profile != nil {
-			if profile.FirstName != "" {
-				req.FirstName = profile.FirstName
-			}
-			if profile.LastName != "" {
-				req.LastName = profile.LastName
-			}
-			if profile.JobTitle != "" {
-				req.JobTitle = profile.JobTitle
-			}
-			if profile.Organization != "" {
-				req.Org = profile.Organization
-			}
+		} else {
+			resolvedProfile = profile
 		}
 	}
 
-	req.CreatedBy = s.buildRequestingUser(ctx)
+	// Auth service data is authoritative over what the client sent; the request
+	// payload serves as fallback when a field is absent from the profile or the
+	// lookup failed entirely.
+	if resolvedProfile != nil {
+		if resolvedProfile.FirstName != "" {
+			req.FirstName = resolvedProfile.FirstName
+		}
+		if resolvedProfile.LastName != "" {
+			req.LastName = resolvedProfile.LastName
+		}
+		if resolvedProfile.JobTitle != "" {
+			req.JobTitle = resolvedProfile.JobTitle
+		}
+		if resolvedProfile.Organization != "" {
+			req.Org = resolvedProfile.Organization
+		}
+	}
+
+	req.CreatedBy = s.buildRequestingUserFromProfile(ctx, resolvedProfile)
 
 	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 }

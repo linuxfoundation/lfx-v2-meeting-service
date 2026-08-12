@@ -10,11 +10,11 @@ type ErrorType int
 
 const (
 	ErrorTypeValidation  ErrorType = iota // Input validation errors (400 Bad Request)
+	ErrorTypeForbidden                    // Business-logic forbidden errors (403 Forbidden)
 	ErrorTypeNotFound                     // Resource not found errors (404 Not Found)
 	ErrorTypeConflict                     // Resource conflict errors (409 Conflict)
 	ErrorTypeInternal                     // Internal server errors (500 Internal Server Error)
 	ErrorTypeUnavailable                  // Service unavailable errors (503 Service Unavailable)
-	ErrorTypeForbidden                    // Business-logic forbidden errors (403 Forbidden)
 )
 
 // DomainError represents an error with semantic type information

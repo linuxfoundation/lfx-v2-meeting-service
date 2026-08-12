@@ -73,6 +73,31 @@ func (a auditStamper) buildRequestingUser(ctx context.Context) *itx.User {
 	return user
 }
 
+// buildRequestingUserFromProfile constructs an *itx.User from an already-resolved
+// *domain.UserProfile, skipping the NATS round-trip. Use this when the caller has
+// already called ResolveProfile (e.g. for field enrichment) and wants to reuse the
+// result for the audit stamp without a second lookup.
+func (a auditStamper) buildRequestingUserFromProfile(ctx context.Context, profile *domain.UserProfile) *itx.User {
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if principal == "" {
+		return nil
+	}
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if profile == nil {
+		return &itx.User{Username: principal, Email: email}
+	}
+	user := &itx.User{
+		Username:       principal,
+		Name:           profile.Name,
+		Email:          profile.Email,
+		ProfilePicture: profile.AvatarURL,
+	}
+	if user.Email == "" {
+		user.Email = email
+	}
+	return user
+}
+
 // buildRequestingCreatedUpdatedBy is the same as buildRequestingUser but returns an
 // *itx.CreatedUpdatedBy — the audit-user shape used by attachment endpoints, which
 // omit id and profile_picture. Returns nil when there is no principal on ctx.
