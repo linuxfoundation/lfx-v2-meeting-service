@@ -2,6 +2,130 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Central LFX skills:**
+> - `/lfx-skills:lfx` — cross-repo routing, "where does X live", owner/peer repos, missing checkouts.
+> - `/lfx-skills:lfx-platform-architecture` — platform composition, V2 service classes, write/read/access-check flows, NATS/KV ownership, Heimdall, OpenFGA, Helm, ArgoCD.
+> - `/lfx-skills:lfx-itx-integration` — ITX OAuth2 M2M, v1/v2 ID mapping, KV event sync.
+>
+> **Repo-local meeting-service skills:**
+> - `.claude/skills/meeting-service-code-reviewer/` — audits a change against this repo's written rule surface (CLAUDE.md, the FGA/indexer/event-processing/ITX contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes the rule it cites.
+> - `.claude/skills/meeting-service-learnings-reviewer/` — matches a change against `docs/reviews/knowledge-base/`, this repo's patterns mined from real past PR review comments.
+> - Run both with `/lfx-skills:lfx-local-review` after every pre-PR commit (see Local work cycle below).
+
+## Developer Standards
+
+These rules apply to all contributors and AI agents working in this repo. Read this section first — it governs commit signing, message format, PR shape, and data hygiene across all work.
+
+### Commit Signing
+
+Every commit must carry both a GPG signature and a DCO sign-off:
+
+```bash
+git commit -s -S
+# -s  adds: Signed-off-by: Your Name <your@email.com>
+# -S  attaches a GPG signature
+```
+
+**One-time git config setup:**
+
+```bash
+# List your keys to find the key ID
+gpg --list-secret-keys --keyid-format LONG
+
+# Tell git which key to use
+git config --global user.signingkey <YOUR_KEY_ID>
+git config --global commit.gpgsign true
+```
+
+For GPG key generation and uploading your public key to GitHub, see the [GitHub GPG documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification).
+
+If you forget the sign-off on the last commit, fix it with:
+
+```bash
+git commit --amend -s
+```
+
+### Commit Message Format
+
+Follow Angular conventional commits. Jira tickets are optional — include one when the work has a known ticket.
+
+```text
+type(scope): summary [LFXV2-NNNN]
+```
+
+| Part | Rule |
+|---|---|
+| `type` | Required: `feat` \| `fix` \| `docs` \| `test` \| `refactor` \| `chore` \| `build` \| `ci` \| `perf` \| `style` \| `revert` |
+| `(scope)` | Optional but recommended; lowercase, e.g. `(meetings)`, `(registrants)`, `(eventing)` |
+| `!` | Optional breaking-change marker after scope: `feat(api)!:` |
+| `summary` | Lowercase first letter, imperative mood, no trailing period; max 72 chars total on first line |
+| `[LFXV2-NNNN]` | Optional; include when a Jira ticket exists — omit entirely if there is none |
+
+**Examples:**
+
+```text
+feat(registrants): add self-registration endpoint [LFXV2-1234]
+fix(eventing): handle nil attachment in past-meeting handler [LFXV2-5678]
+refactor(audit): extract buildRequestingCreatedUpdatedBy helper
+docs: update NATS subject table in CLAUDE.md
+chore: bump golangci-lint to v2.6.0
+feat(api)!: rename registrant_uid to registrant_id [LFXV2-9999]
+```
+
+### Pull Request Standards
+
+**Title** — same pattern as the commit message:
+
+```text
+type(scope): summary [LFXV2-NNNN]
+```
+
+**Required description sections:**
+
+```markdown
+## Summary
+What changed and why (2–4 bullet points).
+
+## Ticket
+[LFXV2-NNNN](https://linuxfoundation.atlassian.net/browse/LFXV2-NNNN)
+*(Omit this section entirely if there is no associated Jira ticket.)*
+
+## Changes
+- Bullet describing each meaningful change made in this PR.
+
+## API Changes
+*(Required when the PR touches `design/` or any Goa-generated file. Omit otherwise.)*
+
+| Endpoint | Method | Change Type | Before | After | Breaking? |
+|---|---|---|---|---|---|
+| `/itx/meetings` | POST | New field | — | `recurrence` | No |
+```
+
+### No PII in Source
+
+**No production data may appear anywhere in committed files** — code, tests, comments, or documentation. This covers real names, email addresses, organization names, user IDs, and domain names from production or staging environments.
+
+Approved fake-data conventions for tests and mocks:
+
+| Data type | Approved pattern |
+|---|---|
+| Names | `Test User`, `Alice Example`, `Bob Fixture` |
+| Emails | `*@example.com` — e.g. `alice@example.com` |
+| UUIDs | Sequential: `00000000-0000-0000-0000-000000000001` |
+| Orgs | `Test Org`, `Example Foundation` |
+| Domains | `example.com`, `test.invalid` |
+
+Real-looking names, corporate domains, or UUIDs that appear to come from production data must not appear even if slightly modified or "anonymized."
+
+### Pre-commit Hook
+
+The hook at `scripts/hooks/pre-commit` (installed by `make deps`) runs two checks on every staged commit:
+
+1. **gofmt** — auto-detects unformatted `.go` files and blocks the commit with a fix command.
+2. **License header check** — verifies that every staged `.go`, `.yaml`, `.yml`, and `.sh` file (excluding `gen/`) carries the LFX copyright header. Mirrors the CI `license-header-check` workflow.
+
+If the hook blocks your commit, fix the issue and re-run `git commit`. To amend a missing sign-off on the last commit: `git commit --amend -s`.
+
 ## Architecture Overview
 
 The ITX Meeting Proxy Service is a lightweight stateless proxy built with Go and the Goa framework. It provides a thin authentication and authorization layer between LFX clients and the ITX Zoom API service.
@@ -209,6 +333,49 @@ Every Go file must carry these two lines at the top (before the `package` declar
 - Mock interfaces provided for external dependencies (ITX client, ID mapper)
 - Test files follow `*_test.go` naming convention
 
+### Testing Patterns
+
+Use table-driven tests for comprehensive coverage:
+
+```go
+func TestRegistrantService_AddRegistrant(t *testing.T) {
+    tests := []struct {
+        name      string
+        payload   *gen.AddRegistrantPayload
+        mockSetup func(*mocks.MockITXProxyClient)
+        wantErr   bool
+    }{
+        {
+            name: "success",
+            // ...
+        },
+        {
+            name: "itx returns error",
+            // ...
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            client := mocks.NewMockITXProxyClient(t)
+            tt.mockSetup(client)
+            svc := NewRegistrantService(client, nil, nil)
+            _, err := svc.AddRegistrant(context.Background(), tt.payload)
+            if tt.wantErr {
+                assert.Error(t, err)
+            } else {
+                assert.NoError(t, err)
+            }
+        })
+    }
+}
+```
+
+**Key rules:**
+- Each production function should have exactly **one** corresponding test function (e.g. `AddRegistrant` → `TestRegistrantService_AddRegistrant`) which contains multiple test cases.
+- Add new test cases inside existing test functions rather than creating new top-level test functions for the same production function.
+- Mock all external dependencies; never call real ITX, NATS, or auth services from unit tests.
+
 ### Error Handling
 
 - Uses domain-specific error types in `internal/domain/errors.go`
@@ -383,6 +550,60 @@ Converters in `cmd/meeting-api/service/`:
 - `itx_attachment_converters.go`: Converts between Goa payloads and ITX attachment requests/responses (both meeting and past-meeting)
 
 **Important**: Always use the canonical pointer conversion helpers from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`). Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
+
+### Adding New Endpoints
+
+1. **Add the method to `design/meeting-svc.go`** — define the Goa method, payload, result, and HTTP mapping.
+2. **Run `make apigen`** to regenerate `gen/`. Commit the generated files alongside the design change.
+3. **Implement the Goa adapter** in the appropriate `cmd/meeting-api/api_itx_*.go` file — translation only; no business logic here.
+4. **Add or extend the service** in `internal/service/itx/` — embed `auditStamper` if the endpoint is a write that needs `created_by`/`updated_by`.
+5. **Add converters** in `cmd/meeting-api/service/itx_*_converters.go` — use `StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse` for optional fields.
+6. **Update the Heimdall ruleset** in `charts/lfx-v2-meeting-service/templates/ruleset.yaml` if the endpoint needs a new auth rule.
+7. **Write tests** for the new converter and service method.
+8. **Update CLAUDE.md API Endpoints section** and `README.md` endpoint tables.
+9. **Run `make verify`** to confirm generated code is current before committing.
+
+## Common Pitfalls
+
+### 1. Forgetting to regenerate after design changes
+
+**Problem**: Changes to `design/` files are not reflected in the HTTP handlers or OpenAPI specs.  
+**Solution**: Always run `make apigen` after modifying any file in `design/`. Run `make verify` before committing to confirm the generated files are current.
+
+### 2. Editing the `gen/` directory directly
+
+**Problem**: Hand-edits to `gen/` are overwritten by the next `make apigen` run.  
+**Solution**: `gen/` is generated code — never edit it manually. All changes start in `design/`.
+
+### 3. Missing audit stamp on a write request
+
+**Problem**: An ITX write request goes out without `created_by` or `updated_by`, so audit fields in ITX are empty.  
+**Solution**: Every write service method must embed `auditStamper` and call `buildRequestingUser(ctx)` (for full User shape) or `buildRequestingCreatedUpdatedBy(ctx)` (for attachment endpoints that use `CreatedUpdatedBy`). The stamper degrades gracefully — it never fails the request.
+
+### 4. PII leaking into debug logs
+
+**Problem**: A `slog.DebugContext` call logs a request body that contains `created_by.name` or `created_by.email` in plaintext.  
+**Solution**: Always pass request bodies through `requestJSONForLog(req)` and response bodies through `responseJSONForLog(respBody)` from `internal/infrastructure/proxy/logredact.go`. For other sensitive strings, use `pkg/redaction.Redact(s)` or `pkg/redaction.RedactEmail(email)`.
+
+### 5. Using raw pointer conversion instead of helpers
+
+**Problem**: Code does `&someString` or `&someInt` for optional ITX fields, which passes zero-value pointers that ITX interprets as explicit empty/zero values.  
+**Solution**: Always use `utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`, `utils.BoolPtrOmitFalse` from `pkg/utils/ptr.go`. These return `nil` for zero/empty inputs, which causes ITX to treat the field as absent.
+
+### 6. Wrong audit type on attachment endpoints
+
+**Problem**: Using `buildRequestingUser(ctx)` on an attachment endpoint that expects `CreatedUpdatedBy` (not `User`), causing a type mismatch.  
+**Solution**: Meeting and past-meeting attachment endpoints use `*itx.CreatedUpdatedBy` (no `profile_picture`). Call `buildRequestingCreatedUpdatedBy(ctx)` on those — it wraps `buildRequestingUser` and strips the profile picture field.
+
+## Debugging Tips
+
+1. **Enable debug logging**: Run with `make debug` or set `LOG_LEVEL=debug` in `.env`. Debug logs include PII-redacted request and response bodies for all ITX proxy calls.
+2. **Bypass JWT for local dev**: Set `JWT_AUTH_DISABLED_MOCK_LOCAL_PRINCIPAL=testuser` to skip Heimdall validation and inject a mock principal.
+3. **Check context keys**: The principal username is stored under `constants.PrincipalContextID` and the JWT email under `constants.EmailContextID` (defined in `pkg/constants/http.go`).
+4. **Inspect NATS events**: Use `nats sub "$KV.v1-objects.>"` to monitor all KV events the event processor consumes.
+5. **Trace ITX calls**: Set `OTEL_TRACES_EXPORTER=otlp` and point `OTEL_EXPORTER_OTLP_ENDPOINT` at a local Jaeger instance to see the full proxy call trace.
+6. **Verify generated code**: Run `make verify` to confirm `gen/` matches the current `design/` — a dirty `gen/` directory means `make apigen` was not run after the last design change.
+7. **Event processing off by default locally**: If KV events aren't being processed, check that `NATS_URL` is set and `EVENT_PROCESSING_ENABLED` is not `false`.
 
 ## Project Structure Notes
 
