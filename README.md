@@ -154,7 +154,7 @@ The service includes a comprehensive event processing system for v1→v2 data sy
 
 **Features:**
 
-- 12 event families: meetings, meeting-committee mappings, registrants, RSVPs, past meetings, past-meeting mappings, past meeting invitees/attendees, recordings and transcripts (shared handler), AI summaries, meeting attachments, past meeting attachments
+- 12 event families: meetings, meeting-committee mappings, registrants, RSVPs, past meetings, past-meeting mappings, past meeting invitees, past meeting attendees, recordings and transcripts (shared handler), AI summaries, meeting attachments, past meeting attachments
 - RRULE occurrence calculation for recurring meetings
 - v1 user enrichment and Auth0 mapping
 - Dual publishing architecture (indexer + FGA-sync)
@@ -181,7 +181,7 @@ For the data schemas, tags, access control values, and parent references for all
    make deps
    ```
 
-   This also installs the pre-commit hook that runs `gofmt` before each commit.
+   This also installs the pre-commit hook that runs gofmt and a license-header check before each commit.
 
 2. **Generate API Code**
 
@@ -536,8 +536,8 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LOG_LEVEL` | Log level (`debug`, `info`, `warn`, `error`) | `info` |
-| `LOG_ADD_SOURCE` | Add source location to log lines | `true` |
+| `LOG_LEVEL` | Log level (`debug`, `info`, `warn`, `error`) | `debug` |
+| `LOG_ADD_SOURCE` | Add source location to log lines | `false` |
 
 ### Tracing Configuration
 

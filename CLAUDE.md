@@ -122,7 +122,7 @@ Real-looking names, corporate domains, or UUIDs that appear to come from product
 The hook at `scripts/hooks/pre-commit` (installed by `make deps`) runs two checks on every staged commit:
 
 1. **gofmt** — auto-detects unformatted `.go` files and blocks the commit with a fix command.
-2. **License header check** — verifies that every staged `.go`, `.yaml`, `.yml`, and `.sh` file (excluding `gen/`) carries the LFX copyright header. Mirrors the CI `license-header-check` workflow.
+2. **License header check** — verifies that every staged `.go`, `.yaml`, `.yml`, and `.sh` file (excluding `gen/` and `cmd/meeting-api/kodata/`) carries the LFX copyright header. Mirrors the CI `license-header-check` workflow.
 
 If the hook blocks your commit, fix the issue and re-run `git commit`. To amend a missing sign-off on the last commit: `git commit --amend -s`.
 
@@ -233,7 +233,7 @@ The service follows a clean architecture pattern with:
 ### Git Hooks
 
 - `make install-hooks` - Install git hooks from `scripts/hooks/` into `.git/hooks/` (also called by `make deps`)
-- The pre-commit hook runs `gofmt` to enforce formatting before each commit
+- The pre-commit hook runs gofmt and a license-header check before each commit
 
 ### Docker & Deployment
 
