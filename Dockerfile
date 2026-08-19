@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 # checkov:skip=CKV_DOCKER_7:No free access to Chainguard versioned labels.
-# hadolint global ignore=DL3007
 
 FROM cgr.dev/chainguard/go:latest AS builder
 
