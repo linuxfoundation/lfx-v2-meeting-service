@@ -70,6 +70,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `created_by` | object | User who created the meeting (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the meeting (see [User Reference schema](#user-reference-schema)) |
 | `updated_by_list` | []object (optional) | All users who have updated the meeting |
+| `owner` | object | Single user responsible for the meeting (see [User Reference schema](#user-reference-schema)); zero-valued (all fields empty) when the meeting predates the field and no owner has been set |
 | `use_new_invite_email_address` | bool | Whether to use the new invite email address |
 | `recurrence` | object (optional) | Zoom recurrence pattern (see [Recurrence schema](#recurrence-schema)) |
 | `occurrences` | []object (optional) | Upcoming meeting occurrences (see [Occurrence schema](#occurrence-schema)) |
@@ -105,7 +106,7 @@ Each entry in `committees` has:
 
 #### User Reference Schema
 
-Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
+Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 | Field | Type | Description |
 |---|---|---|

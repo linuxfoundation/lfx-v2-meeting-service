@@ -4,10 +4,15 @@
 package eventing
 
 import (
+	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
 	"testing"
 
+	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -117,4 +122,50 @@ func TestMeetingDBRawUnmarshalOwner(t *testing.T) {
 	var empty MeetingDBRaw
 	require.NoError(t, json.Unmarshal([]byte(`{}`), &empty))
 	assert.Empty(t, empty.Owner.UserID)
+}
+
+// convertMapToMeetingData builds the payload published to the indexer; the owner
+// from v1 KV meeting data must survive the full conversion, not just raw decoding.
+func TestConvertMapToMeetingDataOwner(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	kv := &mockKeyValue{}
+	kv.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+
+	baseData := func() map[string]interface{} {
+		return map[string]interface{}{
+			"meeting_id": "meeting-1",
+			"proj_id":    "proj-1",
+			"topic":      "Test Meeting",
+			"start_time": "2026-01-01T00:00:00Z",
+			"duration":   30,
+			"updated_by": map[string]interface{}{"user_id": "user-1", "username": "alice"},
+		}
+	}
+
+	t.Run("owner flows through to the event payload", func(t *testing.T) {
+		data := baseData()
+		data["owner"] = map[string]interface{}{
+			"user_id":  "user-999",
+			"username": "oowner",
+			"name":     "Olive Owner",
+			"email":    "olive@example.com",
+		}
+
+		meeting, err := convertMapToMeetingData(context.Background(), data, stubIDMapper{}, kv, logger)
+		require.NoError(t, err)
+		require.NotNil(t, meeting)
+		assert.Equal(t, "user-999", meeting.Owner.UserID)
+		assert.Equal(t, "oowner", meeting.Owner.Username)
+		assert.Equal(t, "Olive Owner", meeting.Owner.Name)
+		assert.Equal(t, "olive@example.com", meeting.Owner.Email)
+	})
+
+	t.Run("absent owner stays zero-valued in the event payload", func(t *testing.T) {
+		meeting, err := convertMapToMeetingData(context.Background(), baseData(), stubIDMapper{}, kv, logger)
+		require.NoError(t, err)
+		require.NotNil(t, meeting)
+		assert.Empty(t, meeting.Owner.UserID)
+		assert.Empty(t, meeting.Owner.Username)
+		assert.Empty(t, meeting.Owner.Email)
+	})
 }
