@@ -188,6 +188,7 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled, // nil = omitted, ITX preserves the stored reminder
 		AutoEmailReminderTime:    req.AutoEmailReminderTime,
 		Note:                     req.UpdateNote,
+		Owner:                    req.Owner, // nil = omitted, ITX preserves the stored owner
 	}
 
 	// Map artifact visibility to access controls only when the respective feature is enabled

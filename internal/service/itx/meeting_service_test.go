@@ -292,6 +292,69 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 	})
 }
 
+func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ID:         "meeting-1",
+			ProjectUID: "proj-1",
+			Title:      "Test Meeting",
+			StartTime:  "2026-01-01T00:00:00Z",
+			Duration:   30,
+			Visibility: itx.MeetingVisibilityPublic,
+			Owner: &itx.User{
+				Username: "oowner",
+				Name:     "Olive Owner",
+				Email:    "olive@example.com",
+			},
+		}
+	}
+
+	t.Run("create forwards owner and serializes it on the wire", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		require.NotNil(t, client.lastCreateReq.Owner)
+		assert.Equal(t, "oowner", client.lastCreateReq.Owner.Username)
+		assert.Equal(t, "olive@example.com", client.lastCreateReq.Owner.Email)
+
+		body, err := json.Marshal(client.lastCreateReq)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), `"owner":{`)
+		assert.Contains(t, string(body), `"olive@example.com"`)
+	})
+
+	t.Run("update forwards owner to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		require.NotNil(t, client.lastUpdateReq.Owner)
+		assert.Equal(t, "oowner", client.lastUpdateReq.Owner.Username)
+	})
+
+	t.Run("omitted owner stays off the wire so ITX preserves the stored owner", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.Owner = nil
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+
+		// An update from a client that never sends owner must not clear it: nil
+		// serializes as absent and ITX leaves the stored owner untouched.
+		body, err := json.Marshal(client.lastUpdateReq)
+		require.NoError(t, err)
+		assert.NotContains(t, string(body), `"owner"`)
+	})
+}
+
 func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 	t.Run("stamps updated_by from resolved profile", func(t *testing.T) {
 		client := &fakeMeetingClient{}

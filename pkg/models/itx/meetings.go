@@ -93,6 +93,10 @@ type CreateZoomMeetingRequest struct {
 	// create requests.
 	UpdatedBy *User `json:"updated_by,omitempty"`
 
+	// Owner is the single user responsible for this meeting. When nil, ITX
+	// preserves the stored owner (or defaults it to the creator on creation).
+	Owner *User `json:"owner,omitempty"`
+
 	// Update notification
 	Note string `json:"note,omitempty"`
 }
@@ -195,9 +199,11 @@ type ZoomMeetingResponse struct {
 	ModifiedAt string `json:"modified_at"` // RFC3339
 	// NextOccurrenceStartTime is the RFC3339 start time of the next upcoming occurrence.
 	// Empty when no future occurrence exists.
-	NextOccurrenceStartTime string       `json:"next_occurrence_start_time,omitempty"`
-	CreatedBy               *User        `json:"created_by,omitempty"`
-	UpdatedBy               *User        `json:"updated_by,omitempty"`
+	NextOccurrenceStartTime string `json:"next_occurrence_start_time,omitempty"`
+	CreatedBy               *User  `json:"created_by,omitempty"`
+	UpdatedBy               *User  `json:"updated_by,omitempty"`
+	// Owner is the single user responsible for the meeting.
+	Owner                   *User        `json:"owner,omitempty"`
 	Occurrences             []Occurrence `json:"occurrences,omitempty"`
 	RegistrantCount         int          `json:"registrant_count,omitempty"`
 	EmailDeliveryErrorCount int          `json:"email_delivery_error_count,omitempty"`

@@ -132,6 +132,9 @@ type MeetingDBRaw struct {
 	// UpdatedByList is a list of users that have updated the meeting.
 	UpdatedByList []models.UpdatedBy `json:"updated_by_list,omitempty"`
 
+	// Owner is the single user responsible for the meeting. Zero value means not set.
+	Owner models.UpdatedBy `json:"owner"`
+
 	// UseNewInviteEmailAddress is a flag that indicates if the meeting should use the new invite email address.
 	// In January 2024, we switched to using a new email address as the organizer for meeting invites.
 	// We needed to keep the old email address for existing meetings to avoid calendar issues.
@@ -520,6 +523,7 @@ func convertMapToMeetingData(
 		UpdatedAt:                                 rawMeeting.ModifiedAt,
 		CreatedBy:                                 rawMeeting.CreatedBy,
 		UpdatedBy:                                 rawMeeting.UpdatedBy,
+		Owner:                                     rawMeeting.Owner,
 		Organizers:                                rawMeeting.Organizers,
 	}
 	if meeting.Organizers == nil {

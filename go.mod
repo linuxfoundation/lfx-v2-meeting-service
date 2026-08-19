@@ -3,7 +3,7 @@
 
 module github.com/linuxfoundation/lfx-v2-meeting-service
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/auth0/go-auth0 v1.45.0

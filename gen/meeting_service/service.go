@@ -248,6 +248,9 @@ type CreateItxMeetingPayload struct {
 	AutoEmailReminderEnabled *bool
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 }
 
 // CreateItxPastMeetingAttachmentPayload is the payload type of the Meeting
@@ -1137,6 +1140,9 @@ type ITXZoomMeetingResponse struct {
 	LastMailingListMembersSyncJobFailedCount *int
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string
@@ -1428,6 +1434,9 @@ type UpdateItxMeetingPayload struct {
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 }
 
 // UpdateItxOccurrencePayload is the payload type of the Meeting Service

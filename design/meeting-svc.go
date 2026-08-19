@@ -76,6 +76,7 @@ var _ = Service("Meeting Service", func() {
 			RecurrenceAttribute()
 			AutoEmailReminderEnabledAttribute()
 			AutoEmailReminderTimeAttribute()
+			OwnerAttribute()
 			Required("project_uid", "title", "start_time", "duration", "timezone", "visibility")
 		})
 
@@ -211,6 +212,7 @@ var _ = Service("Meeting Service", func() {
 			AutoEmailReminderEnabledAttribute()
 			AutoEmailReminderTimeAttribute()
 			UpdateNoteAttribute()
+			OwnerAttribute()
 			Required("meeting_id", "project_uid", "title", "start_time", "duration", "timezone", "visibility")
 		})
 
