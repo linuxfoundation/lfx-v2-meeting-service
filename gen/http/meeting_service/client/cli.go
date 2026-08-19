@@ -25,7 +25,7 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 	{
 		err = json.Unmarshal([]byte(meetingServiceCreateItxMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"auto_email_reminder_enabled\": true,\n      \"auto_email_reminder_time\": 420,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"uaq\",\n      \"duration\": 263,\n      \"early_join_time_minutes\": 28,\n      \"meeting_type\": \"Marketing\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Porro iste non commodi sint sed est.\",\n      \"title\": \"Quasi ipsam fugiat quis qui quam.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"auto_email_reminder_enabled\": true,\n      \"auto_email_reminder_time\": 420,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"uaq\",\n      \"duration\": 263,\n      \"early_join_time_minutes\": 28,\n      \"meeting_type\": \"Marketing\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Porro iste non commodi sint sed est.\",\n      \"title\": \"Quasi ipsam fugiat quis qui quam.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
 		if body.Duration < 0 {
@@ -82,6 +82,11 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 		if body.AutoEmailReminderTime != nil {
 			if *body.AutoEmailReminderTime > 1440 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
+			}
+		}
+		if body.Owner != nil {
+			if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if err != nil {
@@ -149,6 +154,9 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = marshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Owner != nil {
+		v.Owner = marshalITXUserRequestBodyToMeetingserviceITXUser(body.Owner)
 	}
 	v.Version = version
 	v.BearerToken = bearerToken
@@ -233,7 +241,7 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 	{
 		err = json.Unmarshal([]byte(meetingServiceUpdateItxMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"public\",\n      \"auto_email_reminder_enabled\": false,\n      \"auto_email_reminder_time\": 1439,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"t3c\",\n      \"duration\": 36,\n      \"early_join_time_minutes\": 19,\n      \"meeting_type\": \"Board\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Eius ut sed dolorem eum eaque.\",\n      \"title\": \"Id qui blanditiis qui maiores adipisci odio.\",\n      \"transcript_enabled\": false,\n      \"update_note\": \"oi3\",\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"public\",\n      \"auto_email_reminder_enabled\": false,\n      \"auto_email_reminder_time\": 1439,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"t3c\",\n      \"duration\": 36,\n      \"early_join_time_minutes\": 19,\n      \"meeting_type\": \"Board\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Eius ut sed dolorem eum eaque.\",\n      \"title\": \"Id qui blanditiis qui maiores adipisci odio.\",\n      \"transcript_enabled\": false,\n      \"update_note\": \"oi3\",\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
 		if body.Duration < 0 {
@@ -295,6 +303,11 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 		if body.UpdateNote != nil {
 			if utf8.RuneCountInString(*body.UpdateNote) > 500 {
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.update_note", *body.UpdateNote, utf8.RuneCountInString(*body.UpdateNote), 500, false))
+			}
+		}
+		if body.Owner != nil {
+			if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if err != nil {
@@ -367,6 +380,9 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = marshalRecurrenceRequestBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Owner != nil {
+		v.Owner = marshalITXUserRequestBodyToMeetingserviceITXUser(body.Owner)
 	}
 	v.MeetingID = meetingID
 	v.Version = version

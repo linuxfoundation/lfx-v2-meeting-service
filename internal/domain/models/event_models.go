@@ -253,6 +253,9 @@ type MeetingEventData struct {
 	// UpdatedByList is a list of users that have updated the meeting.
 	UpdatedByList []UpdatedBy `json:"updated_by_list,omitempty"`
 
+	// Owner is the single user responsible for the meeting. Zero value means not set.
+	Owner UpdatedBy `json:"owner"`
+
 	// UseNewInviteEmailAddress is a flag that indicates if the meeting should use the new invite email address.
 	// In January 2024, we switched to using a new email address as the organizer for meeting invites.
 	// We needed to keep the old email address for existing meetings to avoid calendar issues.

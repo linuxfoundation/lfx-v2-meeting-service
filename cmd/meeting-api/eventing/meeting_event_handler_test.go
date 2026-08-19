@@ -102,3 +102,19 @@ func TestMeetingDBRawUnmarshalUpdatedOccurrenceDuration(t *testing.T) {
 		})
 	}
 }
+
+// The owner field from v1 KV meeting data must decode into MeetingDBRaw so it
+// flows through to the indexer event payload.
+func TestMeetingDBRawUnmarshalOwner(t *testing.T) {
+	input := `{"owner":{"user_id":"user-999","username":"oowner","name":"Olive Owner","email":"olive@example.com"}}`
+	var m MeetingDBRaw
+	require.NoError(t, json.Unmarshal([]byte(input), &m))
+	assert.Equal(t, "user-999", m.Owner.UserID)
+	assert.Equal(t, "oowner", m.Owner.Username)
+	assert.Equal(t, "Olive Owner", m.Owner.Name)
+	assert.Equal(t, "olive@example.com", m.Owner.Email)
+
+	var empty MeetingDBRaw
+	require.NoError(t, json.Unmarshal([]byte(`{}`), &empty))
+	assert.Empty(t, empty.Owner.UserID)
+}

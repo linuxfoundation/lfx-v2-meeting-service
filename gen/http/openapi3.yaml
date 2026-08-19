@@ -164,6 +164,11 @@ paths:
                             duration: 263
                             early_join_time_minutes: 28
                             meeting_type: Marketing
+                            owner:
+                                email: john.doe@example.com
+                                name: John Doe
+                                profile_picture: https://example.com/avatar.jpg
+                                username: jdoe
                             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             recording_enabled: true
                             recurrence:
@@ -252,6 +257,11 @@ paths:
                                       registrant_count: 4711810484664006701
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: cancel
+                                owner:
+                                    email: john.doe@example.com
+                                    name: John Doe
+                                    profile_picture: https://example.com/avatar.jpg
+                                    username: jdoe
                                 passcode: abc123
                                 password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -502,6 +512,11 @@ paths:
                                       registrant_count: 4711810484664006701
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: cancel
+                                owner:
+                                    email: john.doe@example.com
+                                    name: John Doe
+                                    profile_picture: https://example.com/avatar.jpg
+                                    username: jdoe
                                 passcode: abc123
                                 password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -646,6 +661,11 @@ paths:
                             duration: 36
                             early_join_time_minutes: 19
                             meeting_type: Board
+                            owner:
+                                email: john.doe@example.com
+                                name: John Doe
+                                profile_picture: https://example.com/avatar.jpg
+                                username: jdoe
                             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             recording_enabled: true
                             recurrence:
@@ -5143,6 +5163,8 @@ components:
                         - Legal
                         - Other
                         - None
+                owner:
+                    $ref: '#/components/schemas/ITXUser'
                 project_uid:
                     type: string
                     description: The UID of the LF project
@@ -5219,6 +5241,11 @@ components:
                 duration: 217
                 early_join_time_minutes: 47
                 meeting_type: Technical
+                owner:
+                    email: john.doe@example.com
+                    name: John Doe
+                    profile_picture: https://example.com/avatar.jpg
+                    username: jdoe
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 recording_enabled: false
                 recurrence:
@@ -6928,6 +6955,8 @@ components:
                           registrant_count: 4538123110849598032
                           start_time: "2021-01-01T10:00:00Z"
                           status: available
+                owner:
+                    $ref: '#/components/schemas/ITXUser'
                 passcode:
                     type: string
                     description: Zoom meeting passcode
@@ -7056,6 +7085,11 @@ components:
                       registrant_count: 4538123110849598032
                       start_time: "2021-01-01T10:00:00Z"
                       status: available
+                owner:
+                    email: john.doe@example.com
+                    name: John Doe
+                    profile_picture: https://example.com/avatar.jpg
+                    username: jdoe
                 passcode: abc123
                 password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -7557,6 +7591,8 @@ components:
                         - Legal
                         - Other
                         - None
+                owner:
+                    $ref: '#/components/schemas/ITXUser'
                 project_uid:
                     type: string
                     description: The UID of the LF project
@@ -7628,6 +7664,11 @@ components:
                 duration: 77
                 early_join_time_minutes: 24
                 meeting_type: None
+                owner:
+                    email: john.doe@example.com
+                    name: John Doe
+                    profile_picture: https://example.com/avatar.jpg
+                    username: jdoe
                 project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 recording_enabled: false
                 recurrence:

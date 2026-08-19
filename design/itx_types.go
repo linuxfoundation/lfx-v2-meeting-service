@@ -152,6 +152,10 @@ func RecurrenceAttribute() {
 	Attribute("recurrence", Recurrence, "The recurrence of the meeting")
 }
 
+func OwnerAttribute() {
+	Attribute("owner", ITXUser, "The single user responsible for this meeting. Defaults to the creator on creation; omitting the field on update preserves the stored owner.")
+}
+
 func UpdateNoteAttribute() {
 	Attribute("update_note", String, "An optional note to include in the meeting update notification emails sent to registrants", func() {
 		MaxLength(500)
@@ -234,6 +238,8 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	LastMailingListMembersSyncJobStatusAttribute()
 	LastMailingListMembersSyncJobFailedCountAttribute()
 	LastMailingListMembersSyncJobWarningCountAttribute()
+
+	OwnerAttribute()
 
 	NextOccurrenceStartTimeAttribute()
 
