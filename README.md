@@ -79,7 +79,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **ITX Past Meeting Participant Operations**: Add, update, and delete past meeting participants
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
-- **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (11 event types)
+- **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (12 event families)
 - **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
@@ -90,7 +90,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 
 ## 📁 Project Structure
 
-```
+```text
 lfx-v2-meeting-service/
 ├── cmd/                           # Application entry points
 │   └── meeting-api/               # Main API server
@@ -140,7 +140,7 @@ lfx-v2-meeting-service/
 │   ├── backfill_participant_mappings/
 │   ├── reindex_meetings/
 │   └── reconcile_meeting_registrants/
-├── tmp/                           # Temporary ad-hoc migration scripts (not part of binary)
+├── tmp/                           # Temporary ad-hoc migration scripts (not tracked in git)
 ├── Dockerfile                     # Container build configuration
 ├── Makefile                       # Build and development commands
 ├── CLAUDE.md                      # AI agent guide (architecture, conventions, env vars)
@@ -154,7 +154,7 @@ The service includes a comprehensive event processing system for v1→v2 data sy
 
 **Features:**
 
-- 11 event types: meetings, meeting attachments, registrants, RSVPs, past meetings, past meeting invitees/attendees, recordings, transcripts, AI summaries, past meeting attachments
+- 12 event families: meetings, meeting-committee mappings, registrants, RSVPs, past meetings, past-meeting mappings, past meeting invitees/attendees, recordings and transcripts (shared handler), AI summaries, meeting attachments, past meeting attachments
 - RRULE occurrence calculation for recurring meetings
 - v1 user enrichment and Auth0 mapping
 - Dual publishing architecture (indexer + FGA-sync)
@@ -275,7 +275,7 @@ When modifying the API:
 | `make test-coverage` | Generate HTML coverage report in `coverage/` |
 | `make lint` | Run golangci-lint |
 | `make fmt` | Format Go code with gofmt |
-| `make license-check` | Verify all Go files carry LFX copyright and MIT SPDX headers |
+| `make license-check` | Verify all non-generated Go, HTML, and TXT files carry LFX copyright and MIT SPDX headers (excludes `gen/` and `vendor/`) |
 | `make check` | Verify formatting, linting, and license headers without modifying files |
 | `make verify` | Ensure generated code is up to date |
 | `make clean` | Remove build artifacts |
@@ -476,7 +476,7 @@ Copy `.env.example` to `.env` for local development. All variables can also be e
 | `PORT` | HTTP listen port | `8080` |
 | `LFX_ENVIRONMENT` | Deployment environment (`dev`, `staging`, `prod`) | `prod` |
 | `PROJECT_LOGO_BASE_URL` | Base URL for project logo images | `https://lfx-one-project-logos-png-<env>.s3.us-west-2.amazonaws.com` |
-| `LFX_APP_ORIGIN` | LFX app origin URL, used in CORS and response headers | `""` |
+| `LFX_APP_ORIGIN` | LFX app origin URL — parsed but currently not consumed by any handler | `""` |
 
 ### ITX Configuration (Required)
 
@@ -516,7 +516,7 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `INVITES_ENABLED` | Enable outbound LFID invite sending and `invite_accepted` subscriber | `false` |
-| `LFX_SELF_SERVE_BASE_URL` | LFX self-serve app URL embedded in invite emails as `return_url` | Per `LFX_ENVIRONMENT` |
+| `LFX_SELF_SERVE_BASE_URL` | LFX self-serve app URL embedded in invite emails as `return_url` (defaults per `LFX_ENVIRONMENT` when unset; sending disabled when resolved URL fails validation) | Per `LFX_ENVIRONMENT` |
 
 ### Event Processing Configuration (Optional)
 
@@ -530,7 +530,7 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 | `EVENT_ACK_WAIT` | Ack timeout | `30s` |
 | `EVENT_MAX_ACK_PENDING` | Max pending acks | `1000` |
 
-> The KV filter subjects are hardcoded to 12 specific buckets; there is no `EVENT_FILTER_SUBJECT` env var.
+> The KV filter subjects are 12 key-prefix patterns within the single `v1-objects` KV bucket/stream; there is no `EVENT_FILTER_SUBJECT` env var.
 
 ### Logging Configuration
 
@@ -560,7 +560,7 @@ All commits must be:
 - **GPG-signed**: `git commit -S -s` (the `-s` adds DCO `Signed-off-by` trailer)
 - **Conventional commit format**: `<type>(<scope>): <summary>` — e.g. `feat(registrants): add self-registration endpoint`
 
-Types: `feat` | `fix` | `refactor` | `docs` | `chore`
+Types: `feat` | `fix` | `docs` | `test` | `refactor` | `chore` | `build` | `ci` | `perf` | `style` | `revert`
 
 ### Code Standards
 
@@ -571,21 +571,21 @@ make check   # gofmt + golangci-lint + license-header check
 make test    # unit tests with -race -cover
 ```
 
-Every Go file must carry these two header lines before the `package` declaration:
+Every non-generated Go source file (outside `gen/` and `vendor/`) must carry these two header lines before the `package` declaration:
 
 ```go
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 ```
 
-`make check` will fail if any file is missing them.
+`make check` will fail if any checked file is missing them (generated files in `gen/` are excluded).
 
 ### Pull Request Workflow
 
 1. Create a feature branch from `main`
 2. Make changes, run `make check` and `make test`
 3. Run the local review cycle: `/lfx-skills:lfx-local-review` (see CLAUDE.md for details)
-4. Open a PR — title must follow `<type>(<scope>): <summary> [LFXV2-XXXX]` format
+4. Open a PR — title must follow `<type>(<scope>): <summary>` format; append `[LFXV2-XXXX]` only when a relevant Jira ticket exists
 
 ### API Changes
 

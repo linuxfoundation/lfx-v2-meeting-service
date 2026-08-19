@@ -103,7 +103,7 @@ What changed and why (2–4 bullet points).
 
 ### No PII in Source
 
-**No production data may appear anywhere in committed files** — code, tests, comments, or documentation. This covers real names, email addresses, organization names, user IDs, and domain names from production or staging environments.
+**No customer or user PII may appear anywhere in committed files** — code, tests, comments, or documentation. This covers real user names, email addresses, user IDs, and customer organization names. Public LFX infrastructure hostnames and endpoints (ITX URLs, Auth0 domains, API gateway URLs, etc.) are service configuration, not PII, and are not subject to this rule.
 
 Approved fake-data conventions for tests and mocks:
 
@@ -188,7 +188,7 @@ The service follows a clean architecture pattern with:
 
 - Event processor lifecycle management
 - KV handler routing by key prefix
-- 11 specialized event handlers: meetings, meeting attachments, registrants, RSVPs, past meetings, past meeting invitees/attendees, recordings, transcripts, summaries, past meeting attachments
+- 12 routing cases handled by specialized handlers: meetings, meeting-committee mappings, registrants, RSVPs, past meetings, past-meeting mappings, past meeting invitees, past meeting attendees, recordings and transcripts (shared handler), AI summaries, meeting attachments, past meeting attachments
 - `invite_accepted_subscriber.go` — separate NATS queue subscriber (not KV-based); enriches DynamoDB records when an LFID invite is accepted
 - RRULE occurrence calculation
 - v1 user lookup and enrichment
@@ -227,7 +227,7 @@ The service follows a clean architecture pattern with:
 - `make lint` - Run golangci-lint (automatically installed via deps)
 - `make fmt` - Format Go code using gofmt
 - `make check` - Verify formatting, linting, and license headers without modifying files
-- `make license-check` - Check all Go files carry the LFX copyright and MIT SPDX headers
+- `make license-check` - Check all non-generated Go, HTML, and TXT files for LFX copyright and MIT SPDX headers (excludes `gen/` and `vendor/`)
 - `make verify` - Ensure generated code is up to date
 
 ### Git Hooks
@@ -318,14 +318,14 @@ is the PR-side Copilot surface's job (`.github/copilot-instructions.md` and
 
 ### License Headers
 
-Every Go file must carry these two lines at the top (before the `package` declaration):
+Every non-generated Go source file (outside `gen/` and `vendor/`) must carry these two lines at the top (before the `package` declaration):
 
 ```go
 // Copyright The Linux Foundation and each contributor to LFX.
 // SPDX-License-Identifier: MIT
 ```
 
-`make check` (which calls `make license-check`) will fail the build if headers are missing.
+`make check` (which calls `make license-check`) will fail if headers are missing on any checked file. Generated files in `gen/` and files in `vendor/` are excluded; the target also checks `.html` and `.txt` files in addition to `.go` files.
 
 ### Testing Strategy
 
@@ -335,45 +335,38 @@ Every Go file must carry these two lines at the top (before the `package` declar
 
 ### Testing Patterns
 
-Use table-driven tests for comprehensive coverage:
+Use `t.Run` subtests for comprehensive coverage. Fakes are defined inline in `_test.go` files — the codebase does not use a generated mock library:
 
 ```go
-func TestRegistrantService_AddRegistrant(t *testing.T) {
-    tests := []struct {
-        name      string
-        payload   *gen.AddRegistrantPayload
-        mockSetup func(*mocks.MockITXProxyClient)
-        wantErr   bool
-    }{
-        {
-            name: "success",
-            // ...
-        },
-        {
-            name: "itx returns error",
-            // ...
-        },
-    }
+func TestRegistrantService_CreateRegistrant(t *testing.T) {
+    t.Run("stamps created_by from context", func(t *testing.T) {
+        client := &fakeRegistrantClient{}
+        reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+            Username: "alice", Name: "Alice", Email: "alice@example.com",
+        }}
+        svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader)
 
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            client := mocks.NewMockITXProxyClient(t)
-            tt.mockSetup(client)
-            svc := NewRegistrantService(client, nil, nil)
-            _, err := svc.AddRegistrant(context.Background(), tt.payload)
-            if tt.wantErr {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
-            }
-        })
-    }
+        _, err := svc.CreateRegistrant(ctxWithPrincipal("alice", ""), "mtg-1",
+            &itx.ZoomMeetingRegistrant{Email: "invitee@example.com"})
+        require.NoError(t, err)
+        require.NotNil(t, client.lastCreateReq.CreatedBy)
+        assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
+    })
+
+    t.Run("omits created_by without principal", func(t *testing.T) {
+        client := &fakeRegistrantClient{}
+        svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, nil)
+
+        _, err := svc.CreateRegistrant(context.Background(), "mtg-1", &itx.ZoomMeetingRegistrant{})
+        require.NoError(t, err)
+        assert.Nil(t, client.lastCreateReq.CreatedBy)
+    })
 }
 ```
 
 **Key rules:**
-- Each production function should have exactly **one** corresponding test function (e.g. `AddRegistrant` → `TestRegistrantService_AddRegistrant`) which contains multiple test cases.
-- Add new test cases inside existing test functions rather than creating new top-level test functions for the same production function.
+- For new code, prefer grouping test cases for a production function into **one** test function with `t.Run` subtests (e.g. `TestRegistrantService_CreateRegistrant`). Separate per-operation test functions are also acceptable when clarity benefits from the split.
+- When adding cases to an already-tested function, prefer adding a new `t.Run` subtest rather than a new top-level function for the same operation.
 - Mock all external dependencies; never call real ITX, NATS, or auth services from unit tests.
 
 ### Error Handling
@@ -426,7 +419,7 @@ Use the canonical helpers from `pkg/utils/ptr.go` for optional fields:
 - `scripts/reindex_meetings/` — re-triggers the full event processing pipeline by re-putting NATS KV entries
 - `scripts/reconcile_meeting_registrants/` — reconciles registrant records
 
-`tmp/` contains temporary one-off migration scripts (fix_*_access_check, cleanup_orphaned_meetings, reindex_past_meeting_participants). These are not part of the service binary; they are run ad-hoc against a live environment.
+`tmp/` was used for temporary one-off migration scripts (fix_*_access_check, cleanup_orphaned_meetings, reindex_past_meeting_participants). These files are **not tracked in git** — they are created locally and run ad-hoc against a live environment.
 
 ## Environment Variables
 
@@ -483,7 +476,7 @@ The service includes event processing for v1→v2 data synchronization. See [Eve
 - `EVENT_ACK_WAIT`: Ack timeout (default: `30s`)
 - `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`)
 
-**Note**: The KV filter subjects are hardcoded to 12 specific buckets (meetings, mappings, registrants, invite-responses, attachments, past-meetings, past-meeting invitees/attendees/recordings/summaries/attachments, and their mapping buckets). There is no `EVENT_FILTER_SUBJECT` env var.
+**Note**: The KV filter subjects are hardcoded to 12 key-prefix patterns within the single `v1-objects` KV bucket/stream (meetings, meeting-committee mappings, registrants, invite-responses, meeting attachments, past-meetings, past-meeting mappings, past-meeting invitees/attendees/recordings/summaries/attachments). There is no `EVENT_FILTER_SUBJECT` env var.
 
 **Event Types Processed:**
 
@@ -503,12 +496,12 @@ The service includes event processing for v1→v2 data synchronization. See [Eve
 Controls outbound LFID invites for registrants who do not yet have an LFX account.
 
 - `INVITES_ENABLED`: Set to `true` to enable outbound invite sending and the `invite_accepted` subscriber (default: `false`)
-- `LFX_SELF_SERVE_BASE_URL`: LFX self-serve app URL embedded in invite emails as `return_url` (defaults per `LFX_ENVIRONMENT`; outbound invite sending is disabled when empty even if `INVITES_ENABLED=true`)
+- `LFX_SELF_SERVE_BASE_URL`: LFX self-serve app URL embedded in invite emails as `return_url` (defaults per `LFX_ENVIRONMENT` when unset; outbound invite sending is disabled when the resolved URL fails validation, even if `INVITES_ENABLED=true`)
 
 ### Additional Configuration
 
 - `PROJECT_LOGO_BASE_URL`: Base URL for project logo images (defaults to `https://lfx-one-project-logos-png-<env>.s3.us-west-2.amazonaws.com`)
-- `LFX_APP_ORIGIN`: LFX app origin URL, used in CORS and response headers
+- `LFX_APP_ORIGIN`: LFX app origin URL — parsed but currently not consumed by any HTTP handler; reserved for future use
 
 ## ITX API Integration
 
