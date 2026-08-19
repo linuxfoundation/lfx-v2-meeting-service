@@ -1,0 +1,17 @@
+# Copyright The Linux Foundation and each contributor to LFX.
+# SPDX-License-Identifier: MIT
+---
+# Only fail the build on actual error-level findings. DL3007 (latest tag) is a
+# warning, not an error — Chainguard images don't expose versioned tags without
+# a paid subscription, so :latest is intentional and already pinned by digest
+# in CI via ko.
+failure-threshold: error
+ignored:
+  # Chainguard images (cgr.dev/chainguard/*) do not expose versioned tags
+  # without a paid subscription.  The Dockerfile uses :latest intentionally;
+  # the image is already pinned by digest in CI via ko.
+  - DL3007
+  # The Chainguard static base image ships a 'nonroot' user (UID 65532) that is
+  # already defined in /etc/passwd inside the image.  Using the symbolic name is
+  # intentional and equivalent to the numeric form on this base image.
+  - DL3066
