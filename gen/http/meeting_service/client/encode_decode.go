@@ -7302,6 +7302,22 @@ func marshalMeetingserviceRecurrenceToRecurrenceRequestBody(v *meetingservice.Re
 	return res
 }
 
+// marshalMeetingserviceITXUserToITXUserRequestBody builds a value of type
+// *ITXUserRequestBody from a value of type *meetingservice.ITXUser.
+func marshalMeetingserviceITXUserToITXUserRequestBody(v *meetingservice.ITXUser) *ITXUserRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &ITXUserRequestBody{
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
+	}
+
+	return res
+}
+
 // marshalCommitteeRequestBodyToMeetingserviceCommittee builds a value of type
 // *meetingservice.Committee from a value of type *CommitteeRequestBody.
 func marshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBody) *meetingservice.Committee {
@@ -7336,6 +7352,22 @@ func marshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequest
 		MonthlyWeekDay: v.MonthlyWeekDay,
 		EndTimes:       v.EndTimes,
 		EndDateTime:    v.EndDateTime,
+	}
+
+	return res
+}
+
+// marshalITXUserRequestBodyToMeetingserviceITXUser builds a value of type
+// *meetingservice.ITXUser from a value of type *ITXUserRequestBody.
+func marshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *meetingservice.ITXUser {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ITXUser{
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
 	}
 
 	return res
@@ -7380,6 +7412,22 @@ func unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v *RecurrenceResp
 	return res
 }
 
+// unmarshalITXUserResponseBodyToMeetingserviceITXUser builds a value of type
+// *meetingservice.ITXUser from a value of type *ITXUserResponseBody.
+func unmarshalITXUserResponseBodyToMeetingserviceITXUser(v *ITXUserResponseBody) *meetingservice.ITXUser {
+	if v == nil {
+		return nil
+	}
+	res := &meetingservice.ITXUser{
+		Username:       v.Username,
+		Name:           v.Name,
+		Email:          v.Email,
+		ProfilePicture: v.ProfilePicture,
+	}
+
+	return res
+}
+
 // unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence builds a
 // value of type *meetingservice.ITXOccurrence from a value of type
 // *ITXOccurrenceResponseBody.
@@ -7393,54 +7441,6 @@ func unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence(v *ITXOccur
 		Duration:        v.Duration,
 		Status:          v.Status,
 		RegistrantCount: v.RegistrantCount,
-	}
-
-	return res
-}
-
-// marshalMeetingserviceITXUserToITXUserRequestBody builds a value of type
-// *ITXUserRequestBody from a value of type *meetingservice.ITXUser.
-func marshalMeetingserviceITXUserToITXUserRequestBody(v *meetingservice.ITXUser) *ITXUserRequestBody {
-	if v == nil {
-		return nil
-	}
-	res := &ITXUserRequestBody{
-		Username:       v.Username,
-		Name:           v.Name,
-		Email:          v.Email,
-		ProfilePicture: v.ProfilePicture,
-	}
-
-	return res
-}
-
-// marshalITXUserRequestBodyToMeetingserviceITXUser builds a value of type
-// *meetingservice.ITXUser from a value of type *ITXUserRequestBody.
-func marshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *meetingservice.ITXUser {
-	if v == nil {
-		return nil
-	}
-	res := &meetingservice.ITXUser{
-		Username:       v.Username,
-		Name:           v.Name,
-		Email:          v.Email,
-		ProfilePicture: v.ProfilePicture,
-	}
-
-	return res
-}
-
-// unmarshalITXUserResponseBodyToMeetingserviceITXUser builds a value of type
-// *meetingservice.ITXUser from a value of type *ITXUserResponseBody.
-func unmarshalITXUserResponseBodyToMeetingserviceITXUser(v *ITXUserResponseBody) *meetingservice.ITXUser {
-	if v == nil {
-		return nil
-	}
-	res := &meetingservice.ITXUser{
-		Username:       v.Username,
-		Name:           v.Name,
-		Email:          v.Email,
-		ProfilePicture: v.ProfilePicture,
 	}
 
 	return res

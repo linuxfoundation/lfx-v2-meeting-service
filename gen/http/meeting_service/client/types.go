@@ -58,6 +58,9 @@ type CreateItxMeetingRequestBody struct {
 	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserRequestBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 }
 
 // UpdateItxMeetingRequestBody is the type of the "Meeting Service" service
@@ -107,6 +110,9 @@ type UpdateItxMeetingRequestBody struct {
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserRequestBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 }
 
 // CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
@@ -573,6 +579,9 @@ type CreateItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
@@ -658,6 +667,9 @@ type GetItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
@@ -3850,6 +3862,18 @@ type RecurrenceRequestBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
+// ITXUserRequestBody is used to define fields on request body types.
+type ITXUserRequestBody struct {
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
 // CommitteeResponseBody is used to define fields on response body types.
 type CommitteeResponseBody struct {
 	// Committee UID
@@ -3878,6 +3902,18 @@ type RecurrenceResponseBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
+// ITXUserResponseBody is used to define fields on response body types.
+type ITXUserResponseBody struct {
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
 // ITXOccurrenceResponseBody is used to define fields on response body types.
 type ITXOccurrenceResponseBody struct {
 	// Unix timestamp
@@ -3890,30 +3926,6 @@ type ITXOccurrenceResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// Number of registrants for this occurrence
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-}
-
-// ITXUserRequestBody is used to define fields on request body types.
-type ITXUserRequestBody struct {
-	// Username
-	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Full name
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// Email address
-	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// Profile picture URL
-	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
-}
-
-// ITXUserResponseBody is used to define fields on response body types.
-type ITXUserResponseBody struct {
-	// Username
-	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Full name
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// Email address
-	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// Profile picture URL
-	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
 }
 
 // PastMeetingSummaryZoomConfigResponseBody is used to define fields on
@@ -4002,6 +4014,9 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
 	}
+	if p.Owner != nil {
+		body.Owner = marshalMeetingserviceITXUserToITXUserRequestBody(p.Owner)
+	}
 	return body
 }
 
@@ -4041,6 +4056,9 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
+	}
+	if p.Owner != nil {
+		body.Owner = marshalMeetingserviceITXUserToITXUserRequestBody(p.Owner)
 	}
 	return body
 }
@@ -4457,6 +4475,9 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
 	}
+	if body.Owner != nil {
+		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
+	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
 		for i, val := range body.Occurrences {
@@ -4590,6 +4611,9 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Owner != nil {
+		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
 	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
@@ -7851,6 +7875,11 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
 	}
+	if body.Owner != nil {
+		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	if body.NextOccurrenceStartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.next_occurrence_start_time", *body.NextOccurrenceStartTime, goa.FormatDateTime))
 	}
@@ -7942,6 +7971,11 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 	if body.AutoEmailReminderTime != nil {
 		if *body.AutoEmailReminderTime > 1440 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
+		}
+	}
+	if body.Owner != nil {
+		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.NextOccurrenceStartTime != nil {
@@ -11744,6 +11778,17 @@ func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	return
 }
 
+// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
+func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateCommitteeResponseBody runs the validations defined on
 // CommitteeResponseBody
 func ValidateCommitteeResponseBody(body *CommitteeResponseBody) (err error) {
@@ -11772,6 +11817,18 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 	return
 }
 
+// ValidateITXUserResponseBody runs the validations defined on
+// ITXUserResponseBody
+func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateITXOccurrenceResponseBody runs the validations defined on
 // ITXOccurrenceResponseBody
 func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err error) {
@@ -11782,29 +11839,6 @@ func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err err
 		if !(*body.Status == "available" || *body.Status == "cancel") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"available", "cancel"}))
 		}
-	}
-	return
-}
-
-// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
-func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
-	if body.Email != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
-	}
-	if body.ProfilePicture != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
-	}
-	return
-}
-
-// ValidateITXUserResponseBody runs the validations defined on
-// ITXUserResponseBody
-func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
-	if body.Email != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
-	}
-	if body.ProfilePicture != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
 	}
 	return
 }

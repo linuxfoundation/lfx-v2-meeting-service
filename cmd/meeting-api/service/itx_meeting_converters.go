@@ -31,6 +31,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		ArtifactVisibility:       itx.ArtifactAccess(utils.StringValue(p.ArtifactVisibility)),
 		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    utils.IntValue(p.AutoEmailReminderTime),
+		Owner:                    convertGoaITXUserToITX(p.Owner),
 	}
 
 	// Convert committees
@@ -96,6 +97,8 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		LastMailingListMembersSyncJobStatus:       utils.StringPtrOmitEmpty(resp.LastMailingListMembersSyncJobStatus),
 		LastMailingListMembersSyncJobFailedCount:  utils.IntPtrOmitZero(resp.LastMailingListMembersSyncJobFailedCount),
 		LastMailingListMembersSyncJobWarningCount: utils.IntPtrOmitZero(resp.LastMailingListMembersSyncJobWarningCount),
+
+		Owner: convertITXWireUserToGoa(resp.Owner),
 
 		// Read-only response fields
 		NextOccurrenceStartTime: utils.StringPtrOmitEmpty(resp.NextOccurrenceStartTime),
@@ -241,6 +244,35 @@ func ConvertITXMeetingResponseResultToGoa(r *itx.MeetingResponseResult) *meeting
 		OccurrenceID: utils.StringPtrOmitEmpty(r.OccurrenceID),
 		CreatedAt:    utils.StringPtrOmitEmpty(r.CreatedAt),
 		UpdatedAt:    utils.StringPtrOmitEmpty(r.UpdatedAt),
+	}
+}
+
+// convertGoaITXUserToITX converts an optional Goa ITXUser to the ITX wire user model.
+// Returns nil when the field was not provided so downstream callers can distinguish
+// "omitted" from "set".
+func convertGoaITXUserToITX(u *meetingservice.ITXUser) *itx.User {
+	if u == nil {
+		return nil
+	}
+	return &itx.User{
+		Username:       utils.StringValue(u.Username),
+		Name:           utils.StringValue(u.Name),
+		Email:          utils.StringValue(u.Email),
+		ProfilePicture: utils.StringValue(u.ProfilePicture),
+	}
+}
+
+// convertITXWireUserToGoa converts an optional ITX wire user to a Goa ITXUser.
+// (convertITXUserToGoa in itx_attachment_converters.go covers the itx.CreatedUpdatedBy shape.)
+func convertITXWireUserToGoa(u *itx.User) *meetingservice.ITXUser {
+	if u == nil {
+		return nil
+	}
+	return &meetingservice.ITXUser{
+		Username:       utils.StringPtrOmitEmpty(u.Username),
+		Name:           utils.StringPtrOmitEmpty(u.Name),
+		Email:          utils.StringPtrOmitEmpty(u.Email),
+		ProfilePicture: utils.StringPtrOmitEmpty(u.ProfilePicture),
 	}
 }
 

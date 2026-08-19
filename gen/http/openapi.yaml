@@ -4490,6 +4490,8 @@ definitions:
                       registrant_count: 4711810484664006701
                       start_time: "2021-01-01T10:00:00Z"
                       status: cancel
+            owner:
+                $ref: '#/definitions/ITXUser'
             passcode:
                 type: string
                 description: Zoom meeting passcode
@@ -4632,6 +4634,11 @@ definitions:
                   registrant_count: 4711810484664006701
                   start_time: "2021-01-01T10:00:00Z"
                   status: cancel
+            owner:
+                email: john.doe@example.com
+                name: John Doe
+                profile_picture: https://example.com/avatar.jpg
+                username: jdoe
             passcode: abc123
             password: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
@@ -4834,6 +4841,8 @@ definitions:
                     - Legal
                     - Other
                     - None
+            owner:
+                $ref: '#/definitions/ITXUser'
             project_uid:
                 type: string
                 description: The UID of the LF project
@@ -4905,6 +4914,11 @@ definitions:
             duration: 74
             early_join_time_minutes: 50
             meeting_type: Maintainers
+            owner:
+                email: john.doe@example.com
+                name: John Doe
+                profile_picture: https://example.com/avatar.jpg
+                username: jdoe
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: false
             recurrence:
@@ -5603,6 +5617,8 @@ definitions:
                     - Legal
                     - Other
                     - None
+            owner:
+                $ref: '#/definitions/ITXUser'
             project_uid:
                 type: string
                 description: The UID of the LF project
@@ -5674,6 +5690,11 @@ definitions:
             duration: 32
             early_join_time_minutes: 53
             meeting_type: Other
+            owner:
+                email: john.doe@example.com
+                name: John Doe
+                profile_picture: https://example.com/avatar.jpg
+                username: jdoe
             project_uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
             recording_enabled: false
             recurrence:

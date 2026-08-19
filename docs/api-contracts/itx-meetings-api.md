@@ -42,6 +42,8 @@ Shape:
 
 The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
 
+Unlike the stamped audit fields, `owner` is **client-suppliable**: clients may send it on create and update requests (same shape as above), and the proxy forwards it to ITX as-is. `owner` designates the single user responsible for the meeting. When omitted, ITX defaults it to the creator on create and preserves the stored owner on update — so existing callers that never send the field cannot accidentally clear it.
+
 ---
 
 ## Create Meeting
@@ -86,6 +88,12 @@ Content-Type: application/json
   "artifact_visibility": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "owner": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  },
   "recurrence": {
     "type": 2,
     "repeat_interval": 1,
@@ -98,6 +106,8 @@ Content-Type: application/json
   }
 }
 ```
+
+> **Optional field**: `owner` is the single user responsible for the meeting. When omitted, ITX defaults it to the creator. See [Audit stamping](#audit-stamping).
 
 **Response**: `201 Created`
 
@@ -125,6 +135,12 @@ Content-Type: application/json
   "artifact_visibility": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "owner": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  },
   "recurrence": {
     "type": 2,
     "repeat_interval": 1,
@@ -198,6 +214,12 @@ Content-Type: application/json
     "end_times": 10,
     "end_date_time": "2024-12-31T23:59:59Z"
   },
+  "owner": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  },
   "created_by": {
     "username": "jdoe",
     "name": "Jane Doe",
@@ -208,6 +230,8 @@ Content-Type: application/json
 ```
 
 > **Proxy-added field**: `created_by` is stamped by the LFX Meeting Service proxy from the requesting user's authenticated JWT principal (username, enriched with name/email/avatar via the auth service). Clients do not send this field in their proxy request; if provided, it is ignored/overwritten. See [Audit stamping](#audit-stamping).
+>
+> **Passthrough field**: `owner` is forwarded unchanged from the proxy request when the client provides it, and omitted otherwise (ITX then defaults it to the creator). See [Audit stamping](#audit-stamping).
 
 **Response**: `201 Created`
 
@@ -242,6 +266,12 @@ Content-Type: application/json
     "weekly_days": "1,3,5",
     "end_times": 10
   },
+  "owner": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  },
   "passcode": "abc123",
   "password": "7cad5a8d-19d0-41a4-81a6-043453daf9ee",
   "public_link": "https://zoom-lfx.platform.linuxfoundation.org/meeting/1234567890",
@@ -271,6 +301,7 @@ Content-Type: application/json
 | `early_join_time_minutes` | `early_join_time` | Minutes users can join early |
 | `auto_email_reminder_enabled` | `auto_email_reminder_enabled` | Whether a reminder email is sent to participants. Optional: when the proxy request omits it, it is also omitted from the ITX request and ITX preserves the stored reminder pair; an explicit `false` is forwarded as-is and disables the reminder (ITX resets the stored time to 0) |
 | `auto_email_reminder_time` | `auto_email_reminder_time` | Minutes before start to send the reminder (120-1440, proxy-validated); omitted when zero — ITX defaults to 1440 when enabled without a time and resets to 0 on explicit disable |
+| `owner` | `owner` | Single user responsible for the meeting (username/name/email/profile_picture). Optional passthrough: when the proxy request omits it, it is also omitted from the ITX request — ITX defaults it to the creator on create and preserves the stored owner on update |
 | `committees[].uid` | `committees[].id` | Committee identifier |
 | `committees[].allowed_voting_statuses` | `committees[].filters` | Voting status filters |
 | (N/A - added by proxy) | `id` | Zoom meeting ID (response only) |
@@ -364,7 +395,7 @@ Content-Type: application/json
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 
-**Request Body**: Same as ITX Create Meeting request body, except `created_by` is not sent; instead, the proxy stamps `updated_by` with the requesting user (same shape as `created_by`). See [Audit stamping](#audit-stamping).
+**Request Body**: Same as ITX Create Meeting request body, except `created_by` is not sent; instead, the proxy stamps `updated_by` with the requesting user (same shape as `created_by`). `owner` remains an optional client passthrough — when omitted, it is also omitted from the ITX request and ITX preserves the stored owner. See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 
