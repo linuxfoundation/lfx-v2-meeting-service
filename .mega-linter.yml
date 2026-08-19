@@ -45,10 +45,9 @@ API_SPECTRAL_FILTER_REGEX_EXCLUDE: "gen|(cmd/meeting-api/kodata)/"
 # Ignore YAML files with templating macros; these typically fail linting and/or
 # schema checking.
 FILTER_REGEX_EXCLUDE: '(templates/.*\.yml|templates/.*\.yaml|cmd/meeting-api/kodata/*.yaml)'
-# Python test helpers in scripts/ contain test function names (e.g.
-# test_scroll_cleanup_failure_fails_closed) that match Lob's test-key prefix
-# pattern and are verified as non-secrets by Lob's lenient test API. This is a
-# known false-positive class with --only-verified; exclude the directory.
+# Python test helpers in scripts/ contain test function names that match
+# Lob's test-key prefix pattern and are verified by Lob's lenient test API.
+# This is a known false-positive class with --only-verified; exclude the dir.
 REPOSITORY_TRUFFLEHOG_FILTER_REGEX_EXCLUDE: "scripts/"
 KUBERNETES_DIRECTORY: charts/lfx-v2-meeting-service
 KUBERNETES_HELM_ARGUMENTS: charts/lfx-v2-meeting-service
