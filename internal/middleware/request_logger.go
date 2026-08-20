@@ -21,6 +21,7 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 			isHealthCheck := r.URL.Path == "/livez" || r.URL.Path == "/readyz"
 
 			ctx := r.Context()
+			ctx = logging.AppendCtx(ctx, slog.String("component", "api"))
 			ctx = logging.AppendCtx(ctx, slog.String("method", r.Method))
 			ctx = logging.AppendCtx(ctx, slog.String("path", r.URL.Path))
 			ctx = logging.AppendCtx(ctx, slog.String("query", r.URL.RawQuery))
