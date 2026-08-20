@@ -117,3 +117,5 @@ jetstream/
 
 # OAS local agent instances and worktrees
 local-agents/
+.cursor/
+backfill_meeting_host_credentials

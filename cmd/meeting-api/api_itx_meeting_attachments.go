@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -19,6 +20,7 @@ func (s *MeetingsAPI) CreateItxMeetingAttachment(ctx context.Context, p *meeting
 	if err != nil {
 		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "meeting attachment created", "meeting_id", p.MeetingID, "attachment_id", resp.ID)
 	return service.ConvertITXMeetingAttachmentToGoa(resp), nil
 }
 
@@ -39,6 +41,7 @@ func (s *MeetingsAPI) UpdateItxMeetingAttachment(ctx context.Context, p *meeting
 	if err != nil {
 		return handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "meeting attachment updated", "meeting_id", p.MeetingID, "attachment_id", p.AttachmentID)
 	return nil
 }
 
@@ -48,6 +51,7 @@ func (s *MeetingsAPI) DeleteItxMeetingAttachment(ctx context.Context, p *meeting
 	if err != nil {
 		return handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "meeting attachment deleted", "meeting_id", p.MeetingID, "attachment_id", p.AttachmentID)
 	return nil
 }
 

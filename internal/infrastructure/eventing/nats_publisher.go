@@ -79,7 +79,7 @@ func NewNATSPublisher(nc *nats.Conn, logger *slog.Logger) (*NATSPublisher, error
 
 // PublishMeetingEvent publishes a meeting event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData) error {
-	p.logger.DebugContext(ctx, "publishing meeting event", "action", action, "meeting_id", meeting.ID)
+	p.logger.InfoContext(ctx, "publishing meeting event", "action", action, "meeting_id", meeting.ID)
 
 	tags := meeting.Tags()
 	isPublic := meeting.Visibility == "public"
@@ -150,7 +150,7 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 // The credentials object is a permissioned sub-document keyed by meeting ID — only organizers
 // (as enforced by FGA) can retrieve it from the indexer.
 func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, action string, credentials *models.MeetingHostCredentialsEventData) error {
-	p.logger.DebugContext(ctx, "publishing meeting host credentials event", "action", action, "meeting_id", credentials.MeetingID)
+	p.logger.InfoContext(ctx, "publishing meeting host credentials event", "action", action, "meeting_id", credentials.MeetingID)
 
 	publicFalse := false
 	tags := credentials.Tags()
@@ -183,7 +183,7 @@ func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, 
 
 // PublishRegistrantEvent publishes a registrant event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error {
-	p.logger.DebugContext(ctx, "publishing registrant event", "action", action, "registrant_uid", registrant.UID)
+	p.logger.InfoContext(ctx, "publishing registrant event", "action", action, "registrant_uid", registrant.UID)
 
 	tags := registrant.Tags()
 	publicFalse := false
@@ -243,7 +243,7 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 
 // PublishInviteResponseEvent publishes an invite response (RSVP) event to indexer service
 func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData) error {
-	p.logger.DebugContext(ctx, "publishing invite response event", "action", action, "response_id", response.ID)
+	p.logger.InfoContext(ctx, "publishing invite response event", "action", action, "response_id", response.ID)
 
 	tags := response.Tags()
 	publicFalse := false
@@ -280,7 +280,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		return domain.NewValidationError("meeting_and_occurrence_id is required for publishing messages about the past meeting")
 	}
 
-	p.logger.DebugContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.MeetingAndOccurrenceID)
+	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.MeetingAndOccurrenceID)
 
 	tags := meeting.Tags()
 	isPublic := meeting.Visibility == "public"
@@ -393,7 +393,7 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 	if participant.MeetingAndOccurrenceID == "" {
 		return domain.NewValidationError("meeting_and_occurrence_id is required for participant event")
 	}
-	p.logger.DebugContext(ctx, "publishing past meeting participant event", "action", action, "participant_uid", participant.UID)
+	p.logger.InfoContext(ctx, "publishing past meeting participant event", "action", action, "participant_uid", participant.UID)
 
 	tags := participant.Tags()
 	publicFalse := false
@@ -457,7 +457,7 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 
 // PublishPastMeetingRecordingEvent publishes a recording event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error {
-	p.logger.DebugContext(ctx, "publishing past meeting recording event", "action", action, "recording_id", recording.ID)
+	p.logger.InfoContext(ctx, "publishing past meeting recording event", "action", action, "recording_id", recording.ID)
 
 	tags := recording.Tags()
 	isPublic := recording.RecordingAccess == "public"
@@ -493,7 +493,7 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 
 // PublishPastMeetingTranscriptEvent publishes a transcript event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData) error {
-	p.logger.DebugContext(ctx, "publishing past meeting transcript event", "action", action, "transcript_id", transcript.ID)
+	p.logger.InfoContext(ctx, "publishing past meeting transcript event", "action", action, "transcript_id", transcript.ID)
 
 	tags := transcript.Tags()
 	isPublic := transcript.TranscriptAccess == "public"
@@ -529,7 +529,7 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 // PublishPastMeetingSummaryEvent publishes a summary event to indexer and FGA-sync services.
 // summaryAccess is the ai_summary_access value from the parent past meeting record.
 func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, summaryAccess string) error {
-	p.logger.DebugContext(ctx, "publishing past meeting summary event", "action", action, "summary_id", summary.ID)
+	p.logger.InfoContext(ctx, "publishing past meeting summary event", "action", action, "summary_id", summary.ID)
 
 	isPublic := summaryAccess == "public"
 	tags := summary.Tags()
@@ -564,7 +564,7 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 
 // PublishMeetingAttachmentEvent publishes a meeting attachment event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.MeetingAttachmentEventData) error {
-	p.logger.DebugContext(ctx, "publishing meeting attachment event", "action", action, "attachment_uid", attachment.UID)
+	p.logger.InfoContext(ctx, "publishing meeting attachment event", "action", action, "attachment_uid", attachment.UID)
 
 	tags := attachment.Tags()
 	isPublic := false
@@ -597,7 +597,7 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 
 // PublishPastMeetingAttachmentEvent publishes a past meeting attachment event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.PastMeetingAttachmentEventData) error {
-	p.logger.DebugContext(ctx, "publishing past meeting attachment event", "action", action, "attachment_uid", attachment.UID)
+	p.logger.InfoContext(ctx, "publishing past meeting attachment event", "action", action, "attachment_uid", attachment.UID)
 
 	tags := attachment.Tags()
 	isPublic := false

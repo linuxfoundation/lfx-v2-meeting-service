@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -20,6 +21,7 @@ func (s *MeetingsAPI) CreateItxMeeting(ctx context.Context, p *meetingsvc.Create
 	if err != nil {
 		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "meeting created", "meeting_id", resp.ID)
 	return service.ConvertITXMeetingResponseToGoa(resp), nil
 }
 
@@ -67,7 +69,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "meeting updated", "meeting_id", p.MeetingID)
 	return nil
 }
 
@@ -77,7 +79,7 @@ func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.Delete
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "meeting deleted", "meeting_id", p.MeetingID)
 	return nil
 }
 
@@ -109,7 +111,7 @@ func (s *MeetingsAPI) ResendItxMeetingInvitations(ctx context.Context, p *meetin
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "meeting invitations resent", "meeting_id", p.MeetingID)
 	return nil
 }
 
@@ -119,7 +121,7 @@ func (s *MeetingsAPI) RegisterItxCommitteeMembers(ctx context.Context, p *meetin
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "committee member registration triggered", "meeting_id", p.MeetingID)
 	return nil
 }
 
@@ -130,7 +132,7 @@ func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.Upd
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "meeting occurrence updated", "meeting_id", p.MeetingID, "occurrence_id", p.OccurrenceID)
 	return nil
 }
 
@@ -140,7 +142,7 @@ func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.Del
 	if err != nil {
 		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "meeting occurrence deleted", "meeting_id", p.MeetingID, "occurrence_id", p.OccurrenceID)
 	return nil
 }
 
@@ -158,6 +160,6 @@ func (s *MeetingsAPI) SubmitItxMeetingResponse(ctx context.Context, p *meetingsv
 		return nil, handleError(ctx, err)
 	}
 	result.MeetingID = p.MeetingID
-
+	slog.InfoContext(ctx, "meeting response submitted", "meeting_id", p.MeetingID)
 	return service.ConvertITXMeetingResponseResultToGoa(result), nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -116,8 +117,10 @@ func (s *PastMeetingParticipantService) CreateParticipant(
 		}
 		resp, err := s.participantClient.CreateAttendee(ctx, pastMeetingID, attendeeReq)
 		if err != nil {
-			// If invitee was created but attendee fails, we have a partial state
-			// ITX handles cleanup, but we return the error
+			if isInvited {
+				slog.WarnContext(ctx, "partial create state: invitee created but attendee creation failed",
+					"past_meeting_id", pastMeetingID, logging.ErrKey, err)
+			}
 			return nil, fmt.Errorf("failed to create attendee: %w", err)
 		}
 		attendeeResp = resp
@@ -448,7 +451,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	inviteeErr := s.participantClient.DeleteInvitee(ctx, pastMeetingID, idToUseInvitee)
 	if inviteeErr != nil {
-		slog.ErrorContext(ctx, "Failed to delete invitee",
+		slog.WarnContext(ctx, "Failed to delete invitee",
 			"participant_id", participantID,
 			"invitee_id", idToUseInvitee,
 			"past_meeting_id", pastMeetingID,
@@ -466,7 +469,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	attendeeErr := s.participantClient.DeleteAttendee(ctx, pastMeetingID, idToUseAttendee)
 	if attendeeErr != nil {
-		slog.ErrorContext(ctx, "Failed to delete attendee",
+		slog.WarnContext(ctx, "Failed to delete attendee",
 			"participant_id", participantID,
 			"attendee_id", idToUseAttendee,
 			"past_meeting_id", pastMeetingID,

@@ -290,7 +290,7 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 
 	default:
 		// Not a meeting-related event, skip
-		handlers.logger.Debug("skipping non-meeting event", "key", key)
+		handlers.logger.DebugContext(ctx, "skipping non-meeting event", "key", key)
 		return false
 	}
 }

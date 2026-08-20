@@ -145,10 +145,13 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	if err != nil {
 		return ctx, err
 	}
-	// Return a new context containing the principal (and email, if any) as values.
+	// Return a new context containing the principal (and email, if any) as values,
+	// and inject the principal into the slog context so it appears in every log
+	// line for this request without each call site having to add it manually.
 	ctx = context.WithValue(ctx, constants.PrincipalContextID, principal)
 	if email != "" {
 		ctx = context.WithValue(ctx, constants.EmailContextID, email)
 	}
+	ctx = logging.AppendCtx(ctx, slog.String("principal", principal))
 	return ctx, nil
 }

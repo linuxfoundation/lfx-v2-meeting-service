@@ -93,6 +93,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
+	funcLogger.InfoContext(ctx, "processing meeting attachment update")
 
 	// Look up project UID and primary committee SFID from parent meeting.
 	// lookupProjectFromMeeting returns ("","",nil) when the meeting record is missing.
@@ -156,7 +157,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting attachment mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed meeting attachment")
+	funcLogger.InfoContext(ctx, "successfully processed meeting attachment", "action", string(indexerAction))
 	return false
 }
 
@@ -172,6 +173,7 @@ func (h *EventHandlers) handleMeetingAttachmentDelete(
 		h.logger.DebugContext(ctx, "meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing meeting attachment delete", "attachment_uid", attachmentUID)
 	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_meeting_attachment",
 		tombstoneKeyFmts: []string{"v1_meeting_attachments.%s"},
@@ -308,6 +310,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
+	funcLogger.InfoContext(ctx, "processing past meeting attachment update")
 
 	// Look up project info and primary committee SFID from the parent past meeting record.
 	// lookupProjectFromPastMeeting returns ("","","",nil) for ErrKeyNotFound (permanent miss)
@@ -356,7 +359,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting attachment mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment", "action", string(indexerAction))
 	return false
 }
 
@@ -372,6 +375,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentDelete(
 		h.logger.DebugContext(ctx, "past meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting attachment delete", "attachment_uid", attachmentUID)
 	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_attachment",
 		tombstoneKeyFmts: []string{"v1_past_meeting_attachments.%s"},

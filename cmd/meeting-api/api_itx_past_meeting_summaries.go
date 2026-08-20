@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -26,5 +27,6 @@ func (s *MeetingsAPI) UpdateItxPastMeetingSummary(ctx context.Context, p *meetin
 	if err != nil {
 		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "past meeting summary updated", "past_meeting_id", p.PastMeetingID, "summary_uid", p.SummaryUID)
 	return service.ConvertPastMeetingSummaryToGoa(resp), nil
 }
