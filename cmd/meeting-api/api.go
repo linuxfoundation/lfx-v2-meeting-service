@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -102,38 +101,27 @@ func handleError(ctx context.Context, err error) error {
 
 	switch errorType {
 	case domain.ErrorTypeValidation:
-		slog.WarnContext(ctx, "bad request", logging.ErrKey, err)
+		slog.WarnContext(ctx, "bad request")
 		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrorTypeNotFound:
-		slog.WarnContext(ctx, "resource not found", logging.ErrKey, err)
+		slog.WarnContext(ctx, "resource not found")
 		return createResponse(http.StatusNotFound, err)
 	case domain.ErrorTypeConflict:
-		slog.WarnContext(ctx, "conflict", logging.ErrKey, err)
+		slog.WarnContext(ctx, "conflict")
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
-		slog.ErrorContext(ctx, "service unavailable error", "error_message", domainErrMessage(err))
+		slog.ErrorContext(ctx, "service unavailable error")
 		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrorTypeForbidden:
-		slog.WarnContext(ctx, "forbidden", logging.ErrKey, err)
+		slog.WarnContext(ctx, "forbidden")
 		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
-		slog.ErrorContext(ctx, "internal server error", "error_message", domainErrMessage(err))
+		slog.ErrorContext(ctx, "internal server error")
 		return createResponse(http.StatusInternalServerError, err)
 	default:
-		slog.ErrorContext(ctx, "unhandled error", "error_message", domainErrMessage(err))
+		slog.ErrorContext(ctx, "unhandled error")
 		return createResponse(http.StatusInternalServerError, err)
 	}
-}
-
-// domainErrMessage returns only the DomainError.Message field, dropping the
-// wrapped upstream cause which may contain ITX server-supplied text that
-// echoes user-identifiable data (see proxy/client.go recordAndMapHTTPError).
-func domainErrMessage(err error) string {
-	var d *domain.DomainError
-	if errors.As(err, &d) {
-		return d.Message
-	}
-	return err.Error()
 }
 
 // Readyz checks if the service is able to take inbound requests.

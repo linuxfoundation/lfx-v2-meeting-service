@@ -5,7 +5,6 @@ package itx
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -118,13 +117,8 @@ func (s *PastMeetingParticipantService) CreateParticipant(
 		resp, err := s.participantClient.CreateAttendee(ctx, pastMeetingID, attendeeReq)
 		if err != nil {
 			if isInvited {
-				var domErr *domain.DomainError
-				errMsg := "attendee creation failed"
-				if errors.As(err, &domErr) {
-					errMsg = domErr.Message
-				}
 				slog.WarnContext(ctx, "partial create state: invitee created but attendee creation failed",
-					"past_meeting_id", pastMeetingID, "error_message", errMsg)
+					"past_meeting_id", pastMeetingID)
 			}
 			return nil, fmt.Errorf("failed to create attendee: %w", err)
 		}
