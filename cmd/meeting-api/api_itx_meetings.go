@@ -18,7 +18,7 @@ func (s *MeetingsAPI) CreateItxMeeting(ctx context.Context, p *meetingsvc.Create
 	req := service.ConvertCreateITXMeetingPayloadToDomain(p)
 	resp, err := s.itxMeetingService.CreateMeeting(ctx, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXMeetingResponseToGoa(resp), nil
 }
@@ -27,7 +27,7 @@ func (s *MeetingsAPI) CreateItxMeeting(ctx context.Context, p *meetingsvc.Create
 func (s *MeetingsAPI) GetItxMeeting(ctx context.Context, p *meetingsvc.GetItxMeetingPayload) (*meetingsvc.ITXZoomMeetingResponse, error) {
 	resp, err := s.itxMeetingService.GetMeeting(ctx, p.MeetingID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXMeetingResponseToGoa(resp), nil
 }
@@ -65,7 +65,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 	req.UpdateNote = utils.StringValue(p.UpdateNote)
 	err := s.itxMeetingService.UpdateMeeting(ctx, p.MeetingID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.DeleteItxMeetingPayload) error {
 	err := s.itxMeetingService.DeleteMeeting(ctx, p.MeetingID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.Delete
 func (s *MeetingsAPI) GetItxMeetingCount(ctx context.Context, p *meetingsvc.GetItxMeetingCountPayload) (*meetingsvc.ITXMeetingCountResponse, error) {
 	resp, err := s.itxMeetingService.GetMeetingCount(ctx, p.ProjectUID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return &meetingsvc.ITXMeetingCountResponse{MeetingCount: resp.MeetingCount}, nil
 }
@@ -95,7 +95,7 @@ func (s *MeetingsAPI) GetItxJoinLink(ctx context.Context, p *meetingsvc.GetItxJo
 	req := service.ConvertGetJoinLinkPayloadToITX(p)
 	resp, err := s.itxMeetingService.GetMeetingJoinLink(ctx, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXJoinLinkResponseToGoa(resp), nil
 }
@@ -107,7 +107,7 @@ func (s *MeetingsAPI) ResendItxMeetingInvitations(ctx context.Context, p *meetin
 	}
 	err := s.itxMeetingService.ResendMeetingInvitations(ctx, p.MeetingID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func (s *MeetingsAPI) ResendItxMeetingInvitations(ctx context.Context, p *meetin
 func (s *MeetingsAPI) RegisterItxCommitteeMembers(ctx context.Context, p *meetingsvc.RegisterItxCommitteeMembersPayload) error {
 	err := s.itxMeetingService.RegisterCommitteeMembers(ctx, p.MeetingID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -128,7 +128,7 @@ func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.Upd
 	req := service.ConvertUpdateOccurrencePayloadToITX(p)
 	err := s.itxMeetingService.UpdateOccurrence(ctx, p.MeetingID, p.OccurrenceID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -138,7 +138,7 @@ func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.Upd
 func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.DeleteItxOccurrencePayload) error {
 	err := s.itxMeetingService.DeleteOccurrence(ctx, p.MeetingID, p.OccurrenceID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func (s *MeetingsAPI) SubmitItxMeetingResponse(ctx context.Context, p *meetingsv
 
 	result, err := s.itxMeetingService.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	result.MeetingID = p.MeetingID
 

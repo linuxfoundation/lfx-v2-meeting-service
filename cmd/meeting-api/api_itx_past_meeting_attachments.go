@@ -17,7 +17,7 @@ func (s *MeetingsAPI) CreateItxPastMeetingAttachment(ctx context.Context, p *mee
 	req := service.ConvertGoaToITXCreatePastMeetingAttachment(p)
 	resp, err := s.itxPastMeetingAttachmentService.CreatePastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXPastMeetingAttachmentToGoa(resp), nil
 }
@@ -26,7 +26,7 @@ func (s *MeetingsAPI) CreateItxPastMeetingAttachment(ctx context.Context, p *mee
 func (s *MeetingsAPI) GetItxPastMeetingAttachment(ctx context.Context, p *meetingservice.GetItxPastMeetingAttachmentPayload) (*meetingservice.ITXPastMeetingAttachment, error) {
 	resp, err := s.itxPastMeetingAttachmentService.GetPastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, p.AttachmentID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXPastMeetingAttachmentToGoa(resp), nil
 }
@@ -37,7 +37,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingAttachment(ctx context.Context, p *mee
 	req := service.ConvertGoaToITXUpdatePastMeetingAttachment(p)
 	err := s.itxPastMeetingAttachmentService.UpdatePastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, p.AttachmentID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingAttachment(ctx context.Context, p *mee
 func (s *MeetingsAPI) DeleteItxPastMeetingAttachment(ctx context.Context, p *meetingservice.DeleteItxPastMeetingAttachmentPayload) error {
 	err := s.itxPastMeetingAttachmentService.DeletePastMeetingAttachment(ctx, p.MeetingAndOccurrenceID, p.AttachmentID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }
@@ -58,7 +58,7 @@ func (s *MeetingsAPI) CreateItxPastMeetingAttachmentPresign(ctx context.Context,
 	req := service.ConvertGoaToITXCreatePastMeetingAttachmentPresign(p)
 	resp, err := s.itxPastMeetingAttachmentService.CreatePastMeetingAttachmentPresignURL(ctx, p.MeetingAndOccurrenceID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXPastMeetingAttachmentPresignToGoa(resp), nil
 }
@@ -67,7 +67,7 @@ func (s *MeetingsAPI) CreateItxPastMeetingAttachmentPresign(ctx context.Context,
 func (s *MeetingsAPI) GetItxPastMeetingAttachmentDownload(ctx context.Context, p *meetingservice.GetItxPastMeetingAttachmentDownloadPayload) (*meetingservice.ITXAttachmentDownloadResponse, error) {
 	resp, err := s.itxPastMeetingAttachmentService.GetPastMeetingAttachmentDownloadURL(ctx, p.MeetingAndOccurrenceID, p.AttachmentID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXAttachmentDownloadToGoa(resp), nil
 }

@@ -15,7 +15,7 @@ func (s *MeetingsAPI) CreateItxPastMeeting(ctx context.Context, p *meetingsvc.Cr
 	req := service.ConvertCreatePastMeetingPayload(p)
 	resp, err := s.itxPastMeetingService.CreatePastMeeting(ctx, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertPastMeetingToGoa(resp), nil
 }
@@ -24,7 +24,7 @@ func (s *MeetingsAPI) CreateItxPastMeeting(ctx context.Context, p *meetingsvc.Cr
 func (s *MeetingsAPI) GetItxPastMeeting(ctx context.Context, p *meetingsvc.GetItxPastMeetingPayload) (*meetingsvc.ITXPastZoomMeeting, error) {
 	resp, err := s.itxPastMeetingService.GetPastMeeting(ctx, p.PastMeetingID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertPastMeetingToGoa(resp), nil
 }
@@ -34,7 +34,7 @@ func (s *MeetingsAPI) UpdateItxPastMeeting(ctx context.Context, p *meetingsvc.Up
 	req := service.ConvertUpdatePastMeetingPayload(p)
 	_, err := s.itxPastMeetingService.UpdatePastMeeting(ctx, p.PastMeetingID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }
@@ -43,7 +43,7 @@ func (s *MeetingsAPI) UpdateItxPastMeeting(ctx context.Context, p *meetingsvc.Up
 func (s *MeetingsAPI) DeleteItxPastMeeting(ctx context.Context, p *meetingsvc.DeleteItxPastMeetingPayload) error {
 	err := s.itxPastMeetingService.DeletePastMeeting(ctx, p.PastMeetingID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }

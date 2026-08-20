@@ -43,13 +43,15 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 
 			duration := time.Since(start)
 			if !isHealthCheck {
-				slog.InfoContext(ctx, "HTTP response", "status", ww.statusCode, "duration", duration.String())
+				slog.InfoContext(ctx, "HTTP response", "status", ww.StatusCode(), "duration", duration.String())
 			}
 		})
 	}
 }
 
-// responseWriter wraps http.ResponseWriter to capture status code
+// responseWriter wraps http.ResponseWriter to capture status code.
+// statusCode defaults to 200 because net/http implicitly writes 200 when
+// Write is called without an explicit WriteHeader call.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -58,6 +60,15 @@ type responseWriter struct {
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
+}
+
+// StatusCode returns the captured status code, defaulting to 200 if WriteHeader
+// was never called (which net/http treats as an implicit 200 OK).
+func (rw *responseWriter) StatusCode() int {
+	if rw.statusCode == 0 {
+		return http.StatusOK
+	}
+	return rw.statusCode
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {

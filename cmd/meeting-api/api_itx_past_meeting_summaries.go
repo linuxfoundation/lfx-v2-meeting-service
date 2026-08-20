@@ -14,7 +14,7 @@ import (
 func (s *MeetingsAPI) GetItxPastMeetingSummary(ctx context.Context, p *meetingsvc.GetItxPastMeetingSummaryPayload) (*meetingsvc.PastMeetingSummary, error) {
 	resp, err := s.itxPastMeetingSummaryService.GetPastMeetingSummary(ctx, p.PastMeetingID, p.SummaryUID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertPastMeetingSummaryToGoa(resp), nil
 }
@@ -24,7 +24,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingSummary(ctx context.Context, p *meetin
 	req := service.ConvertUpdatePastMeetingSummaryPayload(p)
 	resp, err := s.itxPastMeetingSummaryService.UpdatePastMeetingSummary(ctx, p.PastMeetingID, p.SummaryUID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertPastMeetingSummaryToGoa(resp), nil
 }

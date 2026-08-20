@@ -17,7 +17,7 @@ func (s *MeetingsAPI) CreateItxMeetingAttachment(ctx context.Context, p *meeting
 	req := service.ConvertGoaToITXCreateMeetingAttachment(p)
 	resp, err := s.itxMeetingAttachmentService.CreateMeetingAttachment(ctx, p.MeetingID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXMeetingAttachmentToGoa(resp), nil
 }
@@ -26,7 +26,7 @@ func (s *MeetingsAPI) CreateItxMeetingAttachment(ctx context.Context, p *meeting
 func (s *MeetingsAPI) GetItxMeetingAttachment(ctx context.Context, p *meetingservice.GetItxMeetingAttachmentPayload) (*meetingservice.ITXMeetingAttachment, error) {
 	resp, err := s.itxMeetingAttachmentService.GetMeetingAttachment(ctx, p.MeetingID, p.AttachmentID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXMeetingAttachmentToGoa(resp), nil
 }
@@ -37,7 +37,7 @@ func (s *MeetingsAPI) UpdateItxMeetingAttachment(ctx context.Context, p *meeting
 	req := service.ConvertGoaToITXUpdateMeetingAttachment(p)
 	err := s.itxMeetingAttachmentService.UpdateMeetingAttachment(ctx, p.MeetingID, p.AttachmentID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func (s *MeetingsAPI) UpdateItxMeetingAttachment(ctx context.Context, p *meeting
 func (s *MeetingsAPI) DeleteItxMeetingAttachment(ctx context.Context, p *meetingservice.DeleteItxMeetingAttachmentPayload) error {
 	err := s.itxMeetingAttachmentService.DeleteMeetingAttachment(ctx, p.MeetingID, p.AttachmentID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 	return nil
 }
@@ -58,7 +58,7 @@ func (s *MeetingsAPI) CreateItxMeetingAttachmentPresign(ctx context.Context, p *
 	req := service.ConvertGoaToITXCreateMeetingAttachmentPresign(p)
 	resp, err := s.itxMeetingAttachmentService.CreateMeetingAttachmentPresignURL(ctx, p.MeetingID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXMeetingAttachmentPresignToGoa(resp), nil
 }
@@ -67,7 +67,7 @@ func (s *MeetingsAPI) CreateItxMeetingAttachmentPresign(ctx context.Context, p *
 func (s *MeetingsAPI) GetItxMeetingAttachmentDownload(ctx context.Context, p *meetingservice.GetItxMeetingAttachmentDownloadPayload) (*meetingservice.ITXAttachmentDownloadResponse, error) {
 	resp, err := s.itxMeetingAttachmentService.GetMeetingAttachmentDownloadURL(ctx, p.MeetingID, p.AttachmentID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXAttachmentDownloadToGoa(resp), nil
 }

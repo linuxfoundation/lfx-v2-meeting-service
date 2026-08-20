@@ -11,6 +11,7 @@ import (
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
@@ -90,10 +91,11 @@ func createResponse(code int, err error) error {
 	}
 }
 
-// handleError converts domain errors to HTTP errors.
-// handleError maps domain error types to appropriate HTTP responses
-// This function no longer needs updates when new domain errors are added
-func handleError(err error) error {
+// handleError converts a domain error to its HTTP representation and logs
+// 5xx-class errors (Internal, Unavailable, and unmapped) via slog so that
+// every server-side failure is observable in production without the caller
+// having to add its own log statement.
+func handleError(ctx context.Context, err error) error {
 	errorType := domain.GetErrorType(err)
 
 	switch errorType {
@@ -104,12 +106,15 @@ func handleError(err error) error {
 	case domain.ErrorTypeConflict:
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
+		slog.ErrorContext(ctx, "service unavailable error", logging.ErrKey, err)
 		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrorTypeForbidden:
 		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
+		slog.ErrorContext(ctx, "internal server error", logging.ErrKey, err)
 		return createResponse(http.StatusInternalServerError, err)
 	default:
+		slog.ErrorContext(ctx, "unhandled error", logging.ErrKey, err)
 		return createResponse(http.StatusInternalServerError, err)
 	}
 }

@@ -18,7 +18,7 @@ func (s *MeetingsAPI) CreateItxPastMeetingParticipant(ctx context.Context, p *me
 	isAttended := p.IsAttended != nil && *p.IsAttended
 	resp, err := s.itxPastMeetingParticipantService.CreateParticipant(ctx, p.PastMeetingID, isInvited, isAttended, inviteeReq, attendeeReq)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertParticipantResponseToGoa(resp), nil
 }
@@ -43,7 +43,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 		IsAttended:    p.IsAttended,
 	}, inviteeReq, attendeeReq)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 
 	return service.ConvertParticipantResponseToGoa(resp), nil
@@ -53,7 +53,7 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 func (s *MeetingsAPI) DeleteItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.DeleteItxPastMeetingParticipantPayload) error {
 	err := s.itxPastMeetingParticipantService.DeleteParticipant(ctx, p.PastMeetingID, p.ParticipantID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
 
 	return nil
