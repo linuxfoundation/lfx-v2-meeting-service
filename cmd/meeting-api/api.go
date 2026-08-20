@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"goa.design/goa/v3/security"
 )
 
@@ -109,18 +111,29 @@ func handleError(ctx context.Context, err error) error {
 		slog.WarnContext(ctx, "conflict", logging.ErrKey, err)
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
-		slog.ErrorContext(ctx, "service unavailable error", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "service unavailable error", "error_message", domainErrMessage(err))
 		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrorTypeForbidden:
 		slog.WarnContext(ctx, "forbidden", logging.ErrKey, err)
 		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
-		slog.ErrorContext(ctx, "internal server error", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "internal server error", "error_message", domainErrMessage(err))
 		return createResponse(http.StatusInternalServerError, err)
 	default:
-		slog.ErrorContext(ctx, "unhandled error", logging.ErrKey, err)
+		slog.ErrorContext(ctx, "unhandled error", "error_message", domainErrMessage(err))
 		return createResponse(http.StatusInternalServerError, err)
 	}
+}
+
+// domainErrMessage returns only the DomainError.Message field, dropping the
+// wrapped upstream cause which may contain ITX server-supplied text that
+// echoes user-identifiable data (see proxy/client.go recordAndMapHTTPError).
+func domainErrMessage(err error) string {
+	var d *domain.DomainError
+	if errors.As(err, &d) {
+		return d.Message
+	}
+	return err.Error()
 }
 
 // Readyz checks if the service is able to take inbound requests.
@@ -156,6 +169,6 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	if email != "" {
 		ctx = context.WithValue(ctx, constants.EmailContextID, email)
 	}
-	ctx = logging.AppendCtx(ctx, slog.String("principal", principal))
+	ctx = logging.AppendCtx(ctx, slog.String("principal", redaction.Redact(principal)))
 	return ctx, nil
 }

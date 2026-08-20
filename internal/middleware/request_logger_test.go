@@ -107,3 +107,21 @@ func TestResponseWriterWrapper(t *testing.T) {
 	assertion.Equal(len(content), n)
 	assertion.Equal(content, rec.Body.Bytes())
 }
+
+func TestResponseWriterStatusCodeDefault(t *testing.T) {
+	t.Run("fresh wrapper reports 200 before any write", func(t *testing.T) {
+		rw := &responseWriter{ResponseWriter: httptest.NewRecorder()}
+		if rw.StatusCode() != http.StatusOK {
+			t.Errorf("expected 200, got %d", rw.StatusCode())
+		}
+	})
+
+	t.Run("body-only Write without WriteHeader still reports 200", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		rw := &responseWriter{ResponseWriter: rec}
+		_, _ = rw.Write([]byte("ok"))
+		if rw.StatusCode() != http.StatusOK {
+			t.Errorf("expected 200 after Write, got %d", rw.StatusCode())
+		}
+	})
+}

@@ -5,12 +5,12 @@ package itx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -118,8 +118,13 @@ func (s *PastMeetingParticipantService) CreateParticipant(
 		resp, err := s.participantClient.CreateAttendee(ctx, pastMeetingID, attendeeReq)
 		if err != nil {
 			if isInvited {
+				var domErr *domain.DomainError
+				errMsg := "attendee creation failed"
+				if errors.As(err, &domErr) {
+					errMsg = domErr.Message
+				}
 				slog.WarnContext(ctx, "partial create state: invitee created but attendee creation failed",
-					"past_meeting_id", pastMeetingID, logging.ErrKey, err)
+					"past_meeting_id", pastMeetingID, "error_message", errMsg)
 			}
 			return nil, fmt.Errorf("failed to create attendee: %w", err)
 		}
