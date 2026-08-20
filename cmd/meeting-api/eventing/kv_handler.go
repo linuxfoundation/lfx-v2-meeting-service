@@ -218,7 +218,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 	}
 
 	operation := getOperation(msg)
-	handlers.logger.DebugContext(ctx, "processing KV event",
+	handlers.logger.InfoContext(ctx, "processing KV event",
 		"key", key,
 		"operation", operation,
 		"num_delivered", metadata.NumDelivered,
@@ -247,7 +247,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
 	// Check for soft delete (record written to KV with _sdc_deleted_at set).
 	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
-		handlers.logger.DebugContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
+		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
 		return routeDelete(ctx, key, data, handlers)
 	}
 
@@ -299,7 +299,7 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 // v1Data is nil for hard KV deletes (DEL/PURGE) and populated for soft deletes
 // (_sdc_deleted_at), allowing handlers to extract fields needed for access control messages.
 func routeDelete(ctx context.Context, key string, v1Data map[string]any, handlers *EventHandlers) (retry bool) {
-	handlers.logger.DebugContext(ctx, "routing delete operation", "key", key)
+	handlers.logger.InfoContext(ctx, "routing delete operation", "key", key)
 
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):

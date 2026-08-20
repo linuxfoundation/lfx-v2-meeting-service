@@ -100,15 +100,19 @@ func handleError(ctx context.Context, err error) error {
 
 	switch errorType {
 	case domain.ErrorTypeValidation:
+		slog.WarnContext(ctx, "bad request", logging.ErrKey, err)
 		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrorTypeNotFound:
+		slog.WarnContext(ctx, "resource not found", logging.ErrKey, err)
 		return createResponse(http.StatusNotFound, err)
 	case domain.ErrorTypeConflict:
+		slog.WarnContext(ctx, "conflict", logging.ErrKey, err)
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
 		slog.ErrorContext(ctx, "service unavailable error", logging.ErrKey, err)
 		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrorTypeForbidden:
+		slog.WarnContext(ctx, "forbidden", logging.ErrKey, err)
 		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
 		slog.ErrorContext(ctx, "internal server error", logging.ErrKey, err)
