@@ -245,6 +245,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
@@ -264,7 +265,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting", "action", string(indexerAction))
 	return false // Success, ACK
 }
 
@@ -276,6 +277,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)

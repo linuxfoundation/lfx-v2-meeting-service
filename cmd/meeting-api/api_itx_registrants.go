@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -15,8 +16,9 @@ func (s *MeetingsAPI) CreateItxRegistrant(ctx context.Context, p *meetingsvc.Cre
 	req := service.ConvertCreateITXRegistrantPayloadToITX(p)
 	resp, err := s.itxRegistrantService.CreateRegistrant(ctx, p.MeetingID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "registrant created", "meeting_id", p.MeetingID, "registrant_id", resp.ID)
 	return service.ConvertITXRegistrantToGoa(resp), nil
 }
 
@@ -26,8 +28,9 @@ func (s *MeetingsAPI) SelfRegisterItxMeeting(ctx context.Context, p *meetingsvc.
 	req := service.ConvertSelfRegisterPayloadToITX(p)
 	resp, err := s.itxRegistrantService.SelfRegisterForMeeting(ctx, p.MeetingID, req)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "self-registration completed", "meeting_id", p.MeetingID, "registrant_id", resp.ID)
 	return service.ConvertITXRegistrantToGoa(resp), nil
 }
 
@@ -35,7 +38,7 @@ func (s *MeetingsAPI) SelfRegisterItxMeeting(ctx context.Context, p *meetingsvc.
 func (s *MeetingsAPI) GetItxRegistrant(ctx context.Context, p *meetingsvc.GetItxRegistrantPayload) (*meetingsvc.ITXZoomMeetingRegistrant, error) {
 	resp, err := s.itxRegistrantService.GetRegistrant(ctx, p.MeetingID, p.RegistrantID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return service.ConvertITXRegistrantToGoa(resp), nil
 }
@@ -45,8 +48,9 @@ func (s *MeetingsAPI) UpdateItxRegistrant(ctx context.Context, p *meetingsvc.Upd
 	req := service.ConvertUpdateITXRegistrantPayloadToITX(p)
 	err := s.itxRegistrantService.UpdateRegistrant(ctx, p.MeetingID, p.RegistrantID, req)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "registrant updated", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
 	return nil
 }
 
@@ -54,8 +58,9 @@ func (s *MeetingsAPI) UpdateItxRegistrant(ctx context.Context, p *meetingsvc.Upd
 func (s *MeetingsAPI) DeleteItxRegistrant(ctx context.Context, p *meetingsvc.DeleteItxRegistrantPayload) error {
 	err := s.itxRegistrantService.DeleteRegistrant(ctx, p.MeetingID, p.RegistrantID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "registrant deleted", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
 	return nil
 }
 
@@ -63,7 +68,7 @@ func (s *MeetingsAPI) DeleteItxRegistrant(ctx context.Context, p *meetingsvc.Del
 func (s *MeetingsAPI) GetItxRegistrantIcs(ctx context.Context, p *meetingsvc.GetItxRegistrantIcsPayload) ([]byte, error) {
 	resp, err := s.itxRegistrantService.GetRegistrantICS(ctx, p.MeetingID, p.RegistrantID)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
 	return resp.Content, nil
 }
@@ -72,7 +77,8 @@ func (s *MeetingsAPI) GetItxRegistrantIcs(ctx context.Context, p *meetingsvc.Get
 func (s *MeetingsAPI) ResendItxRegistrantInvitation(ctx context.Context, p *meetingsvc.ResendItxRegistrantInvitationPayload) error {
 	err := s.itxRegistrantService.ResendRegistrantInvitation(ctx, p.MeetingID, p.RegistrantID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "registrant invitation resent", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
 	return nil
 }

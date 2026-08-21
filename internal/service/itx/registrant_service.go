@@ -105,7 +105,7 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	if s.userMetadata != nil {
 		if profile, err := s.userMetadata.ResolveProfile(ctx, username); err != nil {
 			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
-				"username", username, "err", err)
+				"username", redaction.Redact(username), "err", err)
 		} else {
 			resolvedProfile = profile
 		}
