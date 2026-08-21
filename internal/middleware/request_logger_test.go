@@ -124,4 +124,12 @@ func TestResponseWriterStatusCodeDefault(t *testing.T) {
 			t.Errorf("expected 200 after Write, got %d", rw.StatusCode())
 		}
 	})
+
+	t.Run("StatusCode accessor returns explicit status set via WriteHeader", func(t *testing.T) {
+		rw := &responseWriter{ResponseWriter: httptest.NewRecorder()}
+		rw.WriteHeader(http.StatusNotFound)
+		if rw.StatusCode() != http.StatusNotFound {
+			t.Errorf("expected %d from StatusCode(), got %d", http.StatusNotFound, rw.StatusCode())
+		}
+	})
 }
