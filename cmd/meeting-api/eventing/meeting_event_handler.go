@@ -736,7 +736,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	v1Data map[string]interface{},
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
-	funcLogger.DebugContext(ctx, "processing meeting mapping update")
+	funcLogger.DebugContext(ctx, "received meeting mapping update")
 
 	// Extract meeting ID and mapping data
 	meetingID := utils.GetString(v1Data["meeting_id"])

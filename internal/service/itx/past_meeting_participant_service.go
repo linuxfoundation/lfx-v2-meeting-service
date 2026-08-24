@@ -450,7 +450,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	inviteeErr := s.participantClient.DeleteInvitee(ctx, pastMeetingID, idToUseInvitee)
 	if inviteeErr != nil {
-		slog.WarnContext(ctx, "Failed to delete invitee",
+		slog.WarnContext(ctx, "failed to delete invitee",
 			"participant_id", participantID,
 			"invitee_id", idToUseInvitee,
 			"past_meeting_id", pastMeetingID,
@@ -468,7 +468,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	attendeeErr := s.participantClient.DeleteAttendee(ctx, pastMeetingID, idToUseAttendee)
 	if attendeeErr != nil {
-		slog.WarnContext(ctx, "Failed to delete attendee",
+		slog.WarnContext(ctx, "failed to delete attendee",
 			"participant_id", participantID,
 			"attendee_id", idToUseAttendee,
 			"past_meeting_id", pastMeetingID,

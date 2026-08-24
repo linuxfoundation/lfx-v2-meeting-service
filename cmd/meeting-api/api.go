@@ -93,9 +93,10 @@ func createResponse(code int, err error) error {
 }
 
 // handleError converts a domain error to its HTTP representation and logs
-// 5xx-class errors (Internal, Unavailable, and unmapped) via slog so that
-// every server-side failure is observable in production without the caller
-// having to add its own log statement.
+// the outcome via slog: 4xx-class errors (Validation, NotFound, Conflict,
+// Forbidden) log at Warn; 5xx-class errors (Internal, Unavailable, and
+// unmapped) log at Error. This ensures every API failure is observable in
+// production without the caller having to add its own log statement.
 func handleError(ctx context.Context, err error) error {
 	errorType := domain.GetErrorType(err)
 
