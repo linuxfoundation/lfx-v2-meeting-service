@@ -1,7 +1,7 @@
 github.com/PuerkitoBio/rehttp v1.4.0 h1:rIN7A2s+O9fmHUM1vUcInvlHj9Ysql4hE+Y0wcl/xk8=
 github.com/PuerkitoBio/rehttp v1.4.0/go.mod h1:LUwKPoDbDIA2RL5wYZCNsQ90cx4OJ4AWBmq6KzWZL1s=
-github.com/auth0/go-auth0 v1.46.0 h1:2awmVKsBQ+zGi66FnH5PV4NRIQCGkXZK8bnyTOPcdnE=
-github.com/auth0/go-auth0 v1.46.0/go.mod h1:32sQB1uAn+99fJo6N819EniKq8h785p0ag0lMWhiTaE=
+github.com/auth0/go-auth0 v1.47.0 h1:HQvw0oOgMKFfncRqpab/5eP2ZmzpvxoIydSLxcDrzEs=
+github.com/auth0/go-auth0 v1.47.0/go.mod h1:32sQB1uAn+99fJo6N819EniKq8h785p0ag0lMWhiTaE=
 github.com/auth0/go-jwt-middleware/v2 v2.3.1 h1:lbDyWE9aLydb3zrank+Gufb9qGJN9u//7EbJK07pRrw=
 github.com/auth0/go-jwt-middleware/v2 v2.3.1/go.mod h1:mqVr0gdB5zuaFyQFWMJH/c/2hehNjbYUD4i8Dpyf+Hc=
 github.com/aybabtme/iocontrol v0.0.0-20150809002002-ad15bcfc95a0 h1:0NmehRCgyk5rljDQLKUO+cRJCnduDyn11+zGZIc9Z48=
@@ -22,8 +22,8 @@ github.com/felixge/httpsnoop v1.1.0 h1:3YtUj32ZZkqZtt3sZZsClsymw/QDuVfpNhoA31zeO
 github.com/felixge/httpsnoop v1.1.0/go.mod h1:Zqxgdd+1Rkcz8euOqdr7lqgCRJztwr5hp9vDSi5UZCE=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
-github.com/go-chi/chi/v5 v5.3.1 h1:3j4HZLGZQ3JpMCrPJF/Jl3mYJfWLKBfNJ6quurUGCf8=
-github.com/go-chi/chi/v5 v5.3.1/go.mod h1:R+tYY2hNuVUUjxoPtqUdgBqevM9s9njzkTLutVsOCto=
+github.com/go-chi/chi/v5 v5.3.2 h1:5YQkICvTCSZ25hoRsyJazN0scjzKGiu4VAUc7H1o1nY=
+github.com/go-chi/chi/v5 v5.3.2/go.mod h1:R+tYY2hNuVUUjxoPtqUdgBqevM9s9njzkTLutVsOCto=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.4 h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=
 github.com/go-logr/logr v1.4.4/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
@@ -63,8 +63,8 @@ github.com/lestrrat-go/jwx/v2 v2.1.6 h1:hxM1gfDILk/l5ylers6BX/Eq1m/pnxe9NBwW6lVf
 github.com/lestrrat-go/jwx/v2 v2.1.6/go.mod h1:Y722kU5r/8mV7fYDifjug0r8FK8mZdw0K0GpJw/l8pU=
 github.com/lestrrat-go/option v1.0.1 h1:oAzP2fvZGQKWkvHa1/SAcFolBEca1oN+mQ7eooNBEYU=
 github.com/lestrrat-go/option v1.0.1/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
-github.com/linuxfoundation/lfx-v2-fga-sync v0.3.8 h1:5PDw8zbS+fl0JnLuZ6nh1sc1/nB73Ao0dm9xhQpBRvo=
-github.com/linuxfoundation/lfx-v2-fga-sync v0.3.8/go.mod h1:YJd0+yPC9HBuz09qTOnY6B9Za1EXhx9gUqjelxdEwhE=
+github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9 h1:lLxdhDelwnN3+LdYFfuezAJt9o2uuPWPi98ddyZs824=
+github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9/go.mod h1:FBjqq0YJHYu4kYDWpjT1fsvr+uaER85LdVbWwGHbkrQ=
 github.com/linuxfoundation/lfx-v2-indexer-service v0.4.26 h1:LzS7NSshzn3U78DnUsiCbUdlz40fLb/zvquVQX6JLjM=
 github.com/linuxfoundation/lfx-v2-indexer-service v0.4.26/go.mod h1:uzoCTNETMsj4Y0X7kr4FCHZnqrqvgRvajHeYWCKWC5Q=
 github.com/linuxfoundation/lfx-v2-invite-service v0.1.12 h1:pE0Ec2rV7UzlKtgzwpNrdcbIzzSQQC5mNiM63PX1XSQ=
@@ -92,8 +92,8 @@ github.com/stretchr/objx v0.5.3/go.mod h1:rDQraq+vQZU7Fde9LOZLr8Tax6zZvy4kuNKF+Q
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stretchr/testify v1.12.0 h1:K6Mr6jO9JICuend/5xzTM03ydSV3vdNRYAdPSukj8uI=
-github.com/stretchr/testify v1.12.0/go.mod h1:bOYBZb5qJ00vPzWfIqBUZPaxK8jWiXc6d3ErP4Ca9Gw=
+github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
+github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/teambition/rrule-go v1.8.2 h1:lIjpjvWTj9fFUZCmuoVDrKVOtdiyzbzc93qTmRVe/J8=
 github.com/teambition/rrule-go v1.8.2/go.mod h1:Ieq5AbrKGciP1V//Wq8ktsTXwSwJHDD5mD/wLBGl3p4=
 github.com/vmihailenco/msgpack/v5 v5.4.1 h1:cQriyiUvjTwOHg8QZaPihLWeRAAVoCpE00IUPn0Bjt8=
@@ -144,8 +144,10 @@ go.opentelemetry.io/proto/otlp v1.11.0 h1:5rrYs0Ykyj50sdU/JU0x8etU+LubXWb+gED6Tb
 go.opentelemetry.io/proto/otlp v1.11.0/go.mod h1:SmVizdCOAm3XBtG1g1NnOdhW6jtddT72hLMhv8VwA8E=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
-goa.design/goa/v3 v3.29.1 h1:O/FtqeWRI73e6EU6fuODelhLuSI40eSD7Cxn5fmoU5g=
-goa.design/goa/v3 v3.29.1/go.mod h1:FpTADA0Z2onOoZZD2YLWrA2IeXmaBEbs/FeFYag6hxg=
+go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
+go.yaml.in/yaml/v3 v3.0.5/go.mod h1:HVTZu1O7/Vkt2N+BFy8Zza+lnLsABggaTM2ZpNIGuKg=
+goa.design/goa/v3 v3.29.2 h1:nabAmgYTUsE+NfG4KkMyRl6ddHN2uTAflOHC/FuaTfI=
+goa.design/goa/v3 v3.29.2/go.mod h1:CTCdFy0UYeiYuoXmFkUJXji1xGPG7K6XFsO2NqU/QaQ=
 golang.org/x/crypto v0.55.0 h1:+KWHjbgOaAQ66dh/YlkZKHlz9ZUlq61AFirAR9ntP8M=
 golang.org/x/crypto v0.55.0/go.mod h1:uq0V9dE/fzQuJtbnL+2EhWOE63vo164FY8xqEnV9xis=
 golang.org/x/mod v0.40.0 h1:hUv+3cXcdRHz08UmSiOob7sadHig73uo5bkXxQ/tvUs=
