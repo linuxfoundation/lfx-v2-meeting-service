@@ -339,7 +339,7 @@ func routeDelete(ctx context.Context, key string, v1Data map[string]any, handler
 		return handlers.handlePastMeetingAttachmentDelete(ctx, key, v1Data)
 
 	default:
-		handlers.logger.Debug("skipping delete for unrecognized key", "key", key)
+		handlers.logger.DebugContext(ctx, "skipping delete for unrecognized key", "key", key)
 		return false
 	}
 }

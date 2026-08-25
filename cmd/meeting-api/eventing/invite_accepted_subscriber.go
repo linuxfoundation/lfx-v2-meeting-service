@@ -72,7 +72,7 @@ func (s *InviteAcceptedSubscriber) Start(ctx context.Context) error {
 		return err
 	}
 	s.sub = sub
-	s.logger.Info("invite_accepted subscriber started", "subject", inviteapi.InviteServiceAcceptedSubject)
+	s.logger.InfoContext(ctx, "invite_accepted subscriber started", "subject", inviteapi.InviteServiceAcceptedSubject)
 	return nil
 }
 
