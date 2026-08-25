@@ -173,7 +173,7 @@ The service follows a clean architecture pattern with:
 - Auth service for JWT validation
 - ITX services in `itx/` subdirectory: `meeting_service.go`, `registrant_service.go`, `past_meeting_service.go`, `past_meeting_summary_service.go`, `past_meeting_participant_service.go`, `meeting_attachment_service.go`, `past_meeting_attachment_service.go`
 - `audit.go` — `auditStamper` embedded by each ITX service; resolves requesting principal to `*itx.User` for `created_by`/`updated_by` stamps
-- `id_mapping.go` — shared v1↔v2 project/committee mapping helpers (`mapProjectFieldV2ToV1`, `mapCommitteeFieldV1ToV2Graceful`, `mapMeetingCommitteesV1ToV2Graceful`, `mapITXCommitteesV1ToV2Graceful`, etc.) used by meeting, registrant, and past-meeting services
+- `id_mapping.go` — shared v1↔v2 project/committee mapping helpers (`mapProjectFieldV2ToV1`, `mapCommitteeFieldV1ToV2Graceful`, `mapMeetingCommitteesV1ToV2Graceful`, etc.) used by meeting, registrant, and past-meeting services
 - `preferred_email_service.go` — NATS RPC handler for preferred meeting-invite email
 
 **Infrastructure Layer** (`internal/infrastructure/`)
