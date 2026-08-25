@@ -22,6 +22,14 @@ var auditFieldsForResponseRedaction = []string{
 	"file_uploaded_by",
 }
 
+// RequestJSONForLog is the exported form of requestJSONForLog, for use by
+// packages that share the same PII-redaction requirement.
+func RequestJSONForLog(req any) string { return requestJSONForLog(req) }
+
+// ResponseJSONForLog is the exported form of responseJSONForLog, for use by
+// packages that share the same PII-redaction requirement.
+func ResponseJSONForLog(respBody []byte) string { return responseJSONForLog(respBody) }
+
 // requestJSONForLog returns a JSON-encoded string of req with any
 // user-identity audit fields (CreatedBy / UpdatedBy) stripped, so that
 // debug-level logging of ITX request bodies does not leak requester PII

@@ -37,13 +37,8 @@ func NewRegistrantService(registrantClient domain.ITXRegistrantClient, meetingCl
 
 // CreateRegistrant creates a meeting registrant via ITX proxy
 func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
-	// Map committee UID to committee SFID if present
-	if req.CommitteeID != "" {
-		v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.CommitteeID)
-		if err != nil {
-			return nil, err
-		}
-		req.CommitteeID = v1SFID
+	if err := mapCommitteeFieldV2ToV1(ctx, s.idMapper, &req.CommitteeID); err != nil {
+		return nil, err
 	}
 
 	// Stamp created_by from the authenticated principal so the registrant's audit
@@ -56,19 +51,8 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 		return nil, err
 	}
 
-	// Map committee SFID back to committee UID if present. On any mapping failure, log a warning
-	// and leave the committee UID empty so the caller still receives the full registrant response.
-	if resp.CommitteeID != "" {
-		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
-		if err != nil {
-			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", redaction.Redact(resp.CommitteeID), logging.ErrKey, err)
-			resp.CommitteeID = ""
-		} else {
-			resp.CommitteeID = v2UID
-		}
-	}
-
+	resp.CommitteeID = mapCommitteeFieldV1ToV2Graceful(ctx, s.idMapper, resp.CommitteeID,
+		"failed to map committee ID in registrant response; returning empty committee UID")
 	return resp, nil
 }
 
@@ -156,31 +140,15 @@ func (s *RegistrantService) GetRegistrant(ctx context.Context, meetingID, regist
 		return nil, err
 	}
 
-	// Map committee SFID back to committee UID if present. On any mapping failure, log a warning
-	// and leave the committee UID empty so the caller still receives the full registrant response.
-	if resp.CommitteeID != "" {
-		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
-		if err != nil {
-			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", redaction.Redact(resp.CommitteeID), logging.ErrKey, err)
-			resp.CommitteeID = ""
-		} else {
-			resp.CommitteeID = v2UID
-		}
-	}
-
+	resp.CommitteeID = mapCommitteeFieldV1ToV2Graceful(ctx, s.idMapper, resp.CommitteeID,
+		"failed to map committee ID in registrant response; returning empty committee UID")
 	return resp, nil
 }
 
 // UpdateRegistrant updates a meeting registrant via ITX proxy
 func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.ZoomMeetingRegistrant) error {
-	// Map committee UID to committee SFID if present
-	if req.CommitteeID != "" {
-		v1SFID, err := s.idMapper.MapCommitteeV2ToV1(ctx, req.CommitteeID)
-		if err != nil {
-			return err
-		}
-		req.CommitteeID = v1SFID
+	if err := mapCommitteeFieldV2ToV1(ctx, s.idMapper, &req.CommitteeID); err != nil {
+		return err
 	}
 
 	// Stamp updated_by from the authenticated principal so ITX overwrites the stored

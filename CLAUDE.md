@@ -173,11 +173,12 @@ The service follows a clean architecture pattern with:
 - Auth service for JWT validation
 - ITX services in `itx/` subdirectory: `meeting_service.go`, `registrant_service.go`, `past_meeting_service.go`, `past_meeting_summary_service.go`, `past_meeting_participant_service.go`, `meeting_attachment_service.go`, `past_meeting_attachment_service.go`
 - `audit.go` — `auditStamper` embedded by each ITX service; resolves requesting principal to `*itx.User` for `created_by`/`updated_by` stamps
+- `id_mapping.go` — shared v1↔v2 project/committee mapping helpers (`mapProjectFieldV2ToV1`, `mapCommitteeFieldV1ToV2Graceful`, `mapMeetingCommitteesV1ToV2Graceful`, etc.) used by meeting, registrant, and past-meeting services
 - `preferred_email_service.go` — NATS RPC handler for preferred meeting-invite email
 
 **Infrastructure Layer** (`internal/infrastructure/`)
 
-- ITX HTTP client (`proxy/`) with OAuth2 authentication and PII-redacted debug logging
+- ITX HTTP client (`itx/`) — layered, resource-oriented adapter to the ITX Zoom API. Split into `auth.go` (Auth0 M2M), `transport.go` (shared HTTP helpers), `client.go` (config, `NewClient`), `accessors.go` (typed sub-client accessors: `Meetings()`, `Registrants()`, `PastMeetings()`, `PastMeetingSummaries()`, `Participants()`, `MeetingAttachments()`, `PastMeetingAttachments()`), and one file per resource domain (`meetings.go`, `registrants.go`, `past_meetings.go`, `participants.go`, `meeting_attachments.go`, `past_meeting_attachments.go`, `invite_acceptance.go`). PII-redacted debug logging via `logredact.go` in the sibling `proxy/` sub-package.
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing

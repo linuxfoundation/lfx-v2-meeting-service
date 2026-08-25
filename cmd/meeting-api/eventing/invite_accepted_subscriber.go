@@ -145,17 +145,17 @@ func processInviteAcceptedEvent(
 	username := evt.AcceptedBy
 
 	if email == "" || username == "" {
-		logger.Warn("invite_accepted event missing required fields; discarding")
+		logger.WarnContext(ctx, "invite_accepted event missing required fields; discarding")
 		return nil
 	}
 
 	if evt.Resource.Type != "" && evt.Resource.Type != meetingconstants.ResourceTypeMeeting {
-		logger.Debug("received invite_accepted event for non-meeting resource; enriching Zoom records by email",
+		logger.DebugContext(ctx, "received invite_accepted event for non-meeting resource; enriching Zoom records by email",
 			"email", redaction.RedactEmail(email),
 			"resource_type", evt.Resource.Type,
 		)
 	} else {
-		logger.Debug("received invite_accepted event",
+		logger.DebugContext(ctx, "received invite_accepted event",
 			"email", redaction.RedactEmail(email),
 			"username", redaction.Redact(username),
 			"resource_type", evt.Resource.Type,
@@ -166,7 +166,7 @@ func processInviteAcceptedEvent(
 		return err
 	}
 
-	logger.Info("invite_accepted enrichment complete",
+	logger.InfoContext(ctx, "invite_accepted enrichment complete",
 		"email", redaction.RedactEmail(email),
 		"username", redaction.Redact(username),
 	)
