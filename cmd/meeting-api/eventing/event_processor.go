@@ -155,7 +155,7 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 			if r := recover(); r != nil {
 				ep.logger.ErrorContext(ctx, "panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
 				if err := msg.Nak(); err != nil {
-					ep.logger.With(logging.ErrKey, err).Error("failed to NAK message after panic")
+					ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message after panic")
 				}
 			}
 		}()
@@ -165,18 +165,18 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 		if shouldRetry {
 			var numDelivered uint64
 			if metadata, err := msg.Metadata(); err != nil {
-				ep.logger.With(logging.ErrKey, err).Warn("failed to get message metadata, using default retry delay")
+				ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
 			} else {
 				numDelivered = metadata.NumDelivered
 			}
 			delay := getRetryDelay(numDelivered)
 			if err := msg.NakWithDelay(delay); err != nil {
-				ep.logger.With(logging.ErrKey, err).Error("failed to NAK message")
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
 			}
 			ep.logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
 		} else {
 			if err := msg.Ack(); err != nil {
-				ep.logger.With(logging.ErrKey, err).Error("failed to ACK message")
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
 			}
 		}
 	}
@@ -213,7 +213,7 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 
 	// Close publisher
 	if err := ep.publisher.Close(); err != nil {
-		ep.logger.With(logging.ErrKey, err).Error("failed to close publisher")
+		ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to close publisher")
 	}
 
 	// Close NATS connection
@@ -239,7 +239,7 @@ func (ep *EventProcessor) setupConsumerWithRetry(ctx context.Context) error {
 			return ctx.Err()
 		}
 		delay := delays[min(attempt, maxAttempt-1)]
-		ep.logger.With(logging.ErrKey, err).Warn("failed to setup consumer, retrying",
+		ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to setup consumer, retrying",
 			"attempt", attempt+1,
 			"retry_in", delay,
 		)
