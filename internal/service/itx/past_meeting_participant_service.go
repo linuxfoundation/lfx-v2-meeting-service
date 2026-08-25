@@ -10,6 +10,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -237,7 +238,7 @@ func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, 
 	if err != nil || inviteeID == "" {
 		slog.DebugContext(ctx, "invitee does not exist (ID mapping failed or empty)",
 			"participant_id", participantID,
-			"error", err)
+			logging.ErrKey, err)
 		return participantID, false
 	}
 
@@ -252,7 +253,7 @@ func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context,
 	if err != nil || attendeeID == "" {
 		slog.DebugContext(ctx, "attendee does not exist (ID mapping failed or empty)",
 			"participant_id", participantID,
-			"error", err)
+			logging.ErrKey, err)
 		return participantID, false
 	}
 
@@ -268,7 +269,7 @@ func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx cont
 	slog.DebugContext(ctx, "checked invitee existence from invitee ID",
 		"invitee_id", inviteeID,
 		"exists", exists,
-		"error", err)
+		logging.ErrKey, err)
 	return exists
 }
 
@@ -278,7 +279,7 @@ func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx co
 	slog.DebugContext(ctx, "checked attendee existence from attendee ID",
 		"attendee_id", attendeeID,
 		"exists", exists,
-		"error", err)
+		logging.ErrKey, err)
 	return exists
 }
 
@@ -292,7 +293,7 @@ func (s *PastMeetingParticipantService) deleteInvitee(
 			"participant_id", participantID,
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 	}
 }
 
@@ -306,7 +307,7 @@ func (s *PastMeetingParticipantService) deleteAttendee(
 			"participant_id", participantID,
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 	}
 }
 
@@ -341,7 +342,7 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create invitee during update",
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 		return nil
 	}
 
@@ -373,7 +374,7 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create attendee during update",
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 		return nil
 	}
 
@@ -398,7 +399,7 @@ func (s *PastMeetingParticipantService) updateInvitee(
 			"participant_id", participantID,
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 		return nil
 	}
 
@@ -424,7 +425,7 @@ func (s *PastMeetingParticipantService) updateAttendee(
 			"participant_id", participantID,
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
 		return nil
 	}
 
@@ -454,7 +455,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 			"participant_id", participantID,
 			"invitee_id", idToUseInvitee,
 			"past_meeting_id", pastMeetingID,
-			"error", inviteeErr)
+			logging.ErrKey, inviteeErr)
 	}
 
 	// Try to map V2 participant ID to attendee ID
@@ -472,7 +473,7 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 			"participant_id", participantID,
 			"attendee_id", idToUseAttendee,
 			"past_meeting_id", pastMeetingID,
-			"error", attendeeErr)
+			logging.ErrKey, attendeeErr)
 	}
 
 	// Return error if either deletion failed
