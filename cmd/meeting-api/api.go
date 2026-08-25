@@ -11,9 +11,11 @@ import (
 
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 	"goa.design/goa/v3/security"
 )
 
@@ -90,26 +92,35 @@ func createResponse(code int, err error) error {
 	}
 }
 
-// handleError converts domain errors to HTTP errors.
-// handleError maps domain error types to appropriate HTTP responses
-// This function no longer needs updates when new domain errors are added
-func handleError(err error) error {
+// handleError converts a domain error to its HTTP representation and logs
+// the outcome via slog: 4xx-class errors (Validation, NotFound, Conflict,
+// Forbidden) log at Warn; 5xx-class errors (Internal, Unavailable, and
+// unmapped) log at Error. This ensures every API failure is observable in
+// production without the caller having to add its own log statement.
+func handleError(ctx context.Context, err error) error {
 	errorType := domain.GetErrorType(err)
 
 	switch errorType {
 	case domain.ErrorTypeValidation:
+		slog.WarnContext(ctx, "bad request")
 		return createResponse(http.StatusBadRequest, err)
 	case domain.ErrorTypeNotFound:
+		slog.WarnContext(ctx, "resource not found")
 		return createResponse(http.StatusNotFound, err)
 	case domain.ErrorTypeConflict:
+		slog.WarnContext(ctx, "conflict")
 		return createResponse(http.StatusConflict, err)
 	case domain.ErrorTypeUnavailable:
+		slog.ErrorContext(ctx, "service unavailable error")
 		return createResponse(http.StatusServiceUnavailable, err)
 	case domain.ErrorTypeForbidden:
+		slog.WarnContext(ctx, "forbidden")
 		return createResponse(http.StatusForbidden, err)
 	case domain.ErrorTypeInternal:
+		slog.ErrorContext(ctx, "internal server error")
 		return createResponse(http.StatusInternalServerError, err)
 	default:
+		slog.ErrorContext(ctx, "unhandled error")
 		return createResponse(http.StatusInternalServerError, err)
 	}
 }
@@ -140,10 +151,13 @@ func (s *MeetingsAPI) JWTAuth(ctx context.Context, bearerToken string, _ *securi
 	if err != nil {
 		return ctx, err
 	}
-	// Return a new context containing the principal (and email, if any) as values.
+	// Return a new context containing the principal (and email, if any) as values,
+	// and inject the principal into the slog context so it appears in every log
+	// line for this request without each call site having to add it manually.
 	ctx = context.WithValue(ctx, constants.PrincipalContextID, principal)
 	if email != "" {
 		ctx = context.WithValue(ctx, constants.EmailContextID, email)
 	}
+	ctx = logging.AppendCtx(ctx, slog.String("principal", redaction.Redact(principal)))
 	return ctx, nil
 }

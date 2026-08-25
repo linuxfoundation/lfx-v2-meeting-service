@@ -131,6 +131,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
+	funcLogger.InfoContext(ctx, "processing past meeting invitee update")
 
 	// If an attendee cross-reference exists for this participant, preserve is_attended=true
 	// and carry over attendee-only fields so a late-arriving invitee upsert doesn't overwrite
@@ -263,7 +264,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 		}
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee", "action", string(indexerAction))
 	return false
 }
 
@@ -280,6 +281,7 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 		funcLogger.DebugContext(ctx, "invitee delete already processed, skipping")
 		return false
 	}
+	funcLogger.InfoContext(ctx, "processing past meeting invitee delete")
 
 	var username, meetingAndOccurrenceID string
 	if v1Data == nil {
@@ -559,6 +561,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
+	funcLogger.InfoContext(ctx, "processing past meeting attendee update")
 
 	// If an invitee cross-reference exists for this participant, preserve is_invited=true
 	// so a late-arriving attendee upsert doesn't reset a flag the invitee handler already set.
@@ -675,7 +678,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
 		}
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee", "action", string(indexerAction))
 	return false
 }
 
@@ -696,6 +699,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(
 		funcLogger.DebugContext(ctx, "attendee delete already processed, skipping")
 		return false
 	}
+	funcLogger.InfoContext(ctx, "processing past meeting attendee delete")
 
 	var username, meetingAndOccurrenceID string
 	if v1Data == nil {

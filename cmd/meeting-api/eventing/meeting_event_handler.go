@@ -664,6 +664,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)
+	funcLogger.InfoContext(ctx, "processing meeting update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_meetings.%s", meetingData.ID)
@@ -695,7 +696,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed meeting")
+	funcLogger.InfoContext(ctx, "successfully processed meeting", "action", string(indexerAction))
 	return false
 }
 
@@ -707,6 +708,7 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		h.logger.DebugContext(ctx, "meeting delete already processed, skipping", "meeting_id", meetingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing meeting delete", "meeting_id", meetingID)
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_meeting", meetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
@@ -734,7 +736,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	v1Data map[string]interface{},
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
-	funcLogger.InfoContext(ctx, "processing meeting mapping update")
+	funcLogger.DebugContext(ctx, "received meeting mapping update")
 
 	// Extract meeting ID and mapping data
 	meetingID := utils.GetString(v1Data["meeting_id"])
@@ -745,6 +747,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 		funcLogger.WarnContext(ctx, "missing required fields in mapping")
 		return false
 	}
+	funcLogger.InfoContext(ctx, "processing meeting mapping update", "meeting_id", meetingID, "mapping_id", mappingID)
 
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
