@@ -8,8 +8,10 @@ import (
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // auditStamper resolves the requesting principal (stashed on ctx by the JWT auth
@@ -47,7 +49,7 @@ func (a auditStamper) buildRequestingUser(ctx context.Context) *itx.User {
 	profile, err := a.userMetadata.ResolveProfile(ctx, principal)
 	if err != nil {
 		slog.WarnContext(ctx, "failed to resolve user profile for audit stamp; stamping username/email only",
-			"username", principal, "err", err)
+			"username", redaction.Redact(principal), logging.ErrKey, err)
 		return &itx.User{Username: principal, Email: email}
 	}
 	// Defensive: the current NATSUserMetadataReader always returns either a
@@ -57,7 +59,7 @@ func (a auditStamper) buildRequestingUser(ctx context.Context) *itx.User {
 	// the write still succeeds with a minimal audit stamp.
 	if profile == nil {
 		slog.WarnContext(ctx, "user profile lookup returned no profile; stamping username/email only",
-			"username", principal)
+			"username", redaction.Redact(principal))
 		return &itx.User{Username: principal, Email: email}
 	}
 

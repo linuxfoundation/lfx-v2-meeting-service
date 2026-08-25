@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
@@ -61,7 +62,7 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", redaction.Redact(resp.CommitteeID), "err", err)
+				"v1_id", redaction.Redact(resp.CommitteeID), logging.ErrKey, err)
 			resp.CommitteeID = ""
 		} else {
 			resp.CommitteeID = v2UID
@@ -105,7 +106,7 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 	if s.userMetadata != nil {
 		if profile, err := s.userMetadata.ResolveProfile(ctx, username); err != nil {
 			slog.WarnContext(ctx, "failed to resolve user profile for self-registration enrichment; using request payload",
-				"username", username, "err", err)
+				"username", redaction.Redact(username), logging.ErrKey, err)
 		} else {
 			resolvedProfile = profile
 		}
@@ -161,7 +162,7 @@ func (s *RegistrantService) GetRegistrant(ctx context.Context, meetingID, regist
 		v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.CommitteeID)
 		if err != nil {
 			slog.WarnContext(ctx, "failed to map committee ID in registrant response; returning empty committee UID",
-				"v1_id", redaction.Redact(resp.CommitteeID), "err", err)
+				"v1_id", redaction.Redact(resp.CommitteeID), logging.ErrKey, err)
 			resp.CommitteeID = ""
 		} else {
 			resp.CommitteeID = v2UID

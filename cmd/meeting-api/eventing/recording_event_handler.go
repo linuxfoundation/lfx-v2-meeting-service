@@ -204,6 +204,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting recording update")
 
 	// Resolve committees from the parent past meeting record.
 	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
@@ -247,7 +248,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting recording", "action", string(indexerAction))
 	return false
 }
 
@@ -263,6 +264,7 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 		h.logger.DebugContext(ctx, "recording delete already processed, skipping", "recording_id", recordingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting recording delete", "recording_id", recordingID)
 	// Delete recording from indexer first (no tombstone yet).
 	if retry := h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_recording",

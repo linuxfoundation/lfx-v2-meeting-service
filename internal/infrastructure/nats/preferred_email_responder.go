@@ -88,7 +88,7 @@ func (r *PreferredEmailResponder) Start(ctx context.Context) error {
 		r.subs = append(r.subs, sub)
 	}
 
-	r.logger.Info("preferred_email responder started",
+	r.logger.InfoContext(ctx, "preferred_email responder started",
 		"get_subject", constants.PreferredEmailGetSubject,
 		"set_subject", constants.PreferredEmailSetSubject,
 	)

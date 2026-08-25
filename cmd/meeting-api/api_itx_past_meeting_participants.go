@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingsvc "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
@@ -18,8 +19,9 @@ func (s *MeetingsAPI) CreateItxPastMeetingParticipant(ctx context.Context, p *me
 	isAttended := p.IsAttended != nil && *p.IsAttended
 	resp, err := s.itxPastMeetingParticipantService.CreateParticipant(ctx, p.PastMeetingID, isInvited, isAttended, inviteeReq, attendeeReq)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
+	slog.InfoContext(ctx, "past meeting participant created", "past_meeting_id", p.PastMeetingID)
 	return service.ConvertParticipantResponseToGoa(resp), nil
 }
 
@@ -43,9 +45,9 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 		IsAttended:    p.IsAttended,
 	}, inviteeReq, attendeeReq)
 	if err != nil {
-		return nil, handleError(err)
+		return nil, handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "past meeting participant updated", "past_meeting_id", p.PastMeetingID, "participant_id", p.ParticipantID)
 	return service.ConvertParticipantResponseToGoa(resp), nil
 }
 
@@ -53,8 +55,8 @@ func (s *MeetingsAPI) UpdateItxPastMeetingParticipant(ctx context.Context, p *me
 func (s *MeetingsAPI) DeleteItxPastMeetingParticipant(ctx context.Context, p *meetingsvc.DeleteItxPastMeetingParticipantPayload) error {
 	err := s.itxPastMeetingParticipantService.DeleteParticipant(ctx, p.PastMeetingID, p.ParticipantID)
 	if err != nil {
-		return handleError(err)
+		return handleError(ctx, err)
 	}
-
+	slog.InfoContext(ctx, "past meeting participant deleted", "past_meeting_id", p.PastMeetingID, "participant_id", p.ParticipantID)
 	return nil
 }
