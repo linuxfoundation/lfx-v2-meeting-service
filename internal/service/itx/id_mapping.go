@@ -9,6 +9,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	pkgitx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
@@ -55,7 +56,7 @@ func mapCommitteeFieldV1ToV2Graceful(ctx context.Context, mapper domain.IDMapper
 	}
 	v2UID, err := mapper.MapCommitteeV1ToV2(ctx, v1ID)
 	if err != nil {
-		slog.WarnContext(ctx, logMessage, "v1_id", redaction.Redact(v1ID), "err", err)
+		slog.WarnContext(ctx, logMessage, "v1_id", redaction.Redact(v1ID), logging.ErrKey, err)
 		return ""
 	}
 	return v2UID
