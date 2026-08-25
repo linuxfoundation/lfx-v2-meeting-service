@@ -170,6 +170,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("summary_id", summaryData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting summary update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meeting_summaries.%s", summaryData.ID)
@@ -236,7 +237,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store summary mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting summary")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting summary", "action", string(indexerAction))
 	return false
 }
 
@@ -252,6 +253,7 @@ func (h *EventHandlers) handlePastMeetingSummaryDelete(
 		h.logger.DebugContext(ctx, "summary delete already processed, skipping", "summary_id", summaryID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting summary delete", "summary_id", summaryID)
 	return h.handleMeetingTypeDelete(ctx, key, summaryID, []byte(summaryID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_summary",
 		tombstoneKeyFmts: []string{"v1_past_meeting_summaries.%s"},

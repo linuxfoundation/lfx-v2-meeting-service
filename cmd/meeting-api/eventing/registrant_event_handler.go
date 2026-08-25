@@ -179,7 +179,8 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		funcLogger.ErrorContext(ctx, "missing required fields in registrant data")
 		return false
 	}
-	funcLogger = funcLogger.With("registrant_uid", registrantData.UID)
+	funcLogger = funcLogger.With("registrant_uid", registrantData.UID, "meeting_id", registrantData.MeetingID)
+	funcLogger.InfoContext(ctx, "processing registrant update")
 
 	// Parent validation - meeting must exist
 	// This pre-requisite ensures that the meeting is not a meeting that is filtered out and won't be added
@@ -265,7 +266,7 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		h.maybeSendInvite(ctx, funcLogger, registrantData.UID, registrantData.Email, registrantData.FirstName, registrantData.MeetingID, registrantData.CreatedBy)
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed registrant")
+	funcLogger.InfoContext(ctx, "successfully processed registrant", "action", string(indexerAction))
 	return false
 }
 
@@ -297,6 +298,7 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	if meetingID == "" {
 		meetingID = utils.GetString(v1Data["meeting_id"])
 	}
+	funcLogger.InfoContext(ctx, "processing registrant delete")
 
 	var accessPayload []byte
 	var deleteAccessSubject string
@@ -609,6 +611,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("response_id", responseData.ID)
+	funcLogger.InfoContext(ctx, "processing invite response update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_invite_responses.%s", responseData.ID)
@@ -628,7 +631,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invite response mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed invite response")
+	funcLogger.InfoContext(ctx, "successfully processed invite response", "action", string(indexerAction))
 	return false
 }
 
@@ -640,6 +643,7 @@ func (h *EventHandlers) handleInviteResponseDelete(ctx context.Context, key stri
 		h.logger.DebugContext(ctx, "invite response delete already processed, skipping", "response_id", responseID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing invite response delete", "response_id", responseID)
 	return h.handleMeetingTypeDelete(ctx, key, responseID, []byte(responseID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_meeting_rsvp",
 		tombstoneKeyFmts: []string{"v1_invite_responses.%s"},

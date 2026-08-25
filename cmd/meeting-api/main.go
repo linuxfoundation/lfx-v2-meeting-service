@@ -206,7 +206,7 @@ func run() int {
 				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
 			}
 
-			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default(), env.InviteConfig)
+			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default().With("component", "event-processor"), env.InviteConfig)
 			if err != nil {
 				slog.With(logging.ErrKey, err).Error("failed to create event processor")
 				return 1

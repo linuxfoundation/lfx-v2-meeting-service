@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
@@ -76,7 +77,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
 			if err != nil {
 				slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
-					"v1_id", resp.Committees[i].ID, "err", err)
+					"v1_id", resp.Committees[i].ID, logging.ErrKey, err)
 				resp.Committees[i].ID = ""
 				continue
 			}
@@ -110,7 +111,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 			v2UID, err := s.idMapper.MapCommitteeV1ToV2(ctx, resp.Committees[i].ID)
 			if err != nil {
 				slog.WarnContext(ctx, "failed to map committee ID in past meeting response; returning empty committee UID",
-					"v1_id", resp.Committees[i].ID, "err", err)
+					"v1_id", resp.Committees[i].ID, logging.ErrKey, err)
 				resp.Committees[i].ID = ""
 				continue
 			}
