@@ -178,7 +178,7 @@ The service follows a clean architecture pattern with:
 
 **Infrastructure Layer** (`internal/infrastructure/`)
 
-- ITX HTTP client (`itx/`) — layered, resource-oriented adapter to the ITX Zoom API. Split into `auth.go` (Auth0 M2M), `transport.go` (shared HTTP helpers), `client.go` (config, `NewClient`), `accessors.go` (typed sub-client accessors: `Meetings()`, `Registrants()`, `PastMeetings()`, `PastMeetingSummaries()`, `Participants()`, `MeetingAttachments()`, `PastMeetingAttachments()`), and one file per resource domain (`meetings.go`, `registrants.go`, `past_meetings.go`, `participants.go`, `meeting_attachments.go`, `past_meeting_attachments.go`). PII-redacted debug logging via `logredact.go` in the sibling `proxy/` sub-package.
+- ITX HTTP client (`itx/`) — layered, resource-oriented adapter to the ITX Zoom API. Split into `auth.go` (Auth0 M2M), `transport.go` (shared HTTP helpers), `client.go` (config, `NewClient`), `accessors.go` (typed sub-client accessors: `Meetings()`, `Registrants()`, `PastMeetings()`, `PastMeetingSummaries()`, `Participants()`, `MeetingAttachments()`, `PastMeetingAttachments()`), and one file per resource domain (`meetings.go`, `registrants.go`, `past_meetings.go`, `participants.go`, `meeting_attachments.go`, `past_meeting_attachments.go`, `invite_acceptance.go`). PII-redacted debug logging via `logredact.go` in the sibling `proxy/` sub-package.
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing

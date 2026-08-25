@@ -22,6 +22,8 @@ func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *i
 }
 
 // UpdateInvitee updates an invitee for a past meeting via the ITX proxy.
+// ITX returns 204 No Content on success; doJSONTypedOptional returns (nil, nil)
+// on an empty body, preserving the pre-refactor behaviour of always returning nil.
 func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
 	return doJSONTypedOptional[itx.InviteeResponse](c, ctx, apiRequest{
 		method:   http.MethodPut,
@@ -52,6 +54,8 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 }
 
 // UpdateAttendee updates an attendee for a past meeting via the ITX proxy.
+// ITX returns 204 No Content on success; doJSONTypedOptional returns (nil, nil)
+// on an empty body, preserving the pre-refactor behaviour of always returning nil.
 func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
 	return doJSONTypedOptional[itx.AttendeeResponse](c, ctx, apiRequest{
 		method:   http.MethodPut,
