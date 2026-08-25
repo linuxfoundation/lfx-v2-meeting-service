@@ -10,6 +10,7 @@ type ErrorType int
 
 const (
 	ErrorTypeValidation  ErrorType = iota // Input validation errors (400 Bad Request)
+	ErrorTypeForbidden                    // Business-logic forbidden errors (403 Forbidden)
 	ErrorTypeNotFound                     // Resource not found errors (404 Not Found)
 	ErrorTypeConflict                     // Resource conflict errors (409 Conflict)
 	ErrorTypeInternal                     // Internal server errors (500 Internal Server Error)
@@ -62,6 +63,10 @@ func NewInternalError(message string, err ...error) *DomainError {
 
 func NewUnavailableError(message string, err ...error) *DomainError {
 	return &DomainError{Type: ErrorTypeUnavailable, Message: message, Err: errors.Join(err...)}
+}
+
+func NewForbiddenError(message string, err ...error) *DomainError {
+	return &DomainError{Type: ErrorTypeForbidden, Message: message, Err: errors.Join(err...)}
 }
 
 // ErrUserNotFound is returned by UserReader when no registered user matches the lookup.

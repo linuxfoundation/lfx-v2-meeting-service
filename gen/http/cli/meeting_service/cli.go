@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|self-register-itx-meeting|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
 	}
 }
 
@@ -82,6 +82,12 @@ func ParseEndpoint(
 		meetingServiceCreateItxRegistrantMeetingIDFlag   = meetingServiceCreateItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
 		meetingServiceCreateItxRegistrantVersionFlag     = meetingServiceCreateItxRegistrantFlags.String("version", "", "")
 		meetingServiceCreateItxRegistrantBearerTokenFlag = meetingServiceCreateItxRegistrantFlags.String("bearer-token", "", "")
+
+		meetingServiceSelfRegisterItxMeetingFlags           = flag.NewFlagSet("self-register-itx-meeting", flag.ExitOnError)
+		meetingServiceSelfRegisterItxMeetingBodyFlag        = meetingServiceSelfRegisterItxMeetingFlags.String("body", "REQUIRED", "")
+		meetingServiceSelfRegisterItxMeetingMeetingIDFlag   = meetingServiceSelfRegisterItxMeetingFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
+		meetingServiceSelfRegisterItxMeetingVersionFlag     = meetingServiceSelfRegisterItxMeetingFlags.String("version", "", "")
+		meetingServiceSelfRegisterItxMeetingBearerTokenFlag = meetingServiceSelfRegisterItxMeetingFlags.String("bearer-token", "", "")
 
 		meetingServiceGetItxRegistrantFlags            = flag.NewFlagSet("get-itx-registrant", flag.ExitOnError)
 		meetingServiceGetItxRegistrantMeetingIDFlag    = meetingServiceGetItxRegistrantFlags.String("meeting-id", "REQUIRED", "The ID of the meeting")
@@ -290,6 +296,7 @@ func ParseEndpoint(
 	meetingServiceUpdateItxMeetingFlags.Usage = meetingServiceUpdateItxMeetingUsage
 	meetingServiceGetItxMeetingCountFlags.Usage = meetingServiceGetItxMeetingCountUsage
 	meetingServiceCreateItxRegistrantFlags.Usage = meetingServiceCreateItxRegistrantUsage
+	meetingServiceSelfRegisterItxMeetingFlags.Usage = meetingServiceSelfRegisterItxMeetingUsage
 	meetingServiceGetItxRegistrantFlags.Usage = meetingServiceGetItxRegistrantUsage
 	meetingServiceUpdateItxRegistrantFlags.Usage = meetingServiceUpdateItxRegistrantUsage
 	meetingServiceDeleteItxRegistrantFlags.Usage = meetingServiceDeleteItxRegistrantUsage
@@ -380,6 +387,9 @@ func ParseEndpoint(
 
 			case "create-itx-registrant":
 				epf = meetingServiceCreateItxRegistrantFlags
+
+			case "self-register-itx-meeting":
+				epf = meetingServiceSelfRegisterItxMeetingFlags
 
 			case "get-itx-registrant":
 				epf = meetingServiceGetItxRegistrantFlags
@@ -524,6 +534,9 @@ func ParseEndpoint(
 			case "create-itx-registrant":
 				endpoint = c.CreateItxRegistrant()
 				data, err = meetingservicec.BuildCreateItxRegistrantPayload(*meetingServiceCreateItxRegistrantBodyFlag, *meetingServiceCreateItxRegistrantMeetingIDFlag, *meetingServiceCreateItxRegistrantVersionFlag, *meetingServiceCreateItxRegistrantBearerTokenFlag)
+			case "self-register-itx-meeting":
+				endpoint = c.SelfRegisterItxMeeting()
+				data, err = meetingservicec.BuildSelfRegisterItxMeetingPayload(*meetingServiceSelfRegisterItxMeetingBodyFlag, *meetingServiceSelfRegisterItxMeetingMeetingIDFlag, *meetingServiceSelfRegisterItxMeetingVersionFlag, *meetingServiceSelfRegisterItxMeetingBearerTokenFlag)
 			case "get-itx-registrant":
 				endpoint = c.GetItxRegistrant()
 				data, err = meetingservicec.BuildGetItxRegistrantPayload(*meetingServiceGetItxRegistrantMeetingIDFlag, *meetingServiceGetItxRegistrantRegistrantIDFlag, *meetingServiceGetItxRegistrantVersionFlag, *meetingServiceGetItxRegistrantBearerTokenFlag)
@@ -644,6 +657,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    update-itx-meeting: Update a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-registrant: Create a meeting registrant through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    self-register-itx-meeting: Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.`)
 	fmt.Fprintln(os.Stderr, `    get-itx-registrant: Get a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-registrant: Update a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-registrant: Delete a meeting registrant through ITX API proxy`)
@@ -733,7 +747,7 @@ func meetingServiceCreateItxMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"uaq\",\n      \"duration\": 263,\n      \"early_join_time_minutes\": 28,\n      \"meeting_type\": \"Marketing\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Porro iste non commodi sint sed est.\",\n      \"title\": \"Quasi ipsam fugiat quis qui quam.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"auto_email_reminder_enabled\": true,\n      \"auto_email_reminder_time\": 420,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"uaq\",\n      \"duration\": 263,\n      \"early_join_time_minutes\": 28,\n      \"meeting_type\": \"Marketing\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Porro iste non commodi sint sed est.\",\n      \"title\": \"Quasi ipsam fugiat quis qui quam.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }' --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
 }
 
 func meetingServiceGetItxMeetingUsage() {
@@ -803,7 +817,7 @@ func meetingServiceUpdateItxMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"t3c\",\n      \"duration\": 36,\n      \"early_join_time_minutes\": 19,\n      \"meeting_type\": \"Board\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Eius ut sed dolorem eum eaque.\",\n      \"title\": \"Id qui blanditiis qui maiores adipisci odio.\",\n      \"transcript_enabled\": false,\n      \"update_note\": \"nto\",\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting --body '{\n      \"ai_summary_enabled\": true,\n      \"artifact_visibility\": \"public\",\n      \"auto_email_reminder_enabled\": false,\n      \"auto_email_reminder_time\": 1439,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"t3c\",\n      \"duration\": 36,\n      \"early_join_time_minutes\": 19,\n      \"meeting_type\": \"Board\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Eius ut sed dolorem eum eaque.\",\n      \"title\": \"Id qui blanditiis qui maiores adipisci odio.\",\n      \"transcript_enabled\": false,\n      \"update_note\": \"oi3\",\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": false\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --x-sync true")
 }
 
 func meetingServiceGetItxMeetingCountUsage() {
@@ -849,7 +863,31 @@ func meetingServiceCreateItxRegistrantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-registrant --body '{\n      \"attended_occurrence_count\": 3412427569359350717,\n      \"committee_uid\": \"Provident expedita veritatis eaque explicabo.\",\n      \"created_at\": \"Animi voluptatem.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Nihil illo ut non aut.\",\n      \"last_invite_delivery_status\": \"Ipsum eligendi vero.\",\n      \"last_invite_received_message_id\": \"Magnam et esse sed ad assumenda est.\",\n      \"last_invite_received_time\": \"Quia et voluptas dolor.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Et atque dolor aperiam.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Velit quod recusandae aut incidunt.\",\n      \"total_occurrence_count\": 8867872198606554721,\n      \"type\": \"direct\",\n      \"uid\": \"Veritatis fugiat exercitationem.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-registrant --body '{\n      \"attended_occurrence_count\": 8003658907008126670,\n      \"committee_uid\": \"Explicabo eaque.\",\n      \"created_at\": \"Et atque dolor aperiam.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": false,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Ut non aut cumque animi voluptatem.\",\n      \"last_invite_delivery_status\": \"Vero cumque nihil.\",\n      \"last_invite_received_message_id\": \"Assumenda est aut ipsum.\",\n      \"last_invite_received_time\": \"Voluptas dolor laborum magnam et esse sed.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Sunt aliquam.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Quod recusandae aut incidunt omnis dolorem.\",\n      \"total_occurrence_count\": 7830619521221805,\n      \"type\": \"committee\",\n      \"uid\": \"Exercitationem maiores velit provident expedita.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceSelfRegisterItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service self-register-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -body JSON")
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -body JSON: `)
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service self-register-itx-meeting --body '{\n      \"first_name\": \"Bob\",\n      \"job_title\": \"developer\",\n      \"last_name\": \"Smith\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxRegistrantUsage() {
@@ -899,7 +937,7 @@ func meetingServiceUpdateItxRegistrantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-registrant --body '{\n      \"attended_occurrence_count\": 437006580780085388,\n      \"committee_uid\": \"Laboriosam enim.\",\n      \"created_at\": \"Dolorem exercitationem delectus ut et cum itaque.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Rerum deleniti est et occaecati fugit.\",\n      \"last_invite_delivery_status\": \"Vitae ducimus debitis libero.\",\n      \"last_invite_received_message_id\": \"Aut iure aspernatur laborum voluptatem a dolor.\",\n      \"last_invite_received_time\": \"Facere beatae.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Fugit exercitationem qui mollitia vel sit non.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Officiis qui ut dicta.\",\n      \"total_occurrence_count\": 1834127355695980732,\n      \"type\": \"committee\",\n      \"uid\": \"Aperiam repudiandae.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-registrant --body '{\n      \"attended_occurrence_count\": 1769855564763366533,\n      \"committee_uid\": \"Dignissimos inventore at.\",\n      \"created_at\": \"Nam fugiat corrupti in error.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Accusamus quia.\",\n      \"last_invite_delivery_status\": \"Voluptatem qui aut delectus assumenda explicabo.\",\n      \"last_invite_received_message_id\": \"Adipisci est et ea consequatur a animi.\",\n      \"last_invite_received_time\": \"Maiores adipisci corporis.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Ea voluptas animi.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Necessitatibus quod vel eum aut.\",\n      \"total_occurrence_count\": 1592378707617215073,\n      \"type\": \"committee\",\n      \"uid\": \"Accusamus ea non sequi.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }' --meeting-id \"1234567890\" --registrant-id \"zjkfsdfjdfhg\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxRegistrantUsage() {
@@ -955,7 +993,7 @@ func meetingServiceGetItxJoinLinkUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-join-link --meeting-id \"1234567890\" --version \"1\" --use-email true --user-id \"user123\" --name \"John Doe\" --email \"john.doe@example.com\" --register false --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-join-link --meeting-id \"1234567890\" --version \"1\" --use-email false --user-id \"user123\" --name \"John Doe\" --email \"john.doe@example.com\" --register false --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxRegistrantIcsUsage() {
@@ -1075,7 +1113,7 @@ func meetingServiceUpdateItxOccurrenceUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-occurrence --body '{\n      \"agenda\": \"Quod vel eum aut.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Neque dignissimos inventore at velit.\"\n   }' --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-occurrence --body '{\n      \"agenda\": \"Voluptatem asperiores aut pariatur dolores.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"2006-08-02T09:48:40Z\",\n         \"end_times\": 1743448645631853479,\n         \"monthly_day\": 6681397425469462938,\n         \"monthly_week\": 6645035424863629342,\n         \"monthly_week_day\": 3613921200484800227,\n         \"repeat_interval\": 3388645659450458814,\n         \"type\": 2,\n         \"weekly_days\": \"Necessitatibus deleniti natus possimus.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Aspernatur et eum libero id est quae.\"\n   }' --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxOccurrenceUsage() {
@@ -1145,7 +1183,7 @@ func meetingServiceCreateItxPastMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting --body '{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"ncr\",\n      \"duration\": 52,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Other\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"restricted\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Dolores non.\",\n      \"title\": \"Voluptatem qui aut delectus assumenda explicabo.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"9nf\",\n      \"duration\": 388,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Board\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Est nostrum laudantium occaecati quia aut aut.\",\n      \"title\": \"Magni et perferendis et.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\"\n   }' --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingUsage() {
@@ -1213,7 +1251,7 @@ func meetingServiceUpdateItxPastMeetingUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Id ea et adipisci tempore ut.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": false,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Laudantium occaecati quia aut aut.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting --body '{\n      \"artifact_visibility\": \"meeting_participants\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"voting_rep\",\n               \"none\",\n               \"observer\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Quasi consequatur facere veniam voluptas.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": false,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Ut tempora quo doloribus distinctio tenetur unde.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingSummaryUsage() {
@@ -1263,7 +1301,7 @@ func meetingServiceUpdateItxPastMeetingSummaryUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": true,\n      \"edited_content\": \"Et perferendis omnis possimus voluptas.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": false,\n      \"edited_content\": \"In eos rerum quibusdam fugit.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingParticipantUsage() {
@@ -1287,7 +1325,7 @@ func meetingServiceCreateItxPastMeetingParticipantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-participant --body '{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"088cffda-799e-4380-83f2-14c44997346e\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_unknown\": false,\n      \"is_verified\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": true,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Est reiciendis tempore dolorem neque aperiam voluptatem.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis autem quia non et.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Est reiciendis tempore dolorem neque aperiam voluptatem.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Quis autem quia non et.\"\n         }\n      ],\n      \"username\": \"jdoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-participant --body '{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"e29ac27d-6440-400b-88f9-103899d3963c\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_unknown\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": false,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Suscipit rerum laudantium sit.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Consequuntur repellat.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Suscipit rerum laudantium sit.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Consequuntur repellat.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Suscipit rerum laudantium sit.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Consequuntur repellat.\"\n         }\n      ],\n      \"username\": \"jdoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceUpdateItxPastMeetingParticipantUsage() {
@@ -1313,7 +1351,7 @@ func meetingServiceUpdateItxPastMeetingParticipantUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": true,\n      \"is_invited\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-participant --body '{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_attended\": false,\n      \"is_invited\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --participant-id \"ea1e8536-a985-4cf5-b981-a170927a1d11\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxPastMeetingParticipantUsage() {
@@ -1361,7 +1399,7 @@ func meetingServiceCreateItxMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment --body '{\n      \"category\": \"Notes\",\n      \"description\": \"Beatae iste.\",\n      \"link\": \"Velit non.\",\n      \"name\": \"dva\",\n      \"type\": \"file\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Fugiat quia enim id.\",\n      \"link\": \"Eligendi dolor dolor quas.\",\n      \"name\": \"p\",\n      \"type\": \"link\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxMeetingAttachmentUsage() {
@@ -1385,7 +1423,7 @@ func meetingServiceGetItxMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment --meeting-id \"Quod facere pariatur perferendis deleniti alias.\" --attachment-id \"268a1472-7498-4fd9-8087-4b89fcb4f750\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment --meeting-id \"Inventore quisquam totam aut voluptatem.\" --attachment-id \"0df9179c-a6bf-44c8-8889-2a55e1952570\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceUpdateItxMeetingAttachmentUsage() {
@@ -1411,7 +1449,7 @@ func meetingServiceUpdateItxMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting-attachment --body '{\n      \"category\": \"Other\",\n      \"description\": \"Delectus a consequuntur quaerat.\",\n      \"link\": \"Eveniet aut dolorem.\",\n      \"name\": \"Minima consequatur error doloribus fugit.\",\n      \"type\": \"link\"\n   }' --meeting-id \"Velit non ipsa voluptas consequuntur.\" --attachment-id \"f9283be7-096b-4bad-b3d1-923c5a11a04c\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-meeting-attachment --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Sint nostrum illo reprehenderit nostrum soluta vitae.\",\n      \"link\": \"Ut sint fugiat impedit.\",\n      \"name\": \"Similique voluptas iusto quod quae.\",\n      \"type\": \"link\"\n   }' --meeting-id \"Repellendus praesentium exercitationem eius.\" --attachment-id \"82604b90-19d8-4507-8b47-e7fe04b77e8f\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxMeetingAttachmentUsage() {
@@ -1435,7 +1473,7 @@ func meetingServiceDeleteItxMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting-attachment --meeting-id \"Dolores in quas vero.\" --attachment-id \"4a8f572c-8bdc-4a8b-86ab-5710851bbb4e\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting-attachment --meeting-id \"Architecto nihil eum quis culpa eum adipisci.\" --attachment-id \"eede0fbf-6893-4f2a-b283-cef01b83f177\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxMeetingAttachmentPresignUsage() {
@@ -1459,7 +1497,7 @@ func meetingServiceCreateItxMeetingAttachmentPresignUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment-presign --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Fuga ut doloremque quidem placeat.\",\n      \"file_size\": 729562237212051371,\n      \"file_type\": \"Temporibus eum aut tempore eius voluptatem.\",\n      \"name\": \"Quis error eveniet.\"\n   }' --meeting-id \"Aut aut.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-meeting-attachment-presign --body '{\n      \"category\": \"Notes\",\n      \"description\": \"Iure nulla et.\",\n      \"file_size\": 1791030572973156224,\n      \"file_type\": \"Id doloremque.\",\n      \"name\": \"Culpa in.\"\n   }' --meeting-id \"Sint aut maiores ad.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxMeetingAttachmentDownloadUsage() {
@@ -1483,7 +1521,7 @@ func meetingServiceGetItxMeetingAttachmentDownloadUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment-download --meeting-id \"Voluptatum numquam fuga illum aut voluptatem fugiat.\" --attachment-id \"96d25ac3-aa0a-414a-89cb-742185c1fd3b\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-meeting-attachment-download --meeting-id \"Culpa quisquam quibusdam.\" --attachment-id \"d0e0177e-0d94-45bf-8f86-7cf68cd9fab7\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingAttachmentUsage() {
@@ -1507,7 +1545,7 @@ func meetingServiceCreateItxPastMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Expedita sit deleniti itaque.\",\n      \"link\": \"Sint quia corrupti error sint ut vitae.\",\n      \"name\": \"jq5\",\n      \"type\": \"file\"\n   }' --meeting-and-occurrence-id \"Voluptate corporis.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Vel temporibus distinctio.\",\n      \"link\": \"Voluptas vero sapiente id totam aspernatur perferendis.\",\n      \"name\": \"29v\",\n      \"type\": \"file\"\n   }' --meeting-and-occurrence-id \"Aut deserunt tenetur sapiente.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingAttachmentUsage() {
@@ -1531,7 +1569,7 @@ func meetingServiceGetItxPastMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment --meeting-and-occurrence-id \"Rerum pariatur maxime.\" --attachment-id \"44b37415-9e1d-4691-b0fe-755d785caecf\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment --meeting-and-occurrence-id \"Et ut odit magnam officia ipsum dignissimos.\" --attachment-id \"6663ec86-b7c1-4549-963b-66e370a6744b\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceUpdateItxPastMeetingAttachmentUsage() {
@@ -1557,7 +1595,7 @@ func meetingServiceUpdateItxPastMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-attachment --body '{\n      \"category\": \"Notes\",\n      \"description\": \"Nam hic.\",\n      \"link\": \"Veritatis enim quaerat itaque in.\",\n      \"name\": \"Ut quia sed unde illo qui a.\",\n      \"type\": \"link\"\n   }' --meeting-and-occurrence-id \"Aut et sed est.\" --attachment-id \"0ff2a72c-7606-4b23-afe2-600cef769522\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-attachment --body '{\n      \"category\": \"Presentation\",\n      \"description\": \"Sunt iure beatae voluptatem nobis sit vel.\",\n      \"link\": \"Similique aspernatur.\",\n      \"name\": \"Dolorum eveniet culpa est in.\",\n      \"type\": \"file\"\n   }' --meeting-and-occurrence-id \"Est cupiditate.\" --attachment-id \"2902069f-9ab4-41e9-a32b-6d7957722b61\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceDeleteItxPastMeetingAttachmentUsage() {
@@ -1581,7 +1619,7 @@ func meetingServiceDeleteItxPastMeetingAttachmentUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting-attachment --meeting-and-occurrence-id \"Sit fuga ratione quibusdam.\" --attachment-id \"e20a092b-16cb-4a67-9156-264dd06300d6\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-past-meeting-attachment --meeting-and-occurrence-id \"Et neque officiis.\" --attachment-id \"6787bd20-ea41-49ce-b0b8-73ac379c1bea\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingAttachmentPresignUsage() {
@@ -1605,7 +1643,7 @@ func meetingServiceCreateItxPastMeetingAttachmentPresignUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment-presign --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Libero similique id.\",\n      \"file_size\": 7626376824938201178,\n      \"file_type\": \"Corrupti molestias.\",\n      \"name\": \"In beatae exercitationem tempora eos.\"\n   }' --meeting-and-occurrence-id \"Quis et aut illum explicabo cum.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service create-itx-past-meeting-attachment-presign --body '{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Quam officiis illo qui.\",\n      \"file_size\": 7044404979849816095,\n      \"file_type\": \"Inventore aliquam.\",\n      \"name\": \"Qui a.\"\n   }' --meeting-and-occurrence-id \"Excepturi aut quaerat molestias ut eaque sint.\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingAttachmentDownloadUsage() {
@@ -1629,5 +1667,5 @@ func meetingServiceGetItxPastMeetingAttachmentDownloadUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment-download --meeting-and-occurrence-id \"Temporibus error nisi aut incidunt rerum.\" --attachment-id \"62684bf0-ad23-43ce-9c25-4ad9ab238814\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-attachment-download --meeting-and-occurrence-id \"Architecto aspernatur consectetur consectetur accusantium commodi.\" --attachment-id \"8814876c-2322-49d8-9de8-4de419fbfd44\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }

@@ -41,7 +41,14 @@ type CreateITXMeetingRequest struct {
 	RequireAISummaryApproval bool
 	ArtifactVisibility       itx.ArtifactAccess
 	Recurrence               *ITXRecurrence
+	// AutoEmailReminderEnabled is a pointer so an omitted field (nil, ITX preserves the stored
+	// reminder) stays distinct from an explicit false (ITX disables and resets the time to 0).
+	AutoEmailReminderEnabled *bool
+	AutoEmailReminderTime    int // Minutes before the meeting start time (120-1440)
 	UpdateNote               string
+	// Owner, when non-nil, sets the single user responsible for the meeting.
+	// Nil = preserve the stored owner (ITX defaults it to the creator on creation).
+	Owner *itx.User
 }
 
 // ITXRecurrence represents recurrence for ITX requests (with string EndDateTime)

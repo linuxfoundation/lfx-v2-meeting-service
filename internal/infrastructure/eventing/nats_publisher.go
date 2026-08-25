@@ -22,11 +22,17 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 // MessageAction represents the type of action performed on an object
 type MessageAction string
+
+// objectType constants for v1 indexer access-check strings.
+// These were removed from lfx-v2-indexer-service v0.4.25, so we define them locally.
+const (
+	objectTypeV1Meeting     = "v1_meeting"
+	objectTypeV1PastMeeting = "v1_past_meeting"
+)
 
 const (
 	ActionCreated MessageAction = "created"
@@ -46,6 +52,7 @@ const (
 	IndexV1PastMeetingSummarySubject     = "lfx.index.v1_past_meeting_summary"
 	IndexV1MeetingAttachmentSubject      = "lfx.index.v1_meeting_attachment"
 	IndexV1PastMeetingAttachmentSubject  = "lfx.index.v1_past_meeting_attachment"
+	IndexV1MeetingHostCredentialsSubject = "lfx.index.v1_meeting_host_credentials"
 )
 
 // IndexerMessage is the structure for indexer messages
@@ -84,9 +91,9 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             meeting.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + meeting.ID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + meeting.ID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + meeting.ID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
@@ -139,6 +146,41 @@ func (p *NATSPublisher) PublishMeetingEvent(ctx context.Context, action string, 
 	return nil
 }
 
+// PublishMeetingHostCredentialsEvent publishes a meeting_host_credentials event to the indexer.
+// The credentials object is a permissioned sub-document keyed by meeting ID — only organizers
+// (as enforced by FGA) can retrieve it from the indexer.
+func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, action string, credentials *models.MeetingHostCredentialsEventData) error {
+	p.logger.InfoContext(ctx, "publishing meeting host credentials event", "action", action, "meeting_id", credentials.MeetingID)
+
+	publicFalse := false
+	tags := credentials.Tags()
+	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    credentials,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             credentials.MeetingID,
+			Public:               &publicFalse,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + credentials.MeetingID,
+			AccessCheckRelation:  "host",
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + credentials.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           credentials.ParentRefs(),
+			Tags:                 tags,
+			SortName:             credentials.SortName(),
+			NameAndAliases:       credentials.NameAndAliases(),
+			Fulltext:             credentials.FullText(),
+		},
+	}
+
+	if err := p.publish(ctx, IndexV1MeetingHostCredentialsSubject, indexerMsg); err != nil {
+		return fmt.Errorf("failed to publish meeting host credentials to indexer: %w", err)
+	}
+
+	return nil
+}
+
 // PublishRegistrantEvent publishes a registrant event to indexer and FGA-sync services
 func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error {
 	p.logger.InfoContext(ctx, "publishing registrant event", "action", action, "registrant_uid", registrant.UID)
@@ -153,9 +195,9 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             registrant.UID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + registrant.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + registrant.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + registrant.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           registrant.ParentRefs(),
 			Tags:                 tags,
@@ -213,9 +255,9 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             response.ID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + response.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + response.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + response.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           response.ParentRefs(),
 			Tags:                 tags,
@@ -241,7 +283,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 	p.logger.InfoContext(ctx, "publishing past meeting event", "action", action, "past_meeting_id", meeting.MeetingAndOccurrenceID)
 
 	tags := meeting.Tags()
-	publicFalse := false
+	isPublic := meeting.Visibility == "public"
 	indexerMsg := indexerTypes.IndexerMessageEnvelope{
 		Action:  indexerConstants.MessageAction(action),
 		Headers: map[string]string{"authorization": authorizationHeaderValue},
@@ -249,10 +291,10 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Tags:    tags,
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             meeting.MeetingAndOccurrenceID,
-			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
+			Public:               &isPublic,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + meeting.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           meeting.ParentRefs(),
 			Tags:                 tags,
@@ -330,7 +372,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		Operation:  "update_access",
 		Data: fgatypes.GenericAccessData{
 			UID:        meeting.MeetingAndOccurrenceID,
-			Public:     false,
+			Public:     isPublic,
 			Relations:  pastMeetingRelations,
 			References: pastMeetingRefs,
 			// host/invitee/attendee are managed by PublishPastMeetingParticipantEvent
@@ -363,9 +405,9 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             participant.UID,
 			Public:               &publicFalse,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           participant.ParentRefs(),
 			Tags:                 tags,
@@ -427,9 +469,9 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             recording.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "recording_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + recording.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           recording.ParentRefs(),
 			Tags:                 tags,
@@ -463,9 +505,9 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             transcript.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "transcript_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + transcript.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           transcript.ParentRefs(),
 			Tags:                 tags,
@@ -499,9 +541,9 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             summary.ID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "ai_summary_viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           summary.ParentRefs(),
 			Tags:                 tags,
@@ -534,9 +576,9 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             attachment.UID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + attachment.MeetingID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1Meeting + ":" + attachment.MeetingID,
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + attachment.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
@@ -567,9 +609,9 @@ func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, a
 		IndexingConfig: &indexerTypes.IndexingConfig{
 			ObjectID:             attachment.UID,
 			Public:               &isPublic,
-			AccessCheckObject:    indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
 			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   indexerConstants.ObjectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + attachment.MeetingAndOccurrenceID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           attachment.ParentRefs(),
 			Tags:                 tags,
@@ -600,11 +642,7 @@ func (p *NATSPublisher) PublishIndexerDelete(ctx context.Context, subject, id st
 // PublishAccessDelete sends a pre-built access control message payload to subject.
 // The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
-	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish access delete", "subject", subject)
-		return err
-	}
-	return nil
+	return p.publishWithSpan(ctx, subject, payload)
 }
 
 // publishWithSpan wraps conn.PublishMsg with an OTel producer span and injects
@@ -636,12 +674,10 @@ func (p *NATSPublisher) publishWithSpan(ctx context.Context, subject string, dat
 func (p *NATSPublisher) publish(ctx context.Context, subject string, data interface{}) error {
 	payload, err := json.Marshal(data)
 	if err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to marshal event data", "subject", subject)
-		return fmt.Errorf("failed to marshal event data: %w", err)
+		return fmt.Errorf("failed to marshal event data for subject %s: %w", subject, err)
 	}
 
 	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish event", "subject", subject)
 		return err
 	}
 

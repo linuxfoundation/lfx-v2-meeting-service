@@ -2,6 +2,26 @@
 
 This document details the API contracts for past meeting invitees endpoints between the LFX v2 Meeting Service proxy API and the underlying ITX Zoom API.
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX invitee write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests. Also stamped when a `PUT` targets an invitee that doesn't yet exist and the proxy falls back to a create.
+- `updated_by` — stamped on `PUT` (update) requests against an existing invitee.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ## Endpoints
 
 ### Create Past Meeting Invitee
@@ -58,7 +78,7 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 
 ### Create Invitee Request
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 
 ```json
 {
@@ -75,6 +95,32 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
   "committee_voting_status": "Voting Rep"
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `created_by` field:
+
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "primary_email": "john.doe@example.com",
+  "lf_user_id": "003P000001cRZVVI9A",
+  "lf_sso": "jdoe",
+  "org": "Google",
+  "job_title": "Software Engineer",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg",
+  "committee_id": "ea1e8536-a985-4cf5-b981-a170927a1d11",
+  "committee_role": "Developer Seat",
+  "committee_voting_status": "Voting Rep",
+  "created_by": {
+    "username": "jdoe",
+    "name": "Jane Doe",
+    "email": "jane.doe@example.com",
+    "profile_picture": "https://avatars.example.com/jdoe.jpg"
+  }
+}
+```
+
+> **Proxy-added field**: `created_by` is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Required Fields**:
 
@@ -97,7 +143,7 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
 
 ### Update Invitee Request
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**:
 
 ```json
 {
@@ -107,6 +153,8 @@ Deletes an invitee from a specific past meeting occurrence. This removes the inv
   "committee_voting_status": "Alt Voting Rep"
 }
 ```
+
+**ITX API**: Identical to the Proxy API request, plus a proxy-added `updated_by` field (same shape as `created_by` — see [Audit stamping](#audit-stamping)).
 
 All fields are optional - only include fields you want to update.
 

@@ -54,6 +54,13 @@ type CreateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserRequestBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 }
 
 // UpdateItxMeetingRequestBody is the type of the "Meeting Service" service
@@ -96,9 +103,16 @@ type UpdateItxMeetingRequestBody struct {
 	ArtifactVisibility *string `form:"artifact_visibility,omitempty" json:"artifact_visibility,omitempty" xml:"artifact_visibility,omitempty"`
 	// The recurrence of the meeting
 	Recurrence *RecurrenceRequestBody `form:"recurrence,omitempty" json:"recurrence,omitempty" xml:"recurrence,omitempty"`
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserRequestBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 }
 
 // CreateItxRegistrantRequestBody is the type of the "Meeting Service" service
@@ -148,6 +162,21 @@ type CreateItxRegistrantRequestBody struct {
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last updater user info (read-only)
 	UpdatedBy *ITXUserRequestBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// SelfRegisterItxMeetingRequestBody is the type of the "Meeting Service"
+// service "self-register-itx-meeting" endpoint HTTP request body.
+type SelfRegisterItxMeetingRequestBody struct {
+	// First name
+	FirstName string `form:"first_name" json:"first_name" xml:"first_name"`
+	// Last name
+	LastName string `form:"last_name" json:"last_name" xml:"last_name"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Specific occurrence ID to register for (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
 }
 
 // UpdateItxRegistrantRequestBody is the type of the "Meeting Service" service
@@ -550,13 +579,14 @@ type CreateItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -637,13 +667,14 @@ type GetItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobFailedCount *int `form:"last_mailing_list_members_sync_job_failed_count,omitempty" json:"last_mailing_list_members_sync_job_failed_count,omitempty" xml:"last_mailing_list_members_sync_job_failed_count,omitempty"`
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
 	// Zoom meeting ID from ITX
 	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// 6-digit host key
-	HostKey *string `form:"host_key,omitempty" json:"host_key,omitempty" xml:"host_key,omitempty"`
 	// Zoom meeting passcode
 	Passcode *string `form:"passcode,omitempty" json:"passcode,omitempty" xml:"passcode,omitempty"`
 	// UUID password for join page
@@ -670,6 +701,55 @@ type GetItxMeetingCountResponseBody struct {
 // CreateItxRegistrantResponseBody is the type of the "Meeting Service" service
 // "create-itx-registrant" endpoint HTTP response body.
 type CreateItxRegistrantResponseBody struct {
+	// Registrant UID (read-only)
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// Registrant type: direct or committee (read-only)
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Committee UID (for committee registrants)
+	CommitteeUID *string `form:"committee_uid,omitempty" json:"committee_uid,omitempty" xml:"committee_uid,omitempty"`
+	// Registrant email
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// LF username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// First name (required with email)
+	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
+	// Last name (required with email)
+	LastName *string `form:"last_name,omitempty" json:"last_name,omitempty" xml:"last_name,omitempty"`
+	// Organization
+	Org *string `form:"org,omitempty" json:"org,omitempty" xml:"org,omitempty"`
+	// Job title
+	JobTitle *string `form:"job_title,omitempty" json:"job_title,omitempty" xml:"job_title,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+	// Access to host key for the meeting
+	Host *bool `form:"host,omitempty" json:"host,omitempty" xml:"host,omitempty"`
+	// Specific occurrence ID (blank = all occurrences)
+	Occurrence *string `form:"occurrence,omitempty" json:"occurrence,omitempty" xml:"occurrence,omitempty"`
+	// Number of meetings attended (read-only)
+	AttendedOccurrenceCount *int `form:"attended_occurrence_count,omitempty" json:"attended_occurrence_count,omitempty" xml:"attended_occurrence_count,omitempty"`
+	// Total meetings registered (read-only)
+	TotalOccurrenceCount *int `form:"total_occurrence_count,omitempty" json:"total_occurrence_count,omitempty" xml:"total_occurrence_count,omitempty"`
+	// Last invite timestamp RFC3339 (read-only)
+	LastInviteReceivedTime *string `form:"last_invite_received_time,omitempty" json:"last_invite_received_time,omitempty" xml:"last_invite_received_time,omitempty"`
+	// Last email message ID (read-only)
+	LastInviteReceivedMessageID *string `form:"last_invite_received_message_id,omitempty" json:"last_invite_received_message_id,omitempty" xml:"last_invite_received_message_id,omitempty"`
+	// delivered or failed (read-only)
+	LastInviteDeliveryStatus *string `form:"last_invite_delivery_status,omitempty" json:"last_invite_delivery_status,omitempty" xml:"last_invite_delivery_status,omitempty"`
+	// Delivery status details (read-only)
+	LastInviteDeliveryDescription *string `form:"last_invite_delivery_description,omitempty" json:"last_invite_delivery_description,omitempty" xml:"last_invite_delivery_description,omitempty"`
+	// Creation timestamp RFC3339 (read-only)
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// Creator user info (read-only)
+	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// Last modified timestamp RFC3339 (read-only)
+	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
+	// Last updater user info (read-only)
+	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+}
+
+// SelfRegisterItxMeetingResponseBody is the type of the "Meeting Service"
+// service "self-register-itx-meeting" endpoint HTTP response body.
+type SelfRegisterItxMeetingResponseBody struct {
 	// Registrant UID (read-only)
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Registrant type: direct or committee (read-only)
@@ -1744,6 +1824,76 @@ type CreateItxRegistrantServiceUnavailableResponseBody struct {
 // Service" service "create-itx-registrant" endpoint HTTP response body for the
 // "Unauthorized" error.
 type CreateItxRegistrantUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingBadRequestResponseBody is the type of the "Meeting
+// Service" service "self-register-itx-meeting" endpoint HTTP response body for
+// the "BadRequest" error.
+type SelfRegisterItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingConflictResponseBody is the type of the "Meeting
+// Service" service "self-register-itx-meeting" endpoint HTTP response body for
+// the "Conflict" error.
+type SelfRegisterItxMeetingConflictResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingForbiddenResponseBody is the type of the "Meeting
+// Service" service "self-register-itx-meeting" endpoint HTTP response body for
+// the "Forbidden" error.
+type SelfRegisterItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "self-register-itx-meeting" endpoint HTTP response
+// body for the "InternalServerError" error.
+type SelfRegisterItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingNotFoundResponseBody is the type of the "Meeting
+// Service" service "self-register-itx-meeting" endpoint HTTP response body for
+// the "NotFound" error.
+type SelfRegisterItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "self-register-itx-meeting" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type SelfRegisterItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfRegisterItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "self-register-itx-meeting" endpoint HTTP response body for
+// the "Unauthorized" error.
+type SelfRegisterItxMeetingUnauthorizedResponseBody struct {
 	// HTTP status code
 	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
 	// Error message
@@ -3712,6 +3862,18 @@ type RecurrenceRequestBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
+// ITXUserRequestBody is used to define fields on request body types.
+type ITXUserRequestBody struct {
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
 // CommitteeResponseBody is used to define fields on response body types.
 type CommitteeResponseBody struct {
 	// Committee UID
@@ -3740,6 +3902,18 @@ type RecurrenceResponseBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
+// ITXUserResponseBody is used to define fields on response body types.
+type ITXUserResponseBody struct {
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
 // ITXOccurrenceResponseBody is used to define fields on response body types.
 type ITXOccurrenceResponseBody struct {
 	// Unix timestamp
@@ -3752,30 +3926,6 @@ type ITXOccurrenceResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// Number of registrants for this occurrence
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
-}
-
-// ITXUserRequestBody is used to define fields on request body types.
-type ITXUserRequestBody struct {
-	// Username
-	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Full name
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// Email address
-	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// Profile picture URL
-	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
-}
-
-// ITXUserResponseBody is used to define fields on response body types.
-type ITXUserResponseBody struct {
-	// Username
-	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Full name
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// Email address
-	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// Profile picture URL
-	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
 }
 
 // PastMeetingSummaryZoomConfigResponseBody is used to define fields on
@@ -3848,6 +3998,8 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 		AiSummaryEnabled:         p.AiSummaryEnabled,
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    p.AutoEmailReminderTime,
 	}
 	if p.Committees != nil {
 		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
@@ -3861,6 +4013,9 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
+	}
+	if p.Owner != nil {
+		body.Owner = marshalMeetingserviceITXUserToITXUserRequestBody(p.Owner)
 	}
 	return body
 }
@@ -3885,6 +4040,8 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		AiSummaryEnabled:         p.AiSummaryEnabled,
 		RequireAiSummaryApproval: p.RequireAiSummaryApproval,
 		ArtifactVisibility:       p.ArtifactVisibility,
+		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
+		AutoEmailReminderTime:    p.AutoEmailReminderTime,
 		UpdateNote:               p.UpdateNote,
 	}
 	if p.Committees != nil {
@@ -3899,6 +4056,9 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 	}
 	if p.Recurrence != nil {
 		body.Recurrence = marshalMeetingserviceRecurrenceToRecurrenceRequestBody(p.Recurrence)
+	}
+	if p.Owner != nil {
+		body.Owner = marshalMeetingserviceITXUserToITXUserRequestBody(p.Owner)
 	}
 	return body
 }
@@ -3934,6 +4094,20 @@ func NewCreateItxRegistrantRequestBody(p *meetingservice.CreateItxRegistrantPayl
 	}
 	if p.UpdatedBy != nil {
 		body.UpdatedBy = marshalMeetingserviceITXUserToITXUserRequestBody(p.UpdatedBy)
+	}
+	return body
+}
+
+// NewSelfRegisterItxMeetingRequestBody builds the HTTP request body from the
+// payload of the "self-register-itx-meeting" endpoint of the "Meeting Service"
+// service.
+func NewSelfRegisterItxMeetingRequestBody(p *meetingservice.SelfRegisterItxMeetingPayload) *SelfRegisterItxMeetingRequestBody {
+	body := &SelfRegisterItxMeetingRequestBody{
+		FirstName:  p.FirstName,
+		LastName:   p.LastName,
+		Org:        p.Org,
+		JobTitle:   p.JobTitle,
+		Occurrence: p.Occurrence,
 	}
 	return body
 }
@@ -4281,7 +4455,6 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		LastMailingListMembersSyncJobWarningCount: body.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   body.NextOccurrenceStartTime,
 		ID:                                        body.ID,
-		HostKey:                                   body.HostKey,
 		Passcode:                                  body.Passcode,
 		Password:                                  body.Password,
 		PublicLink:                                body.PublicLink,
@@ -4301,6 +4474,9 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Owner != nil {
+		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
 	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
@@ -4416,7 +4592,6 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		LastMailingListMembersSyncJobWarningCount: body.LastMailingListMembersSyncJobWarningCount,
 		NextOccurrenceStartTime:                   body.NextOccurrenceStartTime,
 		ID:                                        body.ID,
-		HostKey:                                   body.HostKey,
 		Passcode:                                  body.Passcode,
 		Password:                                  body.Password,
 		PublicLink:                                body.PublicLink,
@@ -4436,6 +4611,9 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 	}
 	if body.Recurrence != nil {
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
+	}
+	if body.Owner != nil {
+		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
 	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
@@ -4841,6 +5019,119 @@ func NewCreateItxRegistrantServiceUnavailable(body *CreateItxRegistrantServiceUn
 // NewCreateItxRegistrantUnauthorized builds a Meeting Service service
 // create-itx-registrant endpoint Unauthorized error.
 func NewCreateItxRegistrantUnauthorized(body *CreateItxRegistrantUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingITXZoomMeetingRegistrantCreated builds a "Meeting
+// Service" service "self-register-itx-meeting" endpoint result from a HTTP
+// "Created" response.
+func NewSelfRegisterItxMeetingITXZoomMeetingRegistrantCreated(body *SelfRegisterItxMeetingResponseBody) *meetingservice.ITXZoomMeetingRegistrant {
+	v := &meetingservice.ITXZoomMeetingRegistrant{
+		UID:                           body.UID,
+		Type:                          body.Type,
+		CommitteeUID:                  body.CommitteeUID,
+		Email:                         body.Email,
+		Username:                      body.Username,
+		FirstName:                     body.FirstName,
+		LastName:                      body.LastName,
+		Org:                           body.Org,
+		JobTitle:                      body.JobTitle,
+		ProfilePicture:                body.ProfilePicture,
+		Host:                          body.Host,
+		Occurrence:                    body.Occurrence,
+		AttendedOccurrenceCount:       body.AttendedOccurrenceCount,
+		TotalOccurrenceCount:          body.TotalOccurrenceCount,
+		LastInviteReceivedTime:        body.LastInviteReceivedTime,
+		LastInviteReceivedMessageID:   body.LastInviteReceivedMessageID,
+		LastInviteDeliveryStatus:      body.LastInviteDeliveryStatus,
+		LastInviteDeliveryDescription: body.LastInviteDeliveryDescription,
+		CreatedAt:                     body.CreatedAt,
+		ModifiedAt:                    body.ModifiedAt,
+	}
+	if body.CreatedBy != nil {
+		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+	}
+	if body.UpdatedBy != nil {
+		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingBadRequest builds a Meeting Service service
+// self-register-itx-meeting endpoint BadRequest error.
+func NewSelfRegisterItxMeetingBadRequest(body *SelfRegisterItxMeetingBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingConflict builds a Meeting Service service
+// self-register-itx-meeting endpoint Conflict error.
+func NewSelfRegisterItxMeetingConflict(body *SelfRegisterItxMeetingConflictResponseBody) *meetingservice.ConflictError {
+	v := &meetingservice.ConflictError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingForbidden builds a Meeting Service service
+// self-register-itx-meeting endpoint Forbidden error.
+func NewSelfRegisterItxMeetingForbidden(body *SelfRegisterItxMeetingForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingInternalServerError builds a Meeting Service
+// service self-register-itx-meeting endpoint InternalServerError error.
+func NewSelfRegisterItxMeetingInternalServerError(body *SelfRegisterItxMeetingInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingNotFound builds a Meeting Service service
+// self-register-itx-meeting endpoint NotFound error.
+func NewSelfRegisterItxMeetingNotFound(body *SelfRegisterItxMeetingNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingServiceUnavailable builds a Meeting Service service
+// self-register-itx-meeting endpoint ServiceUnavailable error.
+func NewSelfRegisterItxMeetingServiceUnavailable(body *SelfRegisterItxMeetingServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfRegisterItxMeetingUnauthorized builds a Meeting Service service
+// self-register-itx-meeting endpoint Unauthorized error.
+func NewSelfRegisterItxMeetingUnauthorized(body *SelfRegisterItxMeetingUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
 	v := &meetingservice.UnauthorizedError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -7574,6 +7865,21 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime < 120 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
+		}
+	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime > 1440 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
+		}
+	}
+	if body.Owner != nil {
+		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	if body.NextOccurrenceStartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.next_occurrence_start_time", *body.NextOccurrenceStartTime, goa.FormatDateTime))
 	}
@@ -7657,6 +7963,21 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime < 120 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
+		}
+	}
+	if body.AutoEmailReminderTime != nil {
+		if *body.AutoEmailReminderTime > 1440 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
+		}
+	}
+	if body.Owner != nil {
+		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	if body.NextOccurrenceStartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.next_occurrence_start_time", *body.NextOccurrenceStartTime, goa.FormatDateTime))
 	}
@@ -7694,6 +8015,30 @@ func ValidateGetItxMeetingCountResponseBody(body *GetItxMeetingCountResponseBody
 // ValidateCreateItxRegistrantResponseBody runs the validations defined on
 // Create-Itx-RegistrantResponseBody
 func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBody) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == "direct" || *body.Type == "committee") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
+		}
+	}
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.CreatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdatedBy != nil {
+		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingResponseBody runs the validations defined on
+// Self-Register-Itx-MeetingResponseBody
+func ValidateSelfRegisterItxMeetingResponseBody(body *SelfRegisterItxMeetingResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"direct", "committee"}))
@@ -8882,6 +9227,92 @@ func ValidateCreateItxRegistrantServiceUnavailableResponseBody(body *CreateItxRe
 // ValidateCreateItxRegistrantUnauthorizedResponseBody runs the validations
 // defined on create-itx-registrant_Unauthorized_response_body
 func ValidateCreateItxRegistrantUnauthorizedResponseBody(body *CreateItxRegistrantUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingBadRequestResponseBody runs the validations
+// defined on self-register-itx-meeting_BadRequest_response_body
+func ValidateSelfRegisterItxMeetingBadRequestResponseBody(body *SelfRegisterItxMeetingBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingConflictResponseBody runs the validations
+// defined on self-register-itx-meeting_Conflict_response_body
+func ValidateSelfRegisterItxMeetingConflictResponseBody(body *SelfRegisterItxMeetingConflictResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingForbiddenResponseBody runs the validations
+// defined on self-register-itx-meeting_Forbidden_response_body
+func ValidateSelfRegisterItxMeetingForbiddenResponseBody(body *SelfRegisterItxMeetingForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody runs the
+// validations defined on
+// self-register-itx-meeting_InternalServerError_response_body
+func ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody(body *SelfRegisterItxMeetingInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingNotFoundResponseBody runs the validations
+// defined on self-register-itx-meeting_NotFound_response_body
+func ValidateSelfRegisterItxMeetingNotFoundResponseBody(body *SelfRegisterItxMeetingNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody runs the
+// validations defined on
+// self-register-itx-meeting_ServiceUnavailable_response_body
+func ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody(body *SelfRegisterItxMeetingServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfRegisterItxMeetingUnauthorizedResponseBody runs the validations
+// defined on self-register-itx-meeting_Unauthorized_response_body
+func ValidateSelfRegisterItxMeetingUnauthorizedResponseBody(body *SelfRegisterItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}
@@ -11347,6 +11778,17 @@ func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	return
 }
 
+// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
+func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateCommitteeResponseBody runs the validations defined on
 // CommitteeResponseBody
 func ValidateCommitteeResponseBody(body *CommitteeResponseBody) (err error) {
@@ -11375,6 +11817,18 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 	return
 }
 
+// ValidateITXUserResponseBody runs the validations defined on
+// ITXUserResponseBody
+func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateITXOccurrenceResponseBody runs the validations defined on
 // ITXOccurrenceResponseBody
 func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err error) {
@@ -11385,29 +11839,6 @@ func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err err
 		if !(*body.Status == "available" || *body.Status == "cancel") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []any{"available", "cancel"}))
 		}
-	}
-	return
-}
-
-// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
-func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
-	if body.Email != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
-	}
-	if body.ProfilePicture != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
-	}
-	return
-}
-
-// ValidateITXUserResponseBody runs the validations defined on
-// ITXUserResponseBody
-func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
-	if body.Email != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
-	}
-	if body.ProfilePicture != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
 	}
 	return
 }

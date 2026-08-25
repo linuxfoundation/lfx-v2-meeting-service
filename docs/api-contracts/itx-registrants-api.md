@@ -22,6 +22,26 @@ Client → LFX Meeting Service (Proxy) → ITX Service → Zoom API
 - Authorization: OAuth2 M2M (added automatically by proxy)
 - Header: `x-scope: manage:zoom`
 
+## Audit stamping
+
+The LFX Meeting Service proxy adds identity-attribution fields to ITX write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
+
+- `created_by` — stamped on `POST` (create) requests.
+- `updated_by` — stamped on `PUT` (update) requests.
+
+Shape:
+
+```json
+{
+  "username": "jdoe",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "profile_picture": "https://avatars.example.com/jdoe.jpg"
+}
+```
+
+The name / email / avatar are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write.
+
 ---
 
 ## Create Registrant
@@ -166,9 +186,17 @@ Content-Type: application/json
   "job_title": "Senior Developer",
   "profile_picture": "https://example.com/avatar.jpg",
   "host": false,
-  "occurrence": "1666848600"
+  "occurrence": "1666848600",
+  "created_by": {
+    "username": "admin",
+    "name": "Admin User",
+    "email": "admin@example.com",
+    "profile_picture": "https://example.com/admin.jpg"
+  }
 }
 ```
+
+> **Proxy-added field**: `created_by` is stamped by the LFX Meeting Service proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
 **Response**: `201 Created`
 
@@ -273,7 +301,7 @@ Content-Type: application/json
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `registrant_id` (string, required) - The registrant ID
 
-**Request Body**: Same as ITX Create Registrant request body
+**Request Body**: Same as ITX Create Registrant request body, except the proxy stamps `updated_by` (same shape as `created_by`) instead of `created_by`. See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 
@@ -484,11 +512,71 @@ Structure is identical in both APIs:
 
 ---
 
+## Self-Register Registrant
+
+Allows any authenticated user with at least `viewer` access to a meeting to register themselves. The caller's email is sourced from their JWT bearer token — it is **not** accepted in the request body, preventing a caller from self-registering under a different identity.
+
+### Proxy API Endpoint
+
+**Method**: `POST /itx/meetings/{meeting_id}/registrants/self`
+
+**Authorization**: Requires `viewer` permission on the meeting
+
+**Request Headers**:
+
+```text
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
+
+**Path Parameters**:
+
+- `meeting_id` (string, required) - The Zoom meeting ID
+
+**Request Body**:
+
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "org": "Example Corp",
+  "job_title": "Senior Developer",
+  "occurrence": "1666848600"
+}
+```
+
+**Request Fields**:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `first_name` | string | Yes | Registrant first name (required by ITX when email is set) |
+| `last_name` | string | Yes | Registrant last name (required by ITX when email is set) |
+| `org` | string | No | Organization name |
+| `job_title` | string | No | Job title |
+| `occurrence` | string | No | Specific occurrence ID (blank = all) |
+
+> **Note**: `email` and `username` are intentionally absent from the request body. The service sources email from the JWT claim first; if the JWT omits the email claim (e.g. `use_oidc_contextualizer` is disabled in the environment), it falls back to the auth-service profile resolved via NATS. Neither value can be overridden by the caller, ensuring the registration is always associated with the requesting user's identity.
+>
+> **Note**: Only meetings with `visibility: public` are eligible for self-registration. Attempting to self-register for a private meeting returns `403 Forbidden` even if the caller has viewer access.
+
+**Response**: `201 Created`
+
+Same response shape as [Create Registrant](#create-registrant). The `type` field will always be `"direct"`.
+
+**Error Responses**:
+
+- `400 Bad Request` — Authenticated user's JWT and auth-service profile do not contain an email address
+- `403 Forbidden` — Caller lacks viewer access, or the meeting is private (visibility ≠ public)
+- `409 Conflict` — User is already registered for this meeting
+
+---
+
 ## Authorization Requirements
 
 | Endpoint | Required Permission |
 |----------|-------------------|
 | Create Registrant | `organizer` on meeting |
+| Self-Register Registrant | `viewer` on meeting |
 | Get Registrant | `auditor` on meeting |
 | Update Registrant | `organizer` on meeting |
 | Delete Registrant | `organizer` on meeting |

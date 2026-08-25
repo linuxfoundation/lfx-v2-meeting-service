@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -62,11 +61,6 @@ type PastMeetingDBRaw struct {
 
 	// RecordingEnabled is whether the recording of the past meeting is enabled
 	RecordingEnabled bool `json:"recording_enabled"`
-
-	// HasRecording is true when a real recording exists for the past meeting — specifically when
-	// the largest recording session (by total size) has a non-empty share URL. This is synced from
-	// ITX (see ZoomPastMeeting.HasRecording) rather than computed here.
-	HasRecording bool `json:"has_recording"`
 
 	// ScheduledStartTime is the scheduled start time of the past meeting.
 	// This differs from the actual start time of the meeting because the [Sessions] stores
@@ -167,55 +161,14 @@ func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for duration: %w", err)
-			}
-			p.Duration = val
-		}
-	case float64:
-		p.Duration = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for duration: %T", v)
+	if err := coerceInt(&p.Duration, tmp.Duration, "duration"); err != nil {
+		return err
 	}
-
-	// Handle EarlyJoinTime
-	switch v := tmp.EarlyJoinTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for early_join_time: %w", err)
-			}
-			p.EarlyJoinTime = val
-		}
-	case float64:
-		p.EarlyJoinTime = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for early_join_time: %T", v)
+	if err := coerceInt(&p.EarlyJoinTime, tmp.EarlyJoinTime, "early_join_time"); err != nil {
+		return err
 	}
-
-	// Handle Type
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for type: %w", err)
-			}
-			p.Type = val
-		}
-	case float64:
-		p.Type = int(v)
-	case nil:
-	default:
-		return fmt.Errorf("invalid type for type: %T", v)
+	if err := coerceInt(&p.Type, tmp.Type, "type"); err != nil {
+		return err
 	}
 
 	return nil
@@ -292,6 +245,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
@@ -311,7 +265,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting", "action", string(indexerAction))
 	return false // Success, ACK
 }
 
@@ -323,6 +277,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
@@ -450,7 +405,6 @@ func convertMapToPastMeetingData(
 		ArtifactVisibility:       artifactVisibility,
 		Restricted:               rawPastMeeting.Restricted,
 		RecordingEnabled:         rawPastMeeting.RecordingEnabled,
-		HasRecording:             rawPastMeeting.HasRecording,
 		RecordingAccess:          rawPastMeeting.RecordingAccess,
 		TranscriptEnabled:        rawPastMeeting.TranscriptEnabled,
 		TranscriptAccess:         rawPastMeeting.TranscriptAccess,
@@ -746,7 +700,7 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger, may be deleted")
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger; it may have been deleted")
 			return false
 		}
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching past meeting during retrigger")

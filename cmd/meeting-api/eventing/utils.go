@@ -5,6 +5,7 @@ package eventing
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -78,4 +79,56 @@ func parseName(fullName string) (firstName, lastName string) {
 	}
 	// First part is first name, everything else is last name
 	return parts[0], strings.Join(parts[1:], " ")
+}
+
+// coerceInt decodes a JSON-decoded interface{} into *dest.
+// Accepts string (numeric or empty), float64, int, and nil; returns an error for any other type.
+func coerceInt(dest *int, v interface{}, field string) error {
+	switch val := v.(type) {
+	case string:
+		if val == "" {
+			return nil
+		}
+		n, err := strconv.Atoi(val)
+		if err != nil {
+			return fmt.Errorf("invalid value for %s: %w", field, err)
+		}
+		*dest = n
+	case float64:
+		*dest = int(val)
+	case int:
+		*dest = val
+	case nil:
+		// leave dest unchanged
+	default:
+		return fmt.Errorf("invalid type for %s: %T", field, v)
+	}
+	return nil
+}
+
+// coerceInt64 decodes a JSON-decoded interface{} into *dest.
+// Accepts string (numeric or empty), float64, int64, int, and nil; returns an error for any other type.
+func coerceInt64(dest *int64, v interface{}, field string) error {
+	switch val := v.(type) {
+	case string:
+		if val == "" {
+			return nil
+		}
+		n, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid value for %s: %w", field, err)
+		}
+		*dest = n
+	case float64:
+		*dest = int64(val)
+	case int64:
+		*dest = val
+	case int:
+		*dest = int64(val)
+	case nil:
+		// leave dest unchanged
+	default:
+		return fmt.Errorf("invalid type for %s: %T", field, v)
+	}
+	return nil
 }

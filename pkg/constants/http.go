@@ -3,11 +3,6 @@
 
 package constants
 
-import (
-	"fmt"
-	"net/url"
-)
-
 // Constants for the HTTP request headers
 const (
 	// AuthorizationHeader is the header name for the authorization
@@ -52,60 +47,8 @@ type contextUsername string
 // UsernameContextID is the context ID for the username
 const UsernameContextID contextUsername = "username"
 
-// LFX app domain constants
-const (
-	// LFXDomainDev is the development domain
-	LFXDomainDev = "app.dev.lfx.dev"
-	// LFXDomainStaging is the staging domain
-	LFXDomainStaging = "app.staging.lfx.dev"
-	// LFXDomainProd is the production domain
-	LFXDomainProd = "app.lfx.dev"
-)
+// contextEmail is the type for the email context key
+type contextEmail string
 
-// GetLFXAppDomain returns the appropriate LFX app domain based on the environment
-// Environment should be one of: "dev", "staging", "prod"
-func GetLFXAppDomain(environment string) string {
-	switch environment {
-	case "dev":
-		return LFXDomainDev
-	case "staging":
-		return LFXDomainStaging
-	case "prod":
-		return LFXDomainProd
-	default:
-		// Default to production domain if environment is not one of the expected values
-		return LFXDomainProd
-	}
-}
-
-// LfxURLGenerator generates LFX app URLs with environment-specific domains or custom app origins
-type LfxURLGenerator struct {
-	environment     string
-	customAppOrigin string
-}
-
-// NewLfxURLGenerator creates a new LfxURLGenerator with the given environment and optional custom app origin
-func NewLfxURLGenerator(environment, customAppOrigin string) *LfxURLGenerator {
-	return &LfxURLGenerator{
-		environment:     environment,
-		customAppOrigin: customAppOrigin,
-	}
-}
-
-// GenerateMeetingURL generates the LFX app meeting URL with the given meeting UID and password
-func (g *LfxURLGenerator) GenerateMeetingURL(meetingUID, password string) string {
-	if g.customAppOrigin != "" {
-		return fmt.Sprintf("%s/meetings/%s?password=%s", g.customAppOrigin, meetingUID, url.QueryEscape(password))
-	}
-	domain := GetLFXAppDomain(g.environment)
-	return fmt.Sprintf("https://%s/meetings/%s?password=%s", domain, meetingUID, url.QueryEscape(password))
-}
-
-// GenerateMeetingDetailsURL generates the LFX app project meetings page URL with the given project slug and meeting UID
-func (g *LfxURLGenerator) GenerateMeetingDetailsURL(projectSlug, meetingUID string) string {
-	if g.customAppOrigin != "" {
-		return fmt.Sprintf("%s/project/%s/meetings#meeting-%s", g.customAppOrigin, projectSlug, meetingUID)
-	}
-	domain := GetLFXAppDomain(g.environment)
-	return fmt.Sprintf("https://%s/project/%s/meetings#meeting-%s", domain, projectSlug, meetingUID)
-}
+// EmailContextID is the context ID for the JWT-claimed email of the authenticated principal
+const EmailContextID contextEmail = "email"

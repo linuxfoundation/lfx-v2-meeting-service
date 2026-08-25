@@ -3,11 +3,23 @@
 
 package itx
 
+import "log/slog"
+
 // CreatedUpdatedBy represents user information for created_by and updated_by fields
 type CreatedUpdatedBy struct {
 	Username string `json:"username"`        // Username of the user
 	Email    string `json:"email,omitempty"` // Email of the user
 	Name     string `json:"name,omitempty"`  // Name of the user
+}
+
+// LogValue implements slog.LogValuer so that CreatedUpdatedBy values logged
+// directly as a slog attribute (e.g. `slog.Any("created_by", cb)`) don't leak
+// the requester's name and email into logs — only the username is emitted.
+// Does NOT redact CreatedUpdatedBy values nested inside a JSON-marshaled
+// request body; the proxy client applies a separate body-level redaction for
+// that case (see requestJSONForLog in internal/infrastructure/proxy).
+func (c CreatedUpdatedBy) LogValue() slog.Value {
+	return slog.GroupValue(slog.String("username", c.Username))
 }
 
 // CreateAttachmentPresignRequest represents the request to generate a presigned URL for attachment upload

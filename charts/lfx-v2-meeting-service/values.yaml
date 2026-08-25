@@ -143,6 +143,14 @@ app:
     # ITX_AUDIENCE is the OAuth2 audience for ITX service
     ITX_AUDIENCE:
       value: https://api.dev.itx.linuxfoundation.org/
+    # User Service (LFXV2-2599): backs the preferred meeting-invite email NATS RPC
+    # (lfx.meeting-service.preferred_email.get/set). The RPC calls the v1 user-service
+    # preferences API AS the user, using the bearer token forwarded in the request from
+    # self-serve, so no service credentials are configured here. The responder starts
+    # whenever NATS_URL is configured.
+    # USER_SERVICE_BASE_URL is the v1 API-gateway base URL
+    USER_SERVICE_BASE_URL:
+      value: https://api-gw.dev.platform.linuxfoundation.org
     # ID_MAPPING_DISABLED disables v1/v2 ID mapping (optional, defaults to false)
     # Set to "true" to disable ID mapping and pass IDs through unchanged
     ID_MAPPING_DISABLED:

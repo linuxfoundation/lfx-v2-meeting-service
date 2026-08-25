@@ -21,6 +21,8 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
 	itxclient "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/itx"
+	natsinfra "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/userservice"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
@@ -106,6 +108,34 @@ func run() int {
 		}
 	}
 
+	natsURL := os.Getenv("NATS_URL")
+
+	// User metadata reader (LFXV2-2809 / LFXV2-2821): resolves the requesting principal's
+	// display profile (name/email/avatar) via the auth service, token-free, so ITX writes
+	// (meetings, registrants, past meetings, invitees, attendees, summaries, attachments)
+	// can stamp created_by / updated_by / modified_by. Uses its own NATS connection since
+	// it's needed regardless of whether ID mapping or event processing are enabled; nil
+	// (and a warning) when NATS isn't configured or the connection fails, so writes still
+	// work, just with audit fields limited to the JWT-derived username/email (profile
+	// enrichment such as name/avatar is unavailable).
+	var userMetadataReader domain.UserMetadataReader
+	var userMetadataNatsConn *natsgo.Conn
+	if natsURL == "" {
+		slog.WarnContext(ctx, "NATS_URL not set; ITX audit-stamp profile enrichment unavailable (created_by/updated_by/modified_by limited to JWT username/email)")
+	} else {
+		nc, err := natsgo.Connect(natsURL)
+		if err != nil {
+			slog.With(logging.ErrKey, err).WarnContext(ctx,
+				"failed to connect to NATS for user metadata reader; ITX audit-stamp profile enrichment unavailable")
+		} else {
+			userMetadataNatsConn = nc
+			userMetadataReader = natsinfra.NewUserMetadataReader(nc, slog.Default())
+		}
+	}
+	if userMetadataNatsConn != nil {
+		defer userMetadataNatsConn.Close()
+	}
+
 	// Initialize ITX proxy client and services
 	itxProxyConfig := itxclient.Config{
 		BaseURL:     env.ITXConfig.BaseURL,
@@ -116,17 +146,15 @@ func run() int {
 		Timeout:     30 * time.Second,
 	}
 	itxClient := itxclient.NewClient(itxProxyConfig)
-	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper)
-	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), idMapper)
-	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper)
-	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries())
-	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper)
-	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments())
-	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments())
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper, userMetadataReader)
+	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper, userMetadataReader)
+	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)
+	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)
+	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments(), userMetadataReader)
+	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments(), userMetadataReader)
 	authService := service.NewAuthService(jwtAuth)
 	slog.InfoContext(ctx, "ITX proxy client initialized")
-
-	natsURL := os.Getenv("NATS_URL")
 
 	// Start invite_accepted subscriber independently of KV event processing.
 	var inviteAcceptedSub *apieventing.InviteAcceptedSubscriber
@@ -153,6 +181,10 @@ func run() int {
 		}
 	}
 
+	// Start preferred-email RPC responder (LFXV2-2599) independently of KV event processing.
+	// It proxies get/set of a user's preferred meeting-invite email to the v1 user-service.
+	preferredEmailResponder, preferredEmailNatsConn := startPreferredEmailResponder(ctx, env, natsURL)
+
 	// Initialize event processor if enabled
 	var eventProcessor *apieventing.EventProcessor
 	var eventProcessorCancel context.CancelFunc
@@ -174,7 +206,7 @@ func run() int {
 				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
 			}
 
-			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default(), env.InviteConfig)
+			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default().With("component", "event-processor"), env.InviteConfig)
 			if err != nil {
 				slog.With(logging.ErrKey, err).Error("failed to create event processor")
 				return 1
@@ -220,7 +252,7 @@ func run() int {
 	// This next line blocks until SIGINT or SIGTERM is received.
 	<-done
 
-	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteAcceptedSub, inviteNatsConn)
+	gracefulShutdown(httpServer, &gracefulCloseWG, cancel, eventProcessor, eventProcessorCancel, inviteAcceptedSub, inviteNatsConn, preferredEmailResponder, preferredEmailNatsConn)
 
 	return 0
 }
@@ -234,6 +266,8 @@ func gracefulShutdown(
 	eventProcessorCancel context.CancelFunc,
 	inviteAcceptedSub *apieventing.InviteAcceptedSubscriber,
 	inviteNatsConn *natsgo.Conn,
+	preferredEmailResponder *natsinfra.PreferredEmailResponder,
+	preferredEmailNatsConn *natsgo.Conn,
 ) {
 	if inviteAcceptedSub != nil {
 		slog.Info("shutting down invite_accepted subscriber")
@@ -242,6 +276,16 @@ func gracefulShutdown(
 	if inviteNatsConn != nil && !inviteNatsConn.IsClosed() {
 		if err := inviteNatsConn.Drain(); err != nil {
 			slog.With(logging.ErrKey, err).Error("error draining invite NATS connection")
+		}
+	}
+
+	if preferredEmailResponder != nil {
+		slog.Info("shutting down preferred_email responder")
+		preferredEmailResponder.Stop()
+	}
+	if preferredEmailNatsConn != nil && !preferredEmailNatsConn.IsClosed() {
+		if err := preferredEmailNatsConn.Drain(); err != nil {
+			slog.With(logging.ErrKey, err).Error("error draining preferred_email NATS connection")
 		}
 	}
 
@@ -275,4 +319,40 @@ func gracefulShutdown(
 
 	// Wait for the HTTP graceful shutdown
 	gracefulCloseWG.Wait()
+}
+
+// startPreferredEmailResponder builds the user-service client and starts the preferred-email
+// NATS responder (LFXV2-2599). It is best-effort: any missing config or startup failure is
+// logged and the service continues without the responder (returns nil, nil).
+func startPreferredEmailResponder(ctx context.Context, env environment, natsURL string) (*natsinfra.PreferredEmailResponder, *natsgo.Conn) {
+	if natsURL == "" {
+		slog.InfoContext(ctx, "NATS_URL not set; preferred_email RPC responder will not start")
+		return nil, nil
+	}
+
+	userServiceClient, err := userservice.NewClient(userservice.Config{
+		BaseURL: env.UserServiceConfig.BaseURL,
+		Timeout: 30 * time.Second,
+	})
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create user-service client; preferred_email RPC responder will not start")
+		return nil, nil
+	}
+
+	nc, err := natsgo.Connect(natsURL)
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to connect to NATS for preferred_email responder; continuing without it")
+		return nil, nil
+	}
+
+	preferredEmailService := service.NewPreferredEmailService(userServiceClient, slog.Default())
+	responder := natsinfra.NewPreferredEmailResponder(nc, preferredEmailService, slog.Default())
+	if err := responder.Start(ctx); err != nil {
+		nc.Close()
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to start preferred_email responder; continuing without it")
+		return nil, nil
+	}
+
+	slog.InfoContext(ctx, "preferred_email RPC responder initialized")
+	return responder, nc
 }

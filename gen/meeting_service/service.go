@@ -32,6 +32,10 @@ type Service interface {
 	GetItxMeetingCount(context.Context, *GetItxMeetingCountPayload) (res *ITXMeetingCountResponse, err error)
 	// Create a meeting registrant through ITX API proxy
 	CreateItxRegistrant(context.Context, *CreateItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Register the authenticated user for a meeting through ITX API proxy. Only
+	// public meetings are supported; private meetings return 403. Requires viewer
+	// access on the meeting.
+	SelfRegisterItxMeeting(context.Context, *SelfRegisterItxMeetingPayload) (res *ITXZoomMeetingRegistrant, err error)
 	// Get a meeting registrant through ITX API proxy
 	GetItxRegistrant(context.Context, *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
 	// Update a meeting registrant through ITX API proxy
@@ -124,7 +128,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [40]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
+var MethodNames = [41]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 // Voting status filter for committee members
 type AllowedVotingStatus string
@@ -240,6 +244,13 @@ type CreateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 }
 
 // CreateItxPastMeetingAttachmentPayload is the payload type of the Meeting
@@ -1129,13 +1140,14 @@ type ITXZoomMeetingResponse struct {
 	LastMailingListMembersSyncJobFailedCount *int
 	// Number of records with warnings in the last mailing list members sync job
 	LastMailingListMembersSyncJobWarningCount *int
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string
 	// Zoom meeting ID from ITX
 	ID *string
-	// 6-digit host key
-	HostKey *string
 	// Zoom meeting passcode
 	Passcode *string
 	// UUID password for join page
@@ -1272,6 +1284,27 @@ type ResendItxRegistrantInvitationPayload struct {
 	RegistrantID string
 }
 
+// SelfRegisterItxMeetingPayload is the payload type of the Meeting Service
+// service self-register-itx-meeting method.
+type SelfRegisterItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// First name
+	FirstName string
+	// Last name
+	LastName string
+	// Organization
+	Org *string
+	// Job title
+	JobTitle *string
+	// Specific occurrence ID to register for (blank = all occurrences)
+	Occurrence *string
+}
+
 type ServiceUnavailableError struct {
 	// HTTP status code
 	Code string
@@ -1394,9 +1427,16 @@ type UpdateItxMeetingPayload struct {
 	ArtifactVisibility *string
 	// The recurrence of the meeting
 	Recurrence *Recurrence
+	// Whether automatic email reminders are enabled for the meeting
+	AutoEmailReminderEnabled *bool
+	// Time in minutes before the meeting to send the automatic email reminder
+	AutoEmailReminderTime *int
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string
+	// The single user responsible for this meeting. Defaults to the creator on
+	// creation; omitting the field on update preserves the stored owner.
+	Owner *ITXUser
 }
 
 // UpdateItxOccurrencePayload is the payload type of the Meeting Service

@@ -113,7 +113,7 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 // If the consumer is deleted on the server at runtime, it is automatically
 // recreated and consumption resumes without requiring a service restart.
 func (ep *EventProcessor) Start(ctx context.Context) error {
-	ep.logger.Info("starting event processor", "consumer", ep.config.ConsumerName)
+	ep.logger.InfoContext(ctx, "starting event processor", "consumer", ep.config.ConsumerName)
 
 	for {
 		if err := ep.setupConsumerWithRetry(ctx); err != nil {
@@ -125,11 +125,11 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 		consumeCtx, err := ep.consumer.Consume(ep.msgHandler(ctx), jetstream.ConsumeErrHandler(
 			func(_ jetstream.ConsumeContext, err error) {
 				if errors.Is(err, jetstream.ErrConsumerDeleted) {
-					ep.logger.Warn("consumer was deleted on the server, will recreate")
+					ep.logger.WarnContext(ctx, "consumer was deleted on the server, will recreate")
 					close(consumerDeleted)
 					return
 				}
-				ep.logger.With(logging.ErrKey, err).Warn("consumer error")
+				ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "consumer error")
 			},
 		))
 		if err != nil {
@@ -138,12 +138,12 @@ func (ep *EventProcessor) Start(ctx context.Context) error {
 
 		select {
 		case <-ctx.Done():
-			ep.logger.Info("context cancelled, stopping consumer")
+			ep.logger.InfoContext(ctx, "context cancelled, stopping consumer")
 			consumeCtx.Stop()
 			return nil
 		case <-consumerDeleted:
 			// consumeCtx is already stopped by the terminal error — just loop and recreate.
-			ep.logger.Info("recreating consumer after deletion")
+			ep.logger.InfoContext(ctx, "recreating consumer after deletion")
 		}
 	}
 }
@@ -153,9 +153,9 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 	return func(msg jetstream.Msg) {
 		defer func() {
 			if r := recover(); r != nil {
-				ep.logger.Error("panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
+				ep.logger.ErrorContext(ctx, "panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
 				if err := msg.Nak(); err != nil {
-					ep.logger.With(logging.ErrKey, err).Error("failed to NAK message after panic")
+					ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message after panic")
 				}
 			}
 		}()
@@ -165,18 +165,18 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 		if shouldRetry {
 			var numDelivered uint64
 			if metadata, err := msg.Metadata(); err != nil {
-				ep.logger.With(logging.ErrKey, err).Warn("failed to get message metadata, using default retry delay")
+				ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
 			} else {
 				numDelivered = metadata.NumDelivered
 			}
 			delay := getRetryDelay(numDelivered)
 			if err := msg.NakWithDelay(delay); err != nil {
-				ep.logger.With(logging.ErrKey, err).Error("failed to NAK message")
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
 			}
-			ep.logger.Info("message NAKed for retry", "subject", msg.Subject(), "delay", delay)
+			ep.logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
 		} else {
 			if err := msg.Ack(); err != nil {
-				ep.logger.With(logging.ErrKey, err).Error("failed to ACK message")
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
 			}
 		}
 	}
@@ -184,30 +184,36 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 
 // Stop gracefully stops the event processor
 func (ep *EventProcessor) Stop(ctx context.Context) error {
-	ep.logger.Info("stopping event processor")
+	ep.logger.InfoContext(ctx, "stopping event processor")
 
 	// Drain pending messages with timeout
 	drainCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	done := make(chan struct{})
+	done := make(chan error, 1)
 	go func() {
 		if ep.nc != nil {
-			ep.nc.Drain()
+			done <- ep.nc.Drain()
+		} else {
+			done <- nil
 		}
-		close(done)
 	}()
 
+	var drainErr error
 	select {
 	case <-drainCtx.Done():
-		ep.logger.Warn("drain timeout exceeded, force closing")
-	case <-done:
-		ep.logger.Info("drain completed")
+		ep.logger.WarnContext(ctx, "drain timeout exceeded, force closing")
+	case drainErr = <-done:
+		if drainErr != nil {
+			ep.logger.WarnContext(ctx, "failed to drain NATS connection on shutdown", logging.ErrKey, drainErr)
+		} else {
+			ep.logger.InfoContext(ctx, "drain completed")
+		}
 	}
 
 	// Close publisher
 	if err := ep.publisher.Close(); err != nil {
-		ep.logger.With(logging.ErrKey, err).Error("failed to close publisher")
+		ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to close publisher")
 	}
 
 	// Close NATS connection
@@ -215,8 +221,8 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 		ep.nc.Close()
 	}
 
-	ep.logger.Info("event processor stopped")
-	return nil
+	ep.logger.InfoContext(ctx, "event processor stopped")
+	return drainErr
 }
 
 // setupConsumerWithRetry calls setupConsumer with exponential backoff until it
@@ -233,7 +239,7 @@ func (ep *EventProcessor) setupConsumerWithRetry(ctx context.Context) error {
 			return ctx.Err()
 		}
 		delay := delays[min(attempt, maxAttempt-1)]
-		ep.logger.With(logging.ErrKey, err).Warn("failed to setup consumer, retrying",
+		ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to setup consumer, retrying",
 			"attempt", attempt+1,
 			"retry_in", delay,
 		)
@@ -266,7 +272,7 @@ func (ep *EventProcessor) setupConsumer(ctx context.Context) error {
 	}
 
 	ep.consumer = consumer
-	ep.logger.Info("consumer configured",
+	ep.logger.InfoContext(ctx, "consumer configured",
 		"name", ep.config.ConsumerName,
 		"stream", ep.config.StreamName,
 		"filters", ep.config.FilterSubjects,

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -106,40 +105,12 @@ func (r *RecordingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	switch v := tmp.RecordingCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid value for recording_count: %w", err)
-			}
-			r.RecordingCount = val
-		}
-	case float64:
-		r.RecordingCount = int(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for recording_count: %T", v)
+	if err := coerceInt(&r.RecordingCount, tmp.RecordingCount, "recording_count"); err != nil {
+		return err
 	}
-
-	switch v := tmp.TotalSize.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid value for total_size: %w", err)
-			}
-			r.TotalSize = val
-		}
-	case float64:
-		r.TotalSize = int64(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for total_size: %T", v)
+	if err := coerceInt64(&r.TotalSize, tmp.TotalSize, "total_size"); err != nil {
+		return err
 	}
-
 	return nil
 }
 
@@ -172,23 +143,9 @@ func (r *RecordingFileDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	switch v := tmp.FileSize.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid value for file_size: %w", err)
-			}
-			r.FileSize = val
-		}
-	case float64:
-		r.FileSize = int64(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for file_size: %T", v)
+	if err := coerceInt64(&r.FileSize, tmp.FileSize, "file_size"); err != nil {
+		return err
 	}
-
 	return nil
 }
 
@@ -215,23 +172,9 @@ func (r *RecordingSessionDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	switch v := tmp.TotalSize.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return fmt.Errorf("invalid value for total_size: %w", err)
-			}
-			r.TotalSize = val
-		}
-	case float64:
-		r.TotalSize = int64(v)
-	case nil:
-		// leave as zero value
-	default:
-		return fmt.Errorf("invalid type for total_size: %T", v)
+	if err := coerceInt64(&r.TotalSize, tmp.TotalSize, "total_size"); err != nil {
+		return err
 	}
-
 	return nil
 }
 
@@ -261,6 +204,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting recording update")
 
 	// Resolve committees from the parent past meeting record.
 	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
@@ -304,7 +248,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting recording", "action", string(indexerAction))
 	return false
 }
 
@@ -320,6 +264,7 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 		h.logger.DebugContext(ctx, "recording delete already processed, skipping", "recording_id", recordingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting recording delete", "recording_id", recordingID)
 	// Delete recording from indexer first (no tombstone yet).
 	if retry := h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_recording",

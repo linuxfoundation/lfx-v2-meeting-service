@@ -11,6 +11,7 @@ This document is the authoritative reference for all data the meeting service se
 ## Resource Types
 
 - [V1 Meeting](#v1-meeting)
+- [V1 Meeting Host Credentials](#v1-meeting-host-credentials)
 - [V1 Meeting Registrant](#v1-meeting-registrant)
 - [V1 Meeting RSVP](#v1-meeting-rsvp)
 - [V1 Past Meeting](#v1-past-meeting)
@@ -56,7 +57,6 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `duration` | int | Meeting duration in minutes |
 | `early_join_time_minutes` | int | Minutes before start time that attendees can join |
 | `last_end_time` | int64 | End time of the last occurrence (Unix timestamp) |
-| `host_key` | string | Six-digit Zoom host PIN (rotated weekly) |
 | `join_url` | string | LFX meeting join page URL |
 | `password` | string | UUID password for the join page |
 | `restricted` | bool | Whether only invited users can join |
@@ -70,6 +70,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `created_by` | object | User who created the meeting (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the meeting (see [User Reference schema](#user-reference-schema)) |
 | `updated_by_list` | []object (optional) | All users who have updated the meeting |
+| `owner` | object | Single user responsible for the meeting (see [User Reference schema](#user-reference-schema)); zero-valued (all fields empty) when the meeting predates the field and no owner has been set |
 | `use_new_invite_email_address` | bool | Whether to use the new invite email address |
 | `recurrence` | object (optional) | Zoom recurrence pattern (see [Recurrence schema](#recurrence-schema)) |
 | `occurrences` | []object (optional) | Upcoming meeting occurrences (see [Occurrence schema](#occurrence-schema)) |
@@ -91,6 +92,8 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `use_unique_ics_uid` | string | UUID used as the unique ICS UID for calendar events (empty string when not set) |
 | `show_meeting_attendees` | bool | Whether attendee data is visible to other attendees |
 | `organizers` | []string | Auth0 sub-format usernames of meeting organizers |
+| `auto_email_reminder_enabled` | bool | Whether an automatic reminder email is sent to participants before the meeting starts |
+| `auto_email_reminder_time` | int | Minutes before the meeting start time that the reminder email is sent (120-1440; `0` when reminders are disabled) |
 
 #### Committee Schema
 
@@ -103,7 +106,7 @@ Each entry in `committees` has:
 
 #### User Reference Schema
 
-Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
+Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 | Field | Type | Description |
 |---|---|---|
@@ -202,6 +205,56 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 
 ---
 
+## V1 Meeting Host Credentials
+
+**Object type:** `v1_meeting_host_credentials`
+
+**NATS subject:** `lfx.index.v1_meeting_host_credentials`
+
+**Source struct:** `internal/domain/models/event_models.go` — `MeetingHostCredentialsEventData`
+
+**Indexed on:** create, update, delete of a meeting (sourced from the v1 meeting data). The host key was split out of `v1_meeting` into this separate permissioned object (LFXV2-2358) so it is only accessible to users with the `host` relation on the parent meeting.
+
+### Data Schema
+
+| Field | Type | Description |
+|---|---|---|
+| `meeting_id` | string | Meeting ID of the parent meeting |
+| `host_key` | string | Six-digit Zoom host PIN (rotated weekly) |
+
+### Tags
+
+| Tag Format | Example | Purpose |
+|---|---|---|
+| `{meeting_id}` | `93699735000` | Direct lookup by meeting ID |
+| `meeting_id:{meeting_id}` | `meeting_id:93699735000` | Namespaced lookup by meeting ID |
+
+### Access Control (IndexingConfig)
+
+| Field | Value |
+|---|---|
+| `access_check_object` | `v1_meeting:{meeting_id}` (access checked on the parent meeting) |
+| `access_check_relation` | `host` |
+| `history_check_object` | `v1_meeting:{meeting_id}` |
+| `history_check_relation` | `auditor` |
+| `public` | `false` (always) |
+
+### Search Behavior
+
+| Field | Value |
+|---|---|
+| `sort_name` | `""` (not searchable by name) |
+| `name_and_aliases` | `nil` |
+| `fulltext` | `""` |
+
+### Parent References
+
+| Ref | Condition |
+|---|---|
+| `v1_meeting:{meeting_id}` | Only when `meeting_id` is non-empty |
+
+---
+
 ## V1 Meeting Registrant
 
 **Object type:** `v1_meeting_registrant`
@@ -272,7 +325,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `sort_name` | `email` (trimmed) |
-| `name_and_aliases` | `[username, email]` (deduplicated, omits empty values) |
+| `name_and_aliases` | `[username, email, first_name, last_name, "first_name last_name"]` (deduplicated, omits empty values) |
 | `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References
@@ -429,7 +482,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | `access_check_relation` | `viewer` |
 | `history_check_object` | `v1_past_meeting:{id}` |
 | `history_check_relation` | `auditor` |
-| `public` | `false` (always) |
+| `public` | `true` when `visibility == "public"`, `false` otherwise |
 
 ### Search Behavior
 
@@ -518,7 +571,7 @@ Used by `created_by`, `updated_by`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `sort_name` | `email` (trimmed) |
-| `name_and_aliases` | `[first_name, last_name, username]` (deduplicated, omits empty values) |
+| `name_and_aliases` | `[first_name, last_name, username, "first_name last_name"]` (deduplicated, omits empty values) |
 | `fulltext` | `sort_name` + `name_and_aliases` (space-joined, deduplicated) |
 
 ### Parent References

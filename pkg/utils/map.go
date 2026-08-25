@@ -5,24 +5,6 @@ package utils
 
 import "fmt"
 
-// GetInt coerces an interface{} value to int.
-func GetInt(val interface{}) int {
-	switch v := val.(type) {
-	case int:
-		return v
-	case int64:
-		return int(v)
-	case float64:
-		return int(v)
-	case string:
-		var i int
-		fmt.Sscanf(v, "%d", &i)
-		return i
-	default:
-		return 0
-	}
-}
-
 // GetBool coerces an interface{} value to bool.
 func GetBool(val interface{}) bool {
 	switch v := val.(type) {

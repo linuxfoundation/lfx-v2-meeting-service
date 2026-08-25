@@ -287,7 +287,6 @@ func (c *Client) ensureValidToken(ctx context.Context) error {
      "id": "123456789",
      "project_uid": "abc-123",
      "title": "Team Meeting",
-     "host_key": "012345",
      "passcode": "abc123",
      "public_link": "https://zoom.us/j/123456789",
      ...

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -131,6 +131,9 @@ type MeetingDBRaw struct {
 
 	// UpdatedByList is a list of users that have updated the meeting.
 	UpdatedByList []models.UpdatedBy `json:"updated_by_list,omitempty"`
+
+	// Owner is the single user responsible for the meeting. Zero value means not set.
+	Owner models.UpdatedBy `json:"owner"`
 
 	// UseNewInviteEmailAddress is a flag that indicates if the meeting should use the new invite email address.
 	// In January 2024, we switched to using a new email address as the organizer for meeting invites.
@@ -249,6 +252,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		LastBulkRegistrantsJobWarningCount        interface{}       `json:"last_bulk_registrants_job_warning_count"`
 		LastMailingListMembersSyncJobFailedCount  interface{}       `json:"last_mailing_list_members_sync_job_failed_count"`
 		LastMailingListMembersSyncJobWarningCount interface{}       `json:"last_mailing_list_members_sync_job_warning_count"`
+		AutoEmailReminderTime                     interface{}       `json:"auto_email_reminder_time"`
 		Occurrences                               []json.RawMessage `json:"occurrences"`
 		UpdatedOccurrences                        []json.RawMessage `json:"updated_occurrences"`
 		*Alias
@@ -260,146 +264,29 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Handle Duration
-	switch v := tmp.Duration.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.Duration = val
-		}
-	case float64:
-		m.Duration = int(v)
-	case int:
-		m.Duration = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for duration: %T", v)
-		}
+	if err := coerceInt(&m.Duration, tmp.Duration, "duration"); err != nil {
+		return err
 	}
-
-	// Handle EarlyJoinTime
-	switch v := tmp.EarlyJoinTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.EarlyJoinTime = val
-		}
-	case float64:
-		m.EarlyJoinTime = int(v)
-	case int:
-		m.EarlyJoinTime = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for early_join_time_minutes: %T", v)
-		}
+	if err := coerceInt(&m.EarlyJoinTime, tmp.EarlyJoinTime, "early_join_time"); err != nil {
+		return err
 	}
-
-	// Handle LastEndTime (int64)
-	switch v := tmp.LastEndTime.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				return err
-			}
-			m.LastEndTime = val
-		}
-	case float64:
-		m.LastEndTime = int64(v)
-	case int64:
-		m.LastEndTime = v
-	case int:
-		m.LastEndTime = int64(v)
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_end_time: %T", v)
-		}
+	if err := coerceInt64(&m.LastEndTime, tmp.LastEndTime, "last_end_time"); err != nil {
+		return err
 	}
-
-	// Handle LastBulkRegistrantsJobFailedCount
-	switch v := tmp.LastBulkRegistrantsJobFailedCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastBulkRegistrantsJobFailedCount = val
-		}
-	case float64:
-		m.LastBulkRegistrantsJobFailedCount = int(v)
-	case int:
-		m.LastBulkRegistrantsJobFailedCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_bulk_registrants_job_failed_count: %T", v)
-		}
+	if err := coerceInt(&m.LastBulkRegistrantsJobFailedCount, tmp.LastBulkRegistrantsJobFailedCount, "last_bulk_registrants_job_failed_count"); err != nil {
+		return err
 	}
-
-	// Handle LastBulkRegistrantsJobWarningCount
-	switch v := tmp.LastBulkRegistrantsJobWarningCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastBulkRegistrantsJobWarningCount = val
-		}
-	case float64:
-		m.LastBulkRegistrantsJobWarningCount = int(v)
-	case int:
-		m.LastBulkRegistrantsJobWarningCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_bulk_registrants_job_warning_count: %T", v)
-		}
+	if err := coerceInt(&m.LastBulkRegistrantsJobWarningCount, tmp.LastBulkRegistrantsJobWarningCount, "last_bulk_registrants_job_warning_count"); err != nil {
+		return err
 	}
-
-	// Handle LastMailingListMembersSyncJobFailedCount
-	switch v := tmp.LastMailingListMembersSyncJobFailedCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastMailingListMembersSyncJobFailedCount = val
-		}
-	case float64:
-		m.LastMailingListMembersSyncJobFailedCount = int(v)
-	case int:
-		m.LastMailingListMembersSyncJobFailedCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_failed_count: %T", v)
-		}
+	if err := coerceInt(&m.LastMailingListMembersSyncJobFailedCount, tmp.LastMailingListMembersSyncJobFailedCount, "last_mailing_list_members_sync_job_failed_count"); err != nil {
+		return err
 	}
-
-	// Handle LastMailingListMembersSyncJobWarningCount
-	switch v := tmp.LastMailingListMembersSyncJobWarningCount.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return err
-			}
-			m.LastMailingListMembersSyncJobWarningCount = val
-		}
-	case float64:
-		m.LastMailingListMembersSyncJobWarningCount = int(v)
-	case int:
-		m.LastMailingListMembersSyncJobWarningCount = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for last_mailing_list_members_sync_job_warning_count: %T", v)
-		}
+	if err := coerceInt(&m.LastMailingListMembersSyncJobWarningCount, tmp.LastMailingListMembersSyncJobWarningCount, "last_mailing_list_members_sync_job_warning_count"); err != nil {
+		return err
+	}
+	if err := coerceInt(&m.AutoEmailReminderTime, tmp.AutoEmailReminderTime, "auto_email_reminder_time"); err != nil {
+		return err
 	}
 
 	// Occurrences are recomputed from RRULE calculation; discard the raw field (already shadowed above).
@@ -410,17 +297,31 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 		m.UpdatedOccurrences = make([]models.UpdatedOccurrence, 0, len(tmp.UpdatedOccurrences))
 		for _, raw := range tmp.UpdatedOccurrences {
 			var occTmp struct {
-				OldOccurrenceID string                        `json:"old_occurrence_id"`
-				NewOccurrenceID string                        `json:"new_occurrence_id"`
-				Timezone        string                        `json:"timezone"`
-				Duration        interface{}                   `json:"duration"`
-				Title           string                        `json:"title"`
-				Description     string                        `json:"description"`
-				Recurrence      *models.ZoomMeetingRecurrence `json:"recurrence"`
-				AllFollowing    bool                          `json:"all_following"`
+				OldOccurrenceID string           `json:"old_occurrence_id"`
+				NewOccurrenceID string           `json:"new_occurrence_id"`
+				Timezone        string           `json:"timezone"`
+				Duration        interface{}      `json:"duration"`
+				Title           string           `json:"title"`
+				Description     string           `json:"description"`
+				Recurrence      *RecurrenceDBRaw `json:"recurrence"`
+				AllFollowing    bool             `json:"all_following"`
 			}
 			if err := json.Unmarshal(raw, &occTmp); err != nil {
 				return fmt.Errorf("failed to unmarshal updated_occurrence: %w", err)
+			}
+			var rec *models.ZoomMeetingRecurrence
+			if occTmp.Recurrence != nil {
+				r := occTmp.Recurrence
+				rec = &models.ZoomMeetingRecurrence{
+					Type:           r.Type,
+					RepeatInterval: r.RepeatInterval,
+					WeeklyDays:     r.WeeklyDays,
+					MonthlyDay:     r.MonthlyDay,
+					MonthlyWeek:    r.MonthlyWeek,
+					MonthlyWeekDay: r.MonthlyWeekDay,
+					EndTimes:       r.EndTimes,
+					EndDateTime:    r.EndDateTime,
+				}
 			}
 			occ := models.UpdatedOccurrence{
 				OldOccurrenceID: occTmp.OldOccurrenceID,
@@ -428,22 +329,11 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 				Timezone:        occTmp.Timezone,
 				Title:           occTmp.Title,
 				Description:     occTmp.Description,
-				Recurrence:      occTmp.Recurrence,
+				Recurrence:      rec,
 				AllFollowing:    occTmp.AllFollowing,
 			}
-			switch v := occTmp.Duration.(type) {
-			case string:
-				if v != "" {
-					val, err := strconv.Atoi(v)
-					if err != nil {
-						return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
-					}
-					occ.Duration = val
-				}
-			case float64:
-				occ.Duration = int(v)
-			case int:
-				occ.Duration = v
+			if err := coerceInt(&occ.Duration, occTmp.Duration, "duration"); err != nil {
+				return fmt.Errorf("invalid duration in updated_occurrence: %w", err)
 			}
 			m.UpdatedOccurrences = append(m.UpdatedOccurrences, occ)
 		}
@@ -486,123 +376,23 @@ func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
 	}
 
 	// Handle Type (string from Meltano, int/float64 from other sources)
-	switch v := tmp.Type.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid type format: %w", err)
-			}
-			r.Type = val
-		}
-	case float64:
-		r.Type = int(v)
-	case int:
-		r.Type = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for type: %T", v)
-		}
+	if err := coerceInt(&r.Type, tmp.Type, "type"); err != nil {
+		return err
 	}
-
-	// Handle RepeatInterval
-	switch v := tmp.RepeatInterval.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid repeat_interval format: %w", err)
-			}
-			r.RepeatInterval = val
-		}
-	case float64:
-		r.RepeatInterval = int(v)
-	case int:
-		r.RepeatInterval = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for repeat_interval: %T", v)
-		}
+	if err := coerceInt(&r.RepeatInterval, tmp.RepeatInterval, "repeat_interval"); err != nil {
+		return err
 	}
-
-	// Handle MonthlyDay
-	switch v := tmp.MonthlyDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_day format: %w", err)
-			}
-			r.MonthlyDay = val
-		}
-	case float64:
-		r.MonthlyDay = int(v)
-	case int:
-		r.MonthlyDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_day: %T", v)
-		}
+	if err := coerceInt(&r.MonthlyDay, tmp.MonthlyDay, "monthly_day"); err != nil {
+		return err
 	}
-
-	// Handle MonthlyWeek
-	switch v := tmp.MonthlyWeek.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_week format: %w", err)
-			}
-			r.MonthlyWeek = val
-		}
-	case float64:
-		r.MonthlyWeek = int(v)
-	case int:
-		r.MonthlyWeek = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week: %T", v)
-		}
+	if err := coerceInt(&r.MonthlyWeek, tmp.MonthlyWeek, "monthly_week"); err != nil {
+		return err
 	}
-
-	// Handle MonthlyWeekDay
-	switch v := tmp.MonthlyWeekDay.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid monthly_week_day format: %w", err)
-			}
-			r.MonthlyWeekDay = val
-		}
-	case float64:
-		r.MonthlyWeekDay = int(v)
-	case int:
-		r.MonthlyWeekDay = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for monthly_week_day: %T", v)
-		}
+	if err := coerceInt(&r.MonthlyWeekDay, tmp.MonthlyWeekDay, "monthly_week_day"); err != nil {
+		return err
 	}
-
-	// Handle EndTimes
-	switch v := tmp.EndTimes.(type) {
-	case string:
-		if v != "" {
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("invalid end_times format: %w", err)
-			}
-			r.EndTimes = val
-		}
-	case float64:
-		r.EndTimes = int(v)
-	case int:
-		r.EndTimes = v
-	default:
-		if v != nil {
-			return fmt.Errorf("invalid type for end_times: %T", v)
-		}
+	if err := coerceInt(&r.EndTimes, tmp.EndTimes, "end_times"); err != nil {
+		return err
 	}
 
 	// Handle WeeklyDays
@@ -702,7 +492,6 @@ func convertMapToMeetingData(
 		MeetingType:                              rawMeeting.MeetingType,
 		EarlyJoinTimeMinutes:                     rawMeeting.EarlyJoinTime,
 		LastEndTime:                              rawMeeting.LastEndTime,
-		HostKey:                                  rawMeeting.HostKey,
 		JoinURL:                                  rawMeeting.JoinURL,
 		Password:                                 rawMeeting.Password,
 		RecordingEnabled:                         rawMeeting.RecordingEnabled,
@@ -734,6 +523,7 @@ func convertMapToMeetingData(
 		UpdatedAt:                                 rawMeeting.ModifiedAt,
 		CreatedBy:                                 rawMeeting.CreatedBy,
 		UpdatedBy:                                 rawMeeting.UpdatedBy,
+		Owner:                                     rawMeeting.Owner,
 		Organizers:                                rawMeeting.Organizers,
 	}
 	if meeting.Organizers == nil {
@@ -874,6 +664,7 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)
+	funcLogger.InfoContext(ctx, "processing meeting update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_meetings.%s", meetingData.ID)
@@ -888,12 +679,24 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return isTransientError(err)
 	}
 
+	// Publish host credentials as a separate permissioned object.
+	// This is done on every meeting update so the credentials doc stays in sync
+	// whenever the meeting is created or the host key is rotated.
+	hostCreds := &models.MeetingHostCredentialsEventData{
+		MeetingID: meetingData.ID,
+		HostKey:   utils.GetString(v1Data["host_key"]),
+	}
+	if err := h.publisher.PublishMeetingHostCredentialsEvent(ctx, string(indexerAction), hostCreds); err != nil {
+		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials event")
+		return isTransientError(err)
+	}
+
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed meeting")
+	funcLogger.InfoContext(ctx, "successfully processed meeting", "action", string(indexerAction))
 	return false
 }
 
@@ -905,10 +708,15 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		h.logger.DebugContext(ctx, "meeting delete already processed, skipping", "meeting_id", meetingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing meeting delete", "meeting_id", meetingID)
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_meeting", meetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
 		return false
+	}
+	if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1MeetingHostCredentialsSubject, meetingID); err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish meeting host credentials delete event", "meeting_id", meetingID)
+		return isTransientError(err)
 	}
 	return h.handleMeetingTypeDelete(ctx, key, meetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_meeting",
@@ -928,7 +736,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	v1Data map[string]interface{},
 ) (retry bool) {
 	funcLogger := h.logger.With("key", key, "handler", "meeting_mapping")
-	funcLogger.InfoContext(ctx, "processing meeting mapping update")
+	funcLogger.DebugContext(ctx, "received meeting mapping update")
 
 	// Extract meeting ID and mapping data
 	meetingID := utils.GetString(v1Data["meeting_id"])
@@ -939,6 +747,7 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 		funcLogger.WarnContext(ctx, "missing required fields in mapping")
 		return false
 	}
+	funcLogger.InfoContext(ctx, "processing meeting mapping update", "meeting_id", meetingID, "mapping_id", mappingID)
 
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {

@@ -71,13 +71,31 @@ type CreateZoomMeetingRequest struct {
 	RequireAISummaryApproval bool           `json:"require_ai_summary_approval"`
 	AISummaryAccess          ArtifactAccess `json:"ai_summary_access,omitempty"`
 
-	// Email reminders
-	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
-	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"`
+	// Email reminders. Enabled is a pointer so presence is preserved on the wire: nil is
+	// omitted (ITX preserves the stored reminder pair), while a non-nil false still
+	// serializes (omitempty never drops a non-nil pointer) so an explicit disable reaches
+	// ITX and resets the stored time to 0. Time stays a plain omitempty int because 0 is
+	// never a valid set-value (ITX range is 120-1440).
+	AutoEmailReminderEnabled *bool `json:"auto_email_reminder_enabled,omitempty"`
+	AutoEmailReminderTime    int   `json:"auto_email_reminder_time,omitempty"`
 
 	// Advanced
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
+
+	// CreatedBy identifies the requesting user at creation time (create only; ITX persists
+	// whatever the caller sends, so this is never set on update requests).
+	CreatedBy *User `json:"created_by,omitempty"`
+
+	// UpdatedBy identifies the requesting user on update requests. ITX only overwrites the
+	// stored updated_by / updated_by_list when this field is non-zero, so it must be
+	// populated on every update to keep the meeting audit trail accurate. Leave nil on
+	// create requests.
+	UpdatedBy *User `json:"updated_by,omitempty"`
+
+	// Owner is the single user responsible for this meeting. When nil, ITX
+	// preserves the stored owner (or defaults it to the creator on creation).
+	Owner *User `json:"owner,omitempty"`
 
 	// Update notification
 	Note string `json:"note,omitempty"`
@@ -181,9 +199,11 @@ type ZoomMeetingResponse struct {
 	ModifiedAt string `json:"modified_at"` // RFC3339
 	// NextOccurrenceStartTime is the RFC3339 start time of the next upcoming occurrence.
 	// Empty when no future occurrence exists.
-	NextOccurrenceStartTime string       `json:"next_occurrence_start_time,omitempty"`
-	CreatedBy               *User        `json:"created_by,omitempty"`
-	UpdatedBy               *User        `json:"updated_by,omitempty"`
+	NextOccurrenceStartTime string `json:"next_occurrence_start_time,omitempty"`
+	CreatedBy               *User  `json:"created_by,omitempty"`
+	UpdatedBy               *User  `json:"updated_by,omitempty"`
+	// Owner is the single user responsible for the meeting.
+	Owner                   *User        `json:"owner,omitempty"`
 	Occurrences             []Occurrence `json:"occurrences,omitempty"`
 	RegistrantCount         int          `json:"registrant_count,omitempty"`
 	EmailDeliveryErrorCount int          `json:"email_delivery_error_count,omitempty"`

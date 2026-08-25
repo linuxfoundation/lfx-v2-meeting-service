@@ -13,6 +13,7 @@ import (
 type EventPublisher interface {
 	// Active meeting events
 	PublishMeetingEvent(ctx context.Context, action string, meeting *models.MeetingEventData) error
+	PublishMeetingHostCredentialsEvent(ctx context.Context, action string, credentials *models.MeetingHostCredentialsEventData) error
 	PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error
 	PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData) error
 

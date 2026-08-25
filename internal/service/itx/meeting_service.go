@@ -13,13 +13,18 @@ import (
 
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
+	auditStamper
 	meetingClient domain.ITXMeetingClient
 	idMapper      domain.IDMapper
 }
 
-// NewMeetingService creates a new ITX meeting service
-func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper) *MeetingService {
+// NewMeetingService creates a new ITX meeting service. userMetadata may be nil (e.g. when
+// NATS is disabled), in which case created_by / updated_by are limited to the JWT-derived
+// username/email (profile enrichment such as name/avatar is skipped) rather than blocking
+// the request.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *MeetingService {
 	return &MeetingService{
+		auditStamper:  auditStamper{userMetadata: userMetadata},
 		meetingClient: meetingClient,
 		idMapper:      idMapper,
 	}
@@ -37,6 +42,7 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 	}
 
 	itxReq := s.transformToITXRequest(req)
+	itxReq.CreatedBy = s.buildRequestingUser(ctx)
 	resp, err := s.meetingClient.CreateZoomMeeting(ctx, itxReq)
 	if err != nil {
 		return nil, err
@@ -77,6 +83,10 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	}
 
 	itxReq := s.transformToITXRequest(req)
+	// Stamp updated_by from the authenticated principal. ITX only overwrites the stored
+	// updated_by / updated_by_list when this field is non-zero, so omitting it leaves a
+	// stale value on the record (typically the original creator or last PIS updater).
+	itxReq.UpdatedBy = s.buildRequestingUser(ctx)
 	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 	if err != nil {
 		return err
@@ -128,6 +138,9 @@ func (s *MeetingService) RegisterCommitteeMembers(ctx context.Context, meetingID
 
 // UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
+	// Stamp updated_by from the authenticated principal so ITX overwrites the stored
+	// value on the occurrence record instead of preserving stale data.
+	req.UpdatedBy = s.buildRequestingUser(ctx)
 	return s.meetingClient.UpdateOccurrence(ctx, meetingID, occurrenceID, req)
 }
 
@@ -150,6 +163,8 @@ func validateMeetingRequest(req *models.CreateITXMeetingRequest) error {
 	return nil
 }
 
+// buildRequestingUser is provided by the embedded auditStamper; see audit.go.
+
 // transformToITXRequest transforms domain request to ITX request format
 func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingRequest) *itx.CreateZoomMeetingRequest {
 	itxReq := &itx.CreateZoomMeetingRequest{
@@ -169,7 +184,10 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		YoutubeUploadEnabled:     req.YoutubeUploadEnabled,
 		ZoomAIEnabled:            req.AISummaryEnabled,
 		RequireAISummaryApproval: req.RequireAISummaryApproval,
+		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled, // nil = omitted, ITX preserves the stored reminder
+		AutoEmailReminderTime:    req.AutoEmailReminderTime,
 		Note:                     req.UpdateNote,
+		Owner:                    req.Owner, // nil = omitted, ITX preserves the stored owner
 	}
 
 	// Map artifact visibility to access controls only when the respective feature is enabled

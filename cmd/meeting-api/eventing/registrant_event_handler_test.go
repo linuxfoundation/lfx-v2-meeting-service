@@ -22,6 +22,75 @@ import (
 	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
+// stubV1UserLookup is a no-op lookup used in tests that do not exercise user enrichment.
+type stubV1UserLookup struct{}
+
+func (stubV1UserLookup) LookupUser(_ context.Context, _ string) (*domain.V1User, error) {
+	return nil, nil
+}
+
+// stubIDMapper is a no-op mapper for tests that don't involve committee mapping.
+type stubIDMapper struct{}
+
+func (stubIDMapper) MapProjectV2ToV1(_ context.Context, _ string) (string, error)   { return "", nil }
+func (stubIDMapper) MapProjectV1ToV2(_ context.Context, _ string) (string, error)   { return "", nil }
+func (stubIDMapper) MapCommitteeV2ToV1(_ context.Context, _ string) (string, error) { return "", nil }
+func (stubIDMapper) MapCommitteeV1ToV2(_ context.Context, _ string) (string, error) { return "", nil }
+func (stubIDMapper) MapInviteeIDToParticipantV2(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapAttendeeIDToParticipantV2(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapParticipantV2ToInviteeID(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+func (stubIDMapper) MapParticipantV2ToAttendeeID(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+
+// mockEventPublisher is a testify mock for domain.EventPublisher.
+type mockEventPublisher struct{ mock.Mock }
+
+func (m *mockEventPublisher) PublishMeetingEvent(_ context.Context, _ string, _ *models.MeetingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishMeetingHostCredentialsEvent(_ context.Context, _ string, _ *models.MeetingHostCredentialsEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishRegistrantEvent(ctx context.Context, action string, r *models.RegistrantEventData) error {
+	return m.Called(ctx, action, r).Error(0)
+}
+func (m *mockEventPublisher) PublishInviteResponseEvent(_ context.Context, _ string, _ *models.InviteResponseEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingEvent(_ context.Context, _ string, _ *models.PastMeetingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingParticipantEvent(_ context.Context, _ string, _ *models.PastMeetingParticipantEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingRecordingEvent(_ context.Context, _ string, _ *models.RecordingEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingTranscriptEvent(_ context.Context, _ string, _ *models.TranscriptEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingSummaryEvent(_ context.Context, _ string, _ *models.SummaryEventData, _ string) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishMeetingAttachmentEvent(_ context.Context, _ string, _ *models.MeetingAttachmentEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishPastMeetingAttachmentEvent(_ context.Context, _ string, _ *models.PastMeetingAttachmentEventData) error {
+	return nil
+}
+func (m *mockEventPublisher) PublishIndexerDelete(_ context.Context, _, _ string) error { return nil }
+func (m *mockEventPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
+	return m.Called(ctx, subject, payload).Error(0)
+}
+func (m *mockEventPublisher) Close() error { return nil }
+
 type stubUserReader struct {
 	username string
 	err      error
@@ -59,6 +128,38 @@ func (s *stubAcceptanceClient) AcceptInvite(_ context.Context, email, username s
 	s.email = email
 	s.user = username
 	return s.err
+}
+
+// TestConvertMapToInviteResponseData_MailerDaemon verifies that mailer-daemon bounce emails
+// are silently filtered (nil, nil) before required-field validation or any KV lookup occurs.
+// Addresses where "mailer-daemon" appears only in the domain or as a subaddress suffix are
+// not filtered; those cases require a real KV stub and are covered by integration tests.
+func TestConvertMapToInviteResponseData_MailerDaemon(t *testing.T) {
+	cases := []struct {
+		name  string
+		email string
+	}{
+		{"standard lowercase", "mailer-daemon@example.com"},
+		{"uppercase", "MAILER-DAEMON@example.com"},
+		{"mixed case", "Mailer-Daemon@example.com"},
+		// Payload missing required id/meeting_id — still filtered before validation runs.
+		{"missing required fields", "mailer-daemon@bounce.example.org"},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			v1Data := map[string]interface{}{
+				"id":         "resp-1",
+				"meeting_id": "mtg-1",
+				"email":      tt.email,
+				"response":   "accepted",
+			}
+			// v1ObjectsKV is nil — the filter must return before any KV call is made.
+			result, err := convertMapToInviteResponseData(context.Background(), v1Data, stubV1UserLookup{}, stubIDMapper{}, nil, slog.Default())
+			require.NoError(t, err)
+			assert.Nil(t, result)
+		})
+	}
 }
 
 func TestMaybeSendInvite(t *testing.T) {
@@ -220,4 +321,119 @@ func TestProcessInviteAcceptedEvent_clientError(t *testing.T) {
 
 	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
 	require.Error(t, err)
+}
+
+// TestHandleRegistrantUpdate_UsernameCleared verifies that a CDC update that results in an
+// empty username — whether the "username" key is absent (v1 removes the field on clear) or
+// explicitly present as "" — revokes the previously-stored FGA access.
+//
+// Both shapes are treated identically: utils.GetString(v1Data["username"]) returns "" in
+// either case, which correctly triggers a member_remove against the stored oldUsername.
+func TestHandleRegistrantUpdate_UsernameCleared(t *testing.T) {
+	const (
+		registrantUID = "reg-1"
+		meetingID     = "meeting-1"
+		oldUsername   = "alice"
+	)
+
+	storedMapping := buildRegistrantMappingValue(registrantUID, oldUsername, meetingID)
+
+	tests := []struct {
+		name   string
+		v1Data map[string]interface{}
+	}{
+		{
+			name: "username key absent (v1 clear CDC shape) revokes",
+			v1Data: map[string]interface{}{
+				"registrant_id": registrantUID,
+				"meeting_id":    meetingID,
+				// "username" key absent — shape v1 sends when username is removed
+			},
+		},
+		{
+			name: "username key present and empty revokes",
+			v1Data: map[string]interface{}{
+				"registrant_id": registrantUID,
+				"meeting_id":    meetingID,
+				"username":      "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mappingsKV := &mockKeyValue{}
+			publisher := &mockEventPublisher{}
+
+			mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+				Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
+			mappingsKV.On("Get", mock.Anything, "v1_meeting_registrants."+registrantUID).
+				Return(mockKeyValueEntry{key: "v1_meeting_registrants." + registrantUID, value: []byte(storedMapping)}, nil)
+			mappingsKV.On("Put", mock.Anything, "v1_meeting_registrants."+registrantUID, mock.Anything).
+				Return(uint64(2), nil)
+
+			publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+			h := &EventHandlers{
+				publisher:    publisher,
+				userLookup:   stubV1UserLookup{},
+				idMapper:     stubIDMapper{},
+				v1MappingsKV: mappingsKV,
+				logger:       slog.Default(),
+			}
+
+			retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID, tt.v1Data)
+
+			assert.False(t, retry)
+			publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
+			mappingsKV.AssertExpectations(t)
+			publisher.AssertExpectations(t)
+		})
+	}
+}
+
+// TestHandleRegistrantUpdate_UsernameUnchanged verifies that an update where the username
+// is the same as the stored value does not trigger a member_remove.
+func TestHandleRegistrantUpdate_UsernameUnchanged(t *testing.T) {
+	const (
+		registrantUID = "reg-2"
+		meetingID     = "meeting-2"
+		username      = "bob"
+	)
+
+	storedMapping := buildRegistrantMappingValue(registrantUID, username, meetingID)
+
+	mappingsKV := &mockKeyValue{}
+	publisher := &mockEventPublisher{}
+
+	mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+		Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
+	mappingsKV.On("Get", mock.Anything, "v1_meeting_registrants."+registrantUID).
+		Return(mockKeyValueEntry{key: "v1_meeting_registrants." + registrantUID, value: []byte(storedMapping)}, nil)
+	mappingsKV.On("Put", mock.Anything, "v1_meeting_registrants."+registrantUID, mock.Anything).
+		Return(uint64(2), nil)
+
+	publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	h := &EventHandlers{
+		publisher:    publisher,
+		userLookup:   stubV1UserLookup{},
+		idMapper:     stubIDMapper{},
+		v1MappingsKV: mappingsKV,
+		logger:       slog.Default(),
+	}
+
+	v1Data := map[string]interface{}{
+		"registrant_id": registrantUID,
+		"meeting_id":    meetingID,
+		"username":      username,
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID, v1Data)
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
 }

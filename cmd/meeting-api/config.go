@@ -29,6 +29,7 @@ type environment struct {
 	ProjectLogoBaseURL string
 	LFXAppOrigin       string
 	ITXConfig          itxConfig
+	UserServiceConfig  userServiceConfig
 	IDMappingDisabled  bool
 	EventConfig        eventConfig
 	InviteConfig       apieventing.InviteFeatureConfig
@@ -41,6 +42,13 @@ type itxConfig struct {
 	PrivateKey  string
 	Auth0Domain string
 	Audience    string
+}
+
+// userServiceConfig holds v1 user-service (API-gateway) client configuration for
+// the preferred meeting-invite email RPC. The RPC calls user-service AS the user via a
+// bearer token forwarded by self-serve, so only the gateway base URL is needed.
+type userServiceConfig struct {
+	BaseURL string
 }
 
 // eventConfig holds event processing configuration
@@ -116,6 +124,7 @@ func parseEnv() environment {
 		ProjectLogoBaseURL: projectLogoBaseURL,
 		LFXAppOrigin:       lfxAppOrigin,
 		ITXConfig:          parseITXConfig(),
+		UserServiceConfig:  parseUserServiceConfig(lfxEnvironment),
 		IDMappingDisabled:  idMappingDisabled,
 		EventConfig:        parseEventConfig(),
 		InviteConfig:       parseInviteConfig(lfxEnvironment),
@@ -172,6 +181,25 @@ func parseITXConfig() itxConfig {
 		Auth0Domain: auth0Domain,
 		Audience:    audience,
 	}
+}
+
+// parseUserServiceConfig parses v1 user-service (API-gateway) configuration for the
+// preferred meeting-invite email RPC. lfxEnvironment must be the normalized value from
+// normalizeLFXEnvironment.
+func parseUserServiceConfig(lfxEnvironment string) userServiceConfig {
+	baseURL := os.Getenv("USER_SERVICE_BASE_URL")
+	if baseURL == "" {
+		switch lfxEnvironment {
+		case "prod":
+			baseURL = "https://api-gw.platform.linuxfoundation.org"
+		case "staging":
+			baseURL = "https://api-gw.staging.platform.linuxfoundation.org"
+		default:
+			baseURL = "https://api-gw.dev.platform.linuxfoundation.org"
+		}
+	}
+
+	return userServiceConfig{BaseURL: baseURL}
 }
 
 // parseEventConfig parses event processing configuration from environment variables
