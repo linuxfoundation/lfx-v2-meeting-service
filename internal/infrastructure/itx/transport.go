@@ -13,7 +13,11 @@ import (
 	"net/http"
 	"net/url"
 
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/proxy"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
@@ -72,8 +76,8 @@ func (c *Client) execute(ctx context.Context, req apiRequest) ([]byte, error) {
 
 	if req.debugOp != "" {
 		fields := append([]any{"method", req.method, "url", targetURL}, req.debugFields...)
-		if len(bodyBytes) > 0 {
-			fields = append(fields, "request", string(bodyBytes))
+		if req.body != nil {
+			fields = append(fields, "request", proxy.RequestJSONForLog(req.body))
 		}
 		slog.DebugContext(ctx, "ITX "+req.debugOp+" request", fields...)
 	}
@@ -110,11 +114,11 @@ func (c *Client) execute(ctx context.Context, req apiRequest) ([]byte, error) {
 	if req.debugOp != "" {
 		slog.DebugContext(ctx, "ITX "+req.debugOp+" response",
 			"statusCode", resp.StatusCode,
-			"response", string(respBody))
+			"response", proxy.ResponseJSONForLog(respBody))
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, mapHTTPError(resp.StatusCode, respBody)
+		return nil, recordAndMapHTTPError(ctx, resp.StatusCode, respBody)
 	}
 
 	return respBody, nil
@@ -177,6 +181,19 @@ func (c *Client) doNoContent(ctx context.Context, req apiRequest) error {
 
 func (c *Client) doRaw(ctx context.Context, req apiRequest) ([]byte, error) {
 	return c.execute(ctx, req)
+}
+
+// recordAndMapHTTPError maps a non-2xx status to a domain error and, for 5xx
+// responses, records a status-only error on the active OTel span so that
+// Datadog surfaces error.message/error.type without leaking upstream PII.
+func recordAndMapHTTPError(ctx context.Context, statusCode int, body []byte) error {
+	err := mapHTTPError(statusCode, body)
+	if statusCode >= 500 {
+		span := trace.SpanFromContext(ctx)
+		span.RecordError(fmt.Errorf("HTTP %d", statusCode))
+		span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d", statusCode))
+	}
+	return err
 }
 
 func mapHTTPError(statusCode int, body []byte) error {

@@ -96,12 +96,3 @@ func mapITXCommitteesV2ToV1(ctx context.Context, mapper domain.IDMapper, committ
 	}
 	return nil
 }
-
-func mapITXCommitteesV1ToV2Graceful(ctx context.Context, mapper domain.IDMapper, committees []pkgitx.Committee, logMessage string) {
-	for i := range committees {
-		if committees[i].ID == "" {
-			continue
-		}
-		committees[i].ID = mapCommitteeFieldV1ToV2Graceful(ctx, mapper, committees[i].ID, logMessage)
-	}
-}

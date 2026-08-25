@@ -49,7 +49,7 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 	if err := mapProjectFieldV1ToV2(ctx, s.idMapper, &resp.ProjectID); err != nil {
 		return nil, err
 	}
-	mapITXCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
+	mapMeetingCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
 		"failed to map committee ID in past meeting response; returning empty committee UID")
 	return resp, nil
 }
@@ -64,7 +64,7 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 	if err := mapProjectFieldV1ToV2(ctx, s.idMapper, &resp.ProjectID); err != nil {
 		return nil, err
 	}
-	mapITXCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
+	mapMeetingCommitteesV1ToV2Graceful(ctx, s.idMapper, resp.Committees,
 		"failed to map committee ID in past meeting response; returning empty committee UID")
 	return resp, nil
 }

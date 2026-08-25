@@ -38,6 +38,14 @@ var auditFieldsForResponseRedaction = []string{
 // as a slog attribute value; this helper handles the harder case of an audit
 // field nested inside a JSON-encoded request body, which slog cannot resolve
 // on its own.
+// RequestJSONForLog is the exported form of requestJSONForLog, for use by
+// packages that share the same PII-redaction requirement.
+func RequestJSONForLog(req any) string { return requestJSONForLog(req) }
+
+// ResponseJSONForLog is the exported form of responseJSONForLog, for use by
+// packages that share the same PII-redaction requirement.
+func ResponseJSONForLog(respBody []byte) string { return responseJSONForLog(respBody) }
+
 func requestJSONForLog(req any) string {
 	b, err := json.Marshal(redactAuditForLog(req))
 	if err != nil {
