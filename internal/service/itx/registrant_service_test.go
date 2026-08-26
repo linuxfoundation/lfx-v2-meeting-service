@@ -266,7 +266,7 @@ func TestEnrichRegistrantFromProfile(t *testing.T) {
 	})
 
 	t.Run("sets email and username from arguments; overwrites any request body value", func(t *testing.T) {
-		req := &itx.ZoomMeetingRegistrant{Email: "attacker@evil.com"}
+		req := &itx.ZoomMeetingRegistrant{Email: "attacker@example.com"}
 		err := enrichRegistrantFromProfile(req, nil, "alice@example.com", "alice")
 		require.NoError(t, err)
 		assert.Equal(t, "alice@example.com", req.Email)
@@ -278,67 +278,67 @@ func TestEnrichRegistrantFromProfile(t *testing.T) {
 			FirstName: "Al",
 			LastName:  "S",
 			JobTitle:  "Dev",
-			Org:       "ACME",
+			Org:       "Test Org",
 		}
 		profile := &domain.UserProfile{
 			FirstName:    "Alice",
-			LastName:     "Smith",
+			LastName:     "Example",
 			JobTitle:     "Engineer",
-			Organization: "Linux Foundation",
+			Organization: "Example Foundation",
 		}
 		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", req.FirstName)
-		assert.Equal(t, "Smith", req.LastName)
+		assert.Equal(t, "Example", req.LastName)
 		assert.Equal(t, "Engineer", req.JobTitle)
-		assert.Equal(t, "Linux Foundation", req.Org)
+		assert.Equal(t, "Example Foundation", req.Org)
 	})
 
 	t.Run("request payload used as fallback when profile fields are empty", func(t *testing.T) {
 		req := &itx.ZoomMeetingRegistrant{
 			FirstName: "Alice",
-			LastName:  "Liddell",
+			LastName:  "Example",
 			JobTitle:  "Engineer",
-			Org:       "ACME",
+			Org:       "Test Org",
 		}
 		profile := &domain.UserProfile{} // all enrichment fields empty
 		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", req.FirstName)
-		assert.Equal(t, "Liddell", req.LastName)
+		assert.Equal(t, "Example", req.LastName)
 		assert.Equal(t, "Engineer", req.JobTitle)
-		assert.Equal(t, "ACME", req.Org)
+		assert.Equal(t, "Test Org", req.Org)
 	})
 
 	t.Run("nil profile leaves request payload fields intact", func(t *testing.T) {
 		req := &itx.ZoomMeetingRegistrant{
 			FirstName: "Alice",
-			LastName:  "Liddell",
+			LastName:  "Example",
 		}
 		err := enrichRegistrantFromProfile(req, nil, "alice@example.com", "alice")
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", req.FirstName)
-		assert.Equal(t, "Liddell", req.LastName)
+		assert.Equal(t, "Example", req.LastName)
 	})
 
 	t.Run("profile only partially overrides — empty profile fields leave request values", func(t *testing.T) {
 		req := &itx.ZoomMeetingRegistrant{
 			FirstName: "Al",
 			LastName:  "S",
-			JobTitle:  "Dev",  // profile has no JobTitle → stays
-			Org:       "ACME", // profile has no Organization → stays
+			JobTitle:  "Dev",      // profile has no JobTitle → stays
+			Org:       "Test Org", // profile has no Organization → stays
 		}
 		profile := &domain.UserProfile{
-			FirstName: "Alice", // overrides
-			LastName:  "Smith", // overrides
+			FirstName: "Alice",   // overrides
+			LastName:  "Example", // overrides
 			// JobTitle and Organization intentionally empty
 		}
 		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", req.FirstName, "profile first name overrides request")
-		assert.Equal(t, "Smith", req.LastName, "profile last name overrides request")
+		assert.Equal(t, "Example", req.LastName, "profile last name overrides request")
 		assert.Equal(t, "Dev", req.JobTitle, "empty profile job title leaves request value")
-		assert.Equal(t, "ACME", req.Org, "empty profile org leaves request value")
+		assert.Equal(t, "Test Org", req.Org, "empty profile org leaves request value")
 	})
 }
 
