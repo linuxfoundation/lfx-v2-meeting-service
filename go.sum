@@ -67,8 +67,8 @@ github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9 h1:lLxdhDelwnN3+LdYFfuezAJt9o2
 github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9/go.mod h1:FBjqq0YJHYu4kYDWpjT1fsvr+uaER85LdVbWwGHbkrQ=
 github.com/linuxfoundation/lfx-v2-indexer-service v0.4.26 h1:LzS7NSshzn3U78DnUsiCbUdlz40fLb/zvquVQX6JLjM=
 github.com/linuxfoundation/lfx-v2-indexer-service v0.4.26/go.mod h1:uzoCTNETMsj4Y0X7kr4FCHZnqrqvgRvajHeYWCKWC5Q=
-github.com/linuxfoundation/lfx-v2-invite-service v0.1.12 h1:pE0Ec2rV7UzlKtgzwpNrdcbIzzSQQC5mNiM63PX1XSQ=
-github.com/linuxfoundation/lfx-v2-invite-service v0.1.12/go.mod h1:D3e+EifPVrmNAaon/g3Yrra+fnXs+D00IkwWhqP+Fc4=
+github.com/linuxfoundation/lfx-v2-invite-service v0.1.13 h1:Lj6B9SpHtIyr8zc7D2DyQVKSHz3ebpTRXZErH8XmkOQ=
+github.com/linuxfoundation/lfx-v2-invite-service v0.1.13/go.mod h1:D3e+EifPVrmNAaon/g3Yrra+fnXs+D00IkwWhqP+Fc4=
 github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d h1:Zj+PHjnhRYWBK6RqCDBcAhLXoi3TzC27Zad/Vn+gnVQ=
 github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d/go.mod h1:WZy8Q5coAB1zhY9AOBJP0O6J4BuDfbupUDavKY+I3+s=
 github.com/manveru/gobdd v0.0.0-20131210092515-f1a17fdd710b h1:3E44bLeN8uKYdfQqVQycPnaVviZdBLbizFhU49mtbe4=
