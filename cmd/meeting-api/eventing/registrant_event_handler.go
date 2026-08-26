@@ -76,15 +76,9 @@ func convertMapToRegistrantData(
 	idMapper domain.IDMapper,
 	logger *slog.Logger,
 ) (*models.RegistrantEventData, error) {
-	// Convert map to JSON bytes, then to RegistrantDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawRegistrant, err := decodeV1[RegistrantDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawRegistrant RegistrantDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawRegistrant); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal registrant data: %w", err)
+		return nil, fmt.Errorf("failed to decode registrant data: %w", err)
 	}
 
 	// Map committee ID if present
@@ -469,15 +463,9 @@ func convertMapToInviteResponseData(
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.InviteResponseEventData, error) {
-	// Convert map to JSON bytes, then to InviteResponseDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawResponse, err := decodeV1[InviteResponseDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawResponse InviteResponseDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal invite response data: %w", err)
+		return nil, fmt.Errorf("failed to decode invite response data: %w", err)
 	}
 
 	// Filter out mailer daemon emails — these are bounce auto-replies, not real RSVPs.

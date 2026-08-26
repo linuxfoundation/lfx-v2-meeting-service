@@ -4,11 +4,28 @@
 package eventing
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
+
+// decodeV1 converts a map[string]interface{} v1 KV payload into a typed struct T
+// by routing it through JSON: marshal the map then unmarshal into T. This is the
+// canonical decode pattern for v1 bucket data throughout the eventing package.
+func decodeV1[T any](v1Data map[string]interface{}) (T, error) {
+	var zero T
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return zero, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+	var result T
+	if err := json.Unmarshal(jsonBytes, &result); err != nil {
+		return zero, fmt.Errorf("failed to unmarshal v1Data: %w", err)
+	}
+	return result, nil
+}
 
 func shouldSkipSync(lastModifiedByID string) bool {
 	return lastModifiedByID == "meeting-service" || lastModifiedByID == "lfx-v2-meeting-service"

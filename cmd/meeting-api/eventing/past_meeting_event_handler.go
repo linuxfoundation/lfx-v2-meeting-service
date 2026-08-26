@@ -94,7 +94,7 @@ type PastMeetingDBRaw struct {
 	Visibility string `json:"visibility"`
 
 	// Recurrence is the recurrence of the past meeting
-	Recurrence *RecurrenceDBRaw `json:"recurrence"`
+	Recurrence *recurrenceDBRaw `json:"recurrence"`
 
 	// Restricted is whether the past meeting is restricted to only invited participants
 	Restricted bool `json:"restricted"`
@@ -299,15 +299,9 @@ func convertMapToPastMeetingData(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.PastMeetingEventData, error) {
-	// Convert map to JSON bytes, then to PastMeetingDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawPastMeeting, err := decodeV1[PastMeetingDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawPastMeeting PastMeetingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawPastMeeting); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal past meeting data: %w", err)
+		return nil, fmt.Errorf("failed to decode past meeting data: %w", err)
 	}
 
 	// Validate required fields

@@ -379,13 +379,9 @@ type rawParticipantData struct {
 // decodeInviteeRaw decodes v1Data into rawParticipantData for the invitee side.
 // It performs the registrant KV lookup needed to determine isHost.
 func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1ObjectsKV jetstream.KeyValue) (rawParticipantData, error) {
-	jsonBytes, err := json.Marshal(v1Data)
+	raw, err := decodeV1[InviteeDBRaw](v1Data)
 	if err != nil {
-		return rawParticipantData{}, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-	var raw InviteeDBRaw
-	if err := json.Unmarshal(jsonBytes, &raw); err != nil {
-		return rawParticipantData{}, fmt.Errorf("failed to unmarshal invitee data: %w", err)
+		return rawParticipantData{}, err
 	}
 	if raw.InviteeID == "" || raw.MeetingAndOccurrenceID == "" {
 		return rawParticipantData{}, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
@@ -431,13 +427,9 @@ func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1Obje
 // No KV lookups are needed: host is always false for attendees, and isInvited is
 // derived from the presence of a registrant_id on the record itself.
 func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error) {
-	jsonBytes, err := json.Marshal(v1Data)
+	raw, err := decodeV1[AttendeeDBRaw](v1Data)
 	if err != nil {
-		return rawParticipantData{}, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-	var raw AttendeeDBRaw
-	if err := json.Unmarshal(jsonBytes, &raw); err != nil {
-		return rawParticipantData{}, fmt.Errorf("failed to unmarshal attendee data: %w", err)
+		return rawParticipantData{}, err
 	}
 	if raw.ID == "" || raw.MeetingAndOccurrenceID == "" {
 		return rawParticipantData{}, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")

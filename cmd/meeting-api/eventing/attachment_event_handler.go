@@ -182,14 +182,9 @@ func (h *EventHandlers) handleMeetingAttachmentDelete(
 
 // convertMapToMeetingAttachmentData converts a raw v1 map to MeetingAttachmentEventData
 func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.MeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[AttachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp AttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
@@ -384,14 +379,9 @@ func (h *EventHandlers) handlePastMeetingAttachmentDelete(
 
 // convertMapToPastMeetingAttachmentData converts a raw v1 map to PastMeetingAttachmentEventData
 func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*models.PastMeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[PastMeetingAttachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp PastMeetingAttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal past meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode past meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)

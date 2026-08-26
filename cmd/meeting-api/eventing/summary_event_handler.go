@@ -269,15 +269,9 @@ func convertMapToSummaryData(
 	v1Data map[string]interface{},
 	logger *slog.Logger,
 ) (*models.SummaryEventData, error) {
-	// Convert map to JSON bytes, then to SummaryDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawSummary, err := decodeV1[SummaryDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawSummary SummaryDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawSummary); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal summary data: %w", err)
+		return nil, fmt.Errorf("failed to decode summary data: %w", err)
 	}
 
 	// Validate required fields

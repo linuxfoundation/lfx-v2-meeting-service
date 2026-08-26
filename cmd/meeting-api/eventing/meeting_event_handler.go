@@ -27,8 +27,10 @@ import (
 // Meeting Event Handler
 // =============================================================================
 
-// MeetingDBRaw represents raw meeting data from v1 DynamoDB/NATS KV bucket
-type MeetingDBRaw struct {
+// meetingDBRaw represents raw meeting data from v1 DynamoDB/NATS KV bucket.
+// Unexported: it is an implementation detail of convertMapToMeetingData; callers
+// work with models.MeetingEventData and never touch v1 wire format directly.
+type meetingDBRaw struct {
 	// MeetingID is the meeting ID (can be a UUID or numeric ID)
 	MeetingID string `json:"meeting_id"`
 
@@ -143,7 +145,7 @@ type MeetingDBRaw struct {
 	// Recurrence is the recurrence pattern of the meeting.
 	// This is managed by this service and not by Zoom. In Zoom, all meetings are scheduled as recurring with
 	// no fixed time (type 3).
-	Recurrence *RecurrenceDBRaw `json:"recurrence,omitempty"`
+	Recurrence *recurrenceDBRaw `json:"recurrence,omitempty"`
 
 	// Occurrences is a list of [ZoomMeetingOccurrence] objects that represent the occurrences of the meeting.
 	Occurrences []models.ZoomMeetingOccurrence `json:"occurrences,omitempty"`
@@ -228,7 +230,7 @@ type MeetingDBRaw struct {
 }
 
 // GetArtifactVisibility returns the artifact visibility of the meeting.
-func (m *MeetingDBRaw) GetArtifactVisibility() string {
+func (m *meetingDBRaw) GetArtifactVisibility() string {
 	if m.RecordingAccess != "" {
 		return m.RecordingAccess
 	}
@@ -242,8 +244,8 @@ func (m *MeetingDBRaw) GetArtifactVisibility() string {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias MeetingDBRaw
+func (m *meetingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias meetingDBRaw
 	tmp := struct {
 		Duration                                  interface{}       `json:"duration"`
 		EarlyJoinTime                             interface{}       `json:"early_join_time"`
@@ -303,7 +305,7 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 				Duration        interface{}      `json:"duration"`
 				Title           string           `json:"title"`
 				Description     string           `json:"description"`
-				Recurrence      *RecurrenceDBRaw `json:"recurrence"`
+				Recurrence      *recurrenceDBRaw `json:"recurrence"`
 				AllFollowing    bool             `json:"all_following"`
 			}
 			if err := json.Unmarshal(raw, &occTmp); err != nil {
@@ -342,8 +344,8 @@ func (m *MeetingDBRaw) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// RecurrenceDBRaw represents raw recurrence data from v1 DynamoDB
-type RecurrenceDBRaw struct {
+// recurrenceDBRaw represents raw recurrence data from v1 DynamoDB.
+type recurrenceDBRaw struct {
 	Type           int    `json:"type"`
 	RepeatInterval int    `json:"repeat_interval"`
 	WeeklyDays     string `json:"weekly_days"`
@@ -355,8 +357,8 @@ type RecurrenceDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (r *RecurrenceDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias RecurrenceDBRaw
+func (r *recurrenceDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias recurrenceDBRaw
 	tmp := struct {
 		Type           interface{} `json:"type"`
 		RepeatInterval interface{} `json:"repeat_interval"`
@@ -442,7 +444,7 @@ func mapUpdatedOccurrences(v1Data map[string]interface{}, occurrences []models.U
 
 // buildMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw meeting.
 // V1 stores these as top-level fields rather than a nested zoom_config object.
-func buildMeetingZoomConfig(m *MeetingDBRaw) *models.ZoomConfig {
+func buildMeetingZoomConfig(m *meetingDBRaw) *models.ZoomConfig {
 	cfg := &models.ZoomConfig{
 		MeetingID: m.MeetingID,
 		Passcode:  m.Passcode,
@@ -464,15 +466,9 @@ func convertMapToMeetingData(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.MeetingEventData, error) {
-	// Convert map to JSON bytes, then to MeetingDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawMeeting, err := decodeV1[meetingDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawMeeting MeetingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawMeeting); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting data: %w", err)
+		return nil, fmt.Errorf("failed to decode meeting data: %w", err)
 	}
 
 	meeting := &models.MeetingEventData{

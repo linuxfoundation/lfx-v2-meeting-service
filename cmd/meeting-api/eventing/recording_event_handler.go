@@ -289,15 +289,9 @@ func convertMapToRecordingData(
 	idMapper domain.IDMapper,
 	logger *slog.Logger,
 ) (*models.RecordingEventData, *models.TranscriptEventData, error) {
-	// Convert map to JSON bytes, then to RecordingDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawRecording, err := decodeV1[RecordingDBRaw](v1Data)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawRecording RecordingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawRecording); err != nil {
-		return nil, nil, fmt.Errorf("failed to unmarshal recording data: %w", err)
+		return nil, nil, fmt.Errorf("failed to decode recording data: %w", err)
 	}
 
 	// Validate required fields
