@@ -22,8 +22,8 @@ import (
 // Past Meeting Summary Event Handler
 // =============================================================================
 
-// SummaryDBRaw represents raw past meeting summary data from v1 DynamoDB/NATS KV bucket
-type SummaryDBRaw struct {
+// summaryDBRaw represents raw past meeting summary data from v1 DynamoDB/NATS KV bucket
+type summaryDBRaw struct {
 	// ID is the partition key of the summary record (it is a UUID).
 	ID string `json:"id"`
 
@@ -73,7 +73,7 @@ type SummaryDBRaw struct {
 	SummaryOverview string `json:"summary_overview"`
 
 	// SummaryDetails is the details of the summary.
-	SummaryDetails []SummaryDetailDBRaw `json:"summary_details"`
+	SummaryDetails []summaryDetailDBRaw `json:"summary_details"`
 
 	// NextSteps is the next steps of the summary.
 	NextSteps []string `json:"next_steps"`
@@ -82,7 +82,7 @@ type SummaryDBRaw struct {
 	EditedSummaryOverview string `json:"edited_summary_overview"`
 
 	// EditedSummaryDetails is the edited details of the summary.
-	EditedSummaryDetails []SummaryDetailDBRaw `json:"edited_summary_details"`
+	EditedSummaryDetails []summaryDetailDBRaw `json:"edited_summary_details"`
 
 	// EditedNextSteps is the edited next steps of the summary.
 	EditedNextSteps []string `json:"edited_next_steps"`
@@ -128,22 +128,22 @@ type SummaryDBRaw struct {
 	ModifiedBy models.UpdatedBy `json:"modified_by"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for SummaryDBRaw.
-func (s *SummaryDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias SummaryDBRaw
+// UnmarshalJSON implements custom unmarshaling for summaryDBRaw.
+func (s *summaryDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias summaryDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
 	return json.Unmarshal(data, &tmp)
 }
 
-// SummaryDetailDBRaw represents raw summary detail data from v1 DynamoDB/NATS KV bucket
-type SummaryDetailDBRaw struct {
+// summaryDetailDBRaw represents raw summary detail data from v1 DynamoDB/NATS KV bucket
+type summaryDetailDBRaw struct {
 	Label   string `json:"label"`
 	Summary string `json:"summary"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for SummaryDetailDBRaw.
-func (s *SummaryDetailDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias SummaryDetailDBRaw
+// UnmarshalJSON implements custom unmarshaling for summaryDetailDBRaw.
+func (s *summaryDetailDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias summaryDetailDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -269,7 +269,7 @@ func convertMapToSummaryData(
 	v1Data map[string]interface{},
 	logger *slog.Logger,
 ) (*models.SummaryEventData, error) {
-	rawSummary, err := decodeV1[SummaryDBRaw](v1Data)
+	rawSummary, err := decodeV1[summaryDBRaw](v1Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode summary data: %w", err)
 	}
@@ -322,7 +322,7 @@ func convertMapToSummaryData(
 }
 
 // buildSummaryMarkdown consolidates sparse summary fields into markdown format
-func buildSummaryMarkdown(overview string, details []SummaryDetailDBRaw, nextSteps []string) string {
+func buildSummaryMarkdown(overview string, details []summaryDetailDBRaw, nextSteps []string) string {
 	if overview == "" && len(details) == 0 && len(nextSteps) == 0 {
 		return ""
 	}

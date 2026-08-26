@@ -24,8 +24,8 @@ import (
 // Past Meeting Event Handler
 // =============================================================================
 
-// PastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
-type PastMeetingDBRaw struct {
+// pastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
+type pastMeetingDBRaw struct {
 	// MeetingAndOccurrenceID is the partition key of the past meeting table
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 
@@ -146,8 +146,8 @@ type PastMeetingDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias PastMeetingDBRaw
+func (p *pastMeetingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias pastMeetingDBRaw
 	tmp := struct {
 		Duration      interface{} `json:"duration"`
 		EarlyJoinTime interface{} `json:"early_join_time"`
@@ -299,7 +299,7 @@ func convertMapToPastMeetingData(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.PastMeetingEventData, error) {
-	rawPastMeeting, err := decodeV1[PastMeetingDBRaw](v1Data)
+	rawPastMeeting, err := decodeV1[pastMeetingDBRaw](v1Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode past meeting data: %w", err)
 	}
@@ -422,7 +422,7 @@ func convertMapToPastMeetingData(
 
 // buildPastMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw past meeting.
 // Returns nil if no source fields are present so ZoomConfig is omitted from the event payload.
-func buildPastMeetingZoomConfig(m *PastMeetingDBRaw) *models.ZoomConfig {
+func buildPastMeetingZoomConfig(m *pastMeetingDBRaw) *models.ZoomConfig {
 	if m.ZoomAIEnabled == nil && m.RequireAISummaryApproval == nil {
 		return nil
 	}

@@ -20,8 +20,8 @@ import (
 // Past Meeting Invitee Event Handler
 // =============================================================================
 
-// InviteeDBRaw represents raw past meeting invitee data from v1 DynamoDB/NATS KV bucket
-type InviteeDBRaw struct {
+// inviteeDBRaw represents raw past meeting invitee data from v1 DynamoDB/NATS KV bucket
+type inviteeDBRaw struct {
 	// InviteeID is the partition key of the invitee table
 	InviteeID string `json:"invitee_id"`
 
@@ -95,9 +95,9 @@ type InviteeDBRaw struct {
 	UpdatedBy models.UpdatedBy `json:"updated_by"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for InviteeDBRaw.
-func (i *InviteeDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias InviteeDBRaw
+// UnmarshalJSON implements custom unmarshaling for inviteeDBRaw.
+func (i *inviteeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias inviteeDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -161,8 +161,8 @@ func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key 
 // Past Meeting Attendee Event Handler
 // =============================================================================
 
-// AttendeeDBRaw represents raw past meeting attendee data from v1 DynamoDB/NATS KV bucket
-type AttendeeDBRaw struct {
+// attendeeDBRaw represents raw past meeting attendee data from v1 DynamoDB/NATS KV bucket
+type attendeeDBRaw struct {
 	// ID is the partition key of the attendee table
 	// This is from the v1 system
 	ID string `json:"id"`
@@ -253,7 +253,7 @@ type AttendeeDBRaw struct {
 	AverageAttendance int `json:"-"`
 
 	// Sessions is the list of sessions associated with the attendee
-	Sessions []AttendeeSessionDBRaw `json:"sessions"`
+	Sessions []attendeeSessionDBRaw `json:"sessions"`
 
 	// CreatedAt is the creation time of the attendee
 	CreatedAt string `json:"created_at"`
@@ -271,24 +271,24 @@ type AttendeeDBRaw struct {
 	IsAutoMatched bool `json:"is_auto_matched,omitempty"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for AttendeeDBRaw.
-func (a *AttendeeDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttendeeDBRaw
+// UnmarshalJSON implements custom unmarshaling for attendeeDBRaw.
+func (a *attendeeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attendeeDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
 	return json.Unmarshal(data, &tmp)
 }
 
-// AttendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
-type AttendeeSessionDBRaw struct {
+// attendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
+type attendeeSessionDBRaw struct {
 	ParticipantUUID string `json:"participant_uuid"`
 	JoinTime        string `json:"join_time"`
 	LeaveTime       string `json:"leave_time"`
 	LeaveReason     string `json:"leave_reason"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for AttendeeSessionDBRaw.
-func (a *AttendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttendeeSessionDBRaw
+// UnmarshalJSON implements custom unmarshaling for attendeeSessionDBRaw.
+func (a *attendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attendeeSessionDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -340,7 +340,7 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(ctx context.Context, key
 // =============================================================================
 
 // rawParticipantData is a normalised intermediate representation populated from
-// either InviteeDBRaw or AttendeeDBRaw. It lets convertParticipant run the shared
+// either inviteeDBRaw or attendeeDBRaw. It lets convertParticipant run the shared
 // logic (project/committee resolution, user enrichment, org flags, time parsing)
 // once, regardless of which wire format was decoded.
 type rawParticipantData struct {
@@ -373,13 +373,13 @@ type rawParticipantData struct {
 	isAutoMatched     bool
 	zoomUserName      string
 	mappedInviteeName string
-	sessions          []AttendeeSessionDBRaw
+	sessions          []attendeeSessionDBRaw
 }
 
 // decodeInviteeRaw decodes v1Data into rawParticipantData for the invitee side.
 // It performs the registrant KV lookup needed to determine isHost.
 func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1ObjectsKV jetstream.KeyValue) (rawParticipantData, error) {
-	raw, err := decodeV1[InviteeDBRaw](v1Data)
+	raw, err := decodeV1[inviteeDBRaw](v1Data)
 	if err != nil {
 		return rawParticipantData{}, err
 	}
@@ -427,7 +427,7 @@ func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1Obje
 // No KV lookups are needed: host is always false for attendees, and isInvited is
 // derived from the presence of a registrant_id on the record itself.
 func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error) {
-	raw, err := decodeV1[AttendeeDBRaw](v1Data)
+	raw, err := decodeV1[attendeeDBRaw](v1Data)
 	if err != nil {
 		return rawParticipantData{}, err
 	}
