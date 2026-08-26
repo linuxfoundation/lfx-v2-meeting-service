@@ -118,15 +118,12 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key 
 			attendeeEntry, err := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingID)
 			if err == nil {
 				if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
-					if jsonBytes, err := json.Marshal(attendeeMap); err == nil {
-						var rawAttendee AttendeeDBRaw
-						if err := json.Unmarshal(jsonBytes, &rawAttendee); err == nil {
-							self.IsUnknown = rawAttendee.IsUnknown
-							self.IsAIReconciled = rawAttendee.IsAIReconciled
-							self.IsAutoMatched = rawAttendee.IsAutoMatched
-							self.ZoomUserName = rawAttendee.ZoomUserName
-							self.MappedInviteeName = rawAttendee.MappedInviteeName
-						}
+					if rawData, err := decodeAttendeeRaw(attendeeMap); err == nil {
+						self.IsUnknown = rawData.isUnknown
+						self.IsAIReconciled = rawData.isAIReconciled
+						self.IsAutoMatched = rawData.isAutoMatched
+						self.ZoomUserName = rawData.zoomUserName
+						self.MappedInviteeName = rawData.mappedInviteeName
 					}
 				}
 			}
@@ -342,88 +339,194 @@ func (h *EventHandlers) handlePastMeetingAttendeeDelete(ctx context.Context, key
 // Participant Conversion Functions
 // =============================================================================
 
-func convertMapToInviteeParticipantData(
+// rawParticipantData is a normalised intermediate representation populated from
+// either InviteeDBRaw or AttendeeDBRaw. It lets convertParticipant run the shared
+// logic (project/committee resolution, user enrichment, org flags, time parsing)
+// once, regardless of which wire format was decoded.
+type rawParticipantData struct {
+	uid                string
+	meetingAndOccID    string
+	meetingID          string
+	projectSFID        string
+	projectSlug        string
+	committeeID        string
+	email              string
+	firstName          string
+	lastName           string
+	username           string
+	lfUserID           string
+	jobTitle           string
+	org                string
+	profilePic         string
+	registrantID       string
+	createdAt          string
+	modifiedAt         string
+	orgIsMember        *bool
+	orgIsProjectMember *bool
+	// flags set by each side
+	isInvited  bool
+	isAttended bool
+	isHost     bool // pre-computed by invitee side via KV lookup; always false for attendees
+	// attendee-only fields (zero-valued for invitees)
+	isUnknown         bool
+	isAIReconciled    bool
+	isAutoMatched     bool
+	zoomUserName      string
+	mappedInviteeName string
+	sessions          []AttendeeSessionDBRaw
+}
+
+// decodeInviteeRaw decodes v1Data into rawParticipantData for the invitee side.
+// It performs the registrant KV lookup needed to determine isHost.
+func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1ObjectsKV jetstream.KeyValue) (rawParticipantData, error) {
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return rawParticipantData{}, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+	var raw InviteeDBRaw
+	if err := json.Unmarshal(jsonBytes, &raw); err != nil {
+		return rawParticipantData{}, fmt.Errorf("failed to unmarshal invitee data: %w", err)
+	}
+	if raw.InviteeID == "" || raw.MeetingAndOccurrenceID == "" {
+		return rawParticipantData{}, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
+	}
+
+	// Invitee host status requires a registrant record lookup.
+	isHost := false
+	if raw.RegistrantID != "" {
+		if entry, err := v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", raw.RegistrantID)); err == nil {
+			if data, err := decodeData(entry.Value()); err == nil {
+				isHost = utils.GetBool(data["host"])
+			}
+		}
+	}
+
+	return rawParticipantData{
+		uid:                raw.InviteeID,
+		meetingAndOccID:    raw.MeetingAndOccurrenceID,
+		meetingID:          raw.MeetingID,
+		projectSFID:        raw.ProjectID,
+		projectSlug:        raw.ProjectSlug,
+		committeeID:        raw.CommitteeID,
+		email:              raw.Email,
+		firstName:          raw.FirstName,
+		lastName:           raw.LastName,
+		username:           raw.LFSSO,
+		lfUserID:           raw.LFUserID,
+		jobTitle:           raw.JobTitle,
+		org:                raw.Org,
+		profilePic:         raw.ProfilePicture,
+		registrantID:       raw.RegistrantID,
+		createdAt:          raw.CreatedAt,
+		modifiedAt:         raw.ModifiedAt,
+		orgIsMember:        raw.OrgIsMember,
+		orgIsProjectMember: raw.OrgIsProjectMember,
+		isInvited:          true,
+		isAttended:         false,
+		isHost:             isHost,
+	}, nil
+}
+
+// decodeAttendeeRaw decodes v1Data into rawParticipantData for the attendee side.
+// No KV lookups are needed: host is always false for attendees, and isInvited is
+// derived from the presence of a registrant_id on the record itself.
+func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error) {
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return rawParticipantData{}, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+	var raw AttendeeDBRaw
+	if err := json.Unmarshal(jsonBytes, &raw); err != nil {
+		return rawParticipantData{}, fmt.Errorf("failed to unmarshal attendee data: %w", err)
+	}
+	if raw.ID == "" || raw.MeetingAndOccurrenceID == "" {
+		return rawParticipantData{}, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	firstName, lastName := parseName(raw.Name)
+
+	return rawParticipantData{
+		uid:                raw.ID,
+		meetingAndOccID:    raw.MeetingAndOccurrenceID,
+		meetingID:          raw.MeetingID,
+		projectSFID:        raw.ProjectID,
+		projectSlug:        raw.ProjectSlug,
+		committeeID:        raw.CommitteeID,
+		email:              raw.Email,
+		firstName:          firstName,
+		lastName:           lastName,
+		username:           raw.LFSSO,
+		lfUserID:           raw.LFUserID,
+		jobTitle:           raw.JobTitle,
+		org:                raw.Org,
+		profilePic:         raw.ProfilePicture,
+		registrantID:       raw.RegistrantID,
+		createdAt:          raw.CreatedAt,
+		modifiedAt:         raw.ModifiedAt,
+		orgIsMember:        raw.OrgIsMember,
+		orgIsProjectMember: raw.OrgIsProjectMember,
+		isInvited:          raw.RegistrantID != "",
+		isAttended:         true,
+		isHost:             false, // attendee records don't carry host info
+		isUnknown:          raw.IsUnknown,
+		isAIReconciled:     raw.IsAIReconciled,
+		isAutoMatched:      raw.IsAutoMatched,
+		zoomUserName:       raw.ZoomUserName,
+		mappedInviteeName:  raw.MappedInviteeName,
+		sessions:           raw.Sessions,
+	}, nil
+}
+
+// convertParticipant is the shared conversion core. It takes an already-decoded
+// rawParticipantData and performs project/committee resolution, user enrichment,
+// session conversion, time parsing, and org-flag unpacking — logic that is
+// identical for both the invitee and attendee sides.
+func convertParticipant(
 	ctx context.Context,
-	v1Data map[string]interface{},
+	raw rawParticipantData,
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.PastMeetingParticipantEventData, error) {
-	// Convert map to JSON bytes, then to InviteeDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawInvitee InviteeDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawInvitee); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal invitee data: %w", err)
-	}
-
-	// Validate required fields
-	if rawInvitee.InviteeID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
-		return nil, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
-	}
-
-	// Get project SFID and slug: prefer the values from the invitee record, but fall back to
-	// the parent past_meeting when proj_id is absent (it is omitempty and may be missing for
-	// some v1 invitee records). This ensures those records are indexed rather than silently
-	// dropped, and that project_slug is always propagated so the Persona Service can resolve
-	// the project without per-record fetches at query time.
-	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawInvitee.MeetingAndOccurrenceID, rawInvitee.ProjectID, rawInvitee.ProjectSlug, v1ObjectsKV, logger)
+	// Resolve project SFID and slug: prefer values from the record, fall back to the
+	// parent past_meeting so records with omitted proj_id are indexed rather than dropped.
+	projectSFID, projectSlug, err := resolveProjectFields(ctx, raw.meetingAndOccID, raw.projectSFID, raw.projectSlug, v1ObjectsKV, logger)
 	if err != nil {
 		return nil, err
 	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("invitee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
+		return nil, fmt.Errorf("participant missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
 	}
 
-	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
+	// Map project ID. A missing mapping means the project isn't in v2 yet — caller skips.
 	// Any other error is transient and propagated for retry.
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
-	// Map the invitee's own committee_id to a v2 UID. Only set when the invitee record carries a
-	// committee_id — a missing mapping is non-fatal.
+	// Map committee_id to v2 UID when present; a missing mapping is non-fatal.
 	var committeeUID string
-	if rawInvitee.CommitteeID != "" {
-		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawInvitee.CommitteeID)
+	if raw.committeeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, raw.committeeID)
 		if mapErr != nil {
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for participant", "v1_id", raw.committeeID)
 		} else {
 			committeeUID = uid
 		}
 	}
 
-	// Determine if host (lookup registrant if available)
-	isHost := false
-	if rawInvitee.RegistrantID != "" {
-		registrantKey := fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", rawInvitee.RegistrantID)
-		if registrantEntry, err := v1ObjectsKV.Get(ctx, registrantKey); err == nil {
-			if registrantData, err := decodeData(registrantEntry.Value()); err == nil {
-				isHost = utils.GetBool(registrantData["host"])
-			}
-		}
-	}
-
-	// Username is lf_sso field
-	username := rawInvitee.LFSSO
-
-	// Use existing first/last name from invitee record
-	firstName := rawInvitee.FirstName
-	lastName := rawInvitee.LastName
-
-	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
-	if rawInvitee.LFUserID != "" && (firstName == "" || lastName == "") {
-		v1User, err := userLookup.LookupUser(ctx, rawInvitee.LFUserID)
+	// Enrich first/last name from the auth-service profile when the record is missing them.
+	firstName := raw.firstName
+	lastName := raw.lastName
+	if raw.lfUserID != "" && (firstName == "" || lastName == "") {
+		v1User, err := userLookup.LookupUser(ctx, raw.lfUserID)
 		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawInvitee.LFUserID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", raw.lfUserID)
 		} else if v1User != nil {
 			if firstName == "" && v1User.FirstName != "" {
 				firstName = v1User.FirstName
@@ -434,183 +537,82 @@ func convertMapToInviteeParticipantData(
 		}
 	}
 
-	// Parse times
-	createdAt, _ := parseTime(rawInvitee.CreatedAt)
-	modifiedAt, _ := parseTime(rawInvitee.ModifiedAt)
+	// Convert sessions (non-nil only for attendees; invitees carry nil).
+	var sessions []models.ParticipantSession
+	for _, s := range raw.sessions {
+		ps := models.ParticipantSession{
+			UID:         s.ParticipantUUID,
+			LeaveReason: s.LeaveReason,
+		}
+		if t, err := parseTime(s.JoinTime); err == nil {
+			ps.JoinTime = &t
+		}
+		if t, err := parseTime(s.LeaveTime); err == nil {
+			ps.LeaveTime = &t
+		}
+		sessions = append(sessions, ps)
+	}
 
-	// Get org membership flags
+	createdAt, _ := parseTime(raw.createdAt)
+	modifiedAt, _ := parseTime(raw.modifiedAt)
+
 	orgIsMember := false
-	if rawInvitee.OrgIsMember != nil {
-		orgIsMember = *rawInvitee.OrgIsMember
+	if raw.orgIsMember != nil {
+		orgIsMember = *raw.orgIsMember
 	}
 	orgIsProjectMember := false
-	if rawInvitee.OrgIsProjectMember != nil {
-		orgIsProjectMember = *rawInvitee.OrgIsProjectMember
+	if raw.orgIsProjectMember != nil {
+		orgIsProjectMember = *raw.orgIsProjectMember
 	}
 
 	return &models.PastMeetingParticipantEventData{
-		UID:                    rawInvitee.InviteeID,
-		MeetingAndOccurrenceID: rawInvitee.MeetingAndOccurrenceID,
-		MeetingID:              rawInvitee.MeetingID,
+		UID:                    raw.uid,
+		MeetingAndOccurrenceID: raw.meetingAndOccID,
+		MeetingID:              raw.meetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
 		CommitteeUID:           committeeUID,
-		Email:                  rawInvitee.Email,
+		Email:                  raw.email,
 		FirstName:              firstName,
 		LastName:               lastName,
-		Host:                   isHost,
-		JobTitle:               rawInvitee.JobTitle,
-		OrgName:                rawInvitee.Org,
+		Host:                   raw.isHost,
+		JobTitle:               raw.jobTitle,
+		OrgName:                raw.org,
 		OrgIsMember:            orgIsMember,
 		OrgIsProjectMember:     orgIsProjectMember,
-		AvatarURL:              rawInvitee.ProfilePicture,
-		Username:               username,
-		IsInvited:              true,
-		IsAttended:             false,
-		Sessions:               nil, // Invitees don't have sessions
+		AvatarURL:              raw.profilePic,
+		Username:               raw.username,
+		IsInvited:              raw.isInvited,
+		IsAttended:             raw.isAttended,
+		IsUnknown:              raw.isUnknown,
+		IsAIReconciled:         raw.isAIReconciled,
+		IsAutoMatched:          raw.isAutoMatched,
+		ZoomUserName:           raw.zoomUserName,
+		MappedInviteeName:      raw.mappedInviteeName,
+		Sessions:               sessions,
 		CreatedAt:              createdAt,
 		UpdatedAt:              modifiedAt,
 	}, nil
 }
 
-func convertMapToAttendeeParticipantData(
-	ctx context.Context,
-	v1Data map[string]interface{},
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	logger *slog.Logger,
-) (*models.PastMeetingParticipantEventData, error) {
-	// Convert map to JSON bytes, then to AttendeeDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawAttendee AttendeeDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawAttendee); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal attendee data: %w", err)
-	}
-
-	// Validate required fields
-	if rawAttendee.ID == "" || rawAttendee.MeetingAndOccurrenceID == "" {
-		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
-	}
-
-	// Get project SFID and slug from the attendee record; fall back to the parent past_meeting
-	// for any missing values so the Persona Service can always resolve the project at query time.
-	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawAttendee.MeetingAndOccurrenceID, rawAttendee.ProjectID, rawAttendee.ProjectSlug, v1ObjectsKV, logger)
+// convertMapToInviteeParticipantData decodes invitee v1Data and runs the shared
+// conversion core. Satisfies participantConvertFn.
+func convertMapToInviteeParticipantData(ctx context.Context, v1Data map[string]interface{}, userLookup domain.V1UserLookup, idMapper domain.IDMapper, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) (*models.PastMeetingParticipantEventData, error) {
+	raw, err := decodeInviteeRaw(ctx, v1Data, v1ObjectsKV)
 	if err != nil {
 		return nil, err
 	}
-	if projectSFID == "" {
-		return nil, fmt.Errorf("attendee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
+	return convertParticipant(ctx, raw, userLookup, idMapper, v1ObjectsKV, logger)
+}
+
+// convertMapToAttendeeParticipantData decodes attendee v1Data and runs the shared
+// conversion core. Satisfies participantConvertFn.
+func convertMapToAttendeeParticipantData(ctx context.Context, v1Data map[string]interface{}, userLookup domain.V1UserLookup, idMapper domain.IDMapper, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) (*models.PastMeetingParticipantEventData, error) {
+	raw, err := decodeAttendeeRaw(v1Data)
+	if err != nil {
+		return nil, err
 	}
-
-	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
-	// Any other error is transient and propagated for retry.
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
-
-	// Map the attendee's own committee_id to a v2 UID. Only set when the attendee record carries a
-	// committee_id — a missing mapping is non-fatal.
-	var committeeUID string
-	if rawAttendee.CommitteeID != "" {
-		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawAttendee.CommitteeID)
-		if mapErr != nil {
-			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
-				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
-			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
-		} else {
-			committeeUID = uid
-		}
-	}
-
-	// Check if this user was also invited (registrant_id present)
-	isInvited := rawAttendee.RegistrantID != ""
-
-	// Parse name
-	firstName, lastName := parseName(rawAttendee.Name)
-
-	// Username is lf_sso field
-	username := rawAttendee.LFSSO
-
-	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
-	if rawAttendee.LFUserID != "" && (firstName == "" || lastName == "") {
-		v1User, err := userLookup.LookupUser(ctx, rawAttendee.LFUserID)
-		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawAttendee.LFUserID)
-		} else if v1User != nil {
-			if firstName == "" && v1User.FirstName != "" {
-				firstName = v1User.FirstName
-			}
-			if lastName == "" && v1User.LastName != "" {
-				lastName = v1User.LastName
-			}
-		}
-	}
-
-	// Convert sessions
-	var sessions []models.ParticipantSession
-	for _, rawSession := range rawAttendee.Sessions {
-		s := models.ParticipantSession{
-			UID:         rawSession.ParticipantUUID,
-			LeaveReason: rawSession.LeaveReason,
-		}
-		if t, err := parseTime(rawSession.JoinTime); err == nil {
-			s.JoinTime = &t
-		}
-		if t, err := parseTime(rawSession.LeaveTime); err == nil {
-			s.LeaveTime = &t
-		}
-		sessions = append(sessions, s)
-	}
-
-	// Parse times
-	createdAt, _ := parseTime(rawAttendee.CreatedAt)
-	modifiedAt, _ := parseTime(rawAttendee.ModifiedAt)
-
-	// Get org membership flags
-	orgIsMember := false
-	if rawAttendee.OrgIsMember != nil {
-		orgIsMember = *rawAttendee.OrgIsMember
-	}
-	orgIsProjectMember := false
-	if rawAttendee.OrgIsProjectMember != nil {
-		orgIsProjectMember = *rawAttendee.OrgIsProjectMember
-	}
-
-	return &models.PastMeetingParticipantEventData{
-		UID:                    rawAttendee.ID,
-		MeetingAndOccurrenceID: rawAttendee.MeetingAndOccurrenceID,
-		MeetingID:              rawAttendee.MeetingID,
-		ProjectUID:             projectUID,
-		ProjectSlug:            projectSlug,
-		CommitteeUID:           committeeUID,
-		Email:                  rawAttendee.Email,
-		FirstName:              firstName,
-		LastName:               lastName,
-		Host:                   false, // Attendee records don't have host info
-		JobTitle:               rawAttendee.JobTitle,
-		OrgName:                rawAttendee.Org,
-		OrgIsMember:            orgIsMember,
-		OrgIsProjectMember:     orgIsProjectMember,
-		AvatarURL:              rawAttendee.ProfilePicture,
-		Username:               username,
-		IsInvited:              isInvited,
-		IsAttended:             true,
-		IsUnknown:              rawAttendee.IsUnknown,
-		IsAIReconciled:         rawAttendee.IsAIReconciled,
-		IsAutoMatched:          rawAttendee.IsAutoMatched,
-		ZoomUserName:           rawAttendee.ZoomUserName,
-		MappedInviteeName:      rawAttendee.MappedInviteeName,
-		Sessions:               sessions,
-		CreatedAt:              createdAt,
-		UpdatedAt:              modifiedAt,
-	}, nil
+	return convertParticipant(ctx, raw, userLookup, idMapper, v1ObjectsKV, logger)
 }
 
 // resolveProjectFields returns the project SFID and slug for a participant record.
