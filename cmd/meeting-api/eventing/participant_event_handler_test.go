@@ -451,6 +451,183 @@ func TestHandleInviteeUpdate_ProjectNotFound(t *testing.T) {
 }
 
 // =============================================================================
+// Current-username sibling merge (mergeSibling called for same username)
+// =============================================================================
+
+// TestHandleInviteeUpdate_MergesAttendeeFields verifies the core late-arrival scenario:
+// when an invitee update arrives after the attendee record is already in place,
+// the handler merges attendee-only fields (isUnknown etc.) into the invitee record
+// so they are not lost. This exercises the mergeSibling closure end-to-end.
+func TestHandleInviteeUpdate_MergesAttendeeFields(t *testing.T) {
+	const (
+		inviteeUID    = "inv-merge-1"
+		attendeeUID   = "att-merge-1"
+		meetingAndOcc = "meeting-merge-1_occ-1"
+		username      = "alice"
+	)
+	// Attendee already processed: has isUnknown=true which the invitee record should inherit.
+	attendeeData := map[string]interface{}{
+		"id":                        attendeeUID,
+		"meeting_and_occurrence_id": meetingAndOcc,
+		"lf_sso":                    username,
+		"proj_id":                   "proj-sfid",
+		"project_slug":              "my-project",
+		"name":                      "Alice Example",
+		"is_unknown":                true,
+		"zoom_user_name":            "Alice Z",
+		"mapped_invitee_name":       "Alice Example",
+	}
+	attendeeJSON := mustMarshalJSON(t, attendeeData)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge step: attendee xref exists for current username.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Fetch sibling attendee for field merge.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: attendeeJSON}, nil)
+	// First time create (no prior mapping).
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Capture the participant event to assert IsAttended=true and IsUnknown=true.
+	var captured *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		captured = p
+		return true
+	})).Return(nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, mock.Anything).
+		Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username, mock.Anything).
+		Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	assert.False(t, retry)
+	require.NotNil(t, captured)
+	// Invitee-side flags are set, PLUS attendee-only fields are merged in.
+	assert.True(t, captured.IsInvited, "invitee record must be IsInvited")
+	assert.True(t, captured.IsAttended, "attendee sibling's IsAttended must be merged")
+	assert.True(t, captured.IsUnknown, "is_unknown from attendee sibling must be merged")
+	assert.Equal(t, "Alice Z", captured.ZoomUserName, "zoom_user_name from sibling must be merged")
+	publisher.AssertExpectations(t)
+	mappingsKV.AssertExpectations(t)
+}
+
+// TestHandleAttendeeUpdate_MergesInviteeFlag verifies that when an attendee update arrives
+// after the invitee record is already in place, IsInvited=true is merged into the attendee
+// record (attendee-side mergeSibling: just a flag, no field copying).
+func TestHandleAttendeeUpdate_MergesInviteeFlag(t *testing.T) {
+	const (
+		attendeeUID   = "att-merge-2"
+		meetingAndOcc = "meeting-merge-2_occ-2"
+		username      = "bob"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge step: invitee xref exists for current username.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte("inv-merge-2")}, nil)
+	// First time create.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_attendees."+attendeeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	var captured *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		captured = p
+		return true
+	})).Return(nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_attendees."+attendeeUID, mock.Anything).
+		Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username, mock.Anything).
+		Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingAttendeeUpdate(context.Background(),
+		"itx-zoom-past-meetings-attendees."+attendeeUID,
+		minimalAttendeeV1Data(attendeeUID, meetingAndOcc, username))
+
+	assert.False(t, retry)
+	require.NotNil(t, captured)
+	assert.True(t, captured.IsAttended, "attendee record must be IsAttended")
+	assert.True(t, captured.IsInvited, "invitee sibling's flag must be merged into attendee record")
+	publisher.AssertExpectations(t)
+	mappingsKV.AssertExpectations(t)
+}
+
+// TestHandleAttendeeUpdate_SiblingExists verifies the attendee-side username-change path:
+// when an attendee's username changes and a sibling invitee xref exists for the old username,
+// a partial member_put is published for the invitee with IsInvited=true, IsAttended=false
+// (not a member_remove), confirming attendee-side setSiblingFlags is correct.
+func TestHandleAttendeeUpdate_SiblingExists(t *testing.T) {
+	const (
+		attendeeUID   = "att-sib-2"
+		inviteeUID    = "inv-sib-2"
+		meetingAndOcc = "meeting-7_occ-7"
+		oldUsername   = "bob"
+		newUsername   = "bob-new"
+	)
+	storedMapping := buildRegistrantMappingValue(attendeeUID, oldUsername, meetingAndOcc)
+	inviteeData := minimalInviteeV1Data(inviteeUID, meetingAndOcc, oldUsername)
+	inviteeJSON := mustMarshalJSON(t, inviteeData)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge check for NEW username — no invitee xref yet.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+newUsername).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Existing mapping carries old username.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// Sibling invitee xref exists for old username.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+oldUsername).
+		Return(mockKeyValueEntry{value: []byte(inviteeUID)}, nil)
+	// Fetch sibling invitee for partial update.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: inviteeJSON}, nil)
+	// Capture the first call only — the sibling invitee partial member_put.
+	// The second call is the own attendee participant event (IsAttended=true).
+	var capturedSibling *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		if capturedSibling == nil {
+			capturedSibling = p
+		}
+		return true
+	})).Return(nil)
+	// Tombstone old attendee xref for old username.
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+oldUsername, []byte(tombstoneMarker)).
+		Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_attendees."+attendeeUID, mock.Anything).
+		Return(uint64(2), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+newUsername, mock.Anything).
+		Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingAttendeeUpdate(context.Background(),
+		"itx-zoom-past-meetings-attendees."+attendeeUID,
+		minimalAttendeeV1Data(attendeeUID, meetingAndOcc, newUsername))
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 2)
+	// Verify attendee-side flag polarity on the sibling (invitee) partial member_put.
+	require.NotNil(t, capturedSibling)
+	assert.True(t, capturedSibling.IsInvited, "sibling invitee must retain IsInvited=true")
+	assert.False(t, capturedSibling.IsAttended, "sibling invitee must have IsAttended=false")
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
+}
+
+// =============================================================================
 // Delete handlers
 // =============================================================================
 
@@ -778,6 +955,107 @@ func TestHandleAttendeeDelete_FullDelete(t *testing.T) {
 	publisher.AssertNumberOfCalls(t, "PublishIndexerDelete", 1)
 	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
+}
+
+// TestHandleAttendeeDelete_SiblingExists mirrors TestHandleInviteeDelete_SiblingExists
+// for the attendee side, verifying that the surviving invitee sibling is published with
+// IsInvited=true, IsAttended=false (attendee-side setSiblingFlags polarity).
+func TestHandleAttendeeDelete_SiblingExists(t *testing.T) {
+	const (
+		attendeeUID   = "att-del-2"
+		inviteeUID    = "inv-sibling-del"
+		meetingAndOcc = "meeting-del-5_occ-5"
+		username      = "bob"
+	)
+	inviteeData := minimalInviteeV1Data(inviteeUID, meetingAndOcc, username)
+	inviteeJSON := mustMarshalJSON(t, inviteeData)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// isTombstoned check — not tombstoned.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: []byte("some-mapping")}, nil)
+	// Sibling invitee xref exists — partial delete path.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(inviteeUID)}, nil)
+	// Fetch surviving sibling invitee from objects KV.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: inviteeJSON}, nil)
+	// Indexer delete for own (attendee) record.
+	publisher.On("PublishIndexerDelete", mock.Anything, "lfx.index.v1_past_meeting_participant", attendeeUID).Return(nil)
+	// Capture sibling update to assert attendee-side flag polarity.
+	var capturedSibling *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		capturedSibling = p
+		return true
+	})).Return(nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_attendees."+attendeeUID, []byte(tombstoneMarker)).
+		Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username, []byte(tombstoneMarker)).
+		Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := map[string]interface{}{
+		"lf_sso":                    username,
+		"meeting_and_occurrence_id": meetingAndOcc,
+	}
+	retry := h.handlePastMeetingAttendeeDelete(context.Background(),
+		"itx-zoom-past-meetings-attendees."+attendeeUID, v1Data)
+
+	assert.False(t, retry)
+	// Sibling preserves access — member_remove must NOT fire.
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	publisher.AssertNumberOfCalls(t, "PublishIndexerDelete", 1)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 1)
+	// Confirm attendee-side setSiblingFlags polarity: invitee stays invited but not attended.
+	require.NotNil(t, capturedSibling)
+	assert.True(t, capturedSibling.IsInvited, "surviving invitee must retain IsInvited=true")
+	assert.False(t, capturedSibling.IsAttended, "surviving invitee must have IsAttended=false")
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
+}
+
+// TestHandleInviteeDelete_HardDelete verifies the nil-v1Data (hard NATS delete) path:
+// username and meetingAndOccurrenceID are recovered from the stored mapping, and the
+// full delete proceeds correctly without v1Data being provided.
+func TestHandleInviteeDelete_HardDelete(t *testing.T) {
+	const (
+		inviteeUID    = "inv-hard-del-1"
+		meetingAndOcc = "meeting-hard-1_occ-1"
+		username      = "alice"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, username, meetingAndOcc)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// isTombstoned check — not tombstoned; the same key is then read again to
+	// recover username/meetingAndOcc since v1Data is nil (hard-delete shape).
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// No sibling attendee xref — full delete.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrKeyNotFound)
+	publisher.On("PublishIndexerDelete", mock.Anything, "lfx.index.v1_past_meeting_participant", inviteeUID).Return(nil)
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, []byte(tombstoneMarker)).
+		Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username, []byte(tombstoneMarker)).
+		Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	// v1Data is nil — hard NATS delete shape.
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, nil)
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishIndexerDelete", 1)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
 }
