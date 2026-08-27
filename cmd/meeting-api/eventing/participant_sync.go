@@ -106,10 +106,18 @@ func (h *EventHandlers) syncParticipantUpdate(
 
 	// Merge sibling — if the other side's xref exists, reflect its presence in our record
 	// so a late-arriving update on one side doesn't reset a flag the other side already set.
+	// Distinguish ErrKeyNotFound (sibling absent) from transient errors: a transient failure
+	// here would publish an incorrect IsAttended/IsInvited flag and corrupt FGA relations.
 	if participantData.Username != "" {
 		siblingXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.siblingXrefPrefix, participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey); err == nil && !entryIsTombstoned(entry) {
+		entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey)
+		if err != nil {
+			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading sibling xref for merge, will retry")
+				return true
+			}
+		} else if !entryIsTombstoned(entry) {
 			if err := cfg.mergeSibling(ctx, participantData, string(entry.Value())); err != nil {
 				return isTransientError(err)
 			}
@@ -155,13 +163,20 @@ func (h *EventHandlers) syncParticipantUpdate(
 				}
 				siblingExists = false
 			} else {
-				if siblingData, decErr := decodeData(siblingObjEntry.Value()); decErr == nil {
-					if siblingParticipant, convErr := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger); convErr == nil {
-						cfg.setSiblingFlags(siblingParticipant)
-						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
-							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old username")
-							return isTransientError(pubErr)
-						}
+				siblingData, decErr := decodeData(siblingObjEntry.Value())
+				if decErr != nil {
+					// Decode failure — fall through to member_remove so stale access is
+					// revoked rather than silently left intact.
+					funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode sibling for partial update, falling through to member_remove")
+					siblingExists = false
+				} else if siblingParticipant, convErr := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger); convErr != nil {
+					funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "failed to convert sibling for partial update, falling through to member_remove")
+					siblingExists = false
+				} else {
+					cfg.setSiblingFlags(siblingParticipant)
+					if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
+						funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old username")
+						return isTransientError(pubErr)
 					}
 				}
 			}
@@ -253,10 +268,18 @@ func (h *EventHandlers) syncParticipantDelete(
 
 	// Check if a sibling record still exists — if so, apply a partial delete that
 	// preserves the sibling's access rather than revoking it entirely.
+	// Distinguish ErrKeyNotFound (no sibling) from transient errors: a transient failure
+	// would fall through to fullParticipantDelete and incorrectly revoke the sibling's access.
 	if username != "" && meetingAndOccurrenceID != "" {
 		siblingXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.siblingXrefPrefix, meetingAndOccurrenceID, username)
-		if entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey); err == nil && !entryIsTombstoned(entry) {
+		entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey)
+		if err != nil {
+			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading sibling xref on delete, will retry")
+				return true
+			}
+		} else if !entryIsTombstoned(entry) {
 			survivingID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active sibling record; applying partial delete",
 				"surviving_sibling_id", survivingID)
