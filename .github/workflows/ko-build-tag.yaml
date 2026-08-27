@@ -33,7 +33,7 @@ jobs:
           disable-sudo: true
 
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
@@ -67,17 +67,17 @@ jobs:
         env:
           VERSION: ${{ steps.prepare.outputs.app_version }}
           REF_NAME: ${{ github.ref_name }}
+          GIT_SHA: ${{ github.sha }}
         run: |
           BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
-          GIT_COMMIT="${{ github.sha }}"
-          GIT_COMMIT="${GIT_COMMIT:0:7}"
+          GIT_COMMIT="${GIT_SHA:0:7}"
           export BUILD_TIME
           export GIT_COMMIT
           ko build github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api \
             -B \
             --platform linux/amd64,linux/arm64 \
             -t "$REF_NAME" \
-            -t ${{ steps.prepare.outputs.app_version }} \
+            -t "$VERSION" \
             -t latest \
             --sbom spdx
 
@@ -98,14 +98,14 @@ jobs:
           disable-sudo: true
 
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
       - name: Publish Chart to GHCR
         id: publish-ghcr
         # yamllint disable-line rule:line-length
-        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@17e4144d7ba68f7c3e8c16eece5aed15fd7c2dc8  # main
+        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@a93335d2abc2a2e2bb1b7a4cdefbbf15351681ce  # v0.1.0
         with:
           name: ${{ needs.publish.outputs.chart_name }}
           repository: ${{ github.repository }}/chart
@@ -130,9 +130,11 @@ jobs:
       - name: Sign the Helm chart in GHCR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_NAME: ${{ steps.publish-ghcr.outputs.image_name }}
+          IMAGE_DIGEST: ${{ steps.publish-ghcr.outputs.digest }}
         run: |
           set -euo pipefail
-          cosign sign --yes '${{ steps.publish-ghcr.outputs.image_name }}@${{ steps.publish-ghcr.outputs.digest }}'
+          cosign sign --yes "${IMAGE_NAME}@${IMAGE_DIGEST}"
 
   create-ghcr-helm-provenance:
     needs:

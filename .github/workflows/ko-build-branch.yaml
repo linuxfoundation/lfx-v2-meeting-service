@@ -25,10 +25,10 @@ jobs:
           egress-policy: audit
           disable-sudo: true
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
         with:
           go-version-file: go.mod
       - uses: ko-build/setup-ko@61b4d1d396f5b2e7d6bb6fefdce3dc38d1a13445  # v0.10
@@ -44,15 +44,15 @@ jobs:
       - name: Build meeting-api for PR
         env:
           VERSION: ${{ steps.container_tag.outputs.tag }}
+          GIT_SHA: ${{ github.sha }}
         run: |
           BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
-          GIT_COMMIT="${{ github.sha }}"
-          GIT_COMMIT="${GIT_COMMIT:0:7}"
+          GIT_COMMIT="${GIT_SHA:0:7}"
           export BUILD_TIME
           export GIT_COMMIT
           ko build github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api \
             -B \
             --platform linux/amd64,linux/arm64 \
-            -t ${{ github.sha }} \
-            -t ${{ steps.container_tag.outputs.tag }} \
+            -t "$GIT_SHA" \
+            -t "$VERSION" \
             --sbom spdx
