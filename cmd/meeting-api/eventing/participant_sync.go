@@ -170,6 +170,15 @@ func (h *EventHandlers) syncParticipantUpdate(
 					funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode sibling for partial update, falling through to member_remove")
 					siblingExists = false
 				} else if siblingParticipant, convErr := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger); convErr != nil {
+					if isTransientError(convErr) {
+						// Transient failure (e.g. project/committee ID mapping unavailable) — retry
+						// rather than falling through to member_remove, which would incorrectly
+						// revoke the sibling's surviving access.
+						funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "transient error converting sibling for partial update, will retry")
+						return true
+					}
+					// Permanent decode failure — fall through to member_remove so stale access
+					// is revoked rather than silently left intact.
 					funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "failed to convert sibling for partial update, falling through to member_remove")
 					siblingExists = false
 				} else {

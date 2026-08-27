@@ -416,6 +416,67 @@ func TestHandleInviteeUpdate_SiblingExists(t *testing.T) {
 }
 
 // =============================================================================
+// Username-change: transient siblingConvert failure → retry, no member_remove
+// =============================================================================
+
+// TestHandleInviteeUpdate_SiblingConvert_TransientError verifies that when the username
+// changes, a sibling attendee xref exists for the old username, but siblingConvert fails
+// transiently (e.g. project-ID mapping unavailable), the handler returns retry=true and
+// does NOT fall through to member_remove — which would incorrectly revoke the sibling's
+// surviving access.
+func TestHandleInviteeUpdate_SiblingConvert_TransientError(t *testing.T) {
+	const (
+		inviteeUID    = "inv-sc-transient"
+		attendeeUID   = "att-sc-transient"
+		meetingAndOcc = "meeting-sc_occ-1"
+		oldUsername   = "alice"
+		newUsername   = "alice-new"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, oldUsername, meetingAndOcc)
+	// Attendee data is missing proj_id so that siblingConvert (convertMapToAttendeeParticipantData)
+	// will attempt a KV fallback and fail transiently when the parent past_meeting is absent.
+	attendeeDataNoProject := map[string]interface{}{
+		"id":                        attendeeUID,
+		"meeting_and_occurrence_id": meetingAndOcc,
+		"lf_sso":                    oldUsername,
+		// proj_id intentionally omitted to force resolveProjectFields to hit the KV
+	}
+	attendeeJSON := mustMarshalJSON(t, attendeeDataNoProject)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge check for new username — no attendee xref.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+newUsername).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Existing mapping carries old username.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// Sibling attendee xref exists for old username.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+oldUsername).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Fetch sibling attendee object — succeeds, but the object has no proj_id.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: attendeeJSON}, nil)
+	// siblingConvert will call resolveProjectFields which falls back to the past_meeting KV —
+	// return ErrKeyNotFound so the error wraps with "(transient)" and triggers the retry path.
+	objectsKV.On("Get", mock.Anything, mock.MatchedBy(func(k string) bool {
+		return k != "itx-zoom-past-meetings-attendees."+attendeeUID
+	})).Return(nil, jetstream.ErrKeyNotFound)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, newUsername))
+
+	// Must retry — must NOT publish member_remove (which would revoke the sibling's access).
+	assert.True(t, retry, "transient siblingConvert failure must trigger retry")
+	publisher.AssertNotCalled(t, "PublishAccessDelete")
+	publisher.AssertNotCalled(t, "PublishPastMeetingParticipantEvent")
+}
+
+// =============================================================================
 // Skip when parent project not in mappings
 // =============================================================================
 
