@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -113,18 +114,25 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key 
 		siblingConvert:      convertMapToAttendeeParticipantData,
 		// Invitee merges attendee-only fields so a late-arriving invitee upsert doesn't
 		// overwrite values the attendee handler already set (is_unknown, is_ai_reconciled, etc.).
+		// Distinguish ErrKeyNotFound (attendee object absent) from transient KV errors: a
+		// transient failure here would publish the invitee record with zero-valued attendee-only
+		// fields, defeating the merge that preserves IsUnknown, IsAIReconciled, etc.
 		mergeSibling: func(ctx context.Context, self *models.PastMeetingParticipantEventData, siblingID string) error {
 			self.IsAttended = true
 			attendeeEntry, err := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingID)
-			if err == nil {
-				if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
-					if rawData, err := decodeAttendeeRaw(attendeeMap); err == nil {
-						self.IsUnknown = rawData.isUnknown
-						self.IsAIReconciled = rawData.isAIReconciled
-						self.IsAutoMatched = rawData.isAutoMatched
-						self.ZoomUserName = rawData.zoomUserName
-						self.MappedInviteeName = rawData.mappedInviteeName
-					}
+			if err != nil {
+				if !errors.Is(err, jetstream.ErrKeyNotFound) {
+					return err // transient: caller will retry before publishing
+				}
+				return nil // sibling object absent: proceed without merging fields
+			}
+			if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
+				if rawData, err := decodeAttendeeRaw(attendeeMap); err == nil {
+					self.IsUnknown = rawData.isUnknown
+					self.IsAIReconciled = rawData.isAIReconciled
+					self.IsAutoMatched = rawData.isAutoMatched
+					self.ZoomUserName = rawData.zoomUserName
+					self.MappedInviteeName = rawData.mappedInviteeName
 				}
 			}
 			return nil

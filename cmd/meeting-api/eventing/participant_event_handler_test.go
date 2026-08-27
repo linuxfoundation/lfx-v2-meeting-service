@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"testing"
 
@@ -517,6 +518,42 @@ func TestHandleInviteeUpdate_MergesAttendeeFields(t *testing.T) {
 	assert.Equal(t, "Alice Z", captured.ZoomUserName, "zoom_user_name from sibling must be merged")
 	publisher.AssertExpectations(t)
 	mappingsKV.AssertExpectations(t)
+}
+
+// TestHandleInviteeUpdate_MergeSibling_TransientKVError verifies that a transient KV failure
+// reading the attendee sibling object causes the handler to retry rather than publish a
+// zero-valued invitee record that silently drops IsUnknown / IsAIReconciled / etc.
+func TestHandleInviteeUpdate_MergeSibling_TransientKVError(t *testing.T) {
+	const (
+		inviteeUID    = "inv-merge-transient"
+		attendeeUID   = "att-merge-transient"
+		meetingAndOcc = "meeting-transient_occ-1"
+		username      = "alice"
+	)
+
+	transientErr := fmt.Errorf("nats: connection timeout fetching attendee object")
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling xref exists — the merge closure will be called.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// KV read for the sibling object fails transiently.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(nil, transientErr)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	// Must retry — must NOT publish with zero-valued attendee fields.
+	assert.True(t, retry, "transient sibling object read must trigger retry")
+	publisher.AssertNotCalled(t, "PublishPastMeetingParticipantEvent")
+	mappingsKV.AssertExpectations(t)
+	objectsKV.AssertExpectations(t)
 }
 
 // TestHandleAttendeeUpdate_MergesInviteeFlag verifies that when an attendee update arrives
