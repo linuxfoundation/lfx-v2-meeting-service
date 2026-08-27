@@ -1222,6 +1222,59 @@ func TestHandleInviteeDelete_SiblingDecodeFailure_FallsBackToFullDelete(t *testi
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
 }
 
+// TestHandleInviteeDelete_SiblingConvertFailure_FallsBackToFullDelete verifies that when
+// the sibling attendee object is valid JSON but fails siblingConvert (e.g. missing required
+// fields like meeting_and_occurrence_id), a permanent conversion error falls back to
+// fullParticipantDelete rather than ACKing without any cleanup.
+func TestHandleInviteeDelete_SiblingConvertFailure_FallsBackToFullDelete(t *testing.T) {
+	const (
+		inviteeUID    = "inv-del-convert-fail"
+		attendeeUID   = "att-incomplete"
+		meetingAndOcc = "meeting-del-cf_occ-1"
+		username      = "alice"
+	)
+
+	// Valid JSON map but missing required "id" and "meeting_and_occurrence_id" fields
+	// so decodeAttendeeRaw returns an error (permanent conversion failure).
+	incompleteAttendee := map[string]interface{}{
+		"lf_sso": username,
+		// "id" and "meeting_and_occurrence_id" intentionally omitted
+	}
+	incompleteJSON := mustMarshalJSON(t, incompleteAttendee)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Not tombstoned.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte("some-mapping")}, nil)
+	// Sibling xref exists.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Sibling object present but missing required fields.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: incompleteJSON}, nil)
+	// Falls back to fullParticipantDelete.
+	publisher.On("PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := map[string]interface{}{
+		"lf_sso":                    username,
+		"meeting_and_occurrence_id": meetingAndOcc,
+	}
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, v1Data)
+
+	// Permanent conversion failure must fall back to full delete — not ACK silently.
+	assert.False(t, retry)
+	publisher.AssertCalled(t, "PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything)
+	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
+}
+
 // =============================================================================
 // Decoder unit tests — field mapping and flag polarity
 // =============================================================================

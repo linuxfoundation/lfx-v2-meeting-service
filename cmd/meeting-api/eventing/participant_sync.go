@@ -385,8 +385,15 @@ func (h *EventHandlers) partialParticipantDelete(
 
 	participantData, err := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert sibling data for partial delete")
-		return isTransientError(err)
+		if isTransientError(err) {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error converting sibling data for partial delete, will retry")
+			return true
+		}
+		// Permanent conversion failure (e.g. missing required fields in a valid JSON payload):
+		// fall back to a full delete so own-side indexer and FGA state are cleaned up rather
+		// than being silently abandoned when the event is ACKed.
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to convert sibling data for partial delete, falling back to full delete")
+		return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
 	}
 	cfg.setSiblingFlags(participantData)
 
