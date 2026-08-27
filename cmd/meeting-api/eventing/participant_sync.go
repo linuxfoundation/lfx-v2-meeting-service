@@ -119,7 +119,12 @@ func (h *EventHandlers) syncParticipantUpdate(
 			}
 		} else if !entryIsTombstoned(entry) {
 			if err := cfg.mergeSibling(ctx, participantData, string(entry.Value())); err != nil {
-				return isTransientError(err)
+				// mergeSibling only returns errors for retryable sibling-object reads
+				// (non-ErrKeyNotFound from v1ObjectsKV.Get). Always retry: isTransientError
+				// misses context.DeadlineExceeded and other errors whose messages don't
+				// match its keyword list, which would silently ACK without publishing.
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error in mergeSibling, will retry")
+				return true
 			}
 		}
 	}

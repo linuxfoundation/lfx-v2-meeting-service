@@ -581,40 +581,53 @@ func TestHandleInviteeUpdate_MergesAttendeeFields(t *testing.T) {
 	mappingsKV.AssertExpectations(t)
 }
 
-// TestHandleInviteeUpdate_MergeSibling_TransientKVError verifies that a transient KV failure
+// TestHandleInviteeUpdate_MergeSibling_TransientKVError verifies that any KV failure
 // reading the attendee sibling object causes the handler to retry rather than publish a
 // zero-valued invitee record that silently drops IsUnknown / IsAIReconciled / etc.
+// Covers both a generic connection error and context.DeadlineExceeded, whose message
+// ("context deadline exceeded") was not matched by isTransientError's keyword list.
 func TestHandleInviteeUpdate_MergeSibling_TransientKVError(t *testing.T) {
 	const (
-		inviteeUID    = "inv-merge-transient"
-		attendeeUID   = "att-merge-transient"
 		meetingAndOcc = "meeting-transient_occ-1"
 		username      = "alice"
 	)
 
-	transientErr := fmt.Errorf("nats: connection timeout fetching attendee object")
+	tests := []struct {
+		name string
+		err  error
+	}{
+		{name: "connection error", err: fmt.Errorf("nats: connection timeout fetching attendee object")},
+		{name: "context deadline exceeded", err: context.DeadlineExceeded},
+	}
 
-	mappingsKV := &mockKeyValue{}
-	objectsKV := &mockKeyValue{}
-	publisher := &mockParticipantPublisher{}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			inviteeUID := "inv-merge-transient-" + tc.name
+			attendeeUID := "att-merge-transient-" + tc.name
 
-	// Sibling xref exists — the merge closure will be called.
-	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
-		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
-	// KV read for the sibling object fails transiently.
-	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
-		Return(nil, transientErr)
+			mappingsKV := &mockKeyValue{}
+			objectsKV := &mockKeyValue{}
+			publisher := &mockParticipantPublisher{}
 
-	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
-	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
-		"itx-zoom-past-meetings-invitees."+inviteeUID,
-		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+			// Sibling xref exists — the merge closure will be called.
+			mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+				Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+			// KV read for the sibling object fails.
+			objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+				Return(nil, tc.err)
 
-	// Must retry — must NOT publish with zero-valued attendee fields.
-	assert.True(t, retry, "transient sibling object read must trigger retry")
-	publisher.AssertNotCalled(t, "PublishPastMeetingParticipantEvent")
-	mappingsKV.AssertExpectations(t)
-	objectsKV.AssertExpectations(t)
+			h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+			retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+				"itx-zoom-past-meetings-invitees."+inviteeUID,
+				minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+			// Must retry — must NOT publish with zero-valued attendee fields.
+			assert.True(t, retry, "sibling object read error must trigger retry")
+			publisher.AssertNotCalled(t, "PublishPastMeetingParticipantEvent")
+			mappingsKV.AssertExpectations(t)
+			objectsKV.AssertExpectations(t)
+		})
+	}
 }
 
 // TestHandleAttendeeUpdate_MergesInviteeFlag verifies that when an attendee update arrives
