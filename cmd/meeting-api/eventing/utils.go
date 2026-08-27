@@ -5,10 +5,13 @@ package eventing
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 // decodeV1 converts a map[string]interface{} v1 KV payload into a typed struct T
@@ -68,6 +71,15 @@ func extractIDFromKey(key, prefix string) string {
 		return key[len(prefix):]
 	}
 	return key
+}
+
+// isKVAbsenceError reports whether err means the key does not (and cannot) exist
+// in the KV store. Both ErrKeyNotFound (key was never written or was deleted) and
+// ErrInvalidKey (the key string contains characters that NATS rejects, e.g. spaces
+// in an lf_sso value) are treated as absence: the xref will never be found, so
+// callers should proceed as if the sibling does not exist rather than retrying.
+func isKVAbsenceError(err error) bool {
+	return errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey)
 }
 
 func isTransientError(err error) bool {

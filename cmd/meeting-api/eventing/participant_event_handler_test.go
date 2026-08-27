@@ -739,6 +739,124 @@ func TestHandleAttendeeUpdate_SiblingExists(t *testing.T) {
 }
 
 // =============================================================================
+// ErrInvalidKey treated as absence (not as retry) at all three xref-read sites
+// =============================================================================
+
+// TestHandleInviteeUpdate_InvalidKeyUsername_MergeSkipped verifies that when the current
+// username contains characters that make an invalid NATS KV key (e.g. spaces), the sibling
+// xref Get returns ErrInvalidKey and the handler proceeds without retrying — treating the
+// xref as absent and publishing the invitee record normally.
+func TestHandleInviteeUpdate_InvalidKeyUsername_MergeSkipped(t *testing.T) {
+	const (
+		inviteeUID    = "inv-invalid-key"
+		meetingAndOcc = "meeting-ik_occ-1"
+		username      = "alice with spaces" // spaces → ErrInvalidKey from NATS
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling xref Get fails with ErrInvalidKey because the username contains spaces.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrInvalidKey)
+	// First-time create.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	// ErrInvalidKey must not cause a retry — the event should be processed normally.
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 1)
+}
+
+// TestHandleInviteeUpdate_InvalidKeyOldUsername_NoRetry verifies that when the old username
+// (recovered from the stored mapping on a username-change event) contains invalid KV key
+// characters, the sibling xref Get for the old username returns ErrInvalidKey and is treated
+// as absent — the handler falls through to member_remove rather than retrying forever.
+func TestHandleInviteeUpdate_InvalidKeyOldUsername_NoRetry(t *testing.T) {
+	const (
+		inviteeUID    = "inv-invalid-old"
+		meetingAndOcc = "meeting-iko_occ-1"
+		oldUsername   = "old user with spaces"
+		newUsername   = "alice-new"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, oldUsername, meetingAndOcc)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge check for new username — no sibling xref.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+newUsername).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Existing mapping carries the old (invalid) username.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// Old-username sibling xref Get fails with ErrInvalidKey — treated as absent.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+oldUsername).
+		Return(nil, jetstream.ErrInvalidKey)
+	// Falls through to member_remove (no sibling survives).
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// Tombstone old own-side xref (may also get ErrInvalidKey for the old username, which is tolerated).
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, newUsername))
+
+	// ErrInvalidKey on the old-username xref must not retry — must fall through to member_remove.
+	assert.False(t, retry)
+	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
+}
+
+// TestHandleInviteeDelete_InvalidKeyUsername_FullDelete verifies that when the username
+// contains invalid KV key characters, the sibling xref Get on the delete path returns
+// ErrInvalidKey and is treated as absent — the handler proceeds to fullParticipantDelete
+// rather than retrying forever.
+func TestHandleInviteeDelete_InvalidKeyUsername_FullDelete(t *testing.T) {
+	const (
+		inviteeUID    = "inv-invalid-del"
+		meetingAndOcc = "meeting-ikd_occ-1"
+		username      = "del user spaces"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, username, meetingAndOcc)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Own mapping lookup succeeds.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// Sibling xref Get on the delete path returns ErrInvalidKey — treated as absent.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrInvalidKey)
+	// Proceeds to fullParticipantDelete.
+	publisher.On("PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := minimalInviteeV1Data(inviteeUID, meetingAndOcc, username)
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, v1Data)
+
+	// ErrInvalidKey on delete-path sibling xref must not retry — full delete must proceed.
+	assert.False(t, retry)
+	publisher.AssertCalled(t, "PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything)
+	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
+}
+
+// =============================================================================
 // Delete handlers
 // =============================================================================
 

@@ -113,10 +113,11 @@ func (h *EventHandlers) syncParticipantUpdate(
 			cfg.siblingXrefPrefix, participantData.MeetingAndOccurrenceID, participantData.Username)
 		entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey)
 		if err != nil {
-			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			if !isKVAbsenceError(err) {
 				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading sibling xref for merge, will retry")
 				return true
 			}
+			// ErrKeyNotFound or ErrInvalidKey: no xref exists or can exist — skip merge.
 		} else if !entryIsTombstoned(entry) {
 			if err := cfg.mergeSibling(ctx, participantData, string(entry.Value())); err != nil {
 				// mergeSibling only returns errors for retryable sibling-object reads
@@ -150,10 +151,11 @@ func (h *EventHandlers) syncParticipantUpdate(
 		oldSiblingXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.siblingXrefPrefix, participantData.MeetingAndOccurrenceID, oldUsername)
 		siblingEntry, xrefErr := h.v1MappingsKV.Get(ctx, oldSiblingXrefKey)
-		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
+		if xrefErr != nil && !isKVAbsenceError(xrefErr) {
 			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking sibling xref, will retry")
 			return true
 		}
+		// ErrKeyNotFound or ErrInvalidKey both mean no sibling xref exists.
 		siblingExists := xrefErr == nil && !entryIsTombstoned(siblingEntry)
 
 		if siblingExists {
@@ -289,10 +291,11 @@ func (h *EventHandlers) syncParticipantDelete(
 			cfg.siblingXrefPrefix, meetingAndOccurrenceID, username)
 		entry, err := h.v1MappingsKV.Get(ctx, siblingXrefKey)
 		if err != nil {
-			if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			if !isKVAbsenceError(err) {
 				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading sibling xref on delete, will retry")
 				return true
 			}
+			// ErrKeyNotFound or ErrInvalidKey: no xref exists or can exist — treat as no sibling.
 		} else if !entryIsTombstoned(entry) {
 			survivingID := string(entry.Value())
 			funcLogger.DebugContext(ctx, "participant has active sibling record; applying partial delete",
