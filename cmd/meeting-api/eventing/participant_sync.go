@@ -377,8 +377,10 @@ func (h *EventHandlers) partialParticipantDelete(
 
 	siblingData, err := decodeData(siblingEntry.Value())
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode sibling data for partial delete")
-		return false
+		// Corrupt sibling payload: fall back to a full delete so the own-side indexer
+		// record and FGA tuples are cleaned up rather than being silently abandoned.
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode sibling data for partial delete, falling back to full delete")
+		return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
 	}
 
 	participantData, err := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)

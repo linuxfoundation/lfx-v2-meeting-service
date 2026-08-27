@@ -57,11 +57,9 @@ func (s *RegistrantService) CreateRegistrant(ctx context.Context, meetingID stri
 }
 
 // SelfRegisterForMeeting registers the authenticated user as a meeting registrant.
-// The caller's email is sourced from the JWT claim on ctx (EmailContextID) first; if the JWT
-// omits the email claim (e.g. use_oidc_contextualizer is disabled), it falls back to the
-// auth-service profile resolved via NATS. Email is never accepted from req.
-// All other fields in req (first_name, last_name, org, job_title, occurrence) are used as-is
-// unless overridden by the auth-service profile.
+// Email is always sourced from the JWT claim (EmailContextID) or the auth-service profile;
+// it is never accepted from req. Field-precedence rules for all other fields are documented
+// on enrichRegistrantFromProfile.
 // Returns an error if the user is already registered (ITX returns 409 Conflict).
 func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
 	meeting, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)

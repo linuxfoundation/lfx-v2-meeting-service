@@ -1048,8 +1048,12 @@ func TestHandleInviteeDelete_SiblingExists(t *testing.T) {
 		Return(mockKeyValueEntry{value: attendeeJSON}, nil)
 	// Indexer delete for own (invitee) record.
 	publisher.On("PublishIndexerDelete", mock.Anything, "lfx.index.v1_past_meeting_participant", inviteeUID).Return(nil)
-	// Sibling attendee published as update with IsInvited=false, IsAttended=true.
-	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// Capture sibling update to assert invitee-side flag polarity.
+	var capturedSibling *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		capturedSibling = p
+		return true
+	})).Return(nil)
 	// Tombstone own mapping and xref; sibling's records are left intact.
 	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, []byte(tombstoneMarker)).
 		Return(uint64(1), nil)
@@ -1069,8 +1073,102 @@ func TestHandleInviteeDelete_SiblingExists(t *testing.T) {
 	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
 	publisher.AssertNumberOfCalls(t, "PublishIndexerDelete", 1)
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 1)
+	// Confirm invitee-side setSiblingFlags polarity: attendee stays attended but not invited.
+	require.NotNil(t, capturedSibling)
+	assert.False(t, capturedSibling.IsInvited, "surviving attendee must have IsInvited=false")
+	assert.True(t, capturedSibling.IsAttended, "surviving attendee must retain IsAttended=true")
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
+}
+
+// TestHandleInviteeDelete_SiblingObjectAbsent_FallsBackToFullDelete verifies that when the
+// sibling attendee xref exists but the attendee object itself is not found (stale xref),
+// the handler falls back to fullParticipantDelete rather than skipping the delete entirely.
+func TestHandleInviteeDelete_SiblingObjectAbsent_FallsBackToFullDelete(t *testing.T) {
+	const (
+		inviteeUID    = "inv-del-fallback"
+		attendeeUID   = "att-gone"
+		meetingAndOcc = "meeting-del-fb_occ-1"
+		username      = "alice"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Not tombstoned.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte("some-mapping")}, nil)
+	// Sibling xref exists.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Sibling object is gone (stale xref).
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Falls back to fullParticipantDelete.
+	publisher.On("PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := map[string]interface{}{
+		"lf_sso":                    username,
+		"meeting_and_occurrence_id": meetingAndOcc,
+	}
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, v1Data)
+
+	assert.False(t, retry)
+	// Full delete must fire — indexer delete + member_remove.
+	publisher.AssertCalled(t, "PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything)
+	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
+	// No sibling update published.
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
+}
+
+// TestHandleInviteeDelete_SiblingDecodeFailure_FallsBackToFullDelete verifies that when the
+// sibling attendee object is present but cannot be decoded, the handler falls back to
+// fullParticipantDelete (rather than ACKing without doing any cleanup).
+func TestHandleInviteeDelete_SiblingDecodeFailure_FallsBackToFullDelete(t *testing.T) {
+	const (
+		inviteeUID    = "inv-del-decode-fail"
+		attendeeUID   = "att-corrupt"
+		meetingAndOcc = "meeting-del-df_occ-1"
+		username      = "alice"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Not tombstoned.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte("some-mapping")}, nil)
+	// Sibling xref exists.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Sibling object present but corrupt (not valid JSON map).
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: []byte("not-json")}, nil)
+	// Falls back to fullParticipantDelete.
+	publisher.On("PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := map[string]interface{}{
+		"lf_sso":                    username,
+		"meeting_and_occurrence_id": meetingAndOcc,
+	}
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, v1Data)
+
+	assert.False(t, retry)
+	// Full delete must fire — own state cleaned up despite corrupt sibling.
+	publisher.AssertCalled(t, "PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything)
+	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
+	// No sibling update published.
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
 }
 
 // =============================================================================
