@@ -13,50 +13,64 @@ import (
 // CreateRegistrant creates a meeting registrant via ITX proxy.
 func (c *Client) CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
 	return doJSONTyped[itx.ZoomMeetingRegistrant](c, ctx, apiRequest{
-		method:   http.MethodPost,
-		path:     "/v2/zoom/meetings/%s/registrants",
-		pathArgs: []any{meetingID},
-		body:     req,
-		accept:   acceptJSON,
+		method:          http.MethodPost,
+		path:            "/v2/zoom/meetings/%s/registrants",
+		pathArgs:        []any{meetingID},
+		body:            req,
+		accept:          acceptJSON,
+		debugOp:         "CreateRegistrant",
+		debugFields:     []any{"meetingID", meetingID},
+		skipBodyLog:     true,
+		skipResponseLog: true,
 	})
 }
 
 // GetRegistrant retrieves a meeting registrant via ITX proxy.
 func (c *Client) GetRegistrant(ctx context.Context, meetingID, registrantID string) (*itx.ZoomMeetingRegistrant, error) {
 	return doJSONTyped[itx.ZoomMeetingRegistrant](c, ctx, apiRequest{
-		method:   http.MethodGet,
-		path:     "/v2/zoom/meetings/%s/registrants/%s",
-		pathArgs: []any{meetingID, registrantID},
-		accept:   acceptJSON,
+		method:          http.MethodGet,
+		path:            "/v2/zoom/meetings/%s/registrants/%s",
+		pathArgs:        []any{meetingID, registrantID},
+		accept:          acceptJSON,
+		debugOp:         "GetRegistrant",
+		debugFields:     []any{"meetingID", meetingID, "registrantID", registrantID},
+		skipResponseLog: true,
 	})
 }
 
 // UpdateRegistrant updates a meeting registrant via ITX proxy.
 func (c *Client) UpdateRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.ZoomMeetingRegistrant) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPut,
-		path:     "/v2/zoom/meetings/%s/registrants/%s",
-		pathArgs: []any{meetingID, registrantID},
-		body:     req,
+		method:      http.MethodPut,
+		path:        "/v2/zoom/meetings/%s/registrants/%s",
+		pathArgs:    []any{meetingID, registrantID},
+		body:        req,
+		debugOp:     "UpdateRegistrant",
+		debugFields: []any{"meetingID", meetingID, "registrantID", registrantID},
+		skipBodyLog: true,
 	})
 }
 
 // DeleteRegistrant deletes a meeting registrant via ITX proxy.
 func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodDelete,
-		path:     "/v2/zoom/meetings/%s/registrants/%s",
-		pathArgs: []any{meetingID, registrantID},
+		method:      http.MethodDelete,
+		path:        "/v2/zoom/meetings/%s/registrants/%s",
+		pathArgs:    []any{meetingID, registrantID},
+		debugOp:     "DeleteRegistrant",
+		debugFields: []any{"meetingID", meetingID, "registrantID", registrantID},
 	})
 }
 
 // GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy.
 func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error) {
 	content, err := c.doRaw(ctx, apiRequest{
-		method:   http.MethodGet,
-		path:     "/v2/zoom/meetings/%s/registrants/%s/ics",
-		pathArgs: []any{meetingID, registrantID},
-		accept:   acceptCalendar,
+		method:      http.MethodGet,
+		path:        "/v2/zoom/meetings/%s/registrants/%s/ics",
+		pathArgs:    []any{meetingID, registrantID},
+		accept:      acceptCalendar,
+		debugOp:     "GetRegistrantICS",
+		debugFields: []any{"meetingID", meetingID, "registrantID", registrantID},
 	})
 	if err != nil {
 		return nil, err
@@ -67,8 +81,10 @@ func (c *Client) GetRegistrantICS(ctx context.Context, meetingID, registrantID s
 // ResendRegistrantInvitation resends a meeting invitation to a registrant via ITX proxy.
 func (c *Client) ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPost,
-		path:     "/v2/zoom/meetings/%s/registrants/%s/resend",
-		pathArgs: []any{meetingID, registrantID},
+		method:      http.MethodPost,
+		path:        "/v2/zoom/meetings/%s/registrants/%s/resend",
+		pathArgs:    []any{meetingID, registrantID},
+		debugOp:     "ResendRegistrantInvitation",
+		debugFields: []any{"meetingID", meetingID, "registrantID", registrantID},
 	})
 }
