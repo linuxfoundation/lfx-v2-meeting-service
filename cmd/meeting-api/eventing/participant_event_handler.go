@@ -131,11 +131,16 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key 
 			self.IsAttended = true
 			attendeeMap, err := decodeData(attendeeEntry.Value())
 			if err != nil {
-				return err // corrupt payload: propagate so caller retries
+				// Permanent decode failure: the payload is corrupt and won't change on retry.
+				// Publish with IsAttended=true (which is confirmed correct) rather than
+				// exhausting redeliveries and dropping the invitee update entirely.
+				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee sibling for merge; publishing without attendee-only fields")
+				return nil
 			}
 			rawData, err := decodeAttendeeRaw(attendeeMap)
 			if err != nil {
-				return err // corrupt payload: propagate so caller retries
+				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee raw fields for merge; publishing without attendee-only fields")
+				return nil
 			}
 			self.IsUnknown = rawData.isUnknown
 			self.IsAIReconciled = rawData.isAIReconciled

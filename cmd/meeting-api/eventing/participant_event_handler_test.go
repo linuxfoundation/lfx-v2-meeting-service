@@ -630,6 +630,57 @@ func TestHandleInviteeUpdate_MergeSibling_TransientKVError(t *testing.T) {
 	}
 }
 
+// TestHandleInviteeUpdate_MergeSibling_CorruptPayload_PublishesWithIsAttended verifies that
+// when the attendee sibling object exists but its payload cannot be decoded (corrupt KV
+// value), the invitee update is still published with IsAttended=true rather than retrying
+// until max-delivery and dropping the event. Attendee-only enrichment fields are zeroed,
+// but the FGA-critical flag is preserved.
+func TestHandleInviteeUpdate_MergeSibling_CorruptPayload_PublishesWithIsAttended(t *testing.T) {
+	const (
+		inviteeUID    = "inv-corrupt-sibling"
+		attendeeUID   = "att-corrupt-sibling"
+		meetingAndOcc = "meeting-corrupt_occ-1"
+		username      = "alice"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling xref exists — merge closure will be called.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(mockKeyValueEntry{value: []byte(attendeeUID)}, nil)
+	// Sibling object present but corrupt (not valid JSON map).
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
+		Return(mockKeyValueEntry{value: []byte("not-valid-json")}, nil)
+	// First-time create.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Invitee update MUST still be published.
+	var captured *models.PastMeetingParticipantEventData
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.MatchedBy(func(p *models.PastMeetingParticipantEventData) bool {
+		captured = p
+		return true
+	})).Return(nil)
+	mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	// Corrupt payload is permanent — must NOT retry (would exhaust max-delivery).
+	assert.False(t, retry, "corrupt sibling payload must not trigger retry")
+	// Event must still be published with IsAttended=true (attendee object existence confirmed).
+	require.NotNil(t, captured)
+	assert.True(t, captured.IsAttended, "IsAttended must be true even when sibling decode fails")
+	assert.True(t, captured.IsInvited, "invitee own flag must be set")
+	// Attendee-only enrichment fields are zeroed — acceptable degraded mode.
+	assert.False(t, captured.IsUnknown, "enrichment field zeroed on decode failure")
+	assert.Empty(t, captured.ZoomUserName, "enrichment field zeroed on decode failure")
+	publisher.AssertExpectations(t)
+}
+
 // TestHandleAttendeeUpdate_MergesInviteeFlag verifies that when an attendee update arrives
 // after the invitee record is already in place, IsInvited=true is merged into the attendee
 // record (attendee-side mergeSibling: just a flag, no field copying).
