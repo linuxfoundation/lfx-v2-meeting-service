@@ -856,6 +856,96 @@ func TestHandleInviteeDelete_InvalidKeyUsername_FullDelete(t *testing.T) {
 	publisher.AssertCalled(t, "PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything)
 }
 
+// TestHandleInviteeUpdate_InvalidKeyOldUsername_TombstonePut_ContinuesProcessing verifies
+// the data-loss path fixed by this PR: when the old username contains invalid KV key
+// characters, the tombstone Put for the old own-side xref returns ErrInvalidKey. Previously
+// this flowed through isTransientError → false → ACK, which exited the handler before the
+// new participant event was published. The fixed path must skip the tombstone (no-op) and
+// continue to publish the new participant event.
+func TestHandleInviteeUpdate_InvalidKeyOldUsername_TombstonePut_ContinuesProcessing(t *testing.T) {
+	const (
+		inviteeUID    = "inv-tombstone-ik"
+		attendeeUID   = "att-tombstone-ik"
+		meetingAndOcc = "meeting-tik_occ-1"
+		oldUsername   = "old user spaces" // invalid KV key characters
+		newUsername   = "alice-clean"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, oldUsername, meetingAndOcc)
+	attendeeData := minimalAttendeeV1Data(attendeeUID, meetingAndOcc, oldUsername)
+	attendeeJSON := mustMarshalJSON(t, attendeeData)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Sibling merge for new username — no sibling xref.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+newUsername).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Existing mapping carries the old (invalid) username.
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// Old-username sibling xref — no sibling exists.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+oldUsername).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// member_remove published (no sibling survives).
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// Tombstone Put for old own-side xref returns ErrInvalidKey — must be treated as no-op.
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+oldUsername, mock.Anything).
+		Return(uint64(0), jetstream.ErrInvalidKey)
+	// New participant event must still be published.
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// New mapping and xref writes succeed.
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, mock.Anything).Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+newUsername, mock.Anything).Return(uint64(1), nil)
+
+	_ = attendeeUID
+	_ = attendeeJSON
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, newUsername))
+
+	// ErrInvalidKey on tombstone Put must NOT stop processing — new event must be published.
+	assert.False(t, retry)
+	publisher.AssertCalled(t, "PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything)
+}
+
+// TestHandleInviteeUpdate_NewXrefPut_TransientError_Retries verifies that a transient
+// failure writing the new-username own-side xref triggers retry=true rather than silently
+// dropping the xref (which would cause future sibling merges to fail for this participant).
+func TestHandleInviteeUpdate_NewXrefPut_TransientError_Retries(t *testing.T) {
+	const (
+		inviteeUID    = "inv-xref-transient"
+		meetingAndOcc = "meeting-xrt_occ-1"
+		username      = "alice"
+	)
+	transientErr := fmt.Errorf("nats: connection timeout writing xref")
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// No sibling xref (first-time create path).
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Participant event and main mapping write succeed.
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, mock.Anything).Return(uint64(1), nil)
+	// New-username xref Put fails transiently.
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username, mock.Anything).
+		Return(uint64(0), transientErr)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	// Transient xref Put must trigger retry so the xref is not silently lost.
+	assert.True(t, retry, "transient new-username xref Put must trigger retry")
+}
+
 // =============================================================================
 // Delete handlers
 // =============================================================================

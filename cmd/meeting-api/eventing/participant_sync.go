@@ -214,8 +214,14 @@ func (h *EventHandlers) syncParticipantUpdate(
 		oldOwnXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.ownXrefPrefix, participantData.MeetingAndOccurrenceID, oldUsername)
 		if _, err := h.v1MappingsKV.Put(ctx, oldOwnXrefKey, []byte(tombstoneMarker)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old xref, will retry")
-			return isTransientError(err)
+			if errors.Is(err, jetstream.ErrInvalidKey) {
+				// oldUsername contains invalid KV key characters; the xref can never have
+				// existed, so the tombstone is a no-op — continue to publish the new event.
+				funcLogger.WarnContext(ctx, "skipping tombstone for old xref: username contains invalid KV key characters")
+			} else {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old xref, will retry")
+				return true
+			}
 		}
 	}
 
@@ -232,14 +238,20 @@ func (h *EventHandlers) syncParticipantUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store participant mapping")
 		return isTransientError(err)
 	}
-	// Known limitation: NATS JetStream KV keys only allow [-a-zA-Z0-9_.], so usernames
-	// containing spaces or other special characters will fail this Put with "nats: invalid key".
-	// We accept this as a pre-existing gap; the WARN log captures the failure for diagnosis.
+	// Write the new-username cross-reference so sibling handlers can find this record.
+	// ErrInvalidKey (username contains characters outside [-a-zA-Z0-9_.]) is accepted: the
+	// xref simply cannot be written, and sibling merges for this participant will be skipped.
+	// Any other failure is transient — retry so the xref is not silently lost.
 	if participantData.Username != "" {
 		ownXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.ownXrefPrefix, participantData.MeetingAndOccurrenceID, participantData.Username)
 		if _, err := h.v1MappingsKV.Put(ctx, ownXrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store participant cross-reference mapping")
+			if errors.Is(err, jetstream.ErrInvalidKey) {
+				funcLogger.WarnContext(ctx, "skipping xref write: username contains invalid KV key characters")
+			} else {
+				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error storing participant cross-reference mapping, will retry")
+				return true
+			}
 		}
 	}
 
