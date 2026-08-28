@@ -256,7 +256,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_BooleanFields(t *testing.T) {
 		}
 	}
 
-	t.Run("case 1", func(t *testing.T) {
+	t.Run("Rst=T Rec=T Trans=F YT=T AI=F Req=F", func(t *testing.T) {
 		p := base()
 		p.Restricted = utils.BoolPtr(true)
 		p.RecordingEnabled = utils.BoolPtr(true)
@@ -273,7 +273,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_BooleanFields(t *testing.T) {
 		assert.False(t, req.RequireAISummaryApproval)
 	})
 
-	t.Run("case 2", func(t *testing.T) {
+	t.Run("Rst=T Rec=F Trans=T YT=F AI=T Req=F", func(t *testing.T) {
 		p := base()
 		p.Restricted = utils.BoolPtr(true)
 		p.RecordingEnabled = utils.BoolPtr(false)
@@ -290,7 +290,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_BooleanFields(t *testing.T) {
 		assert.False(t, req.RequireAISummaryApproval)
 	})
 
-	t.Run("case 3", func(t *testing.T) {
+	t.Run("Rst=F Rec=T Trans=T YT=F AI=F Req=T", func(t *testing.T) {
 		p := base()
 		p.Restricted = utils.BoolPtr(false)
 		p.RecordingEnabled = utils.BoolPtr(true)
@@ -547,6 +547,112 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 		assert.Equal(t, 4, req.Recurrence.MonthlyWeekDay)
 		assert.Equal(t, 5, req.Recurrence.EndTimes)
 		assert.Equal(t, "2026-12-31T00:00:00Z", req.Recurrence.EndDateTime)
+	})
+}
+
+// ── ConvertITXMeetingResponseToGoa — boolean fields ──────────────────────────
+
+// Three-case boolean cross-wiring guard for the response converter. The eight
+// booleans split into two groups by null semantics:
+//
+//	Always-pointer (&resp.X): RecordingEnabled, TranscriptEnabled,
+//	  YoutubeUploadEnabled, AiSummaryEnabled (ZoomAIEnabled source)
+//	OmitFalse (*bool, nil when false): Restricted, RequireAiSummaryApproval,
+//	  AutoEmailReminderEnabled, IsInviteResponsesEnabled
+//
+// Column assignments ensure every pair of fields has distinct values in at
+// least one case so any source-field swap is detectable:
+//
+//	Restricted            T T F
+//	RecordingEnabled      T F T
+//	TranscriptEnabled     F T T
+//	YoutubeUploadEnabled  T F F
+//	AiSummaryEnabled      F T F
+//	RequireAiSummaryAppr  F F T
+//	AutoEmailReminder     T F F
+//	IsInviteResponses     F T F
+func TestConvertITXMeetingResponseToGoa_BooleanFields(t *testing.T) {
+	t.Run("Rst=T Rec=T Trans=F YT=T AI=F Req=F AER=T IR=F", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			Restricted:               true,
+			RecordingEnabled:         true,
+			TranscriptEnabled:        false,
+			YoutubeUploadEnabled:     true,
+			ZoomAIEnabled:            false,
+			RequireAISummaryApproval: false,
+			AutoEmailReminderEnabled: true,
+			IsInviteResponsesEnabled: false,
+		}
+		g := ConvertITXMeetingResponseToGoa(resp)
+		require.NotNil(t, g.Restricted)
+		assert.True(t, *g.Restricted)
+		require.NotNil(t, g.RecordingEnabled)
+		assert.True(t, *g.RecordingEnabled)
+		require.NotNil(t, g.TranscriptEnabled)
+		assert.False(t, *g.TranscriptEnabled)
+		require.NotNil(t, g.YoutubeUploadEnabled)
+		assert.True(t, *g.YoutubeUploadEnabled)
+		require.NotNil(t, g.AiSummaryEnabled)
+		assert.False(t, *g.AiSummaryEnabled)
+		assert.Nil(t, g.RequireAiSummaryApproval)
+		require.NotNil(t, g.AutoEmailReminderEnabled)
+		assert.True(t, *g.AutoEmailReminderEnabled)
+		assert.Nil(t, g.IsInviteResponsesEnabled)
+	})
+
+	t.Run("Rst=T Rec=F Trans=T YT=F AI=T Req=F AER=F IR=T", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			Restricted:               true,
+			RecordingEnabled:         false,
+			TranscriptEnabled:        true,
+			YoutubeUploadEnabled:     false,
+			ZoomAIEnabled:            true,
+			RequireAISummaryApproval: false,
+			AutoEmailReminderEnabled: false,
+			IsInviteResponsesEnabled: true,
+		}
+		g := ConvertITXMeetingResponseToGoa(resp)
+		require.NotNil(t, g.Restricted)
+		assert.True(t, *g.Restricted)
+		require.NotNil(t, g.RecordingEnabled)
+		assert.False(t, *g.RecordingEnabled)
+		require.NotNil(t, g.TranscriptEnabled)
+		assert.True(t, *g.TranscriptEnabled)
+		require.NotNil(t, g.YoutubeUploadEnabled)
+		assert.False(t, *g.YoutubeUploadEnabled)
+		require.NotNil(t, g.AiSummaryEnabled)
+		assert.True(t, *g.AiSummaryEnabled)
+		assert.Nil(t, g.RequireAiSummaryApproval)
+		assert.Nil(t, g.AutoEmailReminderEnabled)
+		require.NotNil(t, g.IsInviteResponsesEnabled)
+		assert.True(t, *g.IsInviteResponsesEnabled)
+	})
+
+	t.Run("Rst=F Rec=T Trans=T YT=F AI=F Req=T AER=F IR=F", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			Restricted:               false,
+			RecordingEnabled:         true,
+			TranscriptEnabled:        true,
+			YoutubeUploadEnabled:     false,
+			ZoomAIEnabled:            false,
+			RequireAISummaryApproval: true,
+			AutoEmailReminderEnabled: false,
+			IsInviteResponsesEnabled: false,
+		}
+		g := ConvertITXMeetingResponseToGoa(resp)
+		assert.Nil(t, g.Restricted)
+		require.NotNil(t, g.RecordingEnabled)
+		assert.True(t, *g.RecordingEnabled)
+		require.NotNil(t, g.TranscriptEnabled)
+		assert.True(t, *g.TranscriptEnabled)
+		require.NotNil(t, g.YoutubeUploadEnabled)
+		assert.False(t, *g.YoutubeUploadEnabled)
+		require.NotNil(t, g.AiSummaryEnabled)
+		assert.False(t, *g.AiSummaryEnabled)
+		require.NotNil(t, g.RequireAiSummaryApproval)
+		assert.True(t, *g.RequireAiSummaryApproval)
+		assert.Nil(t, g.AutoEmailReminderEnabled)
+		assert.Nil(t, g.IsInviteResponsesEnabled)
 	})
 }
 
