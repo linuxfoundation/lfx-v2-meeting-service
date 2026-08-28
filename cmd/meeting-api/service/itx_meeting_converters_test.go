@@ -210,9 +210,9 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 			MeetingType:              utils.StringPtrOmitEmpty(string(itx.MeetingTypeBoard)),
 			EarlyJoinTimeMinutes:     utils.IntPtrOmitZero(10),
 			RecordingEnabled:         utils.BoolPtr(true),
-			TranscriptEnabled:        utils.BoolPtr(true),
+			TranscriptEnabled:        utils.BoolPtr(false),
 			YoutubeUploadEnabled:     utils.BoolPtr(true),
-			AiSummaryEnabled:         utils.BoolPtr(true),
+			AiSummaryEnabled:         utils.BoolPtr(false),
 			RequireAiSummaryApproval: utils.BoolPtr(true),
 			ArtifactVisibility:       utils.StringPtrOmitEmpty(string(itx.ArtifactAccessHosts)),
 		}
@@ -230,9 +230,9 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 		assert.Equal(t, itx.MeetingTypeBoard, req.MeetingType)
 		assert.Equal(t, 10, req.EarlyJoinTimeMinutes)
 		assert.True(t, req.RecordingEnabled)
-		assert.True(t, req.TranscriptEnabled)
+		assert.False(t, req.TranscriptEnabled)
 		assert.True(t, req.YoutubeUploadEnabled)
-		assert.True(t, req.AISummaryEnabled)
+		assert.False(t, req.AISummaryEnabled)
 		assert.True(t, req.RequireAISummaryApproval)
 		assert.Equal(t, itx.ArtifactAccessHosts, req.ArtifactVisibility)
 	})
@@ -385,6 +385,19 @@ func TestConvertGetJoinLinkPayloadToITX(t *testing.T) {
 		assert.Equal(t, "Alice Example", req.Name)
 		assert.Equal(t, "alice@example.com", req.Email)
 		assert.True(t, req.Register)
+	})
+
+	t.Run("use_email and register are independent — cross-wiring is detectable", func(t *testing.T) {
+		p := &meetingservice.GetItxJoinLinkPayload{
+			MeetingID: "zoom-100",
+			UseEmail:  utils.BoolPtr(true),
+			Register:  utils.BoolPtr(false),
+		}
+
+		req := ConvertGetJoinLinkPayloadToITX(p)
+
+		assert.True(t, req.UseEmail)
+		assert.False(t, req.Register)
 	})
 
 	t.Run("nil optional fields leave ITX fields as zero values", func(t *testing.T) {
