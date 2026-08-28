@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9
 	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.26
-	github.com/linuxfoundation/lfx-v2-invite-service v0.1.12
+	github.com/linuxfoundation/lfx-v2-invite-service v0.1.13
 	github.com/nats-io/nats.go v1.53.1
 	github.com/remychantenay/slog-otel v1.3.5
 	github.com/stretchr/testify v1.12.1
@@ -32,7 +32,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.21.0
 	go.opentelemetry.io/otel/sdk/metric v1.45.0
 	go.opentelemetry.io/otel/trace v1.45.0
-	goa.design/goa/v3 v3.29.2
+	goa.design/goa/v3 v3.30.0
 	golang.org/x/oauth2 v0.36.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
@@ -77,8 +77,8 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260810153831-ec0a7760b754 // indirect
-	google.golang.org/grpc v1.83.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
+	google.golang.org/grpc v1.83.1 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
