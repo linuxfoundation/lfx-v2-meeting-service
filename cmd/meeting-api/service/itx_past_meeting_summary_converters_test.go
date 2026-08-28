@@ -182,6 +182,41 @@ func TestBuildContentFromITX(t *testing.T) {
 	})
 }
 
+// ── buildEditedContentFromITX ───────────────────────────────────────────────
+
+func TestBuildEditedContentFromITX(t *testing.T) {
+	t.Run("empty response returns empty string", func(t *testing.T) {
+		assert.Empty(t, buildEditedContentFromITX(&itx.PastMeetingSummaryResponse{}))
+	})
+
+	t.Run("edited overview only", func(t *testing.T) {
+		resp := &itx.PastMeetingSummaryResponse{EditedSummaryOverview: "Edited overview."}
+		assert.Equal(t, "Edited overview.", buildEditedContentFromITX(resp))
+	})
+
+	t.Run("edited details with blank label or summary are skipped", func(t *testing.T) {
+		resp := &itx.PastMeetingSummaryResponse{
+			EditedSummaryDetails: []itx.ZoomMeetingSummaryDetails{
+				{Label: "", Summary: "orphan"},
+				{Label: "Valid", Summary: "entry"},
+			},
+		}
+		result := buildEditedContentFromITX(resp)
+		assert.NotContains(t, result, "orphan")
+		assert.Contains(t, result, "Valid: entry")
+	})
+
+	t.Run("edited next steps appended with header and dashes", func(t *testing.T) {
+		resp := &itx.PastMeetingSummaryResponse{
+			EditedNextSteps: []string{"Send report", "Schedule follow-up"},
+		}
+		result := buildEditedContentFromITX(resp)
+		assert.Contains(t, result, "Next Steps:")
+		assert.Contains(t, result, "- Send report")
+		assert.Contains(t, result, "- Schedule follow-up")
+	})
+}
+
 // ── parseContentIntoITXParts ─────────────────────────────────────────────────
 
 func TestParseContentIntoITXParts(t *testing.T) {
