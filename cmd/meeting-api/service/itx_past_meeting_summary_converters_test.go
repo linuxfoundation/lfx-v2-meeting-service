@@ -194,15 +194,17 @@ func TestBuildEditedContentFromITX(t *testing.T) {
 		assert.Equal(t, "Edited overview.", buildEditedContentFromITX(resp))
 	})
 
-	t.Run("edited details with blank label or summary are skipped", func(t *testing.T) {
+	t.Run("edited details with blank label or blank summary are skipped", func(t *testing.T) {
 		resp := &itx.PastMeetingSummaryResponse{
 			EditedSummaryDetails: []itx.ZoomMeetingSummaryDetails{
 				{Label: "", Summary: "orphan"},
+				{Label: "Action", Summary: ""},
 				{Label: "Valid", Summary: "entry"},
 			},
 		}
 		result := buildEditedContentFromITX(resp)
 		assert.NotContains(t, result, "orphan")
+		assert.NotContains(t, result, "Action:")
 		assert.Contains(t, result, "Valid: entry")
 	})
 

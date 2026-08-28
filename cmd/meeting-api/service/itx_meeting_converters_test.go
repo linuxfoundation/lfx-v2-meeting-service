@@ -350,6 +350,14 @@ func TestConvertITXMeetingResponseToGoa_ArtifactVisibilityCoalesce(t *testing.T)
 		assert.Equal(t, "public", utils.StringValue(g.ArtifactVisibility))
 	})
 
+	t.Run("falls back to ai_summary_access when recording and transcript are both empty", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			AISummaryAccess: itx.ArtifactAccess("members"),
+		}
+		g := ConvertITXMeetingResponseToGoa(resp)
+		assert.Equal(t, "members", utils.StringValue(g.ArtifactVisibility))
+	})
+
 	t.Run("nil when all access fields are empty", func(t *testing.T) {
 		g := ConvertITXMeetingResponseToGoa(&itx.ZoomMeetingResponse{})
 		assert.Nil(t, g.ArtifactVisibility)
