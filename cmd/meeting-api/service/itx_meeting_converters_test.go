@@ -552,7 +552,7 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 
 // ── ConvertITXMeetingResponseToGoa — boolean fields ──────────────────────────
 
-// Three-case boolean cross-wiring guard for the response converter. The eight
+// Four-case boolean cross-wiring guard for the response converter. The eight
 // booleans split into two groups by null semantics:
 //
 //	Always-pointer (&resp.X): RecordingEnabled, TranscriptEnabled,
