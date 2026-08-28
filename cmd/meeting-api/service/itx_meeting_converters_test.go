@@ -172,7 +172,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_Recurrence(t *testing.T) {
 			WeeklyDays:     utils.StringPtrOmitEmpty("1,2"),
 			MonthlyDay:     utils.IntPtrOmitZero(15),
 			MonthlyWeek:    utils.IntPtrOmitZero(2),
-			MonthlyWeekDay: utils.IntPtrOmitZero(3),
+			MonthlyWeekDay: utils.IntPtrOmitZero(4),
 			EndTimes:       utils.IntPtrOmitZero(10),
 			EndDateTime:    utils.StringPtrOmitEmpty("2026-12-31T00:00:00Z"),
 		}
@@ -185,7 +185,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_Recurrence(t *testing.T) {
 		assert.Equal(t, "1,2", req.Recurrence.WeeklyDays)
 		assert.Equal(t, 15, req.Recurrence.MonthlyDay)
 		assert.Equal(t, 2, req.Recurrence.MonthlyWeek)
-		assert.Equal(t, 3, req.Recurrence.MonthlyWeekDay)
+		assert.Equal(t, 4, req.Recurrence.MonthlyWeekDay)
 		assert.Equal(t, 10, req.Recurrence.EndTimes)
 		assert.Equal(t, "2026-12-31T00:00:00Z", req.Recurrence.EndDateTime)
 	})
@@ -236,31 +236,75 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 		assert.True(t, req.RequireAISummaryApproval)
 		assert.Equal(t, itx.ArtifactAccessHosts, req.ArtifactVisibility)
 	})
+}
 
-	t.Run("boolean complement — inverted values make every field independently distinguishable", func(t *testing.T) {
-		p := &meetingservice.CreateItxMeetingPayload{
-			ProjectUID:               "proj-1",
-			Title:                    "Board Meeting",
-			StartTime:                "2026-06-01T10:00:00Z",
-			Duration:                 90,
-			Timezone:                 "UTC",
-			Visibility:               "public",
-			Restricted:               utils.BoolPtr(false),
-			RecordingEnabled:         utils.BoolPtr(false),
-			TranscriptEnabled:        utils.BoolPtr(true),
-			YoutubeUploadEnabled:     utils.BoolPtr(false),
-			AiSummaryEnabled:         utils.BoolPtr(true),
-			RequireAiSummaryApproval: utils.BoolPtr(false),
+// Three-case boolean cross-wiring guard. Column assignments are chosen so that
+// every pair of fields has distinct values in at least one case, making any
+// source-field swap detectable:
+//
+//	Restricted     T T F
+//	RecordingEnabled  T F T
+//	TranscriptEnabled F T T
+//	YoutubeUploadEnabled  T F F
+//	AISummaryEnabled  F T F
+//	RequireAISummaryApproval  F F T
+func TestConvertCreateITXMeetingPayloadToDomain_BooleanFields(t *testing.T) {
+	base := func() *meetingservice.CreateItxMeetingPayload {
+		return &meetingservice.CreateItxMeetingPayload{
+			ProjectUID: "proj-1", Title: "T", StartTime: "2026-01-01T00:00:00Z",
+			Duration: 30, Timezone: "UTC", Visibility: "public",
 		}
+	}
 
+	t.Run("case 1", func(t *testing.T) {
+		p := base()
+		p.Restricted = utils.BoolPtr(true)
+		p.RecordingEnabled = utils.BoolPtr(true)
+		p.TranscriptEnabled = utils.BoolPtr(false)
+		p.YoutubeUploadEnabled = utils.BoolPtr(true)
+		p.AiSummaryEnabled = utils.BoolPtr(false)
+		p.RequireAiSummaryApproval = utils.BoolPtr(false)
 		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		assert.True(t, req.Restricted)
+		assert.True(t, req.RecordingEnabled)
+		assert.False(t, req.TranscriptEnabled)
+		assert.True(t, req.YoutubeUploadEnabled)
+		assert.False(t, req.AISummaryEnabled)
+		assert.False(t, req.RequireAISummaryApproval)
+	})
 
-		assert.False(t, req.Restricted)
+	t.Run("case 2", func(t *testing.T) {
+		p := base()
+		p.Restricted = utils.BoolPtr(true)
+		p.RecordingEnabled = utils.BoolPtr(false)
+		p.TranscriptEnabled = utils.BoolPtr(true)
+		p.YoutubeUploadEnabled = utils.BoolPtr(false)
+		p.AiSummaryEnabled = utils.BoolPtr(true)
+		p.RequireAiSummaryApproval = utils.BoolPtr(false)
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		assert.True(t, req.Restricted)
 		assert.False(t, req.RecordingEnabled)
 		assert.True(t, req.TranscriptEnabled)
 		assert.False(t, req.YoutubeUploadEnabled)
 		assert.True(t, req.AISummaryEnabled)
 		assert.False(t, req.RequireAISummaryApproval)
+	})
+
+	t.Run("case 3", func(t *testing.T) {
+		p := base()
+		p.Restricted = utils.BoolPtr(false)
+		p.RecordingEnabled = utils.BoolPtr(true)
+		p.TranscriptEnabled = utils.BoolPtr(true)
+		p.YoutubeUploadEnabled = utils.BoolPtr(false)
+		p.AiSummaryEnabled = utils.BoolPtr(false)
+		p.RequireAiSummaryApproval = utils.BoolPtr(true)
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		assert.False(t, req.Restricted)
+		assert.True(t, req.RecordingEnabled)
+		assert.True(t, req.TranscriptEnabled)
+		assert.False(t, req.YoutubeUploadEnabled)
+		assert.False(t, req.AISummaryEnabled)
+		assert.True(t, req.RequireAISummaryApproval)
 	})
 }
 
@@ -485,7 +529,7 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 				RepeatInterval: utils.IntPtrOmitZero(1),
 				WeeklyDays:     utils.StringPtrOmitEmpty("1,3"),
 				MonthlyDay:     utils.IntPtrOmitZero(15),
-				MonthlyWeek:    utils.IntPtrOmitZero(2),
+				MonthlyWeek:    utils.IntPtrOmitZero(3),
 				MonthlyWeekDay: utils.IntPtrOmitZero(4),
 				EndTimes:       utils.IntPtrOmitZero(5),
 				EndDateTime:    utils.StringPtrOmitEmpty("2026-12-31T00:00:00Z"),
@@ -499,7 +543,7 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 		assert.Equal(t, 1, req.Recurrence.RepeatInterval)
 		assert.Equal(t, "1,3", req.Recurrence.WeeklyDays)
 		assert.Equal(t, 15, req.Recurrence.MonthlyDay)
-		assert.Equal(t, 2, req.Recurrence.MonthlyWeek)
+		assert.Equal(t, 3, req.Recurrence.MonthlyWeek)
 		assert.Equal(t, 4, req.Recurrence.MonthlyWeekDay)
 		assert.Equal(t, 5, req.Recurrence.EndTimes)
 		assert.Equal(t, "2026-12-31T00:00:00Z", req.Recurrence.EndDateTime)
