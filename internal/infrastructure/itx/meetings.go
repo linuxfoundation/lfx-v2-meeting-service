@@ -14,49 +14,62 @@ import (
 // CreateZoomMeeting creates a new Zoom meeting in ITX.
 func (c *Client) CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error) {
 	return doJSONTyped[itx.ZoomMeetingResponse](c, ctx, apiRequest{
-		method: http.MethodPost,
-		path:   "/v2/zoom/meetings",
-		body:   req,
-		accept: acceptJSON,
+		method:          http.MethodPost,
+		path:            "/v2/zoom/meetings",
+		body:            req,
+		accept:          acceptJSON,
+		debugOp:         "CreateZoomMeeting",
+		skipBodyLog:     true,
+		skipResponseLog: true,
 	})
 }
 
 // GetZoomMeeting retrieves a Zoom meeting from ITX.
 func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error) {
 	return doJSONTyped[itx.ZoomMeetingResponse](c, ctx, apiRequest{
-		method:   http.MethodGet,
-		path:     "/v2/zoom/meetings/%s",
-		pathArgs: []any{meetingID},
-		accept:   acceptJSON,
+		method:          http.MethodGet,
+		path:            "/v2/zoom/meetings/%s",
+		pathArgs:        []any{meetingID},
+		accept:          acceptJSON,
+		debugOp:         "GetZoomMeeting",
+		debugFields:     []any{"meetingID", meetingID},
+		skipResponseLog: true,
 	})
 }
 
 // DeleteZoomMeeting deletes a Zoom meeting from ITX.
 func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodDelete,
-		path:     "/v2/zoom/meetings/%s",
-		pathArgs: []any{meetingID},
+		method:      http.MethodDelete,
+		path:        "/v2/zoom/meetings/%s",
+		pathArgs:    []any{meetingID},
+		debugOp:     "DeleteZoomMeeting",
+		debugFields: []any{"meetingID", meetingID},
 	})
 }
 
 // UpdateZoomMeeting updates a Zoom meeting in ITX.
 func (c *Client) UpdateZoomMeeting(ctx context.Context, meetingID string, req *itx.CreateZoomMeetingRequest) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPut,
-		path:     "/v2/zoom/meetings/%s",
-		pathArgs: []any{meetingID},
-		body:     req,
+		method:      http.MethodPut,
+		path:        "/v2/zoom/meetings/%s",
+		pathArgs:    []any{meetingID},
+		body:        req,
+		debugOp:     "UpdateZoomMeeting",
+		debugFields: []any{"meetingID", meetingID},
+		skipBodyLog: true,
 	})
 }
 
 // GetMeetingCount retrieves the count of meetings for a project from ITX.
 func (c *Client) GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error) {
 	return doJSONTyped[itx.MeetingCountResponse](c, ctx, apiRequest{
-		method: http.MethodGet,
-		path:   "/v2/zoom/meeting_count",
-		query:  url.Values{"project": {projectID}},
-		accept: acceptJSON,
+		method:      http.MethodGet,
+		path:        "/v2/zoom/meeting_count",
+		query:       url.Values{"project": {projectID}},
+		accept:      acceptJSON,
+		debugOp:     "GetMeetingCount",
+		debugFields: []any{"projectID", projectID},
 	})
 }
 
@@ -80,11 +93,17 @@ func (c *Client) GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkReq
 	}
 
 	return doJSONTyped[itx.ZoomMeetingJoinLink](c, ctx, apiRequest{
-		method:   http.MethodGet,
-		path:     "/v2/zoom/meetings/%s/join_link",
-		pathArgs: []any{req.MeetingID},
-		query:    query,
-		accept:   acceptJSON,
+		method:      http.MethodGet,
+		path:        "/v2/zoom/meetings/%s/join_link",
+		pathArgs:    []any{req.MeetingID},
+		query:       query,
+		accept:      acceptJSON,
+		debugOp:     "GetMeetingJoinLink",
+		debugFields: []any{"meetingID", req.MeetingID},
+		// email/name/user_id ride in the query string above; never let them
+		// reach logs unredacted.
+		redactQuery:     []string{"email", "name", "user_id"},
+		skipResponseLog: true,
 	})
 }
 
@@ -94,49 +113,61 @@ func (c *Client) ResendMeetingInvitations(ctx context.Context, meetingID string,
 		req = &itx.ResendMeetingInvitationsRequest{}
 	}
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPost,
-		path:     "/v2/zoom/meetings/%s/resend",
-		pathArgs: []any{meetingID},
-		body:     req,
+		method:      http.MethodPost,
+		path:        "/v2/zoom/meetings/%s/resend",
+		pathArgs:    []any{meetingID},
+		body:        req,
+		debugOp:     "ResendMeetingInvitations",
+		debugFields: []any{"meetingID", meetingID},
 	})
 }
 
 // RegisterCommitteeMembers registers committee members to a meeting asynchronously via ITX proxy.
 func (c *Client) RegisterCommitteeMembers(ctx context.Context, meetingID string) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPost,
-		path:     "/v2/zoom/meetings/%s/register_committee_members",
-		pathArgs: []any{meetingID},
+		method:      http.MethodPost,
+		path:        "/v2/zoom/meetings/%s/register_committee_members",
+		pathArgs:    []any{meetingID},
+		debugOp:     "RegisterCommitteeMembers",
+		debugFields: []any{"meetingID", meetingID},
 	})
 }
 
 // UpdateOccurrence updates a specific occurrence of a recurring meeting via ITX proxy.
 func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodPut,
-		path:     "/v2/zoom/meetings/%s/occurrences/%s",
-		pathArgs: []any{meetingID, occurrenceID},
-		body:     req,
+		method:      http.MethodPut,
+		path:        "/v2/zoom/meetings/%s/occurrences/%s",
+		pathArgs:    []any{meetingID, occurrenceID},
+		body:        req,
+		debugOp:     "UpdateOccurrence",
+		debugFields: []any{"meetingID", meetingID, "occurrenceID", occurrenceID},
+		skipBodyLog: true,
 	})
 }
 
 // DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy.
 func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
 	return c.doNoContent(ctx, apiRequest{
-		method:   http.MethodDelete,
-		path:     "/v2/zoom/meetings/%s/occurrences/%s",
-		pathArgs: []any{meetingID, occurrenceID},
+		method:      http.MethodDelete,
+		path:        "/v2/zoom/meetings/%s/occurrences/%s",
+		pathArgs:    []any{meetingID, occurrenceID},
+		debugOp:     "DeleteOccurrence",
+		debugFields: []any{"meetingID", meetingID, "occurrenceID", occurrenceID},
 	})
 }
 
 // SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy.
 func (c *Client) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
 	return doJSONTyped[itx.MeetingResponseResult](c, ctx, apiRequest{
-		method:     http.MethodPost,
-		path:       "/v2/zoom/meetings/%s/responses",
-		pathArgs:   []any{url.PathEscape(meetingAndOccurrenceID)},
-		body:       req,
-		accept:     acceptJSON,
-		parseError: "failed to unmarshal response",
+		method:          http.MethodPost,
+		path:            "/v2/zoom/meetings/%s/responses",
+		pathArgs:        []any{url.PathEscape(meetingAndOccurrenceID)},
+		body:            req,
+		accept:          acceptJSON,
+		parseError:      "failed to unmarshal response",
+		debugOp:         "SubmitMeetingResponse",
+		debugFields:     []any{"meetingAndOccurrenceID", meetingAndOccurrenceID},
+		skipResponseLog: true,
 	})
 }

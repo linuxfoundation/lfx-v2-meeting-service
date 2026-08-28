@@ -30,6 +30,12 @@ func (c *Client) AcceptInvite(ctx context.Context, email, username string) error
 		path:   "/v2/zoom/meetings/invite_accepted",
 		body:   acceptInviteRequestBody{Email: email, Username: username},
 		accept: acceptJSON,
+		// debugOp names the op for the Error-level failure log; skipBodyLog
+		// keeps the raw email/username out of the Debug request-body dump —
+		// proxy.RequestJSONForLog doesn't know how to redact this body type,
+		// and the Info line above already logs redacted values.
+		debugOp:     "AcceptInvite",
+		skipBodyLog: true,
 	})
 }
 

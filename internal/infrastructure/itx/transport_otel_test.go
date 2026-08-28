@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.opentelemetry.io/otel/codes"
@@ -56,6 +57,19 @@ func hasErrorStatus(spans []sdktrace.ReadOnlySpan) bool {
 	return false
 }
 
+// spanAttribute returns the value of the named attribute on the first span
+// that has it, or false if no ended span carries that key.
+func spanAttribute(spans []sdktrace.ReadOnlySpan, key string) (string, bool) {
+	for _, s := range spans {
+		for _, a := range s.Attributes() {
+			if string(a.Key) == key {
+				return fmt.Sprint(a.Value.AsInterface()), true
+			}
+		}
+	}
+	return "", false
+}
+
 // TestRecordAndMapHTTPError_5xx_RecordsErrorOnSpan verifies the PII-safety
 // mechanism: 5xx responses record a sanitised "HTTP <code>" error on the span
 // rather than the raw upstream response body.
@@ -64,7 +78,7 @@ func TestRecordAndMapHTTPError_5xx_RecordsErrorOnSpan(t *testing.T) {
 	ctx, span := tracer.Start(context.Background(), "op")
 
 	body := []byte(`{"message":"internal error containing PII"}`)
-	err := recordAndMapHTTPError(ctx, 500, body)
+	err := recordAndMapHTTPError(ctx, "GetZoomMeeting", 500, body)
 	span.End()
 
 	if err == nil {
@@ -89,7 +103,7 @@ func TestRecordAndMapHTTPError_503_RecordsErrorOnSpan(t *testing.T) {
 	tracer, sr := newTestTracer(t)
 	ctx, span := tracer.Start(context.Background(), "op")
 
-	err := recordAndMapHTTPError(ctx, 503, []byte(`{"message":"downstream unavailable"}`))
+	err := recordAndMapHTTPError(ctx, "GetZoomMeeting", 503, []byte(`{"message":"downstream unavailable"}`))
 	span.End()
 
 	if err == nil {
@@ -104,12 +118,13 @@ func TestRecordAndMapHTTPError_503_RecordsErrorOnSpan(t *testing.T) {
 }
 
 // TestRecordAndMapHTTPError_4xx_DoesNotRecordErrorOnSpan verifies that 4xx
-// client errors do not record an error on the span (they are not server faults).
+// client errors do not record an error on the span (they are not server
+// faults) but still get status-code/operation attributes for traceability.
 func TestRecordAndMapHTTPError_4xx_DoesNotRecordErrorOnSpan(t *testing.T) {
 	tracer, sr := newTestTracer(t)
 	ctx, span := tracer.Start(context.Background(), "op")
 
-	err := recordAndMapHTTPError(ctx, 404, []byte(`{"message":"not found"}`))
+	err := recordAndMapHTTPError(ctx, "GetZoomMeeting", 404, []byte(`{"message":"not found"}`))
 	span.End()
 
 	if err == nil {
@@ -120,5 +135,11 @@ func TestRecordAndMapHTTPError_4xx_DoesNotRecordErrorOnSpan(t *testing.T) {
 	}
 	if hasErrorStatus(sr.Ended()) {
 		t.Error("SetStatus(codes.Error) must not be called on the span for a 4xx response")
+	}
+	if got, ok := spanAttribute(sr.Ended(), "itx.status_code"); !ok || got != "404" {
+		t.Errorf("itx.status_code attribute = %q, ok=%v, want 404", got, ok)
+	}
+	if got, ok := spanAttribute(sr.Ended(), "itx.operation"); !ok || got != "GetZoomMeeting" {
+		t.Errorf("itx.operation attribute = %q, ok=%v, want %q", got, ok, "GetZoomMeeting")
 	}
 }
