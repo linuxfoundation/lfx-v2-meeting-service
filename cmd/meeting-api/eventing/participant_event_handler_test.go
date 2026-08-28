@@ -1007,6 +1007,42 @@ func TestHandleInviteeUpdate_InvalidKeyOldUsername_TombstonePut_ContinuesProcess
 	publisher.AssertCalled(t, "PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything)
 }
 
+// TestHandleInviteeUpdate_MappingPut_DeadlineExceeded_Retries verifies that a
+// context.DeadlineExceeded failure on the durable mapping Put triggers retry=true.
+// isTransientError does not match "context deadline exceeded", so without the fix the
+// handler would ACK after publishing without storing the mapping that future
+// username-change events and hard deletes depend on.
+func TestHandleInviteeUpdate_MappingPut_DeadlineExceeded_Retries(t *testing.T) {
+	const (
+		inviteeUID    = "inv-mapping-deadline"
+		meetingAndOcc = "meeting-md_occ-1"
+		username      = "alice"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// No sibling xref (first-time create path).
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrKeyNotFound)
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Participant event published successfully.
+	publisher.On("PublishPastMeetingParticipantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	// Durable mapping Put fails with context.DeadlineExceeded.
+	mappingsKV.On("Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, mock.Anything).
+		Return(uint64(0), context.DeadlineExceeded)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	// Must retry — mapping is required for future username-change and hard-delete events.
+	assert.True(t, retry, "context.DeadlineExceeded on mapping Put must trigger retry")
+}
+
 // TestHandleInviteeUpdate_NewXrefPut_TransientError_Retries verifies that a transient
 // failure writing the new-username own-side xref triggers retry=true rather than silently
 // dropping the xref (which would cause future sibling merges to fail for this participant).

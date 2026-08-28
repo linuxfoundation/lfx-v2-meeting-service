@@ -235,8 +235,13 @@ func (h *EventHandlers) syncParticipantUpdate(
 	// them without an extra lookup. Retry transient write failures.
 	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store participant mapping")
-		return isTransientError(err)
+		// Always retry: isTransientError misses context.DeadlineExceeded and similar errors
+		// whose messages don't match its keyword list. Without this mapping, future
+		// username-change events and hard deletes cannot recover the old username, breaking
+		// stale-access revocation. ErrInvalidKey cannot occur here (key is uid-only, no
+		// special characters).
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store participant mapping, will retry")
+		return true
 	}
 	// Write the new-username cross-reference so sibling handlers can find this record.
 	// ErrInvalidKey (username contains characters outside [-a-zA-Z0-9_.]) is accepted: the
