@@ -45,6 +45,7 @@ func TestConvertUpdatePastMeetingSummaryPayload(t *testing.T) {
 
 		assert.NotEmpty(t, req.EditedSummaryOverview)
 		// Parser routes "Decision: ..." as a detail and "Next Steps" entries as next steps
+		assert.NotEmpty(t, req.EditedSummaryDetails)
 		assert.NotEmpty(t, req.EditedNextSteps)
 	})
 

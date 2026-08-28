@@ -298,6 +298,40 @@ func TestConvertITXMeetingAttachmentPresignToGoa(t *testing.T) {
 	})
 }
 
+func TestConvertGoaToITXCreatePastMeetingAttachmentPresign(t *testing.T) {
+	t.Run("maps required fields and nil optionals become empty", func(t *testing.T) {
+		p := &meetingservice.CreateItxPastMeetingAttachmentPresignPayload{
+			Name:     "report.pdf",
+			FileSize: 2048,
+			FileType: "application/pdf",
+		}
+
+		req := ConvertGoaToITXCreatePastMeetingAttachmentPresign(p)
+
+		assert.Equal(t, "report.pdf", req.Name)
+		assert.Equal(t, int64(2048), req.FileSize)
+		assert.Equal(t, "application/pdf", req.FileType)
+		assert.Empty(t, req.Description)
+		assert.Empty(t, req.Category)
+		assert.Nil(t, req.CreatedBy, "created_by is stamped by the service layer, not the converter")
+	})
+
+	t.Run("maps optional description and category when provided", func(t *testing.T) {
+		p := &meetingservice.CreateItxPastMeetingAttachmentPresignPayload{
+			Name:        "slides.pptx",
+			FileSize:    512,
+			FileType:    "application/vnd.ms-powerpoint",
+			Description: utils.StringPtrOmitEmpty("Q3 deck"),
+			Category:    utils.StringPtrOmitEmpty("Presentation"),
+		}
+
+		req := ConvertGoaToITXCreatePastMeetingAttachmentPresign(p)
+
+		assert.Equal(t, "Q3 deck", req.Description)
+		assert.Equal(t, "Presentation", req.Category)
+	})
+}
+
 func TestConvertITXPastMeetingAttachmentPresignToGoa(t *testing.T) {
 	t.Run("maps meeting_and_occurrence_id", func(t *testing.T) {
 		resp := &itx.PastMeetingAttachmentPresignResponse{

@@ -84,7 +84,7 @@ func TestConvertCreatePastMeetingPayload(t *testing.T) {
 		p.Committees = []*meetingservice.Committee{
 			{
 				UID:                   &uid,
-				AllowedVotingStatuses: []meetingservice.AllowedVotingStatus{"voting", "observer"},
+				AllowedVotingStatuses: []meetingservice.AllowedVotingStatus{"voting_rep", "observer"},
 			},
 		}
 
@@ -92,7 +92,7 @@ func TestConvertCreatePastMeetingPayload(t *testing.T) {
 
 		require.Len(t, req.Committees, 1)
 		assert.Equal(t, "cmte-10", req.Committees[0].ID)
-		assert.Equal(t, []itx.CommitteeFilter{"voting", "observer"}, req.Committees[0].Filters)
+		assert.Equal(t, []itx.CommitteeFilter{"voting_rep", "observer"}, req.Committees[0].Filters)
 	})
 
 	t.Run("nil committees result in no committees on request", func(t *testing.T) {
@@ -223,7 +223,7 @@ func TestConvertPastMeetingToGoa(t *testing.T) {
 	t.Run("maps committees", func(t *testing.T) {
 		resp := &itx.PastMeetingResponse{
 			Committees: []itx.Committee{
-				{ID: "cmte-10", Filters: []itx.CommitteeFilter{"voting"}},
+				{ID: "cmte-10", Filters: []itx.CommitteeFilter{"voting_rep"}},
 				{ID: "cmte-11"},
 			},
 		}
