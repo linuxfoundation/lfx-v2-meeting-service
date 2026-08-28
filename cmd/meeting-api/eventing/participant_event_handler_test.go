@@ -1083,6 +1083,47 @@ func TestHandleInviteeUpdate_NewXrefPut_TransientError_Retries(t *testing.T) {
 // Delete handlers
 // =============================================================================
 
+// TestHandleInviteeDelete_XrefTombstoneFailure_RetriesBeforePrimaryMapping verifies that
+// when the own-xref tombstone fails, the handler returns retry=true while the primary
+// mapping (the idempotency sentinel) has NOT yet been written. Without this ordering
+// guarantee a retry would exit at isTombstoned and leave the stale xref active forever.
+func TestHandleInviteeDelete_XrefTombstoneFailure_RetriesBeforePrimaryMapping(t *testing.T) {
+	const (
+		inviteeUID    = "inv-xref-tomb-fail"
+		meetingAndOcc = "meeting-xtf_occ-1"
+		username      = "alice"
+	)
+	storedMapping := buildRegistrantMappingValue(inviteeUID, username, meetingAndOcc)
+	transientErr := fmt.Errorf("nats: connection timeout writing xref tombstone")
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Not tombstoned (primary mapping still present).
+	mappingsKV.On("Get", mock.Anything, "v1_past_meeting_invitees."+inviteeUID).
+		Return(mockKeyValueEntry{value: []byte(storedMapping)}, nil)
+	// No sibling — full delete path.
+	mappingsKV.On("Get", mock.Anything, "v1_participant_by_meeting_user.attendee."+meetingAndOcc+"."+username).
+		Return(nil, jetstream.ErrKeyNotFound)
+	// Own-xref tombstone fails transiently.
+	mappingsKV.On("Put", mock.Anything, "v1_participant_by_meeting_user.invitee."+meetingAndOcc+"."+username, []byte(tombstoneMarker)).
+		Return(uint64(0), transientErr)
+	// Primary mapping tombstone must NOT be attempted if xref tombstone fails.
+	// (If it were, a retry would be blocked by isTombstoned.)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	v1Data := minimalInviteeV1Data(inviteeUID, meetingAndOcc, username)
+	retry := h.handlePastMeetingInviteeDelete(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID, v1Data)
+
+	// Must retry — and the primary mapping must NOT have been tombstoned.
+	assert.True(t, retry, "xref tombstone failure must trigger retry")
+	mappingsKV.AssertNotCalled(t, "Put", mock.Anything, "v1_past_meeting_invitees."+inviteeUID, mock.Anything)
+	publisher.AssertNotCalled(t, "PublishIndexerDelete")
+	publisher.AssertNotCalled(t, "PublishAccessDelete")
+}
+
 // TestHandleInviteeDelete_FullDelete verifies that when an invitee is deleted with no
 // surviving sibling attendee, the handler publishes an indexer delete + FGA member_remove
 // and tombstones the own mapping and xref.

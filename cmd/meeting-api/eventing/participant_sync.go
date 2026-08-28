@@ -342,18 +342,21 @@ func (h *EventHandlers) fullParticipantDelete(
 		funcLogger.DebugContext(ctx, "no username available, skipping access control message for participant delete")
 	}
 
-	result := h.handleMeetingTypeDelete(ctx, key, id, accessPayload, meetingDeleteConfig{
-		indexerSubject:      "lfx.index.v1_past_meeting_participant",
-		deleteAccessSubject: deleteAccessSubject,
-		tombstoneKeyFmts:    []string{cfg.mappingKeyPrefix + ".%s"},
-	})
-	if !result && username != "" && meetingAndOccurrenceID != "" {
+	// Tombstone the own-side xref BEFORE the primary mapping so that a failed xref
+	// tombstone can be retried without the idempotency sentinel (primary mapping) already
+	// being written. If the primary mapping were tombstoned first, a retry would exit at
+	// isTombstoned and the stale xref would never be cleaned up.
+	if username != "" && meetingAndOccurrenceID != "" {
 		if err := h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 			cfg.ownXrefPrefix, meetingAndOccurrenceID, username)); err != nil {
 			return true
 		}
 	}
-	return result
+	return h.handleMeetingTypeDelete(ctx, key, id, accessPayload, meetingDeleteConfig{
+		indexerSubject:      "lfx.index.v1_past_meeting_participant",
+		deleteAccessSubject: deleteAccessSubject,
+		tombstoneKeyFmts:    []string{cfg.mappingKeyPrefix + ".%s"},
+	})
 }
 
 // partialParticipantDelete handles the case where a participant record is deleted but a sibling
@@ -408,12 +411,15 @@ func (h *EventHandlers) partialParticipantDelete(
 		return isTransientError(err)
 	}
 
-	// Tombstone own mapping and xref; the sibling's records remain active.
-	if err := h.tombstoneMapping(ctx, fmt.Sprintf("%s.%s", cfg.mappingKeyPrefix, id)); err != nil {
-		return true
-	}
+	// Tombstone the own-side xref BEFORE the primary mapping (idempotency sentinel).
+	// A failed xref tombstone returns retry=true while the primary mapping is still absent,
+	// so the redelivery re-runs this section correctly. Reversing the order would cause
+	// the redelivery to short-circuit at isTombstoned before the xref is cleaned up.
 	if err := h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
 		cfg.ownXrefPrefix, meetingAndOccurrenceID, username)); err != nil {
+		return true
+	}
+	if err := h.tombstoneMapping(ctx, fmt.Sprintf("%s.%s", cfg.mappingKeyPrefix, id)); err != nil {
 		return true
 	}
 
