@@ -228,7 +228,7 @@ func (h *EventHandlers) syncParticipantUpdate(
 	}
 
 	// Store uid+username+meetingAndOccurrenceID so future updates and deletes can recover
-	// them without an extra lookup. Retry transient write failures.
+	// them without an extra lookup. Always retry on failure (see comment inside the block).
 	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
 		// Always retry: isTransientError misses context.DeadlineExceeded and similar errors
