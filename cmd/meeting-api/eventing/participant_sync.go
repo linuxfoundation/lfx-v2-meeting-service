@@ -382,23 +382,22 @@ func (h *EventHandlers) partialParticipantDelete(
 
 	siblingData, err := decodeData(siblingEntry.Value())
 	if err != nil {
-		// Corrupt sibling payload: fall back to a full delete so the own-side indexer
-		// record and FGA tuples are cleaned up rather than being silently abandoned.
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode sibling data for partial delete, falling back to full delete")
-		return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
+		// Corrupt sibling payload: we cannot determine what relations the sibling grants,
+		// so falling back to fullParticipantDelete would wrongly emit member_remove and
+		// revoke the surviving sibling's FGA access (violates fga-contract.md §partial-delete).
+		// Retry instead: self-heals on transient corruption; for permanent corruption the
+		// event is dropped after max-delivery without incorrectly revoking access.
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode sibling data for partial delete, will retry")
+		return true
 	}
 
 	participantData, err := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
-		if isTransientError(err) {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error converting sibling data for partial delete, will retry")
-			return true
-		}
-		// Permanent conversion failure (e.g. missing required fields in a valid JSON payload):
-		// fall back to a full delete so own-side indexer and FGA state are cleaned up rather
-		// than being silently abandoned when the event is ACKed.
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to convert sibling data for partial delete, falling back to full delete")
-		return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
+		// Same reasoning as decodeData failure above: we cannot safely issue member_remove
+		// when a sibling xref exists, regardless of whether the error is transient or permanent.
+		// Always retry to preserve the sibling's FGA access.
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to convert sibling data for partial delete, will retry")
+		return true
 	}
 	cfg.setSiblingFlags(participantData)
 
