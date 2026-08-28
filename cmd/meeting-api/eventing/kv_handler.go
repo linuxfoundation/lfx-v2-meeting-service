@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -96,11 +97,19 @@ func entryIsTombstoned(entry jetstream.KeyValueEntry) bool {
 }
 
 // tombstoneMapping writes "!del" to mappingKey so that re-deliveries of the same
-// delete event are detected and skipped.
-func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string) {
+// delete event are detected and skipped. Returns nil on success and on ErrInvalidKey
+// (the key contains characters the KV store rejects; the xref could never have existed
+// so the tombstone is a no-op). Any other error is returned to the caller for retry.
+func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string) error {
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(tombstoneMarker)); err != nil {
-		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to tombstone mapping", "mapping_key", mappingKey)
+		if errors.Is(err, jetstream.ErrInvalidKey) {
+			h.logger.WarnContext(ctx, "skipping tombstone: mapping key contains invalid characters", "mapping_key", mappingKey)
+			return nil
+		}
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to tombstone mapping, will retry", "mapping_key", mappingKey)
+		return err
 	}
+	return nil
 }
 
 // handleMeetingTypeDelete is the generic delete handler for all meeting-related resources.
@@ -129,7 +138,9 @@ func (h *EventHandlers) handleMeetingTypeDelete(
 	}
 
 	for _, keyFmt := range cfg.tombstoneKeyFmts {
-		h.tombstoneMapping(ctx, fmt.Sprintf(keyFmt, id))
+		if err := h.tombstoneMapping(ctx, fmt.Sprintf(keyFmt, id)); err != nil {
+			return true
+		}
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed delete")

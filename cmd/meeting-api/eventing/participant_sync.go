@@ -172,22 +172,18 @@ func (h *EventHandlers) syncParticipantUpdate(
 			} else {
 				siblingData, decErr := decodeData(siblingObjEntry.Value())
 				if decErr != nil {
-					// Decode failure — fall through to member_remove so stale access is
-					// revoked rather than silently left intact.
-					funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode sibling for partial update, falling through to member_remove")
-					siblingExists = false
+					// The sibling xref is active and the object was fetched successfully, so a
+					// decode failure does not mean the sibling stopped granting access. Falling
+					// through to member_remove would incorrectly revoke the surviving relation.
+					// Retry instead, matching partialParticipantDelete.
+					funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "failed to decode sibling for partial update, will retry")
+					return true
 				} else if siblingParticipant, convErr := cfg.siblingConvert(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger); convErr != nil {
-					if isTransientError(convErr) {
-						// Transient failure (e.g. project/committee ID mapping unavailable) — retry
-						// rather than falling through to member_remove, which would incorrectly
-						// revoke the sibling's surviving access.
-						funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "transient error converting sibling for partial update, will retry")
-						return true
-					}
-					// Permanent decode failure — fall through to member_remove so stale access
-					// is revoked rather than silently left intact.
-					funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "failed to convert sibling for partial update, falling through to member_remove")
-					siblingExists = false
+					// Same reasoning: cannot safely issue member_remove when the sibling xref
+					// is active, regardless of whether the conversion error is transient or
+					// permanent. Always retry to preserve the sibling's FGA access.
+					funcLogger.With(logging.ErrKey, convErr).WarnContext(ctx, "failed to convert sibling for partial update, will retry")
+					return true
 				} else {
 					cfg.setSiblingFlags(siblingParticipant)
 					if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
@@ -352,8 +348,10 @@ func (h *EventHandlers) fullParticipantDelete(
 		tombstoneKeyFmts:    []string{cfg.mappingKeyPrefix + ".%s"},
 	})
 	if !result && username != "" && meetingAndOccurrenceID != "" {
-		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
-			cfg.ownXrefPrefix, meetingAndOccurrenceID, username))
+		if err := h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
+			cfg.ownXrefPrefix, meetingAndOccurrenceID, username)); err != nil {
+			return true
+		}
 	}
 	return result
 }
@@ -411,9 +409,13 @@ func (h *EventHandlers) partialParticipantDelete(
 	}
 
 	// Tombstone own mapping and xref; the sibling's records remain active.
-	h.tombstoneMapping(ctx, fmt.Sprintf("%s.%s", cfg.mappingKeyPrefix, id))
-	h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
-		cfg.ownXrefPrefix, meetingAndOccurrenceID, username))
+	if err := h.tombstoneMapping(ctx, fmt.Sprintf("%s.%s", cfg.mappingKeyPrefix, id)); err != nil {
+		return true
+	}
+	if err := h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s",
+		cfg.ownXrefPrefix, meetingAndOccurrenceID, username)); err != nil {
+		return true
+	}
 
 	funcLogger.InfoContext(ctx, "successfully applied partial participant delete (sibling record remains active)")
 	return false
