@@ -28,7 +28,7 @@ import (
 // Registrant Event Handler
 // =============================================================================
 
-type RegistrantDBRaw struct {
+type registrantDBRaw struct {
 	ID                              string           `json:"registrant_id"`
 	MeetingID                       string           `json:"meeting_id"`
 	Type                            string           `json:"type"`
@@ -61,9 +61,9 @@ type RegistrantDBRaw struct {
 	UpdatedBy                       models.UpdatedBy `json:"updated_by"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for RegistrantDBRaw.
-func (r *RegistrantDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias RegistrantDBRaw
+// UnmarshalJSON implements custom unmarshaling for registrantDBRaw.
+func (r *registrantDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias registrantDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(r)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -76,15 +76,9 @@ func convertMapToRegistrantData(
 	idMapper domain.IDMapper,
 	logger *slog.Logger,
 ) (*models.RegistrantEventData, error) {
-	// Convert map to JSON bytes, then to RegistrantDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawRegistrant, err := decodeV1[registrantDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawRegistrant RegistrantDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawRegistrant); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal registrant data: %w", err)
+		return nil, fmt.Errorf("failed to decode registrant data: %w", err)
 	}
 
 	// Map committee ID if present
@@ -428,8 +422,8 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 // Invite Response (RSVP) Event Handler
 // =============================================================================
 
-// InviteResponseDBRaw represents raw invite response data from v1 DynamoDB/NATS KV bucket
-type InviteResponseDBRaw struct {
+// inviteResponseDBRaw represents raw invite response data from v1 DynamoDB/NATS KV bucket
+type inviteResponseDBRaw struct {
 	ID                     string `json:"id"`
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 	MeetingID              string `json:"meeting_id"`
@@ -453,9 +447,9 @@ type InviteResponseDBRaw struct {
 	ModifiedAt             string `json:"modified_at"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for InviteResponseDBRaw.
-func (i *InviteResponseDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias InviteResponseDBRaw
+// UnmarshalJSON implements custom unmarshaling for inviteResponseDBRaw.
+func (i *inviteResponseDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias inviteResponseDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -469,15 +463,9 @@ func convertMapToInviteResponseData(
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.InviteResponseEventData, error) {
-	// Convert map to JSON bytes, then to InviteResponseDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawResponse, err := decodeV1[inviteResponseDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawResponse InviteResponseDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawResponse); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal invite response data: %w", err)
+		return nil, fmt.Errorf("failed to decode invite response data: %w", err)
 	}
 
 	// Filter out mailer daemon emails — these are bounce auto-replies, not real RSVPs.

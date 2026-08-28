@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
-	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -23,8 +21,8 @@ import (
 // Past Meeting Invitee Event Handler
 // =============================================================================
 
-// InviteeDBRaw represents raw past meeting invitee data from v1 DynamoDB/NATS KV bucket
-type InviteeDBRaw struct {
+// inviteeDBRaw represents raw past meeting invitee data from v1 DynamoDB/NATS KV bucket
+type inviteeDBRaw struct {
 	// InviteeID is the partition key of the invitee table
 	InviteeID string `json:"invitee_id"`
 
@@ -98,174 +96,66 @@ type InviteeDBRaw struct {
 	UpdatedBy models.UpdatedBy `json:"updated_by"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for InviteeDBRaw.
-func (i *InviteeDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias InviteeDBRaw
+// UnmarshalJSON implements custom unmarshaling for inviteeDBRaw.
+func (i *inviteeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias inviteeDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(i)}
 	return json.Unmarshal(data, &tmp)
 }
 
-// handlePastMeetingInviteeUpdate processes updates to past meeting invitees
-func (h *EventHandlers) handlePastMeetingInviteeUpdate(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) (retry bool) {
-	funcLogger := h.logger.With("key", key, "handler", "past_meeting_invitee")
-	funcLogger.DebugContext(ctx, "processing past meeting invitee update")
-
-	// Convert v1Data to participant event data
-	participantData, err := convertMapToInviteeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to invitee participant")
-		return isTransientError(err)
-	}
-
-	// Validate required fields
-	if participantData.UID == "" || participantData.MeetingAndOccurrenceID == "" {
-		funcLogger.ErrorContext(ctx, "missing required fields in invitee participant data")
-		return false
-	}
-	if participantData.ProjectUID == "" {
-		funcLogger.InfoContext(ctx, "skipping invitee participant sync - parent project not found in mappings")
-		return false
-	}
-	funcLogger = funcLogger.With("participant_uid", participantData.UID)
-	funcLogger.InfoContext(ctx, "processing past meeting invitee update")
-
-	// If an attendee cross-reference exists for this participant, preserve is_attended=true
-	// and carry over attendee-only fields so a late-arriving invitee upsert doesn't overwrite
-	// values that the attendee handler already set (e.g. is_unknown, is_ai_reconciled).
-	if participantData.Username != "" {
-		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if xrefEntry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(xrefEntry) {
-			participantData.IsAttended = true
-			attendeeID := string(xrefEntry.Value())
-			if attendeeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-attendees.%s", attendeeID)); err == nil {
-				if attendeeMap, err := decodeData(attendeeEntry.Value()); err == nil {
-					if jsonBytes, err := json.Marshal(attendeeMap); err == nil {
-						var rawAttendee AttendeeDBRaw
-						if err := json.Unmarshal(jsonBytes, &rawAttendee); err == nil {
-							participantData.IsUnknown = rawAttendee.IsUnknown
-							participantData.IsAIReconciled = rawAttendee.IsAIReconciled
-							participantData.IsAutoMatched = rawAttendee.IsAutoMatched
-							participantData.ZoomUserName = rawAttendee.ZoomUserName
-							participantData.MappedInviteeName = rawAttendee.MappedInviteeName
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Determine action (created vs updated) and retrieve the previously-stored username so we
-	// can detect when it has been cleared and revoke stale FGA access.
-	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient failure
-	// would make us treat this as a create, overwrite the mapping, and permanently lose the old
-	// username — exactly the stale-access condition we are trying to fix.
-	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", participantData.UID)
-	indexerAction := indexerConstants.ActionCreated
-	oldUsername := ""
-	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
-		indexerAction = indexerConstants.ActionUpdated
-		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
-	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading invitee mapping, will retry")
-		return true
-	}
-
-	// If the username was cleared or changed, revoke the old FGA access before publishing the
-	// new state. Retry transient publish failures: continuing would overwrite the mapping and
-	// permanently lose the old username. But first check if an attendee record still exists
-	// for this user under the old username — if so, access is preserved via the attendee record.
-	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
-		// Check if sibling attendee exists
-		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
-		attendeeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, attendeeXrefKey)
-		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking attendee sibling xref, will retry")
-			return true
-		}
-		siblingAttendeeExists := xrefErr == nil && !entryIsTombstoned(attendeeXrefEntry)
-
-		if siblingAttendeeExists {
-			// An attendee record still grants the old username access.
-			// Send a member_put with only the attendee's relations so stale invitee/host roles are cleared.
-			siblingAttendeeID := string(attendeeXrefEntry.Value())
-			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingAttendeeID)
-			if siblingErr != nil {
-				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
-					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling attendee for partial update, will retry")
-					return true
-				}
-				// Attendee is gone — fall through to full remove.
-				siblingAttendeeExists = false
-			} else {
-				siblingData, decErr := decodeData(siblingEntry.Value())
-				if decErr == nil {
-					siblingParticipant, convErr := convertMapToAttendeeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-					if convErr == nil {
-						siblingParticipant.IsInvited = false
-						siblingParticipant.IsAttended = true
-						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
-							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old invitee username")
-							return isTransientError(pubErr)
-						}
-					}
-				}
-			}
-		}
-		if !siblingAttendeeExists {
-			// No attendee record survives — fully revoke old username's access.
-			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
+// handlePastMeetingInviteeUpdate processes updates to past meeting invitees.
+func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
+	return h.syncParticipantUpdate(ctx, key, v1Data, participantUpdateConfig{
+		ownXrefPrefix:       "invitee",
+		siblingXrefPrefix:   "attendee",
+		mappingKeyPrefix:    "v1_past_meeting_invitees",
+		siblingObjectPrefix: "itx-zoom-past-meetings-attendees.",
+		convert:             convertMapToInviteeParticipantData,
+		siblingConvert:      convertMapToAttendeeParticipantData,
+		// Invitee merges attendee-only fields so a late-arriving invitee upsert doesn't
+		// overwrite values the attendee handler already set (is_unknown, is_ai_reconciled, etc.).
+		// Distinguish ErrKeyNotFound (attendee object absent) from transient KV errors: a
+		// transient failure here would publish the invitee record with zero-valued attendee-only
+		// fields, defeating the merge that preserves IsUnknown, IsAIReconciled, etc.
+		mergeSibling: func(ctx context.Context, self *models.PastMeetingParticipantEventData, siblingID string) error {
+			attendeeEntry, err := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-attendees."+siblingID)
 			if err != nil {
-				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old invitee username")
-				return false
+				if !errors.Is(err, jetstream.ErrKeyNotFound) {
+					return err // transient: caller will retry before publishing
+				}
+				// Sibling object absent (xref is stale): don't set IsAttended so the
+				// invitee record is not incorrectly published as attended.
+				return nil
 			}
-			if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
-				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old invitee username")
-				return isTransientError(err)
+			// Attendee object confirmed present — set the flag and merge fields.
+			self.IsAttended = true
+			attendeeMap, err := decodeData(attendeeEntry.Value())
+			if err != nil {
+				// Permanent decode failure: the payload is corrupt and won't change on retry.
+				// Publish with IsAttended=true (which is confirmed correct) rather than
+				// exhausting redeliveries and dropping the invitee update entirely.
+				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee sibling for merge; publishing without attendee-only fields")
+				return nil
 			}
-		}
-		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
-		oldInviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
-		if _, err := h.v1MappingsKV.Put(ctx, oldInviteeXrefKey, []byte(tombstoneMarker)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old invitee xref, will retry")
-			return isTransientError(err)
-		}
-	}
-
-	// Publish to indexer and FGA-sync
-	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish invitee participant event")
-		return isTransientError(err)
-	}
-
-	// Store uid, username, and meeting and occurrence ID in the mapping so future updates and deletes can
-	// recover them without an extra lookup. Retry transient write failures.
-	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee participant mapping")
-		return isTransientError(err)
-	}
-	if participantData.Username != "" {
-		// Known limitation: NATS JetStream KV keys only allow [-a-zA-Z0-9_.], so usernames
-		// containing spaces or other special characters (e.g. "John Doe") will fail this Put
-		// with "nats: invalid key". We accept this as a pre-existing gap rather than encoding
-		// the key (which would make it unreadable). The WARN log captures the failure and
-		// the key field on funcLogger identifies the source record for Datadog diagnosis.
-		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invitee cross-reference mapping")
-		}
-	}
-
-	funcLogger.InfoContext(ctx, "successfully processed past meeting invitee", "action", string(indexerAction))
-	return false
+			rawData, err := decodeAttendeeRaw(attendeeMap)
+			if err != nil {
+				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee raw fields for merge; publishing without attendee-only fields")
+				return nil
+			}
+			self.IsUnknown = rawData.isUnknown
+			self.IsAIReconciled = rawData.isAIReconciled
+			self.IsAutoMatched = rawData.isAutoMatched
+			self.ZoomUserName = rawData.zoomUserName
+			self.MappedInviteeName = rawData.mappedInviteeName
+			return nil
+		},
+		// When the invitee's username changes, the surviving sibling is an attendee record:
+		// clear its invitee relation and affirm its attendee relation.
+		setSiblingFlags: func(s *models.PastMeetingParticipantEventData) {
+			s.IsInvited = false
+			s.IsAttended = true
+		},
+	})
 }
 
 // handlePastMeetingInviteeDelete processes invitee deletions.
@@ -274,137 +164,25 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(
 // than member_remove, so the participant retains access from their attendee record.
 func (h *EventHandlers) handlePastMeetingInviteeDelete(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
 	inviteeID := extractIDFromKey(key, "itx-zoom-past-meetings-invitees.")
-	funcLogger := h.logger.With("key", key, "invitee_id", inviteeID)
-
-	mappingKey := fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID)
-	if h.isTombstoned(ctx, mappingKey) {
-		funcLogger.DebugContext(ctx, "invitee delete already processed, skipping")
-		return false
-	}
-	funcLogger.InfoContext(ctx, "processing past meeting invitee delete")
-
-	var username, meetingAndOccurrenceID string
-	if v1Data == nil {
-		// Hard NATS deletes arrive with nil v1Data; recover username and meeting ID
-		// from the rich mapping written by the update handler.
-		if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
-			if !entryIsTombstoned(entry) {
-				_, username, meetingAndOccurrenceID = parseRegistrantMappingValue(string(entry.Value()))
-			}
-		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading invitee mapping on delete, will retry")
-			return true
-		}
-	} else {
-		username = utils.GetString(v1Data["lf_sso"])
-		meetingAndOccurrenceID = utils.GetString(v1Data["meeting_and_occurrence_id"])
-	}
-
-	// Check if an attendee record still exists for this participant.
-	if username != "" && meetingAndOccurrenceID != "" {
-		attendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
-		if entry, err := h.v1MappingsKV.Get(ctx, attendeeXrefKey); err == nil && !entryIsTombstoned(entry) {
-			survivingAttendeeID := string(entry.Value())
-			funcLogger.DebugContext(ctx, "participant has active attendee record; applying partial invitee delete",
-				"surviving_attendee_id", survivingAttendeeID)
-			return h.handlePartialInviteeDelete(ctx, funcLogger, key, inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username)
-		}
-	}
-
-	// Full delete — no attendee record survives.
-	return h.fullDeleteInvitee(ctx, funcLogger, key, inviteeID, meetingAndOccurrenceID, username)
-}
-
-// fullDeleteInvitee performs a full indexer delete and FGA member_remove for an invitee
-// when no sibling attendee record survives. Called from both the normal delete path and
-// as a fallback when the sibling is found to be missing.
-func (h *EventHandlers) fullDeleteInvitee(
-	ctx context.Context,
-	funcLogger *slog.Logger,
-	key, inviteeID, meetingAndOccurrenceID, username string,
-) (retry bool) {
-	var accessPayload []byte
-	var deleteAccessSubject string
-	if username != "" {
-		var err error
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, username); err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
-			return false
-		}
-		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
-	}
-
-	result := h.handleMeetingTypeDelete(ctx, key, inviteeID, accessPayload, meetingDeleteConfig{
-		indexerSubject:      "lfx.index.v1_past_meeting_participant",
-		deleteAccessSubject: deleteAccessSubject,
-		tombstoneKeyFmts:    []string{"v1_past_meeting_invitees.%s"},
+	return h.syncParticipantDelete(ctx, key, v1Data, inviteeID, participantDeleteConfig{
+		ownXrefPrefix:       "invitee",
+		siblingXrefPrefix:   "attendee",
+		mappingKeyPrefix:    "v1_past_meeting_invitees",
+		siblingObjectPrefix: "itx-zoom-past-meetings-attendees.",
+		siblingConvert:      convertMapToAttendeeParticipantData,
+		setSiblingFlags: func(s *models.PastMeetingParticipantEventData) {
+			s.IsInvited = false
+			s.IsAttended = true
+		},
 	})
-	if !result && username != "" && meetingAndOccurrenceID != "" {
-		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username))
-	}
-	return result
-}
-
-// handlePartialInviteeDelete is called when an invitee record is deleted but an attendee record
-// still exists. It sends an indexer UPDATE with is_invited=false and a member_put to update FGA
-// relations, so the participant retains access from their attendee record.
-func (h *EventHandlers) handlePartialInviteeDelete(
-	ctx context.Context,
-	funcLogger *slog.Logger,
-	key, inviteeID, survivingAttendeeID, meetingAndOccurrenceID, username string,
-) (retry bool) {
-	// Fetch the surviving attendee data to build an accurate participant record.
-	attendeeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-attendees.%s", survivingAttendeeID))
-	if err != nil {
-		if !errors.Is(err, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching attendee data for partial invitee delete")
-			return true
-		}
-		// Sibling attendee is gone — fall back to a full invitee delete.
-		funcLogger.WarnContext(ctx, "surviving attendee not found during partial invitee delete; falling back to full delete",
-			"surviving_attendee_id", survivingAttendeeID)
-		return h.fullDeleteInvitee(ctx, funcLogger, key, inviteeID, meetingAndOccurrenceID, username)
-	}
-	attendeeData, err := decodeData(attendeeEntry.Value())
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode attendee data for partial invitee delete")
-		return false
-	}
-
-	participantData, err := convertMapToAttendeeParticipantData(ctx, attendeeData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert attendee data for partial invitee delete")
-		return isTransientError(err)
-	}
-	// The invitee record is gone; the attendee record remains.
-	participantData.IsInvited = false
-	participantData.IsAttended = true
-
-	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_past_meeting_participant", inviteeID); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send indexer delete for partial invitee delete")
-		return isTransientError(err)
-	}
-
-	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), participantData); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send partial invitee delete indexer update")
-		return isTransientError(err)
-	}
-
-	// Tombstone the invitee mapping and cross-reference; the attendee's records remain active.
-	h.tombstoneMapping(ctx, fmt.Sprintf("v1_past_meeting_invitees.%s", inviteeID))
-	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
-	h.tombstoneMapping(ctx, xrefKey)
-
-	funcLogger.InfoContext(ctx, "successfully applied partial invitee delete (attendee record remains active)")
-	return false
 }
 
 // =============================================================================
 // Past Meeting Attendee Event Handler
 // =============================================================================
 
-// AttendeeDBRaw represents raw past meeting attendee data from v1 DynamoDB/NATS KV bucket
-type AttendeeDBRaw struct {
+// attendeeDBRaw represents raw past meeting attendee data from v1 DynamoDB/NATS KV bucket
+type attendeeDBRaw struct {
 	// ID is the partition key of the attendee table
 	// This is from the v1 system
 	ID string `json:"id"`
@@ -495,7 +273,7 @@ type AttendeeDBRaw struct {
 	AverageAttendance int `json:"-"`
 
 	// Sessions is the list of sessions associated with the attendee
-	Sessions []AttendeeSessionDBRaw `json:"sessions"`
+	Sessions []attendeeSessionDBRaw `json:"sessions"`
 
 	// CreatedAt is the creation time of the attendee
 	CreatedAt string `json:"created_at"`
@@ -513,398 +291,254 @@ type AttendeeDBRaw struct {
 	IsAutoMatched bool `json:"is_auto_matched,omitempty"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for AttendeeDBRaw.
-func (a *AttendeeDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttendeeDBRaw
+// UnmarshalJSON implements custom unmarshaling for attendeeDBRaw.
+func (a *attendeeDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attendeeDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
 	return json.Unmarshal(data, &tmp)
 }
 
-// AttendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
-type AttendeeSessionDBRaw struct {
+// attendeeSessionDBRaw represents raw attendee session data from v1 DynamoDB/NATS KV bucket
+type attendeeSessionDBRaw struct {
 	ParticipantUUID string `json:"participant_uuid"`
 	JoinTime        string `json:"join_time"`
 	LeaveTime       string `json:"leave_time"`
 	LeaveReason     string `json:"leave_reason"`
 }
 
-// UnmarshalJSON implements custom unmarshaling for AttendeeSessionDBRaw.
-func (a *AttendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttendeeSessionDBRaw
+// UnmarshalJSON implements custom unmarshaling for attendeeSessionDBRaw.
+func (a *attendeeSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attendeeSessionDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(a)}
 	return json.Unmarshal(data, &tmp)
 }
 
-// handlePastMeetingAttendeeUpdate processes updates to past meeting attendees
-func (h *EventHandlers) handlePastMeetingAttendeeUpdate(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) (retry bool) {
-	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attendee")
-	funcLogger.DebugContext(ctx, "processing past meeting attendee update")
-
-	// Convert v1Data to participant event data
-	participantData, err := convertMapToAttendeeParticipantData(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to attendee participant")
-		return isTransientError(err)
-	}
-
-	// Validate required fields
-	if participantData.UID == "" || participantData.MeetingAndOccurrenceID == "" {
-		funcLogger.ErrorContext(ctx, "missing required fields in attendee participant data")
-		return false
-	}
-	if participantData.ProjectUID == "" {
-		funcLogger.InfoContext(ctx, "skipping attendee participant sync - parent project not found in mappings")
-		return false
-	}
-	funcLogger = funcLogger.With("participant_uid", participantData.UID)
-	funcLogger.InfoContext(ctx, "processing past meeting attendee update")
-
-	// If an invitee cross-reference exists for this participant, preserve is_invited=true
-	// so a late-arriving attendee upsert doesn't reset a flag the invitee handler already set.
-	if participantData.Username != "" {
-		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
-			participantData.IsInvited = true
-		}
-	}
-
-	// Determine action (created vs updated) and retrieve the previously-stored username so we
-	// can detect when it has been cleared and revoke stale FGA access.
-	// Distinguish ErrKeyNotFound (first-time create) from transient errors: a transient failure
-	// would make us treat this as a create, overwrite the mapping, and permanently lose the old
-	// username — exactly the stale-access condition we are trying to fix.
-	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", participantData.UID)
-	indexerAction := indexerConstants.ActionCreated
-	oldUsername := ""
-	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
-		indexerAction = indexerConstants.ActionUpdated
-		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
-	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading attendee mapping, will retry")
-		return true
-	}
-
-	// If the username was cleared or changed, revoke the old FGA access before publishing the
-	// new state. Retry transient publish failures: continuing would overwrite the mapping and
-	// permanently lose the old username. But first check if an invitee record still exists
-	// for this user under the old username — if so, access is preserved via the invitee record.
-	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
-		// Check if sibling invitee exists
-		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
-		inviteeXrefEntry, xrefErr := h.v1MappingsKV.Get(ctx, inviteeXrefKey)
-		if xrefErr != nil && !errors.Is(xrefErr, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, xrefErr).WarnContext(ctx, "transient error checking invitee sibling xref, will retry")
-			return true
-		}
-		siblingInviteeExists := xrefErr == nil && !entryIsTombstoned(inviteeXrefEntry)
-
-		if siblingInviteeExists {
-			// An invitee record still grants the old username access.
-			// Send a member_put with only the invitee's relations so stale attendee/host roles are cleared.
-			siblingInviteeID := string(inviteeXrefEntry.Value())
-			siblingEntry, siblingErr := h.v1ObjectsKV.Get(ctx, "itx-zoom-past-meetings-invitees."+siblingInviteeID)
-			if siblingErr != nil {
-				if !errors.Is(siblingErr, jetstream.ErrKeyNotFound) {
-					funcLogger.With(logging.ErrKey, siblingErr).WarnContext(ctx, "transient error fetching sibling invitee for partial update, will retry")
-					return true
-				}
-				// Invitee is gone — fall through to full remove.
-				siblingInviteeExists = false
-			} else {
-				siblingData, decErr := decodeData(siblingEntry.Value())
-				if decErr == nil {
-					siblingParticipant, convErr := convertMapToInviteeParticipantData(ctx, siblingData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-					if convErr == nil {
-						siblingParticipant.IsInvited = true
-						siblingParticipant.IsAttended = false
-						if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
-							funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old attendee username")
-							return isTransientError(pubErr)
-						}
-					}
-				}
-			}
-		}
-		if !siblingInviteeExists {
-			// No invitee record survives — fully revoke old username's access.
-			payload, err := buildGenericMemberRemovePayload("v1_past_meeting", participantData.MeetingAndOccurrenceID, oldUsername)
-			if err != nil {
-				funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload for old attendee username")
-				return false
-			}
-			if err := h.publisher.PublishAccessDelete(ctx, fgaconstants.GenericMemberRemoveSubject, payload); err != nil {
-				funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to publish FGA remove for old attendee username")
-				return isTransientError(err)
-			}
-		}
-		// Tombstone the stale cross-reference so sibling handlers don't match the old username.
-		oldAttendeeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, oldUsername)
-		if _, err := h.v1MappingsKV.Put(ctx, oldAttendeeXrefKey, []byte(tombstoneMarker)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error tombstoning old attendee xref, will retry")
-			return isTransientError(err)
-		}
-	}
-
-	// Publish to indexer and FGA-sync
-	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish attendee participant event")
-		return isTransientError(err)
-	}
-
-	// Store uid, username, and meeting and occurrence ID in the mapping so future updates and deletes can
-	// recover them without an extra lookup. Retry transient write failures.
-	mappingValue := buildRegistrantMappingValue(participantData.UID, participantData.Username, participantData.MeetingAndOccurrenceID)
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee participant mapping")
-		return isTransientError(err)
-	}
-	if participantData.Username != "" {
-		// Known limitation: NATS JetStream KV keys only allow [-a-zA-Z0-9_.], so usernames
-		// containing spaces or other special characters (e.g. "John Doe") will fail this Put
-		// with "nats: invalid key". We accept this as a pre-existing gap rather than encoding
-		// the key (which would make it unreadable). The WARN log captures the failure and
-		// the key field on funcLogger identifies the source record for Datadog diagnosis.
-		xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s",
-			participantData.MeetingAndOccurrenceID, participantData.Username)
-		if _, err := h.v1MappingsKV.Put(ctx, xrefKey, []byte(participantData.UID)); err != nil {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store attendee cross-reference mapping")
-		}
-	}
-
-	funcLogger.InfoContext(ctx, "successfully processed past meeting attendee", "action", string(indexerAction))
-	return false
+// handlePastMeetingAttendeeUpdate processes updates to past meeting attendees.
+func (h *EventHandlers) handlePastMeetingAttendeeUpdate(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
+	return h.syncParticipantUpdate(ctx, key, v1Data, participantUpdateConfig{
+		ownXrefPrefix:       "attendee",
+		siblingXrefPrefix:   "invitee",
+		mappingKeyPrefix:    "v1_past_meeting_attendees",
+		siblingObjectPrefix: "itx-zoom-past-meetings-invitees.",
+		convert:             convertMapToAttendeeParticipantData,
+		siblingConvert:      convertMapToInviteeParticipantData,
+		// Attendee merges invitee presence with a flag only — no additional fields to copy.
+		mergeSibling: func(_ context.Context, self *models.PastMeetingParticipantEventData, _ string) error {
+			self.IsInvited = true
+			return nil
+		},
+		// When the attendee's username changes, the surviving sibling is an invitee record:
+		// affirm its invitee relation and clear its attendee relation.
+		setSiblingFlags: func(s *models.PastMeetingParticipantEventData) {
+			s.IsInvited = true
+			s.IsAttended = false
+		},
+	})
 }
 
 // handlePastMeetingAttendeeDelete processes attendee deletions.
 // If an invitee record still exists for the same participant, a partial delete is applied:
 // the indexer record is updated with is_attended=false and FGA is updated via member_put rather
 // than member_remove, so the participant retains access from their invitee record.
-func (h *EventHandlers) handlePastMeetingAttendeeDelete(
-	ctx context.Context,
-	key string,
-	v1Data map[string]interface{},
-) (retry bool) {
+func (h *EventHandlers) handlePastMeetingAttendeeDelete(ctx context.Context, key string, v1Data map[string]interface{}) (retry bool) {
 	attendeeID := extractIDFromKey(key, "itx-zoom-past-meetings-attendees.")
-	funcLogger := h.logger.With("key", key, "attendee_id", attendeeID)
-
-	mappingKey := fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID)
-	if h.isTombstoned(ctx, mappingKey) {
-		funcLogger.DebugContext(ctx, "attendee delete already processed, skipping")
-		return false
-	}
-	funcLogger.InfoContext(ctx, "processing past meeting attendee delete")
-
-	var username, meetingAndOccurrenceID string
-	if v1Data == nil {
-		// Hard NATS deletes arrive with nil v1Data; recover username and meeting ID
-		// from the rich mapping written by the update handler.
-		if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
-			if !entryIsTombstoned(entry) {
-				_, username, meetingAndOccurrenceID = parseRegistrantMappingValue(string(entry.Value()))
-			}
-		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading attendee mapping on delete, will retry")
-			return true
-		}
-	} else {
-		username = utils.GetString(v1Data["lf_sso"])
-		meetingAndOccurrenceID = utils.GetString(v1Data["meeting_and_occurrence_id"])
-	}
-
-	// Check if an invitee record still exists for this participant.
-	if username != "" && meetingAndOccurrenceID != "" {
-		inviteeXrefKey := fmt.Sprintf("v1_participant_by_meeting_user.invitee.%s.%s", meetingAndOccurrenceID, username)
-		if entry, err := h.v1MappingsKV.Get(ctx, inviteeXrefKey); err == nil && !entryIsTombstoned(entry) {
-			survivingInviteeID := string(entry.Value())
-			funcLogger.DebugContext(ctx, "participant has active invitee record; applying partial attendee delete",
-				"surviving_invitee_id", survivingInviteeID)
-			return h.handlePartialAttendeeDelete(ctx, funcLogger, key, attendeeID, survivingInviteeID, meetingAndOccurrenceID, username)
-		}
-	}
-
-	// Full delete — no invitee record survives.
-	return h.fullDeleteAttendee(ctx, funcLogger, key, attendeeID, meetingAndOccurrenceID, username)
-}
-
-// fullDeleteAttendee performs a full indexer delete and FGA member_remove for an attendee
-// when no sibling invitee record survives. Called from both the normal delete path and
-// as a fallback when the sibling is found to be missing.
-func (h *EventHandlers) fullDeleteAttendee(
-	ctx context.Context,
-	funcLogger *slog.Logger,
-	key, attendeeID, meetingAndOccurrenceID, username string,
-) (retry bool) {
-	var accessPayload []byte
-	var deleteAccessSubject string
-	if username != "" {
-		var err error
-		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, username); err != nil {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
-			return false
-		}
-		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
-	} else {
-		funcLogger.DebugContext(ctx, "no username available, skipping access control message for attendee delete")
-	}
-
-	result := h.handleMeetingTypeDelete(ctx, key, attendeeID, accessPayload, meetingDeleteConfig{
-		indexerSubject:      "lfx.index.v1_past_meeting_participant",
-		deleteAccessSubject: deleteAccessSubject,
-		tombstoneKeyFmts:    []string{"v1_past_meeting_attendees.%s"},
+	return h.syncParticipantDelete(ctx, key, v1Data, attendeeID, participantDeleteConfig{
+		ownXrefPrefix:       "attendee",
+		siblingXrefPrefix:   "invitee",
+		mappingKeyPrefix:    "v1_past_meeting_attendees",
+		siblingObjectPrefix: "itx-zoom-past-meetings-invitees.",
+		siblingConvert:      convertMapToInviteeParticipantData,
+		setSiblingFlags: func(s *models.PastMeetingParticipantEventData) {
+			s.IsInvited = true
+			s.IsAttended = false
+		},
 	})
-	if !result && username != "" && meetingAndOccurrenceID != "" {
-		h.tombstoneMapping(ctx, fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username))
-	}
-	return result
-}
-
-// handlePartialAttendeeDelete is called when an attendee record is deleted but an invitee record
-// still exists. It sends an indexer UPDATE with is_attended=false and a member_put to update FGA
-// relations, so the participant retains access from their invitee record.
-func (h *EventHandlers) handlePartialAttendeeDelete(
-	ctx context.Context,
-	funcLogger *slog.Logger,
-	key, attendeeID, survivingInviteeID, meetingAndOccurrenceID, username string,
-) (retry bool) {
-	// Fetch the surviving invitee data to build an accurate participant record.
-	inviteeEntry, err := h.v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-past-meetings-invitees.%s", survivingInviteeID))
-	if err != nil {
-		if !errors.Is(err, jetstream.ErrKeyNotFound) {
-			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching invitee data for partial attendee delete")
-			return true
-		}
-		// Sibling invitee is gone — fall back to a full attendee delete.
-		funcLogger.WarnContext(ctx, "surviving invitee not found during partial attendee delete; falling back to full delete",
-			"surviving_invitee_id", survivingInviteeID)
-		return h.fullDeleteAttendee(ctx, funcLogger, key, attendeeID, meetingAndOccurrenceID, username)
-	}
-	inviteeData, err := decodeData(inviteeEntry.Value())
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode invitee data for partial attendee delete")
-		return false
-	}
-
-	participantData, err := convertMapToInviteeParticipantData(ctx, inviteeData, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
-	if err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert invitee data for partial attendee delete")
-		return isTransientError(err)
-	}
-	// The attendee record is gone; the invitee record remains.
-	participantData.IsInvited = true
-	participantData.IsAttended = false
-
-	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_past_meeting_participant", attendeeID); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send indexer delete for partial attendee delete")
-		return isTransientError(err)
-	}
-
-	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), participantData); err != nil {
-		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send partial attendee delete indexer update")
-		return isTransientError(err)
-	}
-
-	// Tombstone the attendee mapping and cross-reference; the invitee's records remain active.
-	h.tombstoneMapping(ctx, fmt.Sprintf("v1_past_meeting_attendees.%s", attendeeID))
-	xrefKey := fmt.Sprintf("v1_participant_by_meeting_user.attendee.%s.%s", meetingAndOccurrenceID, username)
-	h.tombstoneMapping(ctx, xrefKey)
-
-	funcLogger.InfoContext(ctx, "successfully applied partial attendee delete (invitee record remains active)")
-	return false
 }
 
 // =============================================================================
 // Participant Conversion Functions
 // =============================================================================
 
-func convertMapToInviteeParticipantData(
+// rawParticipantData is a normalised intermediate representation populated from
+// either inviteeDBRaw or attendeeDBRaw. It lets convertParticipant run the shared
+// logic (project/committee resolution, user enrichment, org flags, time parsing)
+// once, regardless of which wire format was decoded.
+type rawParticipantData struct {
+	uid                string
+	meetingAndOccID    string
+	meetingID          string
+	projectSFID        string
+	projectSlug        string
+	committeeID        string
+	email              string
+	firstName          string
+	lastName           string
+	username           string
+	lfUserID           string
+	jobTitle           string
+	org                string
+	profilePic         string
+	registrantID       string
+	createdAt          string
+	modifiedAt         string
+	orgIsMember        *bool
+	orgIsProjectMember *bool
+	// flags set by each side
+	isInvited  bool
+	isAttended bool
+	isHost     bool // pre-computed by invitee side via KV lookup; always false for attendees
+	// attendee-only fields (zero-valued for invitees)
+	isUnknown         bool
+	isAIReconciled    bool
+	isAutoMatched     bool
+	zoomUserName      string
+	mappedInviteeName string
+	sessions          []attendeeSessionDBRaw
+}
+
+// decodeInviteeRaw decodes v1Data into rawParticipantData for the invitee side.
+// It performs the registrant KV lookup needed to determine isHost.
+func decodeInviteeRaw(ctx context.Context, v1Data map[string]interface{}, v1ObjectsKV jetstream.KeyValue) (rawParticipantData, error) {
+	raw, err := decodeV1[inviteeDBRaw](v1Data)
+	if err != nil {
+		return rawParticipantData{}, err
+	}
+	if raw.InviteeID == "" || raw.MeetingAndOccurrenceID == "" {
+		return rawParticipantData{}, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
+	}
+
+	// Invitee host status requires a registrant record lookup.
+	isHost := false
+	if raw.RegistrantID != "" {
+		if entry, err := v1ObjectsKV.Get(ctx, fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", raw.RegistrantID)); err == nil {
+			if data, err := decodeData(entry.Value()); err == nil {
+				isHost = utils.GetBool(data["host"])
+			}
+		}
+	}
+
+	return rawParticipantData{
+		uid:                raw.InviteeID,
+		meetingAndOccID:    raw.MeetingAndOccurrenceID,
+		meetingID:          raw.MeetingID,
+		projectSFID:        raw.ProjectID,
+		projectSlug:        raw.ProjectSlug,
+		committeeID:        raw.CommitteeID,
+		email:              raw.Email,
+		firstName:          raw.FirstName,
+		lastName:           raw.LastName,
+		username:           raw.LFSSO,
+		lfUserID:           raw.LFUserID,
+		jobTitle:           raw.JobTitle,
+		org:                raw.Org,
+		profilePic:         raw.ProfilePicture,
+		registrantID:       raw.RegistrantID,
+		createdAt:          raw.CreatedAt,
+		modifiedAt:         raw.ModifiedAt,
+		orgIsMember:        raw.OrgIsMember,
+		orgIsProjectMember: raw.OrgIsProjectMember,
+		isInvited:          true,
+		isAttended:         false,
+		isHost:             isHost,
+	}, nil
+}
+
+// decodeAttendeeRaw decodes v1Data into rawParticipantData for the attendee side.
+// No KV lookups are needed: host is always false for attendees, and isInvited is
+// derived from the presence of a registrant_id on the record itself.
+func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error) {
+	raw, err := decodeV1[attendeeDBRaw](v1Data)
+	if err != nil {
+		return rawParticipantData{}, err
+	}
+	if raw.ID == "" || raw.MeetingAndOccurrenceID == "" {
+		return rawParticipantData{}, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
+	}
+
+	firstName, lastName := parseName(raw.Name)
+
+	return rawParticipantData{
+		uid:                raw.ID,
+		meetingAndOccID:    raw.MeetingAndOccurrenceID,
+		meetingID:          raw.MeetingID,
+		projectSFID:        raw.ProjectID,
+		projectSlug:        raw.ProjectSlug,
+		committeeID:        raw.CommitteeID,
+		email:              raw.Email,
+		firstName:          firstName,
+		lastName:           lastName,
+		username:           raw.LFSSO,
+		lfUserID:           raw.LFUserID,
+		jobTitle:           raw.JobTitle,
+		org:                raw.Org,
+		profilePic:         raw.ProfilePicture,
+		registrantID:       raw.RegistrantID,
+		createdAt:          raw.CreatedAt,
+		modifiedAt:         raw.ModifiedAt,
+		orgIsMember:        raw.OrgIsMember,
+		orgIsProjectMember: raw.OrgIsProjectMember,
+		isInvited:          raw.RegistrantID != "",
+		isAttended:         true,
+		isHost:             false, // attendee records don't carry host info
+		isUnknown:          raw.IsUnknown,
+		isAIReconciled:     raw.IsAIReconciled,
+		isAutoMatched:      raw.IsAutoMatched,
+		zoomUserName:       raw.ZoomUserName,
+		mappedInviteeName:  raw.MappedInviteeName,
+		sessions:           raw.Sessions,
+	}, nil
+}
+
+// convertParticipant is the shared conversion core. It takes an already-decoded
+// rawParticipantData and performs project/committee resolution, user enrichment,
+// session conversion, time parsing, and org-flag unpacking — logic that is
+// identical for both the invitee and attendee sides.
+func convertParticipant(
 	ctx context.Context,
-	v1Data map[string]interface{},
+	raw rawParticipantData,
 	userLookup domain.V1UserLookup,
 	idMapper domain.IDMapper,
 	v1ObjectsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.PastMeetingParticipantEventData, error) {
-	// Convert map to JSON bytes, then to InviteeDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawInvitee InviteeDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawInvitee); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal invitee data: %w", err)
-	}
-
-	// Validate required fields
-	if rawInvitee.InviteeID == "" || rawInvitee.MeetingAndOccurrenceID == "" {
-		return nil, fmt.Errorf("missing required fields: invitee_id or meeting_and_occurrence_id")
-	}
-
-	// Get project SFID and slug: prefer the values from the invitee record, but fall back to
-	// the parent past_meeting when proj_id is absent (it is omitempty and may be missing for
-	// some v1 invitee records). This ensures those records are indexed rather than silently
-	// dropped, and that project_slug is always propagated so the Persona Service can resolve
-	// the project without per-record fetches at query time.
-	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawInvitee.MeetingAndOccurrenceID, rawInvitee.ProjectID, rawInvitee.ProjectSlug, v1ObjectsKV, logger)
+	// Resolve project SFID and slug: prefer values from the record, fall back to the
+	// parent past_meeting so records with omitted proj_id are indexed rather than dropped.
+	projectSFID, projectSlug, err := resolveProjectFields(ctx, raw.meetingAndOccID, raw.projectSFID, raw.projectSlug, v1ObjectsKV, logger)
 	if err != nil {
 		return nil, err
 	}
 	if projectSFID == "" {
-		return nil, fmt.Errorf("invitee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
+		return nil, fmt.Errorf("participant missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
 	}
 
-	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
+	// Map project ID. A missing mapping means the project isn't in v2 yet — caller skips.
 	// Any other error is transient and propagated for retry.
 	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
 	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
 		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
-	// Map the invitee's own committee_id to a v2 UID. Only set when the invitee record carries a
-	// committee_id — a missing mapping is non-fatal.
+	// Map committee_id to v2 UID when present; a missing mapping is non-fatal.
 	var committeeUID string
-	if rawInvitee.CommitteeID != "" {
-		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawInvitee.CommitteeID)
+	if raw.committeeID != "" {
+		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, raw.committeeID)
 		if mapErr != nil {
 			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
 				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
 			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for invitee", "v1_id", rawInvitee.CommitteeID)
+			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for participant", "v1_id", raw.committeeID)
 		} else {
 			committeeUID = uid
 		}
 	}
 
-	// Determine if host (lookup registrant if available)
-	isHost := false
-	if rawInvitee.RegistrantID != "" {
-		registrantKey := fmt.Sprintf("itx-zoom-meetings-registrants-v2.%s", rawInvitee.RegistrantID)
-		if registrantEntry, err := v1ObjectsKV.Get(ctx, registrantKey); err == nil {
-			if registrantData, err := decodeData(registrantEntry.Value()); err == nil {
-				isHost = utils.GetBool(registrantData["host"])
-			}
-		}
-	}
-
-	// Username is lf_sso field
-	username := rawInvitee.LFSSO
-
-	// Use existing first/last name from invitee record
-	firstName := rawInvitee.FirstName
-	lastName := rawInvitee.LastName
-
-	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
-	if rawInvitee.LFUserID != "" && (firstName == "" || lastName == "") {
-		v1User, err := userLookup.LookupUser(ctx, rawInvitee.LFUserID)
+	// Enrich first/last name from the auth-service profile when the record is missing them.
+	firstName := raw.firstName
+	lastName := raw.lastName
+	if raw.lfUserID != "" && (firstName == "" || lastName == "") {
+		v1User, err := userLookup.LookupUser(ctx, raw.lfUserID)
 		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawInvitee.LFUserID)
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", raw.lfUserID)
 		} else if v1User != nil {
 			if firstName == "" && v1User.FirstName != "" {
 				firstName = v1User.FirstName
@@ -915,183 +549,82 @@ func convertMapToInviteeParticipantData(
 		}
 	}
 
-	// Parse times
-	createdAt, _ := parseTime(rawInvitee.CreatedAt)
-	modifiedAt, _ := parseTime(rawInvitee.ModifiedAt)
+	// Convert sessions (non-nil only for attendees; invitees carry nil).
+	var sessions []models.ParticipantSession
+	for _, s := range raw.sessions {
+		ps := models.ParticipantSession{
+			UID:         s.ParticipantUUID,
+			LeaveReason: s.LeaveReason,
+		}
+		if t, err := parseTime(s.JoinTime); err == nil {
+			ps.JoinTime = &t
+		}
+		if t, err := parseTime(s.LeaveTime); err == nil {
+			ps.LeaveTime = &t
+		}
+		sessions = append(sessions, ps)
+	}
 
-	// Get org membership flags
+	createdAt, _ := parseTime(raw.createdAt)
+	modifiedAt, _ := parseTime(raw.modifiedAt)
+
 	orgIsMember := false
-	if rawInvitee.OrgIsMember != nil {
-		orgIsMember = *rawInvitee.OrgIsMember
+	if raw.orgIsMember != nil {
+		orgIsMember = *raw.orgIsMember
 	}
 	orgIsProjectMember := false
-	if rawInvitee.OrgIsProjectMember != nil {
-		orgIsProjectMember = *rawInvitee.OrgIsProjectMember
+	if raw.orgIsProjectMember != nil {
+		orgIsProjectMember = *raw.orgIsProjectMember
 	}
 
 	return &models.PastMeetingParticipantEventData{
-		UID:                    rawInvitee.InviteeID,
-		MeetingAndOccurrenceID: rawInvitee.MeetingAndOccurrenceID,
-		MeetingID:              rawInvitee.MeetingID,
+		UID:                    raw.uid,
+		MeetingAndOccurrenceID: raw.meetingAndOccID,
+		MeetingID:              raw.meetingID,
 		ProjectUID:             projectUID,
 		ProjectSlug:            projectSlug,
 		CommitteeUID:           committeeUID,
-		Email:                  rawInvitee.Email,
+		Email:                  raw.email,
 		FirstName:              firstName,
 		LastName:               lastName,
-		Host:                   isHost,
-		JobTitle:               rawInvitee.JobTitle,
-		OrgName:                rawInvitee.Org,
+		Host:                   raw.isHost,
+		JobTitle:               raw.jobTitle,
+		OrgName:                raw.org,
 		OrgIsMember:            orgIsMember,
 		OrgIsProjectMember:     orgIsProjectMember,
-		AvatarURL:              rawInvitee.ProfilePicture,
-		Username:               username,
-		IsInvited:              true,
-		IsAttended:             false,
-		Sessions:               nil, // Invitees don't have sessions
+		AvatarURL:              raw.profilePic,
+		Username:               raw.username,
+		IsInvited:              raw.isInvited,
+		IsAttended:             raw.isAttended,
+		IsUnknown:              raw.isUnknown,
+		IsAIReconciled:         raw.isAIReconciled,
+		IsAutoMatched:          raw.isAutoMatched,
+		ZoomUserName:           raw.zoomUserName,
+		MappedInviteeName:      raw.mappedInviteeName,
+		Sessions:               sessions,
 		CreatedAt:              createdAt,
 		UpdatedAt:              modifiedAt,
 	}, nil
 }
 
-func convertMapToAttendeeParticipantData(
-	ctx context.Context,
-	v1Data map[string]interface{},
-	userLookup domain.V1UserLookup,
-	idMapper domain.IDMapper,
-	v1ObjectsKV jetstream.KeyValue,
-	logger *slog.Logger,
-) (*models.PastMeetingParticipantEventData, error) {
-	// Convert map to JSON bytes, then to AttendeeDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawAttendee AttendeeDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawAttendee); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal attendee data: %w", err)
-	}
-
-	// Validate required fields
-	if rawAttendee.ID == "" || rawAttendee.MeetingAndOccurrenceID == "" {
-		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
-	}
-
-	// Get project SFID and slug from the attendee record; fall back to the parent past_meeting
-	// for any missing values so the Persona Service can always resolve the project at query time.
-	projectSFID, projectSlug, err := resolveProjectFields(ctx, rawAttendee.MeetingAndOccurrenceID, rawAttendee.ProjectID, rawAttendee.ProjectSlug, v1ObjectsKV, logger)
+// convertMapToInviteeParticipantData decodes invitee v1Data and runs the shared
+// conversion core. Satisfies participantConvertFn.
+func convertMapToInviteeParticipantData(ctx context.Context, v1Data map[string]interface{}, userLookup domain.V1UserLookup, idMapper domain.IDMapper, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) (*models.PastMeetingParticipantEventData, error) {
+	raw, err := decodeInviteeRaw(ctx, v1Data, v1ObjectsKV)
 	if err != nil {
 		return nil, err
 	}
-	if projectSFID == "" {
-		return nil, fmt.Errorf("attendee missing project ID: proj_id absent and parent past_meeting not yet available (transient)")
+	return convertParticipant(ctx, raw, userLookup, idMapper, v1ObjectsKV, logger)
+}
+
+// convertMapToAttendeeParticipantData decodes attendee v1Data and runs the shared
+// conversion core. Satisfies participantConvertFn.
+func convertMapToAttendeeParticipantData(ctx context.Context, v1Data map[string]interface{}, userLookup domain.V1UserLookup, idMapper domain.IDMapper, v1ObjectsKV jetstream.KeyValue, logger *slog.Logger) (*models.PastMeetingParticipantEventData, error) {
+	raw, err := decodeAttendeeRaw(v1Data)
+	if err != nil {
+		return nil, err
 	}
-
-	// Map project ID. A missing mapping means the project isn't in v2 yet — the caller skips.
-	// Any other error is transient and propagated for retry.
-	projectUID, err := idMapper.MapProjectV1ToV2(ctx, projectSFID)
-	if err != nil && domain.GetErrorType(err) != domain.ErrorTypeValidation {
-		return nil, fmt.Errorf("failed to map project ID (transient): %w", err)
-	}
-
-	// Map the attendee's own committee_id to a v2 UID. Only set when the attendee record carries a
-	// committee_id — a missing mapping is non-fatal.
-	var committeeUID string
-	if rawAttendee.CommitteeID != "" {
-		uid, mapErr := idMapper.MapCommitteeV1ToV2(ctx, rawAttendee.CommitteeID)
-		if mapErr != nil {
-			if domain.GetErrorType(mapErr) != domain.ErrorTypeValidation {
-				return nil, fmt.Errorf("failed to map committee ID (transient): %w", mapErr)
-			}
-			logger.With(logging.ErrKey, mapErr).WarnContext(ctx, "committee mapping not found for attendee", "v1_id", rawAttendee.CommitteeID)
-		} else {
-			committeeUID = uid
-		}
-	}
-
-	// Check if this user was also invited (registrant_id present)
-	isInvited := rawAttendee.RegistrantID != ""
-
-	// Parse name
-	firstName, lastName := parseName(rawAttendee.Name)
-
-	// Username is lf_sso field
-	username := rawAttendee.LFSSO
-
-	// Username resolution via V1UserLookup if lf_user_id exists and we need enrichment
-	if rawAttendee.LFUserID != "" && (firstName == "" || lastName == "") {
-		v1User, err := userLookup.LookupUser(ctx, rawAttendee.LFUserID)
-		if err != nil {
-			logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to lookup v1 user", "lf_user_id", rawAttendee.LFUserID)
-		} else if v1User != nil {
-			if firstName == "" && v1User.FirstName != "" {
-				firstName = v1User.FirstName
-			}
-			if lastName == "" && v1User.LastName != "" {
-				lastName = v1User.LastName
-			}
-		}
-	}
-
-	// Convert sessions
-	var sessions []models.ParticipantSession
-	for _, rawSession := range rawAttendee.Sessions {
-		s := models.ParticipantSession{
-			UID:         rawSession.ParticipantUUID,
-			LeaveReason: rawSession.LeaveReason,
-		}
-		if t, err := parseTime(rawSession.JoinTime); err == nil {
-			s.JoinTime = &t
-		}
-		if t, err := parseTime(rawSession.LeaveTime); err == nil {
-			s.LeaveTime = &t
-		}
-		sessions = append(sessions, s)
-	}
-
-	// Parse times
-	createdAt, _ := parseTime(rawAttendee.CreatedAt)
-	modifiedAt, _ := parseTime(rawAttendee.ModifiedAt)
-
-	// Get org membership flags
-	orgIsMember := false
-	if rawAttendee.OrgIsMember != nil {
-		orgIsMember = *rawAttendee.OrgIsMember
-	}
-	orgIsProjectMember := false
-	if rawAttendee.OrgIsProjectMember != nil {
-		orgIsProjectMember = *rawAttendee.OrgIsProjectMember
-	}
-
-	return &models.PastMeetingParticipantEventData{
-		UID:                    rawAttendee.ID,
-		MeetingAndOccurrenceID: rawAttendee.MeetingAndOccurrenceID,
-		MeetingID:              rawAttendee.MeetingID,
-		ProjectUID:             projectUID,
-		ProjectSlug:            projectSlug,
-		CommitteeUID:           committeeUID,
-		Email:                  rawAttendee.Email,
-		FirstName:              firstName,
-		LastName:               lastName,
-		Host:                   false, // Attendee records don't have host info
-		JobTitle:               rawAttendee.JobTitle,
-		OrgName:                rawAttendee.Org,
-		OrgIsMember:            orgIsMember,
-		OrgIsProjectMember:     orgIsProjectMember,
-		AvatarURL:              rawAttendee.ProfilePicture,
-		Username:               username,
-		IsInvited:              isInvited,
-		IsAttended:             true,
-		IsUnknown:              rawAttendee.IsUnknown,
-		IsAIReconciled:         rawAttendee.IsAIReconciled,
-		IsAutoMatched:          rawAttendee.IsAutoMatched,
-		ZoomUserName:           rawAttendee.ZoomUserName,
-		MappedInviteeName:      rawAttendee.MappedInviteeName,
-		Sessions:               sessions,
-		CreatedAt:              createdAt,
-		UpdatedAt:              modifiedAt,
-	}, nil
+	return convertParticipant(ctx, raw, userLookup, idMapper, v1ObjectsKV, logger)
 }
 
 // resolveProjectFields returns the project SFID and slug for a participant record.

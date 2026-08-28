@@ -18,8 +18,8 @@ import (
 // Meeting Attachment Event Handler
 // =============================================================================
 
-// AttachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
-type AttachmentDBRaw struct {
+// attachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type attachmentDBRaw struct {
 	ID               string                `json:"id"`
 	MeetingID        string                `json:"meeting_id"`
 	Type             string                `json:"type"`
@@ -43,8 +43,8 @@ type AttachmentDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttachmentDBRaw
+func (a *attachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attachmentDBRaw
 	tmp := struct {
 		FileSize interface{} `json:"file_size"`
 		*Alias
@@ -182,14 +182,9 @@ func (h *EventHandlers) handleMeetingAttachmentDelete(
 
 // convertMapToMeetingAttachmentData converts a raw v1 map to MeetingAttachmentEventData
 func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.MeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[attachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp AttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
@@ -250,8 +245,8 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 // Past Meeting Attachment Event Handler
 // =============================================================================
 
-// PastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
-type PastMeetingAttachmentDBRaw struct {
+// pastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type pastMeetingAttachmentDBRaw struct {
 	ID                     string                `json:"id"`
 	MeetingAndOccurrenceID string                `json:"meeting_and_occurrence_id"`
 	MeetingID              string                `json:"meeting_id"`
@@ -276,8 +271,8 @@ type PastMeetingAttachmentDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (a *PastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias PastMeetingAttachmentDBRaw
+func (a *pastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias pastMeetingAttachmentDBRaw
 	tmp := struct {
 		FileSize interface{} `json:"file_size"`
 		*Alias
@@ -384,14 +379,9 @@ func (h *EventHandlers) handlePastMeetingAttachmentDelete(
 
 // convertMapToPastMeetingAttachmentData converts a raw v1 map to PastMeetingAttachmentEventData
 func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*models.PastMeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[pastMeetingAttachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp PastMeetingAttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal past meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode past meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
