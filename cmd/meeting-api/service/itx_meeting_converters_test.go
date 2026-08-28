@@ -560,17 +560,17 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 //	OmitFalse (*bool, nil when false): Restricted, RequireAiSummaryApproval,
 //	  AutoEmailReminderEnabled, IsInviteResponsesEnabled
 //
-// Column assignments ensure every pair of fields has distinct values in at
-// least one case so any source-field swap is detectable:
+// Column assignments give every field a unique 4-bit pattern so any
+// source-field swap is detectable across all 28 pairs:
 //
-//	Restricted            T T F
-//	RecordingEnabled      T F T
-//	TranscriptEnabled     F T T
-//	YoutubeUploadEnabled  T F F
-//	AiSummaryEnabled      F T F
-//	RequireAiSummaryAppr  F F T
-//	AutoEmailReminder     T F F
-//	IsInviteResponses     F T F
+//	Restricted            T T F F
+//	RecordingEnabled      T F T T
+//	TranscriptEnabled     F T T F
+//	YoutubeUploadEnabled  T F F F
+//	AiSummaryEnabled      F T F F
+//	RequireAiSummaryAppr  F F T T
+//	AutoEmailReminder     T F F T
+//	IsInviteResponses     F T F T
 func TestConvertITXMeetingResponseToGoa_BooleanFields(t *testing.T) {
 	t.Run("Rst=T Rec=T Trans=F YT=T AI=F Req=F AER=T IR=F", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
@@ -653,6 +653,37 @@ func TestConvertITXMeetingResponseToGoa_BooleanFields(t *testing.T) {
 		assert.True(t, *g.RequireAiSummaryApproval)
 		assert.Nil(t, g.AutoEmailReminderEnabled)
 		assert.Nil(t, g.IsInviteResponsesEnabled)
+	})
+
+	// Case 4 breaks the two duplicate columns from the 3-case matrix:
+	// YT and AER were both T F F; AI and IR were both F T F.
+	t.Run("Rst=F Rec=T Trans=F YT=F AI=F Req=T AER=T IR=T", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			Restricted:               false,
+			RecordingEnabled:         true,
+			TranscriptEnabled:        false,
+			YoutubeUploadEnabled:     false,
+			ZoomAIEnabled:            false,
+			RequireAISummaryApproval: true,
+			AutoEmailReminderEnabled: true,
+			IsInviteResponsesEnabled: true,
+		}
+		g := ConvertITXMeetingResponseToGoa(resp)
+		assert.Nil(t, g.Restricted)
+		require.NotNil(t, g.RecordingEnabled)
+		assert.True(t, *g.RecordingEnabled)
+		require.NotNil(t, g.TranscriptEnabled)
+		assert.False(t, *g.TranscriptEnabled)
+		require.NotNil(t, g.YoutubeUploadEnabled)
+		assert.False(t, *g.YoutubeUploadEnabled)
+		require.NotNil(t, g.AiSummaryEnabled)
+		assert.False(t, *g.AiSummaryEnabled)
+		require.NotNil(t, g.RequireAiSummaryApproval)
+		assert.True(t, *g.RequireAiSummaryApproval)
+		require.NotNil(t, g.AutoEmailReminderEnabled)
+		assert.True(t, *g.AutoEmailReminderEnabled)
+		require.NotNil(t, g.IsInviteResponsesEnabled)
+		assert.True(t, *g.IsInviteResponsesEnabled)
 	})
 }
 
