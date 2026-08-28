@@ -207,14 +207,14 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 			Visibility:               "private",
 			Description:              utils.StringPtrOmitEmpty("Quarterly review"),
 			Restricted:               utils.BoolPtr(true),
-			MeetingType:              utils.StringPtrOmitEmpty("webinar"),
+			MeetingType:              utils.StringPtrOmitEmpty(string(itx.MeetingTypeBoard)),
 			EarlyJoinTimeMinutes:     utils.IntPtrOmitZero(10),
 			RecordingEnabled:         utils.BoolPtr(true),
 			TranscriptEnabled:        utils.BoolPtr(true),
 			YoutubeUploadEnabled:     utils.BoolPtr(true),
 			AiSummaryEnabled:         utils.BoolPtr(true),
 			RequireAiSummaryApproval: utils.BoolPtr(true),
-			ArtifactVisibility:       utils.StringPtrOmitEmpty("members"),
+			ArtifactVisibility:       utils.StringPtrOmitEmpty(string(itx.ArtifactAccessHosts)),
 		}
 
 		req := ConvertCreateITXMeetingPayloadToDomain(p)
@@ -227,14 +227,14 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 		assert.Equal(t, itx.MeetingVisibility("private"), req.Visibility)
 		assert.Equal(t, "Quarterly review", req.Description)
 		assert.True(t, req.Restricted)
-		assert.Equal(t, itx.MeetingType("webinar"), req.MeetingType)
+		assert.Equal(t, itx.MeetingTypeBoard, req.MeetingType)
 		assert.Equal(t, 10, req.EarlyJoinTimeMinutes)
 		assert.True(t, req.RecordingEnabled)
 		assert.True(t, req.TranscriptEnabled)
 		assert.True(t, req.YoutubeUploadEnabled)
 		assert.True(t, req.AISummaryEnabled)
 		assert.True(t, req.RequireAISummaryApproval)
-		assert.Equal(t, itx.ArtifactAccess("members"), req.ArtifactVisibility)
+		assert.Equal(t, itx.ArtifactAccessHosts, req.ArtifactVisibility)
 	})
 }
 
@@ -335,27 +335,27 @@ func TestConvertITXMeetingResponseToGoa_Occurrences(t *testing.T) {
 func TestConvertITXMeetingResponseToGoa_ArtifactVisibilityCoalesce(t *testing.T) {
 	t.Run("uses first non-empty of recording, transcript, ai_summary access", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
-			RecordingAccess:  itx.ArtifactAccess("members"),
-			TranscriptAccess: itx.ArtifactAccess("public"),
+			RecordingAccess:  itx.ArtifactAccessHosts,
+			TranscriptAccess: itx.ArtifactAccessPublic,
 		}
 		g := ConvertITXMeetingResponseToGoa(resp)
-		assert.Equal(t, "members", utils.StringValue(g.ArtifactVisibility))
+		assert.Equal(t, string(itx.ArtifactAccessHosts), utils.StringValue(g.ArtifactVisibility))
 	})
 
 	t.Run("falls back to transcript_access when recording_access is empty", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
-			TranscriptAccess: itx.ArtifactAccess("public"),
+			TranscriptAccess: itx.ArtifactAccessPublic,
 		}
 		g := ConvertITXMeetingResponseToGoa(resp)
-		assert.Equal(t, "public", utils.StringValue(g.ArtifactVisibility))
+		assert.Equal(t, string(itx.ArtifactAccessPublic), utils.StringValue(g.ArtifactVisibility))
 	})
 
 	t.Run("falls back to ai_summary_access when recording and transcript are both empty", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
-			AISummaryAccess: itx.ArtifactAccess("members"),
+			AISummaryAccess: itx.ArtifactAccessParticipants,
 		}
 		g := ConvertITXMeetingResponseToGoa(resp)
-		assert.Equal(t, "members", utils.StringValue(g.ArtifactVisibility))
+		assert.Equal(t, string(itx.ArtifactAccessParticipants), utils.StringValue(g.ArtifactVisibility))
 	})
 
 	t.Run("nil when all access fields are empty", func(t *testing.T) {
@@ -438,21 +438,31 @@ func TestConvertUpdateOccurrencePayloadToITX(t *testing.T) {
 		assert.Nil(t, req.Recurrence)
 	})
 
-	t.Run("maps recurrence when present", func(t *testing.T) {
+	t.Run("maps all recurrence fields when present", func(t *testing.T) {
 		p := &meetingservice.UpdateItxOccurrencePayload{
 			Recurrence: &meetingservice.Recurrence{
-				Type:       utils.IntPtrOmitZero(1),
-				EndTimes:   utils.IntPtrOmitZero(3),
-				WeeklyDays: utils.StringPtrOmitEmpty("2"),
+				Type:           utils.IntPtrOmitZero(2),
+				RepeatInterval: utils.IntPtrOmitZero(1),
+				WeeklyDays:     utils.StringPtrOmitEmpty("1,3"),
+				MonthlyDay:     utils.IntPtrOmitZero(15),
+				MonthlyWeek:    utils.IntPtrOmitZero(2),
+				MonthlyWeekDay: utils.IntPtrOmitZero(4),
+				EndTimes:       utils.IntPtrOmitZero(5),
+				EndDateTime:    utils.StringPtrOmitEmpty("2026-12-31T00:00:00Z"),
 			},
 		}
 
 		req := ConvertUpdateOccurrencePayloadToITX(p)
 
 		require.NotNil(t, req.Recurrence)
-		assert.Equal(t, itx.RecurrenceType(1), req.Recurrence.Type)
-		assert.Equal(t, 3, req.Recurrence.EndTimes)
-		assert.Equal(t, "2", req.Recurrence.WeeklyDays)
+		assert.Equal(t, itx.RecurrenceType(2), req.Recurrence.Type)
+		assert.Equal(t, 1, req.Recurrence.RepeatInterval)
+		assert.Equal(t, "1,3", req.Recurrence.WeeklyDays)
+		assert.Equal(t, 15, req.Recurrence.MonthlyDay)
+		assert.Equal(t, 2, req.Recurrence.MonthlyWeek)
+		assert.Equal(t, 4, req.Recurrence.MonthlyWeekDay)
+		assert.Equal(t, 5, req.Recurrence.EndTimes)
+		assert.Equal(t, "2026-12-31T00:00:00Z", req.Recurrence.EndDateTime)
 	})
 }
 
