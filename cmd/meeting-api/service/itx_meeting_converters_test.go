@@ -167,7 +167,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_Recurrence(t *testing.T) {
 	t.Run("maps all recurrence fields when present", func(t *testing.T) {
 		p := basePayload()
 		p.Recurrence = &meetingservice.Recurrence{
-			Type:           utils.IntPtrOmitZero(2),
+			Type:           utils.IntPtrOmitZero(3),
 			RepeatInterval: utils.IntPtrOmitZero(1),
 			WeeklyDays:     utils.StringPtrOmitEmpty("1,2"),
 			MonthlyDay:     utils.IntPtrOmitZero(15),
@@ -180,7 +180,7 @@ func TestConvertCreateITXMeetingPayloadToDomain_Recurrence(t *testing.T) {
 		req := ConvertCreateITXMeetingPayloadToDomain(p)
 
 		require.NotNil(t, req.Recurrence)
-		assert.Equal(t, itx.RecurrenceType(2), req.Recurrence.Type)
+		assert.Equal(t, itx.RecurrenceType(3), req.Recurrence.Type)
 		assert.Equal(t, 1, req.Recurrence.RepeatInterval)
 		assert.Equal(t, "1,2", req.Recurrence.WeeklyDays)
 		assert.Equal(t, 15, req.Recurrence.MonthlyDay)
@@ -236,6 +236,32 @@ func TestConvertCreateITXMeetingPayloadToDomain_ScalarFields(t *testing.T) {
 		assert.True(t, req.RequireAISummaryApproval)
 		assert.Equal(t, itx.ArtifactAccessHosts, req.ArtifactVisibility)
 	})
+
+	t.Run("boolean complement — inverted values make every field independently distinguishable", func(t *testing.T) {
+		p := &meetingservice.CreateItxMeetingPayload{
+			ProjectUID:               "proj-1",
+			Title:                    "Board Meeting",
+			StartTime:                "2026-06-01T10:00:00Z",
+			Duration:                 90,
+			Timezone:                 "UTC",
+			Visibility:               "public",
+			Restricted:               utils.BoolPtr(false),
+			RecordingEnabled:         utils.BoolPtr(false),
+			TranscriptEnabled:        utils.BoolPtr(true),
+			YoutubeUploadEnabled:     utils.BoolPtr(false),
+			AiSummaryEnabled:         utils.BoolPtr(true),
+			RequireAiSummaryApproval: utils.BoolPtr(false),
+		}
+
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+
+		assert.False(t, req.Restricted)
+		assert.False(t, req.RecordingEnabled)
+		assert.True(t, req.TranscriptEnabled)
+		assert.False(t, req.YoutubeUploadEnabled)
+		assert.True(t, req.AISummaryEnabled)
+		assert.False(t, req.RequireAISummaryApproval)
+	})
 }
 
 // ── ConvertITXMeetingResponseToGoa — committees, recurrence & occurrences ────
@@ -267,7 +293,7 @@ func TestConvertITXMeetingResponseToGoa_Recurrence(t *testing.T) {
 	t.Run("maps all recurrence fields when present", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
 			Recurrence: &itx.Recurrence{
-				Type:           itx.RecurrenceType(2),
+				Type:           itx.RecurrenceType(3),
 				RepeatInterval: 1,
 				WeeklyDays:     "1,3",
 				MonthlyDay:     15,
@@ -282,7 +308,7 @@ func TestConvertITXMeetingResponseToGoa_Recurrence(t *testing.T) {
 
 		require.NotNil(t, g.Recurrence)
 		require.NotNil(t, g.Recurrence.Type)
-		assert.Equal(t, 2, *g.Recurrence.Type)
+		assert.Equal(t, 3, *g.Recurrence.Type)
 		require.NotNil(t, g.Recurrence.RepeatInterval)
 		assert.Equal(t, 1, *g.Recurrence.RepeatInterval)
 		assert.Equal(t, "1,3", utils.StringValue(g.Recurrence.WeeklyDays))
@@ -342,9 +368,10 @@ func TestConvertITXMeetingResponseToGoa_ArtifactVisibilityCoalesce(t *testing.T)
 		assert.Equal(t, string(itx.ArtifactAccessHosts), utils.StringValue(g.ArtifactVisibility))
 	})
 
-	t.Run("falls back to transcript_access when recording_access is empty", func(t *testing.T) {
+	t.Run("transcript_access wins over ai_summary_access when recording is empty", func(t *testing.T) {
 		resp := &itx.ZoomMeetingResponse{
 			TranscriptAccess: itx.ArtifactAccessPublic,
+			AISummaryAccess:  itx.ArtifactAccessParticipants, // lower-priority; must not win
 		}
 		g := ConvertITXMeetingResponseToGoa(resp)
 		assert.Equal(t, string(itx.ArtifactAccessPublic), utils.StringValue(g.ArtifactVisibility))
