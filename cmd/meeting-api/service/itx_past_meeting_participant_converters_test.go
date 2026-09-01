@@ -117,6 +117,28 @@ func TestConvertCreateParticipantPayload_IsAttendedOnly(t *testing.T) {
 		assert.Equal(t, "left meeting", attendee.Sessions[0].LeaveReason)
 	})
 
+	t.Run("inverted boolean flags are each observed true", func(t *testing.T) {
+		// The first subtest has OrgIsProjectMember=false and IsUnknown=false. Because
+		// both are plain bool fields (zero value = false), assert.False can't catch a
+		// dropped assignment. This subtest flips those two (and complements the others)
+		// so every plain-bool assignment is observed true in at least one row.
+		p := &meetingservice.CreateItxPastMeetingParticipantPayload{
+			IsAttended:         utils.BoolPtr(true),
+			OrgIsMember:        utils.BoolPtr(false),
+			OrgIsProjectMember: utils.BoolPtr(true),
+			IsVerified:         utils.BoolPtr(false),
+			IsUnknown:          utils.BoolPtr(true),
+		}
+
+		_, attendee := ConvertCreateParticipantPayload(p)
+
+		require.NotNil(t, attendee)
+		assert.False(t, attendee.OrgIsMember)
+		assert.True(t, attendee.OrgIsProjectMember)
+		assert.False(t, attendee.IsVerified)
+		assert.True(t, attendee.IsUnknown)
+	})
+
 	t.Run("is_attended false produces no attendee request", func(t *testing.T) {
 		p := &meetingservice.CreateItxPastMeetingParticipantPayload{
 			IsAttended: utils.BoolPtr(false),
@@ -291,9 +313,10 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Equal(t, "att-001", utils.StringValue(g.AttendeeID))
 		assert.Equal(t, "zoom-100-occ-200", utils.StringValue(g.PastMeetingID))
 		assert.Equal(t, "zoom-100", utils.StringValue(g.MeetingID))
-		// Boolean values are deliberately non-uniform so any pairwise swap is detectable:
-		// IsInvited=F, IsAttended=T, OrgIsMember=F, OrgIsProjectMember=T, IsCommitteeMember=F,
-		// IsVerified=T, IsUnknown=F.
+		// Adjacent same-type flags are given opposite values so invited/attended,
+		// org-member/project-member, and verified/unknown mix-ups are caught.
+		// The complementary subtest below flips all seven so every field is
+		// observed true in at least one row.
 		require.NotNil(t, g.IsInvited)
 		assert.False(t, *g.IsInvited)
 		require.NotNil(t, g.IsAttended)
@@ -323,6 +346,35 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Equal(t, 3, *g.AverageAttendance)
 		assert.Equal(t, "2026-01-01T00:00:00Z", utils.StringValue(g.CreatedAt))
 		assert.Equal(t, "2026-01-02T00:00:00Z", utils.StringValue(g.ModifiedAt))
+	})
+
+	t.Run("maps all boolean fields — complementary pattern T/F/T/F/T/F/T", func(t *testing.T) {
+		resp := &itxservice.ParticipantResponse{
+			IsInvited:          true,
+			IsAttended:         false,
+			OrgIsMember:        true,
+			OrgIsProjectMember: false,
+			IsCommitteeMember:  true,
+			IsVerified:         false,
+			IsUnknown:          true,
+		}
+
+		g := ConvertParticipantResponseToGoa(resp)
+
+		require.NotNil(t, g.IsInvited)
+		assert.True(t, *g.IsInvited)
+		require.NotNil(t, g.IsAttended)
+		assert.False(t, *g.IsAttended)
+		require.NotNil(t, g.OrgIsMember)
+		assert.True(t, *g.OrgIsMember)
+		require.NotNil(t, g.OrgIsProjectMember)
+		assert.False(t, *g.OrgIsProjectMember)
+		require.NotNil(t, g.IsCommitteeMember)
+		assert.True(t, *g.IsCommitteeMember)
+		require.NotNil(t, g.IsVerified)
+		assert.False(t, *g.IsVerified)
+		require.NotNil(t, g.IsUnknown)
+		assert.True(t, *g.IsUnknown)
 	})
 
 	t.Run("attendee_id used as ID when invitee_id is empty", func(t *testing.T) {

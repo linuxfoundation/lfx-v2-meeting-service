@@ -345,7 +345,7 @@ func TestConvertITXPastMeetingAttachmentToGoa(t *testing.T) {
 // ── Presign and download ──────────────────────────────────────────────────────
 
 func TestConvertITXMeetingAttachmentPresignToGoa(t *testing.T) {
-	t.Run("maps required and optional fields", func(t *testing.T) {
+	t.Run("maps all scalar fields", func(t *testing.T) {
 		resp := &itx.MeetingAttachmentPresignResponse{
 			ID:               "att-003",
 			MeetingID:        "zoom-100",
@@ -353,8 +353,13 @@ func TestConvertITXMeetingAttachmentPresignToGoa(t *testing.T) {
 			Type:             "file",
 			Category:         "Notes",
 			Name:             "upload.pdf",
+			Description:      "Presign upload description",
+			FileName:         "upload-2026-06-01.pdf",
 			FileSize:         4096,
 			FileUploadStatus: "ongoing",
+			FileContentType:  "application/pdf",
+			CreatedAt:        "2026-01-01T00:00:00Z",
+			UpdatedAt:        "2026-01-02T00:00:00Z",
 			CreatedBy:        &itx.CreatedUpdatedBy{Username: "alice"},
 		}
 
@@ -366,9 +371,14 @@ func TestConvertITXMeetingAttachmentPresignToGoa(t *testing.T) {
 		assert.Equal(t, "file", utils.StringValue(g.Type))
 		assert.Equal(t, "Notes", utils.StringValue(g.Category))
 		assert.Equal(t, "upload.pdf", utils.StringValue(g.Name))
+		assert.Equal(t, "Presign upload description", utils.StringValue(g.Description))
+		assert.Equal(t, "upload-2026-06-01.pdf", utils.StringValue(g.FileName))
 		require.NotNil(t, g.FileSize)
 		assert.Equal(t, int64(4096), *g.FileSize)
 		assert.Equal(t, "ongoing", utils.StringValue(g.FileUploadStatus))
+		assert.Equal(t, "application/pdf", utils.StringValue(g.FileContentType))
+		assert.Equal(t, "2026-01-01T00:00:00Z", utils.StringValue(g.CreatedAt))
+		assert.Equal(t, "2026-01-02T00:00:00Z", utils.StringValue(g.UpdatedAt))
 		require.NotNil(t, g.CreatedBy)
 		assert.Equal(t, "alice", utils.StringValue(g.CreatedBy.Username))
 		assert.Nil(t, g.UpdatedBy)
