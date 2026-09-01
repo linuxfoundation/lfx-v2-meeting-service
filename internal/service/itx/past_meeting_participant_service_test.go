@@ -245,6 +245,45 @@ func TestMergeParticipantResponses_CarriesAttendeeReconciliationFields(t *testin
 	assert.Equal(t, "Alice Example", unified.MappedInviteeName)
 }
 
+func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFieldsOnAttendeeCreate(t *testing.T) {
+	// When an update targets an attendee that doesn't exist yet, the service falls
+	// back to creating one. Reconciliation fields set on the update request must
+	// survive that create fallback, not just a straight update.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "erin"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: true, attendeeExists: false},
+		reader,
+	)
+
+	trueVal := true
+	_, err := svc.UpdateParticipant(
+		ctxWithPrincipal("erin", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsInvited:     &trueVal,
+			IsAttended:    &trueVal,
+		},
+		&itx.UpdateInviteeRequest{FirstName: "Erin", LastName: "Test"},
+		&itx.UpdateAttendeeRequest{
+			IsAIReconciled:    true,
+			IsAutoMatched:     true,
+			ZoomUserName:      "Erin (Zoom)",
+			MappedInviteeName: "Erin Test",
+		},
+	)
+	require.NoError(t, err)
+
+	require.NotNil(t, client.attendeeCreateReq, "should fall back to create when attendee doesn't exist")
+	assert.True(t, client.attendeeCreateReq.IsAIReconciled)
+	assert.True(t, client.attendeeCreateReq.IsAutoMatched)
+	assert.Equal(t, "Erin (Zoom)", client.attendeeCreateReq.ZoomUserName)
+	assert.Equal(t, "Erin Test", client.attendeeCreateReq.MappedInviteeName)
+}
+
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {
 	invitee := &itx.InviteeResponse{UUID: "invitee-1", FirstName: "Bob"}
 

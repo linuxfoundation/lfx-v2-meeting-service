@@ -1189,6 +1189,14 @@ var _ = Service("Meeting Service", func() {
 			// Attendee-specific fields
 			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
 			Attribute("is_unknown", Boolean, "Whether attendee is marked as unknown (attendee only)")
+			Attribute("is_ai_reconciled", Boolean, "Whether the attendee record was last updated via AI reconciliation (attendee only)")
+			Attribute("is_auto_matched", Boolean, "Whether the attendee was automatically matched to an invitee by name (attendee only)")
+			Attribute("zoom_user_name", String, "Zoom display name of the attendee (attendee only)", func() {
+				Example("John D. (Zoom)")
+			})
+			Attribute("mapped_invitee_name", String, "Full name of the invitee the attendee was matched to (attendee only)", func() {
+				Example("John Doe")
+			})
 			Attribute("sessions", ArrayOf(ParticipantSession), "Array of session objects with join/leave times (attendee only)")
 
 			Required("past_meeting_id")
@@ -1273,6 +1281,14 @@ var _ = Service("Meeting Service", func() {
 				Example("Alt Voting Rep")
 			})
 			Attribute("is_verified", Boolean, "Whether the attendee has been verified (attendee only)")
+			Attribute("is_ai_reconciled", Boolean, "Whether the attendee record was last updated via AI reconciliation (attendee only)")
+			Attribute("is_auto_matched", Boolean, "Whether the attendee was automatically matched to an invitee by name (attendee only)")
+			Attribute("zoom_user_name", String, "Zoom display name of the attendee (attendee only)", func() {
+				Example("John D. (Zoom)")
+			})
+			Attribute("mapped_invitee_name", String, "Full name of the invitee the attendee was matched to (attendee only)", func() {
+				Example("John Doe")
+			})
 
 			Required("past_meeting_id", "participant_id")
 		})

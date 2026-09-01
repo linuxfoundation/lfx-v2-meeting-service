@@ -383,6 +383,16 @@ type CreateItxPastMeetingParticipantRequestBody struct {
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
 	// Whether attendee is marked as unknown (attendee only)
 	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
+	// Whether the attendee record was last updated via AI reconciliation (attendee
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee was automatically matched to an invitee by name
+	// (attendee only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendee only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendee only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 	// Array of session objects with join/leave times (attendee only)
 	Sessions []*ParticipantSessionRequestBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
 }
@@ -419,6 +429,16 @@ type UpdateItxPastMeetingParticipantRequestBody struct {
 	CommitteeVotingStatus *string `form:"committee_voting_status,omitempty" json:"committee_voting_status,omitempty" xml:"committee_voting_status,omitempty"`
 	// Whether the attendee has been verified (attendee only)
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
+	// Whether the attendee record was last updated via AI reconciliation (attendee
+	// only)
+	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
+	// Whether the attendee was automatically matched to an invitee by name
+	// (attendee only)
+	IsAutoMatched *bool `form:"is_auto_matched,omitempty" json:"is_auto_matched,omitempty" xml:"is_auto_matched,omitempty"`
+	// Zoom display name of the attendee (attendee only)
+	ZoomUserName *string `form:"zoom_user_name,omitempty" json:"zoom_user_name,omitempty" xml:"zoom_user_name,omitempty"`
+	// Full name of the invitee the attendee was matched to (attendee only)
+	MappedInviteeName *string `form:"mapped_invitee_name,omitempty" json:"mapped_invitee_name,omitempty" xml:"mapped_invitee_name,omitempty"`
 }
 
 // CreateItxMeetingAttachmentRequestBody is the type of the "Meeting Service"
@@ -4289,6 +4309,10 @@ func NewCreateItxPastMeetingParticipantRequestBody(p *meetingservice.CreateItxPa
 		IsAttended:            p.IsAttended,
 		IsVerified:            p.IsVerified,
 		IsUnknown:             p.IsUnknown,
+		IsAiReconciled:        p.IsAiReconciled,
+		IsAutoMatched:         p.IsAutoMatched,
+		ZoomUserName:          p.ZoomUserName,
+		MappedInviteeName:     p.MappedInviteeName,
 	}
 	if p.Sessions != nil {
 		body.Sessions = make([]*ParticipantSessionRequestBody, len(p.Sessions))
@@ -4322,6 +4346,10 @@ func NewUpdateItxPastMeetingParticipantRequestBody(p *meetingservice.UpdateItxPa
 		CommitteeRole:         p.CommitteeRole,
 		CommitteeVotingStatus: p.CommitteeVotingStatus,
 		IsVerified:            p.IsVerified,
+		IsAiReconciled:        p.IsAiReconciled,
+		IsAutoMatched:         p.IsAutoMatched,
+		ZoomUserName:          p.ZoomUserName,
+		MappedInviteeName:     p.MappedInviteeName,
 	}
 	return body
 }

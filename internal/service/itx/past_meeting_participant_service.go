@@ -367,6 +367,10 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 		CommitteeRole:         updateReq.CommitteeRole,
 		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
 		IsVerified:            updateReq.IsVerified,
+		IsAIReconciled:        updateReq.IsAIReconciled,
+		IsAutoMatched:         updateReq.IsAutoMatched,
+		ZoomUserName:          updateReq.ZoomUserName,
+		MappedInviteeName:     updateReq.MappedInviteeName,
 		// This path is exercised when an update targets an attendee that doesn't yet
 		// exist; stamp created_by since ITX will treat this as a fresh record.
 		// updater is resolved once in UpdateParticipant so both the invitee and

@@ -122,6 +122,18 @@ func ConvertCreateParticipantPayload(payload *meetingservice.CreateItxPastMeetin
 		if payload.IsUnknown != nil {
 			attendeeReq.IsUnknown = *payload.IsUnknown
 		}
+		if payload.IsAiReconciled != nil {
+			attendeeReq.IsAIReconciled = *payload.IsAiReconciled
+		}
+		if payload.IsAutoMatched != nil {
+			attendeeReq.IsAutoMatched = *payload.IsAutoMatched
+		}
+		if payload.ZoomUserName != nil {
+			attendeeReq.ZoomUserName = *payload.ZoomUserName
+		}
+		if payload.MappedInviteeName != nil {
+			attendeeReq.MappedInviteeName = *payload.MappedInviteeName
+		}
 
 		// Convert sessions
 		if payload.Sessions != nil {
@@ -190,7 +202,9 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 	// Check if any attendee-updatable fields are present
 	hasAttendeeFields := payload.OrgName != nil || payload.JobTitle != nil ||
 		payload.CommitteeRole != nil || payload.CommitteeVotingStatus != nil ||
-		payload.IsVerified != nil
+		payload.IsVerified != nil || payload.IsAiReconciled != nil ||
+		payload.IsAutoMatched != nil || payload.ZoomUserName != nil ||
+		payload.MappedInviteeName != nil
 
 	if hasAttendeeFields {
 		attendeeReq = &itx.UpdateAttendeeRequest{}
@@ -208,6 +222,18 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 		}
 		if payload.IsVerified != nil {
 			attendeeReq.IsVerified = *payload.IsVerified
+		}
+		if payload.IsAiReconciled != nil {
+			attendeeReq.IsAIReconciled = *payload.IsAiReconciled
+		}
+		if payload.IsAutoMatched != nil {
+			attendeeReq.IsAutoMatched = *payload.IsAutoMatched
+		}
+		if payload.ZoomUserName != nil {
+			attendeeReq.ZoomUserName = *payload.ZoomUserName
+		}
+		if payload.MappedInviteeName != nil {
+			attendeeReq.MappedInviteeName = *payload.MappedInviteeName
 		}
 	}
 

@@ -339,6 +339,16 @@ type CreateItxPastMeetingParticipantPayload struct {
 	IsVerified *bool
 	// Whether attendee is marked as unknown (attendee only)
 	IsUnknown *bool
+	// Whether the attendee record was last updated via AI reconciliation (attendee
+	// only)
+	IsAiReconciled *bool
+	// Whether the attendee was automatically matched to an invitee by name
+	// (attendee only)
+	IsAutoMatched *bool
+	// Zoom display name of the attendee (attendee only)
+	ZoomUserName *string
+	// Full name of the invitee the attendee was matched to (attendee only)
+	MappedInviteeName *string
 	// Array of session objects with join/leave times (attendee only)
 	Sessions []*ParticipantSession
 }
@@ -1524,6 +1534,16 @@ type UpdateItxPastMeetingParticipantPayload struct {
 	CommitteeVotingStatus *string
 	// Whether the attendee has been verified (attendee only)
 	IsVerified *bool
+	// Whether the attendee record was last updated via AI reconciliation (attendee
+	// only)
+	IsAiReconciled *bool
+	// Whether the attendee was automatically matched to an invitee by name
+	// (attendee only)
+	IsAutoMatched *bool
+	// Zoom display name of the attendee (attendee only)
+	ZoomUserName *string
+	// Full name of the invitee the attendee was matched to (attendee only)
+	MappedInviteeName *string
 }
 
 // UpdateItxPastMeetingPayload is the payload type of the Meeting Service
