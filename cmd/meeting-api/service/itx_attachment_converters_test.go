@@ -241,9 +241,23 @@ func TestConvertGoaToITXUpdatePastMeetingAttachment(t *testing.T) {
 		req := ConvertGoaToITXUpdatePastMeetingAttachment(p)
 
 		assert.Equal(t, "file", req.Type)
+		assert.Equal(t, "Presentation", req.Category)
 		assert.Equal(t, "deck.pdf", req.Name)
 		assert.Equal(t, "Updated deck", req.Description)
 		assert.Nil(t, req.UpdatedBy)
+	})
+
+	t.Run("maps optional link when provided", func(t *testing.T) {
+		p := &meetingservice.UpdateItxPastMeetingAttachmentPayload{
+			Type:     "link",
+			Category: "Notes",
+			Name:     "ref",
+			Link:     utils.StringPtrOmitEmpty("https://example.com/ref"),
+		}
+
+		req := ConvertGoaToITXUpdatePastMeetingAttachment(p)
+
+		assert.Equal(t, "https://example.com/ref", req.Link)
 	})
 }
 
@@ -350,11 +364,29 @@ func TestConvertITXMeetingAttachmentPresignToGoa(t *testing.T) {
 		assert.Equal(t, "zoom-100", g.MeetingID)
 		assert.Equal(t, "https://s3.example.com/presigned", g.FileURL)
 		assert.Equal(t, "file", utils.StringValue(g.Type))
+		assert.Equal(t, "Notes", utils.StringValue(g.Category))
+		assert.Equal(t, "upload.pdf", utils.StringValue(g.Name))
 		require.NotNil(t, g.FileSize)
 		assert.Equal(t, int64(4096), *g.FileSize)
+		assert.Equal(t, "ongoing", utils.StringValue(g.FileUploadStatus))
 		require.NotNil(t, g.CreatedBy)
 		assert.Equal(t, "alice", utils.StringValue(g.CreatedBy.Username))
 		assert.Nil(t, g.UpdatedBy)
+	})
+
+	t.Run("maps updated_by when present", func(t *testing.T) {
+		resp := &itx.MeetingAttachmentPresignResponse{
+			ID:        "att-003",
+			MeetingID: "zoom-100",
+			FileURL:   "https://s3.example.com/presigned",
+			UpdatedBy: &itx.CreatedUpdatedBy{Username: "bob"},
+		}
+
+		g := ConvertITXMeetingAttachmentPresignToGoa(resp)
+
+		require.NotNil(t, g.UpdatedBy)
+		assert.Equal(t, "bob", utils.StringValue(g.UpdatedBy.Username))
+		assert.Nil(t, g.CreatedBy)
 	})
 }
 

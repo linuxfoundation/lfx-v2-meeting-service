@@ -249,6 +249,7 @@ func TestConvertPastMeetingToGoa(t *testing.T) {
 		require.Len(t, g.Committees, 2)
 		require.NotNil(t, g.Committees[0].UID)
 		assert.Equal(t, "cmte-10", *g.Committees[0].UID)
+		assert.Equal(t, []meetingservice.AllowedVotingStatus{"voting_rep"}, g.Committees[0].AllowedVotingStatuses)
 		require.NotNil(t, g.Committees[1].UID)
 		assert.Equal(t, "cmte-11", *g.Committees[1].UID)
 	})

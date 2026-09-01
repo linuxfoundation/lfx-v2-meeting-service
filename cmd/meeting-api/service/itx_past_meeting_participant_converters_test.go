@@ -358,6 +358,7 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		require.Len(t, g.Sessions, 1)
 		assert.Equal(t, "uuid-1", utils.StringValue(g.Sessions[0].ParticipantUUID))
 		assert.Equal(t, "2026-01-01T10:00:00Z", utils.StringValue(g.Sessions[0].JoinTime))
+		assert.Equal(t, "2026-01-01T11:00:00Z", utils.StringValue(g.Sessions[0].LeaveTime))
 		assert.Equal(t, "left", utils.StringValue(g.Sessions[0].LeaveReason))
 	})
 

@@ -104,17 +104,28 @@ func TestConvertPastMeetingSummaryToGoa(t *testing.T) {
 		assert.False(t, g.EmailSent, "ITX does not track email_sent; always false")
 	})
 
-	t.Run("zoom_config populated when meeting_id is present", func(t *testing.T) {
+	t.Run("zoom_config populated when only meeting_id is set", func(t *testing.T) {
 		resp := &itx.PastMeetingSummaryResponse{
-			MeetingID:       "zoom-100",
-			ZoomMeetingUUID: "abc-uuid",
+			MeetingID: "zoom-100",
 		}
 
 		g := ConvertPastMeetingSummaryToGoa(resp)
 
 		require.NotNil(t, g.ZoomConfig)
 		assert.Equal(t, "zoom-100", utils.StringValue(g.ZoomConfig.MeetingID))
+		assert.Nil(t, g.ZoomConfig.MeetingUUID)
+	})
+
+	t.Run("zoom_config populated when only zoom_uuid is set", func(t *testing.T) {
+		resp := &itx.PastMeetingSummaryResponse{
+			ZoomMeetingUUID: "abc-uuid",
+		}
+
+		g := ConvertPastMeetingSummaryToGoa(resp)
+
+		require.NotNil(t, g.ZoomConfig)
 		assert.Equal(t, "abc-uuid", utils.StringValue(g.ZoomConfig.MeetingUUID))
+		assert.Nil(t, g.ZoomConfig.MeetingID)
 	})
 
 	t.Run("zoom_config nil when neither meeting_id nor zoom_uuid are set", func(t *testing.T) {

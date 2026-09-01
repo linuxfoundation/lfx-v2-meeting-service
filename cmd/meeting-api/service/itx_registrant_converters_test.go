@@ -93,6 +93,7 @@ func TestConvertUpdateITXRegistrantPayloadToITX(t *testing.T) {
 		assert.Equal(t, "Fixture", req.LastName)
 		assert.Equal(t, "Test Org", req.Org)
 		assert.Equal(t, "Manager", req.JobTitle)
+		assert.Equal(t, "https://example.com/bob.png", req.ProfilePicture)
 		assert.True(t, req.Host)
 		assert.Equal(t, "occ-456", req.Occurrence)
 	})
