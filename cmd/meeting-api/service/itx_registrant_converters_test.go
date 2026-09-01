@@ -57,13 +57,13 @@ func TestConvertCreateITXRegistrantPayloadToITX(t *testing.T) {
 		assert.Empty(t, req.Occurrence)
 	})
 
-	t.Run("host false is preserved (not treated as omitted)", func(t *testing.T) {
-		p := &meetingservice.CreateItxRegistrantPayload{
-			Host: utils.BoolPtr(false),
-		}
-
-		req := ConvertCreateITXRegistrantPayloadToITX(p)
-		assert.False(t, req.Host)
+	t.Run("host false and omitted host both send false to ITX", func(t *testing.T) {
+		// The destination is a plain bool (not *bool), so utils.BoolValue(nil) == false.
+		// Both inputs collapse to the same wire value — this test pins that equivalence.
+		explicit := ConvertCreateITXRegistrantPayloadToITX(&meetingservice.CreateItxRegistrantPayload{Host: utils.BoolPtr(false)})
+		omitted := ConvertCreateITXRegistrantPayloadToITX(&meetingservice.CreateItxRegistrantPayload{})
+		assert.False(t, explicit.Host)
+		assert.False(t, omitted.Host)
 	})
 }
 

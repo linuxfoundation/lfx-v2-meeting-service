@@ -44,18 +44,18 @@ func TestConvertCreatePastMeetingPayload(t *testing.T) {
 		p.Title = utils.StringPtrOmitEmpty("Board Meeting")
 		p.Description = utils.StringPtrOmitEmpty("Quarterly review")
 		p.Restricted = utils.BoolPtr(true)
-		p.MeetingType = utils.StringPtrOmitEmpty("regular")
+		p.MeetingType = utils.StringPtrOmitEmpty(string(itx.MeetingTypeBoard))
 		p.Visibility = utils.StringPtrOmitEmpty("public")
 		p.RecordingEnabled = utils.BoolPtr(true)
 		p.TranscriptEnabled = utils.BoolPtr(true)
-		p.ArtifactVisibility = utils.StringPtrOmitEmpty("members")
+		p.ArtifactVisibility = utils.StringPtrOmitEmpty(string(itx.ArtifactAccessHosts))
 
 		req := ConvertCreatePastMeetingPayload(p)
 
 		assert.Equal(t, "Board Meeting", req.Topic)
 		assert.Equal(t, "Quarterly review", req.Agenda)
 		assert.True(t, req.Restricted)
-		assert.Equal(t, itx.MeetingType("regular"), req.MeetingType)
+		assert.Equal(t, itx.MeetingTypeBoard, req.MeetingType)
 		assert.Equal(t, itx.MeetingVisibility("public"), req.Visibility)
 		assert.True(t, req.RecordingEnabled)
 		assert.True(t, req.TranscriptEnabled)
@@ -63,12 +63,12 @@ func TestConvertCreatePastMeetingPayload(t *testing.T) {
 
 	t.Run("artifact_visibility fans out to both recording_access and transcript_access", func(t *testing.T) {
 		p := basePayload()
-		p.ArtifactVisibility = utils.StringPtrOmitEmpty("members")
+		p.ArtifactVisibility = utils.StringPtrOmitEmpty(string(itx.ArtifactAccessHosts))
 
 		req := ConvertCreatePastMeetingPayload(p)
 
-		assert.Equal(t, itx.ArtifactAccess("members"), req.RecordingAccess)
-		assert.Equal(t, itx.ArtifactAccess("members"), req.TranscriptAccess)
+		assert.Equal(t, itx.ArtifactAccessHosts, req.RecordingAccess)
+		assert.Equal(t, itx.ArtifactAccessHosts, req.TranscriptAccess)
 	})
 
 	t.Run("nil artifact_visibility leaves both access fields empty", func(t *testing.T) {
@@ -98,6 +98,22 @@ func TestConvertCreatePastMeetingPayload(t *testing.T) {
 	t.Run("nil committees result in no committees on request", func(t *testing.T) {
 		req := ConvertCreatePastMeetingPayload(basePayload())
 		assert.Empty(t, req.Committees)
+	})
+
+	t.Run("nil and nil-UID committee entries are skipped; filters are forwarded", func(t *testing.T) {
+		p := basePayload()
+		uid := "cmte-10"
+		p.Committees = []*meetingservice.Committee{
+			nil,
+			{UID: nil},
+			{UID: &uid, AllowedVotingStatuses: []meetingservice.AllowedVotingStatus{"voting_rep"}},
+		}
+
+		req := ConvertCreatePastMeetingPayload(p)
+
+		require.Len(t, req.Committees, 1, "nil and nil-UID entries must be skipped")
+		assert.Equal(t, "cmte-10", req.Committees[0].ID)
+		assert.Equal(t, []itx.CommitteeFilter{"voting_rep"}, req.Committees[0].Filters)
 	})
 }
 
@@ -131,7 +147,7 @@ func TestConvertUpdatePastMeetingPayload(t *testing.T) {
 			Visibility:         utils.StringPtrOmitEmpty("private"),
 			RecordingEnabled:   utils.BoolPtr(false),
 			TranscriptEnabled:  utils.BoolPtr(true),
-			ArtifactVisibility: utils.StringPtrOmitEmpty("all"),
+			ArtifactVisibility: utils.StringPtrOmitEmpty(string(itx.ArtifactAccessPublic)),
 		}
 
 		req := ConvertUpdatePastMeetingPayload(p)
@@ -149,8 +165,8 @@ func TestConvertUpdatePastMeetingPayload(t *testing.T) {
 		assert.Equal(t, itx.MeetingVisibility("private"), req.Visibility)
 		assert.False(t, req.RecordingEnabled)
 		assert.True(t, req.TranscriptEnabled)
-		assert.Equal(t, itx.ArtifactAccess("all"), req.RecordingAccess)
-		assert.Equal(t, itx.ArtifactAccess("all"), req.TranscriptAccess)
+		assert.Equal(t, itx.ArtifactAccessPublic, req.RecordingAccess)
+		assert.Equal(t, itx.ArtifactAccessPublic, req.TranscriptAccess)
 	})
 
 	t.Run("committees with nil entries are skipped", func(t *testing.T) {
@@ -186,10 +202,10 @@ func TestConvertPastMeetingToGoa(t *testing.T) {
 			Timezone:          "America/New_York",
 			Visibility:        itx.MeetingVisibility("public"),
 			Restricted:        true,
-			MeetingType:       itx.MeetingType("regular"),
+			MeetingType:       itx.MeetingTypeBoard,
 			RecordingEnabled:  true,
 			TranscriptEnabled: true,
-			RecordingAccess:   itx.ArtifactAccess("members"),
+			RecordingAccess:   itx.ArtifactAccessHosts,
 			IsManuallyCreated: true,
 			MeetingPassword:   "secret-uuid",
 		}
@@ -209,12 +225,12 @@ func TestConvertPastMeetingToGoa(t *testing.T) {
 		assert.Equal(t, "public", utils.StringValue(g.Visibility))
 		require.NotNil(t, g.Restricted)
 		assert.True(t, *g.Restricted)
-		assert.Equal(t, "regular", utils.StringValue(g.MeetingType))
+		assert.Equal(t, string(itx.MeetingTypeBoard), utils.StringValue(g.MeetingType))
 		require.NotNil(t, g.RecordingEnabled)
 		assert.True(t, *g.RecordingEnabled)
 		require.NotNil(t, g.TranscriptEnabled)
 		assert.True(t, *g.TranscriptEnabled)
-		assert.Equal(t, "members", utils.StringValue(g.ArtifactVisibility))
+		assert.Equal(t, string(itx.ArtifactAccessHosts), utils.StringValue(g.ArtifactVisibility))
 		require.NotNil(t, g.IsManuallyCreated)
 		assert.True(t, *g.IsManuallyCreated)
 		assert.Equal(t, "secret-uuid", utils.StringValue(g.MeetingPassword))

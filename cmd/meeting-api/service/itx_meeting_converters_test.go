@@ -146,9 +146,22 @@ func TestConvertCreateITXMeetingPayloadToDomain_Committees(t *testing.T) {
 		assert.Equal(t, []itx.CommitteeFilter{"voting_rep", "observer"}, req.Committees[0].AllowedVotingStatuses)
 	})
 
-	t.Run("nil committees produce empty slice", func(t *testing.T) {
+	t.Run("nil committees leave the request slice nil", func(t *testing.T) {
 		req := ConvertCreateITXMeetingPayloadToDomain(basePayload())
-		assert.Empty(t, req.Committees)
+		assert.Nil(t, req.Committees)
+	})
+
+	t.Run("nil committee entry leaves empty UID forwarded to ITX", func(t *testing.T) {
+		p := basePayload()
+		uid := "cmte-1"
+		p.Committees = []*meetingservice.Committee{
+			nil,
+			{UID: &uid},
+		}
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		require.Len(t, req.Committees, 2)
+		assert.Empty(t, req.Committees[0].UID)
+		assert.Equal(t, "cmte-1", req.Committees[1].UID)
 	})
 }
 
@@ -684,6 +697,104 @@ func TestConvertITXMeetingResponseToGoa_BooleanFields(t *testing.T) {
 		assert.True(t, *g.AutoEmailReminderEnabled)
 		require.NotNil(t, g.IsInviteResponsesEnabled)
 		assert.True(t, *g.IsInviteResponsesEnabled)
+	})
+}
+
+// ── ConvertITXMeetingResponseToGoa — scalar field renames ────────────────────
+
+func TestConvertITXMeetingResponseToGoa_ScalarFields(t *testing.T) {
+	t.Run("maps all echoed scalar fields with distinct values", func(t *testing.T) {
+		resp := &itx.ZoomMeetingResponse{
+			ID:                                       "mtg-100",
+			Project:                                  "proj-scalar",
+			Topic:                                    "Scalar Test Meeting",
+			StartTime:                                "2026-06-01T10:00:00Z",
+			Duration:                                 75,
+			Timezone:                                 "America/Chicago",
+			Visibility:                               itx.MeetingVisibilityPrivate,
+			Agenda:                                   "Scalar agenda",
+			MeetingType:                              itx.MeetingTypeBoard,
+			EarlyJoinTime:                            15,
+			Passcode:                                 "zoom-passcode",
+			Password:                                 "join-uuid-secret",
+			PublicLink:                               "https://lfx.linuxfoundation.org/meetings/zoom-100",
+			NextOccurrenceStartTime:                  "2026-07-01T10:00:00Z",
+			CreatedAt:                                "2026-01-01T00:00:00Z",
+			ModifiedAt:                               "2026-02-01T00:00:00Z",
+			RegistrantCount:                          42,
+			ResponseCountYes:                         10,
+			ResponseCountMaybe:                       5,
+			ResponseCountNo:                          2,
+			AutoEmailReminderTime:                    30,
+			LastBulkRegistrantJobStatus:              "completed",
+			LastBulkRegistrantsJobWarningCount:       3,
+			EmailDeliveryErrorCount:                  1,
+			LastMailingListMembersSyncJobStatus:      "running",
+			LastMailingListMembersSyncJobFailedCount: 7,
+			LastMailingListMembersSyncJobWarningCount: 4,
+		}
+
+		g := ConvertITXMeetingResponseToGoa(resp)
+
+		assert.Equal(t, "mtg-100", utils.StringValue(g.ID))
+		assert.Equal(t, "proj-scalar", utils.StringValue(g.ProjectUID))
+		assert.Equal(t, "Scalar Test Meeting", utils.StringValue(g.Title))
+		assert.Equal(t, "2026-06-01T10:00:00Z", utils.StringValue(g.StartTime))
+		require.NotNil(t, g.Duration)
+		assert.Equal(t, 75, *g.Duration)
+		assert.Equal(t, "America/Chicago", utils.StringValue(g.Timezone))
+		assert.Equal(t, string(itx.MeetingVisibilityPrivate), utils.StringValue(g.Visibility))
+		assert.Equal(t, "Scalar agenda", utils.StringValue(g.Description))
+		assert.Equal(t, string(itx.MeetingTypeBoard), utils.StringValue(g.MeetingType))
+		require.NotNil(t, g.EarlyJoinTimeMinutes)
+		assert.Equal(t, 15, *g.EarlyJoinTimeMinutes)
+		// Read-only fields: Passcode and Password are distinct — swapping them would fail.
+		assert.Equal(t, "zoom-passcode", utils.StringValue(g.Passcode))
+		assert.Equal(t, "join-uuid-secret", utils.StringValue(g.Password))
+		assert.Equal(t, "https://lfx.linuxfoundation.org/meetings/zoom-100", utils.StringValue(g.PublicLink))
+		assert.Equal(t, "2026-07-01T10:00:00Z", utils.StringValue(g.NextOccurrenceStartTime))
+		assert.Equal(t, "2026-01-01T00:00:00Z", utils.StringValue(g.CreatedAt))
+		assert.Equal(t, "2026-02-01T00:00:00Z", utils.StringValue(g.ModifiedAt))
+		require.NotNil(t, g.RegistrantCount)
+		assert.Equal(t, 42, *g.RegistrantCount)
+		require.NotNil(t, g.ResponseCountYes)
+		assert.Equal(t, 10, *g.ResponseCountYes)
+		require.NotNil(t, g.ResponseCountMaybe)
+		assert.Equal(t, 5, *g.ResponseCountMaybe)
+		require.NotNil(t, g.ResponseCountNo)
+		assert.Equal(t, 2, *g.ResponseCountNo)
+		require.NotNil(t, g.AutoEmailReminderTime)
+		assert.Equal(t, 30, *g.AutoEmailReminderTime)
+		assert.Equal(t, "completed", utils.StringValue(g.LastBulkRegistrantJobStatus))
+		require.NotNil(t, g.LastBulkRegistrantsJobWarningCount)
+		assert.Equal(t, 3, *g.LastBulkRegistrantsJobWarningCount)
+		require.NotNil(t, g.EmailDeliveryErrorCount)
+		assert.Equal(t, 1, *g.EmailDeliveryErrorCount)
+		assert.Equal(t, "running", utils.StringValue(g.LastMailingListMembersSyncJobStatus))
+		require.NotNil(t, g.LastMailingListMembersSyncJobFailedCount)
+		assert.Equal(t, 7, *g.LastMailingListMembersSyncJobFailedCount)
+		require.NotNil(t, g.LastMailingListMembersSyncJobWarningCount)
+		assert.Equal(t, 4, *g.LastMailingListMembersSyncJobWarningCount)
+	})
+
+	t.Run("zero-value response leaves OmitZero and OmitEmpty fields nil", func(t *testing.T) {
+		g := ConvertITXMeetingResponseToGoa(&itx.ZoomMeetingResponse{})
+
+		assert.Nil(t, g.Description)
+		assert.Nil(t, g.MeetingType)
+		assert.Nil(t, g.EarlyJoinTimeMinutes)
+		assert.Nil(t, g.RegistrantCount)
+		assert.Nil(t, g.ResponseCountYes)
+		assert.Nil(t, g.ResponseCountMaybe)
+		assert.Nil(t, g.ResponseCountNo)
+		assert.Nil(t, g.AutoEmailReminderTime)
+		assert.Nil(t, g.LastBulkRegistrantJobStatus)
+		assert.Nil(t, g.LastBulkRegistrantsJobWarningCount)
+		assert.Nil(t, g.EmailDeliveryErrorCount)
+		assert.Nil(t, g.LastMailingListMembersSyncJobStatus)
+		assert.Nil(t, g.LastMailingListMembersSyncJobFailedCount)
+		assert.Nil(t, g.LastMailingListMembersSyncJobWarningCount)
+		assert.Nil(t, g.NextOccurrenceStartTime)
 	})
 }
 

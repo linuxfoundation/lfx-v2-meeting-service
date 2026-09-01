@@ -130,7 +130,7 @@ func TestConvertITXMeetingAttachmentToGoa(t *testing.T) {
 			FileUploaded:     true,
 			Link:             "https://example.com/agenda.pdf",
 			Description:      "Agenda document",
-			FileName:         "agenda.pdf",
+			FileName:         "agenda-2026-06-01.pdf",
 			FileSize:         2048,
 			FileURL:          "s3://bucket/agenda.pdf",
 			FileUploadStatus: "completed",
@@ -152,7 +152,7 @@ func TestConvertITXMeetingAttachmentToGoa(t *testing.T) {
 		assert.True(t, *g.FileUploaded)
 		assert.Equal(t, "https://example.com/agenda.pdf", utils.StringValue(g.Link))
 		assert.Equal(t, "Agenda document", utils.StringValue(g.Description))
-		assert.Equal(t, "agenda.pdf", utils.StringValue(g.FileName))
+		assert.Equal(t, "agenda-2026-06-01.pdf", utils.StringValue(g.FileName))
 		require.NotNil(t, g.FileSize)
 		assert.Equal(t, int64(2048), *g.FileSize)
 		assert.Equal(t, "s3://bucket/agenda.pdf", utils.StringValue(g.FileURL))
@@ -214,6 +214,19 @@ func TestConvertGoaToITXCreatePastMeetingAttachment(t *testing.T) {
 		assert.Equal(t, "https://example.com", req.Link)
 		assert.Nil(t, req.CreatedBy)
 	})
+
+	t.Run("maps optional description when provided", func(t *testing.T) {
+		p := &meetingservice.CreateItxPastMeetingAttachmentPayload{
+			Type:        "file",
+			Category:    "Presentation",
+			Name:        "deck.pdf",
+			Description: utils.StringPtrOmitEmpty("Q3 deck"),
+		}
+
+		req := ConvertGoaToITXCreatePastMeetingAttachment(p)
+
+		assert.Equal(t, "Q3 deck", req.Description)
+	})
 }
 
 func TestConvertGoaToITXUpdatePastMeetingAttachment(t *testing.T) {
@@ -237,14 +250,26 @@ func TestConvertGoaToITXUpdatePastMeetingAttachment(t *testing.T) {
 // ── Past meeting attachment — ITX→Goa ────────────────────────────────────────
 
 func TestConvertITXPastMeetingAttachmentToGoa(t *testing.T) {
-	t.Run("maps meeting_and_occurrence_id and meeting_id", func(t *testing.T) {
+	t.Run("maps all scalar fields", func(t *testing.T) {
 		resp := &itx.PastMeetingAttachment{
 			ID:                     "att-002",
 			MeetingAndOccurrenceID: "zoom-100-occ-200",
 			MeetingID:              "zoom-100",
 			Type:                   "file",
+			Source:                 "scheduled_meeting_api",
 			Category:               "Meeting Minutes",
 			Name:                   "minutes.pdf",
+			FileUploaded:           true,
+			Link:                   "https://example.com/minutes.pdf",
+			Description:            "Past meeting minutes",
+			FileName:               "minutes-2026-06-01.pdf",
+			FileSize:               4096,
+			FileURL:                "s3://bucket/minutes.pdf",
+			FileUploadStatus:       "completed",
+			FileContentType:        "application/pdf",
+			CreatedAt:              "2026-01-01T00:00:00Z",
+			UpdatedAt:              "2026-01-02T00:00:00Z",
+			FileUploadedAt:         "2026-01-01T02:00:00Z",
 		}
 
 		g := ConvertITXPastMeetingAttachmentToGoa(resp)
@@ -253,11 +278,46 @@ func TestConvertITXPastMeetingAttachmentToGoa(t *testing.T) {
 		assert.Equal(t, "zoom-100-occ-200", g.MeetingAndOccurrenceID)
 		assert.Equal(t, "zoom-100", g.MeetingID)
 		assert.Equal(t, "file", g.Type)
+		assert.Equal(t, "scheduled_meeting_api", utils.StringValue(g.Source))
+		assert.Equal(t, "Meeting Minutes", g.Category)
+		assert.Equal(t, "minutes.pdf", g.Name)
+		require.NotNil(t, g.FileUploaded)
+		assert.True(t, *g.FileUploaded)
+		assert.Equal(t, "https://example.com/minutes.pdf", utils.StringValue(g.Link))
+		assert.Equal(t, "Past meeting minutes", utils.StringValue(g.Description))
+		assert.Equal(t, "minutes-2026-06-01.pdf", utils.StringValue(g.FileName))
+		require.NotNil(t, g.FileSize)
+		assert.Equal(t, int64(4096), *g.FileSize)
+		assert.Equal(t, "s3://bucket/minutes.pdf", utils.StringValue(g.FileURL))
+		assert.Equal(t, "completed", utils.StringValue(g.FileUploadStatus))
+		assert.Equal(t, "application/pdf", utils.StringValue(g.FileContentType))
+		assert.Equal(t, "2026-01-01T00:00:00Z", utils.StringValue(g.CreatedAt))
+		assert.Equal(t, "2026-01-02T00:00:00Z", utils.StringValue(g.UpdatedAt))
+		assert.Equal(t, "2026-01-01T02:00:00Z", utils.StringValue(g.FileUploadedAt))
 	})
 
 	t.Run("file_uploaded false is omitted (nil)", func(t *testing.T) {
 		g := ConvertITXPastMeetingAttachmentToGoa(&itx.PastMeetingAttachment{FileUploaded: false})
 		assert.Nil(t, g.FileUploaded)
+	})
+
+	t.Run("maps created_by, updated_by, and file_uploaded_by when present", func(t *testing.T) {
+		resp := &itx.PastMeetingAttachment{
+			CreatedBy:      &itx.CreatedUpdatedBy{Username: "alice", Email: "alice@example.com", Name: "Alice Example"},
+			UpdatedBy:      &itx.CreatedUpdatedBy{Username: "bob", Email: "bob@example.com", Name: "Bob Fixture"},
+			FileUploadedBy: &itx.CreatedUpdatedBy{Username: "carol", Name: "Carol Test"},
+		}
+
+		g := ConvertITXPastMeetingAttachmentToGoa(resp)
+
+		require.NotNil(t, g.CreatedBy)
+		assert.Equal(t, "alice", utils.StringValue(g.CreatedBy.Username))
+		assert.Equal(t, "alice@example.com", utils.StringValue(g.CreatedBy.Email))
+		assert.Equal(t, "Alice Example", utils.StringValue(g.CreatedBy.Name))
+		require.NotNil(t, g.UpdatedBy)
+		assert.Equal(t, "bob", utils.StringValue(g.UpdatedBy.Username))
+		require.NotNil(t, g.FileUploadedBy)
+		assert.Equal(t, "carol", utils.StringValue(g.FileUploadedBy.Username))
 	})
 
 	t.Run("audit users nil when absent", func(t *testing.T) {
@@ -333,18 +393,67 @@ func TestConvertGoaToITXCreatePastMeetingAttachmentPresign(t *testing.T) {
 }
 
 func TestConvertITXPastMeetingAttachmentPresignToGoa(t *testing.T) {
-	t.Run("maps meeting_and_occurrence_id", func(t *testing.T) {
+	t.Run("maps all scalar fields", func(t *testing.T) {
 		resp := &itx.PastMeetingAttachmentPresignResponse{
 			ID:                     "att-004",
 			MeetingAndOccurrenceID: "zoom-100-occ-200",
+			MeetingID:              "zoom-100",
 			FileURL:                "https://s3.example.com/presigned",
+			Type:                   "file",
+			Category:               "Notes",
+			Name:                   "presign-upload.pdf",
+			Description:            "Past meeting presign description",
+			FileName:               "presign-upload-2026-06-01.pdf",
+			FileSize:               8192,
+			FileUploadStatus:       "ongoing",
+			FileContentType:        "application/pdf",
+			CreatedAt:              "2026-01-01T00:00:00Z",
+			UpdatedAt:              "2026-01-02T00:00:00Z",
 		}
 
 		g := ConvertITXPastMeetingAttachmentPresignToGoa(resp)
 
 		assert.Equal(t, "att-004", g.UID)
 		assert.Equal(t, "zoom-100-occ-200", g.MeetingAndOccurrenceID)
+		// MeetingID is mapped through StringPtrOmitEmpty in the past-meeting variant
+		// (differs from the meeting variant which assigns it directly).
+		assert.Equal(t, "zoom-100", utils.StringValue(g.MeetingID))
 		assert.Equal(t, "https://s3.example.com/presigned", g.FileURL)
+		assert.Equal(t, "file", utils.StringValue(g.Type))
+		assert.Equal(t, "Notes", utils.StringValue(g.Category))
+		assert.Equal(t, "presign-upload.pdf", utils.StringValue(g.Name))
+		assert.Equal(t, "Past meeting presign description", utils.StringValue(g.Description))
+		assert.Equal(t, "presign-upload-2026-06-01.pdf", utils.StringValue(g.FileName))
+		require.NotNil(t, g.FileSize)
+		assert.Equal(t, int64(8192), *g.FileSize)
+		assert.Equal(t, "ongoing", utils.StringValue(g.FileUploadStatus))
+		assert.Equal(t, "application/pdf", utils.StringValue(g.FileContentType))
+		assert.Equal(t, "2026-01-01T00:00:00Z", utils.StringValue(g.CreatedAt))
+		assert.Equal(t, "2026-01-02T00:00:00Z", utils.StringValue(g.UpdatedAt))
+	})
+
+	t.Run("maps created_by and updated_by when present", func(t *testing.T) {
+		resp := &itx.PastMeetingAttachmentPresignResponse{
+			ID:                     "att-004",
+			MeetingAndOccurrenceID: "zoom-100-occ-200",
+			FileURL:                "https://s3.example.com/presigned",
+			CreatedBy:              &itx.CreatedUpdatedBy{Username: "alice", Email: "alice@example.com"},
+			UpdatedBy:              &itx.CreatedUpdatedBy{Username: "bob"},
+		}
+
+		g := ConvertITXPastMeetingAttachmentPresignToGoa(resp)
+
+		require.NotNil(t, g.CreatedBy)
+		assert.Equal(t, "alice", utils.StringValue(g.CreatedBy.Username))
+		assert.Equal(t, "alice@example.com", utils.StringValue(g.CreatedBy.Email))
+		require.NotNil(t, g.UpdatedBy)
+		assert.Equal(t, "bob", utils.StringValue(g.UpdatedBy.Username))
+	})
+
+	t.Run("audit users nil when absent", func(t *testing.T) {
+		g := ConvertITXPastMeetingAttachmentPresignToGoa(&itx.PastMeetingAttachmentPresignResponse{})
+		assert.Nil(t, g.CreatedBy)
+		assert.Nil(t, g.UpdatedBy)
 	})
 }
 

@@ -65,14 +65,24 @@ func TestConvertCreateParticipantPayload_IsInvitedOnly(t *testing.T) {
 }
 
 func TestConvertCreateParticipantPayload_IsAttendedOnly(t *testing.T) {
-	t.Run("is_attended true produces attendee request with sessions", func(t *testing.T) {
+	t.Run("is_attended true produces attendee request with all identity and committee fields", func(t *testing.T) {
 		p := &meetingservice.CreateItxPastMeetingParticipantPayload{
-			IsAttended: utils.BoolPtr(true),
-			FirstName:  utils.StringPtrOmitEmpty("Bob"),
-			LastName:   utils.StringPtrOmitEmpty("Fixture"),
-			Email:      utils.StringPtrOmitEmpty("bob@example.com"),
-			IsVerified: utils.BoolPtr(true),
-			IsUnknown:  utils.BoolPtr(false),
+			IsAttended:            utils.BoolPtr(true),
+			FirstName:             utils.StringPtrOmitEmpty("Bob"),
+			LastName:              utils.StringPtrOmitEmpty("Fixture"),
+			Email:                 utils.StringPtrOmitEmpty("bob@example.com"),
+			Username:              utils.StringPtrOmitEmpty("bob"),
+			LfUserID:              utils.StringPtrOmitEmpty("sf-002"),
+			OrgName:               utils.StringPtrOmitEmpty("Test Org"),
+			JobTitle:              utils.StringPtrOmitEmpty("Director"),
+			AvatarURL:             utils.StringPtrOmitEmpty("https://example.com/bob.png"),
+			CommitteeID:           utils.StringPtrOmitEmpty("cmte-2"),
+			CommitteeRole:         utils.StringPtrOmitEmpty("Member"),
+			CommitteeVotingStatus: utils.StringPtrOmitEmpty("observer"),
+			OrgIsMember:           utils.BoolPtr(true),
+			OrgIsProjectMember:    utils.BoolPtr(false),
+			IsVerified:            utils.BoolPtr(true),
+			IsUnknown:             utils.BoolPtr(false),
 			Sessions: []*meetingservice.ParticipantSession{
 				{
 					ParticipantUUID: utils.StringPtrOmitEmpty("uuid-1"),
@@ -88,6 +98,16 @@ func TestConvertCreateParticipantPayload_IsAttendedOnly(t *testing.T) {
 		require.NotNil(t, attendee)
 		assert.Equal(t, "Bob Fixture", attendee.Name)
 		assert.Equal(t, "bob@example.com", attendee.Email)
+		assert.Equal(t, "bob", attendee.LFSSO)
+		assert.Equal(t, "sf-002", attendee.LFUserID)
+		assert.Equal(t, "Test Org", attendee.Org)
+		assert.Equal(t, "Director", attendee.JobTitle)
+		assert.Equal(t, "https://example.com/bob.png", attendee.ProfilePicture)
+		assert.Equal(t, "cmte-2", attendee.CommitteeID)
+		assert.Equal(t, "Member", attendee.CommitteeRole)
+		assert.Equal(t, "observer", attendee.CommitteeVotingStatus)
+		assert.True(t, attendee.OrgIsMember)
+		assert.False(t, attendee.OrgIsProjectMember)
 		assert.True(t, attendee.IsVerified)
 		assert.False(t, attendee.IsUnknown)
 		require.Len(t, attendee.Sessions, 1)
@@ -190,6 +210,25 @@ func TestConvertUpdateParticipantPayload(t *testing.T) {
 		assert.Equal(t, "Test Org", attendee.Org)
 	})
 
+	t.Run("job_title, committee_role, and committee_voting_status are forwarded to both invitee and attendee", func(t *testing.T) {
+		p := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+			JobTitle:              utils.StringPtrOmitEmpty("Director"),
+			CommitteeRole:         utils.StringPtrOmitEmpty("Chair"),
+			CommitteeVotingStatus: utils.StringPtrOmitEmpty("voting_rep"),
+		}
+
+		invitee, attendee := ConvertUpdateParticipantPayload(p)
+
+		require.NotNil(t, invitee)
+		assert.Equal(t, "Director", invitee.JobTitle)
+		assert.Equal(t, "Chair", invitee.CommitteeRole)
+		assert.Equal(t, "voting_rep", invitee.CommitteeVotingStatus)
+		require.NotNil(t, attendee)
+		assert.Equal(t, "Director", attendee.JobTitle)
+		assert.Equal(t, "Chair", attendee.CommitteeRole)
+		assert.Equal(t, "voting_rep", attendee.CommitteeVotingStatus)
+	})
+
 	t.Run("empty payload produces neither request", func(t *testing.T) {
 		invitee, attendee := ConvertUpdateParticipantPayload(&meetingservice.UpdateItxPastMeetingParticipantPayload{})
 		assert.Nil(t, invitee)
@@ -221,7 +260,7 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 			AttendeeID:            "att-001",
 			PastMeetingID:         "zoom-100-occ-200",
 			MeetingID:             "zoom-100",
-			IsInvited:             true,
+			IsInvited:             false,
 			IsAttended:            true,
 			FirstName:             "Alice",
 			LastName:              "Example",
@@ -231,12 +270,12 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 			OrgName:               "Example Foundation",
 			JobTitle:              "Engineer",
 			AvatarURL:             "https://example.com/alice.png",
-			OrgIsMember:           true,
+			OrgIsMember:           false,
 			OrgIsProjectMember:    true,
 			CommitteeID:           "cmte-1",
 			CommitteeRole:         "Chair",
-			IsCommitteeMember:     true,
-			CommitteeVotingStatus: "voting",
+			IsCommitteeMember:     false,
+			CommitteeVotingStatus: "voting_rep",
 			IsVerified:            true,
 			IsUnknown:             false,
 			AverageAttendance:     3,
@@ -252,8 +291,11 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Equal(t, "att-001", utils.StringValue(g.AttendeeID))
 		assert.Equal(t, "zoom-100-occ-200", utils.StringValue(g.PastMeetingID))
 		assert.Equal(t, "zoom-100", utils.StringValue(g.MeetingID))
+		// Boolean values are deliberately non-uniform so any pairwise swap is detectable:
+		// IsInvited=F, IsAttended=T, OrgIsMember=F, OrgIsProjectMember=T, IsCommitteeMember=F,
+		// IsVerified=T, IsUnknown=F.
 		require.NotNil(t, g.IsInvited)
-		assert.True(t, *g.IsInvited)
+		assert.False(t, *g.IsInvited)
 		require.NotNil(t, g.IsAttended)
 		assert.True(t, *g.IsAttended)
 		assert.Equal(t, "Alice", utils.StringValue(g.FirstName))
@@ -266,13 +308,13 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Equal(t, "https://example.com/alice.png", utils.StringValue(g.AvatarURL))
 		assert.Equal(t, "cmte-1", utils.StringValue(g.CommitteeID))
 		assert.Equal(t, "Chair", utils.StringValue(g.CommitteeRole))
-		assert.Equal(t, "voting", utils.StringValue(g.CommitteeVotingStatus))
+		assert.Equal(t, "voting_rep", utils.StringValue(g.CommitteeVotingStatus))
 		require.NotNil(t, g.OrgIsMember)
-		assert.True(t, *g.OrgIsMember)
+		assert.False(t, *g.OrgIsMember)
 		require.NotNil(t, g.OrgIsProjectMember)
 		assert.True(t, *g.OrgIsProjectMember)
 		require.NotNil(t, g.IsCommitteeMember)
-		assert.True(t, *g.IsCommitteeMember)
+		assert.False(t, *g.IsCommitteeMember)
 		require.NotNil(t, g.IsVerified)
 		assert.True(t, *g.IsVerified)
 		require.NotNil(t, g.IsUnknown)

@@ -43,10 +43,14 @@ func TestConvertUpdatePastMeetingSummaryPayload(t *testing.T) {
 			EditedContent: &content,
 		})
 
-		assert.NotEmpty(t, req.EditedSummaryOverview)
-		// Parser routes "Decision: ..." as a detail and "Next Steps" entries as next steps
-		assert.NotEmpty(t, req.EditedSummaryDetails)
-		assert.NotEmpty(t, req.EditedNextSteps)
+		// Parser routes "Meeting went well." as overview, "Decision: Approved budget." as a
+		// detail (split on first colon into Label/Summary), and the next-steps list stripped
+		// of its header.
+		assert.Equal(t, "Meeting went well.", req.EditedSummaryOverview)
+		require.Len(t, req.EditedSummaryDetails, 1)
+		assert.Equal(t, "Decision", req.EditedSummaryDetails[0].Label)
+		assert.Equal(t, "Approved budget.", req.EditedSummaryDetails[0].Summary)
+		assert.Equal(t, []string{"Follow up with team"}, req.EditedNextSteps)
 	})
 
 	t.Run("approved nil is passed through as nil", func(t *testing.T) {
@@ -118,11 +122,13 @@ func TestConvertPastMeetingSummaryToGoa(t *testing.T) {
 		assert.Nil(t, g.ZoomConfig)
 	})
 
-	t.Run("summary_data carries start_time end_time and title", func(t *testing.T) {
+	t.Run("summary_data carries start_time end_time, title, content, and edited_content", func(t *testing.T) {
 		resp := &itx.PastMeetingSummaryResponse{
-			SummaryStartTime: "2026-06-01T10:00:00Z",
-			SummaryEndTime:   "2026-06-01T11:00:00Z",
-			SummaryTitle:     "Board Q2 Summary",
+			SummaryStartTime:      "2026-06-01T10:00:00Z",
+			SummaryEndTime:        "2026-06-01T11:00:00Z",
+			SummaryTitle:          "Board Q2 Summary",
+			SummaryOverview:       "Original overview text.",
+			EditedSummaryOverview: "Edited overview text.",
 		}
 
 		g := ConvertPastMeetingSummaryToGoa(resp)
@@ -131,6 +137,12 @@ func TestConvertPastMeetingSummaryToGoa(t *testing.T) {
 		assert.Equal(t, "2026-06-01T10:00:00Z", g.SummaryData.StartTime)
 		assert.Equal(t, "2026-06-01T11:00:00Z", g.SummaryData.EndTime)
 		assert.Equal(t, "Board Q2 Summary", utils.StringValue(g.SummaryData.Title))
+		// buildContentFromITX → Content; buildEditedContentFromITX → EditedContent.
+		// Distinct overviews make a builder-swap detectable.
+		assert.Equal(t, "Original overview text.", utils.StringValue(g.SummaryData.Content))
+		assert.Equal(t, "Edited overview text.", utils.StringValue(g.SummaryData.EditedContent))
+		// ITX does not provide doc_url; converter hard-codes StringPtrOmitEmpty("") → nil.
+		assert.Nil(t, g.SummaryData.DocURL)
 	})
 }
 
