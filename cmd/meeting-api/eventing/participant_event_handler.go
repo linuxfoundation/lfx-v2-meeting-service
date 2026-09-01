@@ -388,6 +388,7 @@ type rawParticipantData struct {
 	isAttended bool
 	isHost     bool // pre-computed by invitee side via KV lookup; always false for attendees
 	// attendee-only fields (zero-valued for invitees)
+	isVerified        bool
 	isUnknown         bool
 	isAIReconciled    bool
 	isAutoMatched     bool
@@ -480,6 +481,7 @@ func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error
 		isInvited:          raw.RegistrantID != "",
 		isAttended:         true,
 		isHost:             false, // attendee records don't carry host info
+		isVerified:         raw.IsVerified,
 		isUnknown:          raw.IsUnknown,
 		isAIReconciled:     raw.IsAIReconciled,
 		isAutoMatched:      raw.IsAutoMatched,
@@ -596,6 +598,7 @@ func convertParticipant(
 		Username:               raw.username,
 		IsInvited:              raw.isInvited,
 		IsAttended:             raw.isAttended,
+		IsVerified:             raw.isVerified,
 		IsUnknown:              raw.isUnknown,
 		IsAIReconciled:         raw.isAIReconciled,
 		IsAutoMatched:          raw.isAutoMatched,

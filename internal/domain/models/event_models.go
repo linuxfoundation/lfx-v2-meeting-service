@@ -891,6 +891,7 @@ type PastMeetingParticipantEventData struct {
 	Username               string               `json:"username,omitempty"`
 	IsInvited              bool                 `json:"is_invited"`
 	IsAttended             bool                 `json:"is_attended"`
+	IsVerified             bool                 `json:"is_verified"`
 	IsUnknown              bool                 `json:"is_unknown"`
 	IsAIReconciled         bool                 `json:"is_ai_reconciled"`
 	IsAutoMatched          bool                 `json:"is_auto_matched"`
