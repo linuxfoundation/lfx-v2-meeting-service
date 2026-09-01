@@ -246,8 +246,12 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 		CommitteeVotingStatus: utils.StringPtrOmitEmpty(resp.CommitteeVotingStatus),
 
 		// Attendee-specific fields
-		IsVerified: utils.BoolPtr(resp.IsVerified),
-		IsUnknown:  utils.BoolPtr(resp.IsUnknown),
+		IsVerified:        utils.BoolPtr(resp.IsVerified),
+		IsUnknown:         utils.BoolPtr(resp.IsUnknown),
+		IsAiReconciled:    utils.BoolPtr(resp.IsAIReconciled),
+		IsAutoMatched:     utils.BoolPtr(resp.IsAutoMatched),
+		ZoomUserName:      utils.StringPtrOmitEmpty(resp.ZoomUserName),
+		MappedInviteeName: utils.StringPtrOmitEmpty(resp.MappedInviteeName),
 
 		// Audit fields
 		CreatedAt:  utils.StringPtrOmitEmpty(resp.CreatedAt),

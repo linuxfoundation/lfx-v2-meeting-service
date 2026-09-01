@@ -67,6 +67,10 @@ type ParticipantResponse struct {
 	// Attendee-specific fields
 	IsVerified        bool
 	IsUnknown         bool
+	IsAIReconciled    bool
+	IsAutoMatched     bool
+	ZoomUserName      string
+	MappedInviteeName string
 	AverageAttendance int
 	Sessions          []itx.AttendeeSession
 
@@ -559,6 +563,10 @@ func mergeParticipantResponses(
 	if attendee != nil {
 		unified.IsVerified = attendee.IsVerified
 		unified.IsUnknown = attendee.IsUnknown
+		unified.IsAIReconciled = attendee.IsAIReconciled
+		unified.IsAutoMatched = attendee.IsAutoMatched
+		unified.ZoomUserName = attendee.ZoomUserName
+		unified.MappedInviteeName = attendee.MappedInviteeName
 		unified.AverageAttendance = attendee.AverageAttendance
 		unified.Sessions = attendee.Sessions
 	}

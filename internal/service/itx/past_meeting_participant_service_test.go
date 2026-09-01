@@ -224,3 +224,34 @@ func TestPastMeetingParticipantService_UpdateParticipant_ResolvesRequesterOnce(t
 		)
 	})
 }
+
+func TestMergeParticipantResponses_CarriesAttendeeReconciliationFields(t *testing.T) {
+	attendee := &itx.AttendeeResponse{
+		ID:                "attendee-1",
+		IsVerified:        true,
+		IsUnknown:         false,
+		IsAIReconciled:    true,
+		IsAutoMatched:     true,
+		ZoomUserName:      "Alice Example (Zoom)",
+		MappedInviteeName: "Alice Example",
+	}
+
+	unified := mergeParticipantResponses("mtg-1-occ-1", nil, attendee, false, true)
+
+	assert.True(t, unified.IsVerified)
+	assert.True(t, unified.IsAIReconciled)
+	assert.True(t, unified.IsAutoMatched)
+	assert.Equal(t, "Alice Example (Zoom)", unified.ZoomUserName)
+	assert.Equal(t, "Alice Example", unified.MappedInviteeName)
+}
+
+func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {
+	invitee := &itx.InviteeResponse{UUID: "invitee-1", FirstName: "Bob"}
+
+	unified := mergeParticipantResponses("mtg-1-occ-1", invitee, nil, true, false)
+
+	assert.False(t, unified.IsAIReconciled)
+	assert.False(t, unified.IsAutoMatched)
+	assert.Empty(t, unified.ZoomUserName)
+	assert.Empty(t, unified.MappedInviteeName)
+}

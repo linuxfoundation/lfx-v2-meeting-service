@@ -436,3 +436,44 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Nil(t, g.ModifiedBy)
 	})
 }
+
+func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing.T) {
+	t.Run("carries reconciliation fields through", func(t *testing.T) {
+		resp := &itxservice.ParticipantResponse{
+			AttendeeID:        "attendee-1",
+			IsAttended:        true,
+			IsVerified:        true,
+			IsAIReconciled:    true,
+			IsAutoMatched:     true,
+			ZoomUserName:      "Alice Example (Zoom)",
+			MappedInviteeName: "Alice Example",
+		}
+
+		goaResp := ConvertParticipantResponseToGoa(resp)
+
+		require.NotNil(t, goaResp.IsAiReconciled)
+		require.NotNil(t, goaResp.IsAutoMatched)
+		require.NotNil(t, goaResp.ZoomUserName)
+		require.NotNil(t, goaResp.MappedInviteeName)
+		assert.True(t, *goaResp.IsAiReconciled)
+		assert.True(t, *goaResp.IsAutoMatched)
+		assert.Equal(t, "Alice Example (Zoom)", *goaResp.ZoomUserName)
+		assert.Equal(t, "Alice Example", *goaResp.MappedInviteeName)
+	})
+
+	t.Run("omits empty reconciliation fields", func(t *testing.T) {
+		resp := &itxservice.ParticipantResponse{
+			InviteeID: "invitee-1",
+			IsInvited: true,
+		}
+
+		goaResp := ConvertParticipantResponseToGoa(resp)
+
+		assert.Nil(t, goaResp.ZoomUserName)
+		assert.Nil(t, goaResp.MappedInviteeName)
+		require.NotNil(t, goaResp.IsAiReconciled)
+		require.NotNil(t, goaResp.IsAutoMatched)
+		assert.False(t, *goaResp.IsAiReconciled)
+		assert.False(t, *goaResp.IsAutoMatched)
+	})
+}
