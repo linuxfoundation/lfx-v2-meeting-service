@@ -536,6 +536,7 @@ func TestHandleInviteeUpdate_MergesAttendeeFields(t *testing.T) {
 		"project_slug":              "my-project",
 		"name":                      "Alice Example",
 		"is_unknown":                true,
+		"is_verified":               true,
 		"zoom_user_name":            "Alice Z",
 		"mapped_invitee_name":       "Alice Example",
 	}
@@ -576,6 +577,7 @@ func TestHandleInviteeUpdate_MergesAttendeeFields(t *testing.T) {
 	assert.True(t, captured.IsInvited, "invitee record must be IsInvited")
 	assert.True(t, captured.IsAttended, "attendee sibling's IsAttended must be merged")
 	assert.True(t, captured.IsUnknown, "is_unknown from attendee sibling must be merged")
+	assert.True(t, captured.IsVerified, "is_verified from attendee sibling must be merged")
 	assert.Equal(t, "Alice Z", captured.ZoomUserName, "zoom_user_name from sibling must be merged")
 	publisher.AssertExpectations(t)
 	mappingsKV.AssertExpectations(t)
@@ -1422,6 +1424,7 @@ func TestDecodeInviteeRaw(t *testing.T) {
 		assert.False(t, raw.isUnknown)
 		assert.False(t, raw.isAIReconciled)
 		assert.False(t, raw.isAutoMatched)
+		assert.False(t, raw.isVerified)
 		assert.Empty(t, raw.zoomUserName)
 		assert.Empty(t, raw.mappedInviteeName)
 		assert.Empty(t, raw.sessions)
@@ -1477,6 +1480,7 @@ func TestDecodeAttendeeRaw(t *testing.T) {
 			"is_unknown":                true,
 			"is_ai_reconciled":          true,
 			"is_auto_matched":           true,
+			"is_verified":               true,
 			"zoom_user_name":            "Bob Z",
 			"mapped_invitee_name":       "Bob Fixture",
 			"sessions": []interface{}{
@@ -1506,6 +1510,7 @@ func TestDecodeAttendeeRaw(t *testing.T) {
 		assert.True(t, raw.isUnknown)
 		assert.True(t, raw.isAIReconciled)
 		assert.True(t, raw.isAutoMatched)
+		assert.True(t, raw.isVerified)
 		assert.Equal(t, "Bob Z", raw.zoomUserName)
 		assert.Equal(t, "Bob Fixture", raw.mappedInviteeName)
 		require.Len(t, raw.sessions, 1)

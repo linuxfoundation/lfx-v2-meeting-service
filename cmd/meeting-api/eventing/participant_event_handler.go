@@ -142,6 +142,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key 
 				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee raw fields for merge; publishing without attendee-only fields")
 				return nil
 			}
+			self.IsVerified = rawData.isVerified
 			self.IsUnknown = rawData.isUnknown
 			self.IsAIReconciled = rawData.isAIReconciled
 			self.IsAutoMatched = rawData.isAutoMatched
