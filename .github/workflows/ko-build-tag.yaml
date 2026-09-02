@@ -27,7 +27,7 @@ jobs:
       chart_name: ${{ steps.prepare.outputs.chart_name }}
       chart_version: ${{ steps.prepare.outputs.chart_version }}
     steps:
-      - uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c  # v2.21.0
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
         with:
           egress-policy: audit
           disable-sudo: true
@@ -92,7 +92,7 @@ jobs:
       digest: ${{ steps.publish-ghcr.outputs.digest }}
       image_name: ${{ steps.publish-ghcr.outputs.image_name }}
     steps:
-      - uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c  # v2.21.0
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
         with:
           egress-policy: audit
           disable-sudo: true
@@ -105,7 +105,7 @@ jobs:
       - name: Publish Chart to GHCR
         id: publish-ghcr
         # yamllint disable-line rule:line-length
-        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@17e4144d7ba68f7c3e8c16eece5aed15fd7c2dc8  # main
+        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@a93335d2abc2a2e2bb1b7a4cdefbbf15351681ce  # main
         with:
           name: ${{ needs.publish.outputs.chart_name }}
           repository: ${{ github.repository }}/chart
