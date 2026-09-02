@@ -1,6 +1,6 @@
 ---
 name: meeting-service-learnings-reviewer
-description: Repo-owned empirical-review brain for lfx-v2-meeting-service, the repo-learnings role of this repo's local pre-PR review. Matches one commit or range against this repo's knowledge base of patterns extracted from real past PR review comments, applies the known-false-positive floor last, and returns a Markdown review in which every finding quotes its KB entry. Loaded directly by the launcher; not a skill a developer invokes by hand.
+description: Repo-owned learnings-review skill for lfx-v2-meeting-service, the repo-learnings role of this repo's local pre-PR review. Matches one commit or range against this repo's knowledge base of patterns extracted from real past PR review comments, applies the known-false-positive floor last, and returns a Markdown review in which every finding quotes its KB entry. Loaded under its exact `/meeting-service-learnings-reviewer` name by the `/lfx-skills:lfx-local-review` lifecycle; not a skill a developer invokes by hand.
 ---
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->

@@ -582,10 +582,9 @@ Every non-generated Go source file (outside `gen/` and `vendor/`) must carry the
 
 ### Pull Request Workflow
 
-1. Create a feature branch from `main`
-2. Make changes, run `make check` and `make test`
-3. Run the local review cycle: `/lfx-skills:lfx-local-review` (see CLAUDE.md for details)
-4. Open a PR — title must follow `<type>(<scope>): <summary>` format; append `[LFXV2-XXXX]` only when a relevant Jira ticket exists
+- Work on a feature branch created from `main`.
+- Review lifecycle: `/lfx-skills:lfx-local-review`, configured by the `## Review lifecycle configuration` section of CLAUDE.md.
+- PR title must follow `<type>(<scope>): <summary>` format; append `[LFXV2-XXXX]` only when a relevant Jira ticket exists.
 
 ### API Changes
 
