@@ -142,6 +142,7 @@ func (h *EventHandlers) handlePastMeetingInviteeUpdate(ctx context.Context, key 
 				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to decode attendee raw fields for merge; publishing without attendee-only fields")
 				return nil
 			}
+			self.IsVerified = rawData.isVerified
 			self.IsUnknown = rawData.isUnknown
 			self.IsAIReconciled = rawData.isAIReconciled
 			self.IsAutoMatched = rawData.isAutoMatched
@@ -388,6 +389,7 @@ type rawParticipantData struct {
 	isAttended bool
 	isHost     bool // pre-computed by invitee side via KV lookup; always false for attendees
 	// attendee-only fields (zero-valued for invitees)
+	isVerified        bool
 	isUnknown         bool
 	isAIReconciled    bool
 	isAutoMatched     bool
@@ -480,6 +482,7 @@ func decodeAttendeeRaw(v1Data map[string]interface{}) (rawParticipantData, error
 		isInvited:          raw.RegistrantID != "",
 		isAttended:         true,
 		isHost:             false, // attendee records don't carry host info
+		isVerified:         raw.IsVerified,
 		isUnknown:          raw.IsUnknown,
 		isAIReconciled:     raw.IsAIReconciled,
 		isAutoMatched:      raw.IsAutoMatched,
@@ -596,6 +599,7 @@ func convertParticipant(
 		Username:               raw.username,
 		IsInvited:              raw.isInvited,
 		IsAttended:             raw.isAttended,
+		IsVerified:             raw.isVerified,
 		IsUnknown:              raw.isUnknown,
 		IsAIReconciled:         raw.isAIReconciled,
 		IsAutoMatched:          raw.isAutoMatched,
