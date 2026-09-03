@@ -259,6 +259,8 @@ func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFi
 	)
 
 	trueVal := true
+	zoomUserName := "Erin (Zoom)"
+	mappedInviteeName := "Erin Test"
 	_, err := svc.UpdateParticipant(
 		ctxWithPrincipal("erin", ""),
 		&models.UpdatePastMeetingParticipant{
@@ -269,10 +271,10 @@ func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFi
 		},
 		&itx.UpdateInviteeRequest{FirstName: "Erin", LastName: "Test"},
 		&itx.UpdateAttendeeRequest{
-			IsAIReconciled:    true,
-			IsAutoMatched:     true,
-			ZoomUserName:      "Erin (Zoom)",
-			MappedInviteeName: "Erin Test",
+			IsAIReconciled:    &trueVal,
+			IsAutoMatched:     &trueVal,
+			ZoomUserName:      &zoomUserName,
+			MappedInviteeName: &mappedInviteeName,
 		},
 	)
 	require.NoError(t, err)
@@ -293,4 +295,85 @@ func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing
 	assert.False(t, unified.IsAutoMatched)
 	assert.Empty(t, unified.ZoomUserName)
 	assert.Empty(t, unified.MappedInviteeName)
+}
+
+// fake204ParticipantClient simulates ITX's real behavior on an attendee update:
+// a 204 No Content response, surfaced here as (nil, nil).
+type fake204ParticipantClient struct {
+	fakeParticipantClient
+}
+
+func (f *fake204ParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	f.attendeeUpdateReq = req
+	return nil, nil
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_EchoesReconciliationFieldsOn204(t *testing.T) {
+	// ITX returns 204 No Content on a successful attendee update, so the ITX client
+	// returns (nil, nil). The synchronous API response must still reflect the
+	// values that were just persisted instead of silently reporting zero values.
+
+	client := &fake204ParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "gina"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	zoomUserName := "Gina (Zoom)"
+	mappedInviteeName := "Gina Test"
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("gina", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			IsAIReconciled:    &trueVal,
+			IsAutoMatched:     &trueVal,
+			ZoomUserName:      &zoomUserName,
+			MappedInviteeName: &mappedInviteeName,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.True(t, resp.IsAIReconciled)
+	assert.True(t, resp.IsAutoMatched)
+	assert.Equal(t, "Gina (Zoom)", resp.ZoomUserName)
+	assert.Equal(t, "Gina Test", resp.MappedInviteeName)
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyUpdateWithoutIsAttended(t *testing.T) {
+	// A reconciliation-only update (e.g. re-running AI matching) carries no
+	// is_attended flag at all. It must still reach ITX rather than being silently
+	// dropped by the isAttended==nil early return.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "hank"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	_, err := svc.UpdateParticipant(
+		ctxWithPrincipal("hank", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+	require.NoError(t, err)
+
+	require.NotNil(t, client.attendeeUpdateReq, "reconciliation-only update must still call ITX")
+	require.NotNil(t, client.attendeeUpdateReq.IsAIReconciled)
+	assert.True(t, *client.attendeeUpdateReq.IsAIReconciled)
 }

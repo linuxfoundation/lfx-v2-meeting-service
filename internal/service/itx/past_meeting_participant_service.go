@@ -201,7 +201,10 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	attendeeReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
 ) (*itx.AttendeeResponse, bool) {
-	if isAttended == nil {
+	// A nil isAttended with a non-nil attendeeReq is a reconciliation-only update
+	// (e.g. is_ai_reconciled/zoom_user_name) that carries no attendance status
+	// change; it must still reach ITX rather than being silently dropped.
+	if isAttended == nil && attendeeReq == nil {
 		return nil, false
 	}
 
@@ -217,7 +220,7 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 		actualAttendeeID, attendeeExists = s.checkAttendeeExists(ctx, participantID)
 	}
 
-	if !*isAttended {
+	if isAttended != nil && !*isAttended {
 		if attendeeExists && actualAttendeeID != "" {
 			s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID)
 		}
@@ -367,10 +370,10 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 		CommitteeRole:         updateReq.CommitteeRole,
 		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
 		IsVerified:            updateReq.IsVerified,
-		IsAIReconciled:        updateReq.IsAIReconciled,
-		IsAutoMatched:         updateReq.IsAutoMatched,
-		ZoomUserName:          updateReq.ZoomUserName,
-		MappedInviteeName:     updateReq.MappedInviteeName,
+		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+		MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
 		// This path is exercised when an update targets an attendee that doesn't yet
 		// exist; stamp created_by since ITX will treat this as a fresh record.
 		// updater is resolved once in UpdateParticipant so both the invitee and
@@ -437,7 +440,24 @@ func (s *PastMeetingParticipantService) updateAttendee(
 		return nil
 	}
 
-	// resp may be nil if ITX returns 204 No Content
+	if resp == nil {
+		// ITX returns 204 No Content on a successful update with no response body.
+		// Echo back the values we just persisted so the synchronous API response
+		// reflects them instead of silently reporting zero/omitted values.
+		resp = &itx.AttendeeResponse{
+			ID:                    attendeeID,
+			Org:                   updateReq.Org,
+			JobTitle:              updateReq.JobTitle,
+			IsVerified:            updateReq.IsVerified,
+			IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+			IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+			ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+			MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
+			CommitteeRole:         updateReq.CommitteeRole,
+			CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+		}
+	}
+
 	return resp
 }
 

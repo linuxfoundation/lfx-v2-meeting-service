@@ -85,6 +85,10 @@ Content-Type: application/json
   "org_is_project_member": true,
   "is_verified": true,
   "is_unknown": false,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe",
   "sessions": [
     {
       "participant_uuid": "session-uuid",
@@ -113,6 +117,10 @@ Content-Type: application/json
 - `org_is_project_member` (boolean) - Whether org has project membership
 - `is_verified` (boolean) - Whether attendee has been verified (attendee-only field)
 - `is_unknown` (boolean) - Whether attendee is marked as unknown (attendee-only field)
+- `is_ai_reconciled` (boolean) - Whether the attendee record was last updated via AI reconciliation (attendee-only field)
+- `is_auto_matched` (boolean) - Whether the attendee was automatically matched to an invitee by name (attendee-only field)
+- `zoom_user_name` (string) - Zoom display name of the attendee (attendee-only field)
+- `mapped_invitee_name` (string) - Full name of the invitee the attendee was matched to (attendee-only field)
 - `sessions` (array) - Session objects with join/leave times (attendee-only field)
 
 **Response**: `201 Created`
@@ -142,6 +150,10 @@ Content-Type: application/json
   "org_is_project_member": true,
   "is_verified": true,
   "is_unknown": false,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe",
   "average_attendance": 0.85,
   "sessions": [
     {
@@ -220,7 +232,11 @@ Content-Type: application/json
   "avatar_url": "https://example.com/new-avatar.jpg",
   "committee_role": "chair",
   "committee_voting_status": "active",
-  "is_verified": true
+  "is_verified": true,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe"
 }
 ```
 
@@ -338,6 +354,10 @@ Deletes both invitee and attendee records if they exist.
 | `org_is_project_member` | `org_is_project_member` | Identical |
 | `is_verified` | `is_verified` | Identical |
 | `is_unknown` | `is_unknown` | Identical |
+| `is_ai_reconciled` | `is_ai_reconciled` | Identical (attendee only) |
+| `is_auto_matched` | `is_auto_matched` | Identical (attendee only) |
+| `zoom_user_name` | `zoom_user_name` | Identical (attendee only) |
+| `mapped_invitee_name` | `mapped_invitee_name` | Identical (attendee only) |
 | `sessions` | `sessions` | Identical |
 | `average_attendance` | `average_attendance` | Identical (read-only) |
 

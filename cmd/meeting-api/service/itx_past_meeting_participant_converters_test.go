@@ -439,11 +439,12 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 
 func TestConvertCreateParticipantPayload_AttendeeReconciliationFields(t *testing.T) {
 	trueVal := true
+	falseVal := false
 	payload := &meetingservice.CreateItxPastMeetingParticipantPayload{
 		PastMeetingID:     "pm-1",
 		IsAttended:        &trueVal,
 		IsAiReconciled:    &trueVal,
-		IsAutoMatched:     &trueVal,
+		IsAutoMatched:     &falseVal,
 		ZoomUserName:      utils.StringPtrOmitEmpty("Alice Example (Zoom)"),
 		MappedInviteeName: utils.StringPtrOmitEmpty("Alice Example"),
 	}
@@ -452,17 +453,18 @@ func TestConvertCreateParticipantPayload_AttendeeReconciliationFields(t *testing
 
 	require.NotNil(t, attendeeReq)
 	assert.True(t, attendeeReq.IsAIReconciled)
-	assert.True(t, attendeeReq.IsAutoMatched)
+	assert.False(t, attendeeReq.IsAutoMatched)
 	assert.Equal(t, "Alice Example (Zoom)", attendeeReq.ZoomUserName)
 	assert.Equal(t, "Alice Example", attendeeReq.MappedInviteeName)
 }
 
 func TestConvertUpdateParticipantPayload_AttendeeReconciliationFields(t *testing.T) {
 	trueVal := true
+	falseVal := false
 	payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
 		PastMeetingID:     "pm-1",
 		ParticipantID:     "p-1",
-		IsAiReconciled:    &trueVal,
+		IsAiReconciled:    &falseVal,
 		IsAutoMatched:     &trueVal,
 		ZoomUserName:      utils.StringPtrOmitEmpty("Bob (Zoom)"),
 		MappedInviteeName: utils.StringPtrOmitEmpty("Bob Fixture"),
@@ -471,10 +473,14 @@ func TestConvertUpdateParticipantPayload_AttendeeReconciliationFields(t *testing
 	_, attendeeReq := ConvertUpdateParticipantPayload(payload)
 
 	require.NotNil(t, attendeeReq, "reconciliation-only fields must still trigger an attendee update")
-	assert.True(t, attendeeReq.IsAIReconciled)
-	assert.True(t, attendeeReq.IsAutoMatched)
-	assert.Equal(t, "Bob (Zoom)", attendeeReq.ZoomUserName)
-	assert.Equal(t, "Bob Fixture", attendeeReq.MappedInviteeName)
+	require.NotNil(t, attendeeReq.IsAIReconciled)
+	require.NotNil(t, attendeeReq.IsAutoMatched)
+	assert.False(t, *attendeeReq.IsAIReconciled)
+	assert.True(t, *attendeeReq.IsAutoMatched)
+	require.NotNil(t, attendeeReq.ZoomUserName)
+	require.NotNil(t, attendeeReq.MappedInviteeName)
+	assert.Equal(t, "Bob (Zoom)", *attendeeReq.ZoomUserName)
+	assert.Equal(t, "Bob Fixture", *attendeeReq.MappedInviteeName)
 }
 
 func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing.T) {

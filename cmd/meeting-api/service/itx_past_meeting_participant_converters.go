@@ -223,18 +223,12 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 		if payload.IsVerified != nil {
 			attendeeReq.IsVerified = *payload.IsVerified
 		}
-		if payload.IsAiReconciled != nil {
-			attendeeReq.IsAIReconciled = *payload.IsAiReconciled
-		}
-		if payload.IsAutoMatched != nil {
-			attendeeReq.IsAutoMatched = *payload.IsAutoMatched
-		}
-		if payload.ZoomUserName != nil {
-			attendeeReq.ZoomUserName = *payload.ZoomUserName
-		}
-		if payload.MappedInviteeName != nil {
-			attendeeReq.MappedInviteeName = *payload.MappedInviteeName
-		}
+		// Pass reconciliation pointers through directly so an explicit false/empty
+		// value is preserved on the wire instead of being dropped by omitempty.
+		attendeeReq.IsAIReconciled = payload.IsAiReconciled
+		attendeeReq.IsAutoMatched = payload.IsAutoMatched
+		attendeeReq.ZoomUserName = payload.ZoomUserName
+		attendeeReq.MappedInviteeName = payload.MappedInviteeName
 	}
 
 	return inviteeReq, attendeeReq
