@@ -6,11 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - `/lfx-skills:lfx` — cross-repo routing, "where does X live", owner/peer repos, missing checkouts.
 > - `/lfx-skills:lfx-platform-architecture` — platform composition, V2 service classes, write/read/access-check flows, NATS/KV ownership, Heimdall, OpenFGA, Helm, ArgoCD.
 > - `/lfx-skills:lfx-itx-integration` — ITX OAuth2 M2M, v1/v2 ID mapping, KV event sync.
->
-> **Repo-local meeting-service skills:**
-> - `.claude/skills/meeting-service-code-reviewer/` — audits a change against this repo's written rule surface (CLAUDE.md, the FGA/indexer/event-processing/ITX contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes the rule it cites.
-> - `.claude/skills/meeting-service-learnings-reviewer/` — matches a change against `docs/reviews/knowledge-base/`, this repo's patterns mined from real past PR review comments.
-> - Run both with `/lfx-skills:lfx-local-review` after every pre-PR commit (see Local work cycle below).
 
 ## Developer Standards
 
@@ -251,63 +246,17 @@ The service follows a clean architecture pattern with:
 - **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
 - Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.example.yaml charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
-## Local work cycle — post-commit and pre-PR review
+## Review lifecycle configuration
 
-This repo runs a local code review before a PR exists. It is an author-side
-workflow: it produces evidence for the developer, and it never posts to GitHub,
-opens or gates a PR, or touches a merge check. It is a **cross-model** review
-only on the Pi path; when Pi is unavailable the trio falls back to Claude, which
-is reported as such and is not cross-model evidence.
+Load and follow `/lfx-skills:lfx-local-review` as the sole owner of the review
+lifecycle. The values below configure that skill and do not replace or override
+its instructions.
 
-- **After every normal signed commit while still pre-PR**, run
-  `/lfx-skills:lfx-local-review`. It runs the `general`, `repo_code` and
-  `repo_learnings` reviewers in parallel against the committed target and returns
-  **ordinary Markdown** reports.
-- **The default is the newest commit only** — `HEAD^..HEAD`, the diff that
-  commit introduced against its first parent. A caller may instead supply a
-  direct base range, which may span more than one commit; it is reviewed exactly
-  as supplied. Either way the reviewers use whatever base the host names and
-  never derive one themselves.
-- **Read the reports in this session and address the findings yourself.** The
-  reviewers never edit code. Fixes are normal signed conventional commits —
-  `fix(<scope>): …` or `fix: …` as appropriate — after which you **rerun the
-  complete trio**.
-- **Before opening a PR**, drain the reviews, then run this repo's native
-  checks: `make check` (gofmt, `golangci-lint`, license headers) and `make test`
-  (`-race -cover`). Run `make deps` first if `golangci-lint` is not installed.
-  There is no separate readiness or preflight skill in this repo.
-
-The trio is the central `general` brain plus this repo's two own brains, which
-live in-repo and are versioned with the code they describe:
-
-- `.claude/skills/meeting-service-code-reviewer/` — audits a change against this
-  repo's written rule surface (`CLAUDE.md`, the FGA/indexer/event-processing/ITX
-  contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes
-  the rule it cites.
-- `.claude/skills/meeting-service-learnings-reviewer/` — carries the empirical
-  review method and matches a change against `docs/reviews/knowledge-base/`, this
-  repo's patterns mined from real past PR review comments. Every finding quotes
-  its knowledge-base entry. The KB lives under `docs/` because it is repo-owned
-  knowledge versioned with the code it describes, and there is exactly one copy
-  of it.
-
-The generic `local-code-review` and `local-learnings-review` names beside them
-are symlinks; they exist so the launcher's discovery is deterministic, and both
-resolve to the two physical skills above. `.agents/skills/` links to the same
-files for non-Claude agents. There is exactly one copy of each brain.
-
-**An incomplete cycle is not a passing cycle.** If any reviewer's report starts
-`INCOMPLETE — <reason>`, or the host reports a failed or empty reviewer, the
-**whole cycle** is incomplete — successful reports from the other roles do not
-rescue it. Resolve the cause and **rerun the complete trio under one harness**:
-never rerun or replace a single role, and never assemble one cycle out of mixed
-Pi and Claude evidence. A run that fell back to Claude because Pi was
-unavailable is honestly reported as such and is not cross-model evidence.
-
-The cycle **stops at PR open**. After verification the branch may be pushed and
-the PR opened under the coordinator's release instruction; from that point review
-is the PR-side Copilot surface's job (`.github/copilot-instructions.md` and
-`.github/skills/**`), and nothing in the local cycle changes or feeds it.
+- repo code reviewer: `/meeting-service-code-reviewer`
+- repo learnings reviewer: `/meeting-service-learnings-reviewer`
+- readiness action: `make check`
+- preflight action: `make test`
+- post-PR extension: `none`
 
 ## Development Guidelines
 

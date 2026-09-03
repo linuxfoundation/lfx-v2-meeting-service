@@ -1,6 +1,6 @@
 ---
 name: meeting-service-code-reviewer
-description: Repo-owned code-review brain for lfx-v2-meeting-service, the repo-code role of this repo's local pre-PR review. Audits one commit or range against this repo's written rule surface — CLAUDE.md, the FGA/indexer/event-processing/ITX contract docs, the Goa design boundary, and the chart — and returns a Markdown review in which every finding quotes the rule it cites. Loaded directly by the launcher; not a skill a developer invokes by hand.
+description: Repo-owned code-review skill for lfx-v2-meeting-service, the repo-code role of this repo's local pre-PR review. Audits one commit or range against this repo's written rule surface — CLAUDE.md, the FGA/indexer/event-processing/ITX contract docs, the Goa design boundary, and the chart — and returns a Markdown review in which every finding quotes the rule it cites. Loaded under its exact `/meeting-service-code-reviewer` name by the `/lfx-skills:lfx-local-review` lifecycle; not a skill a developer invokes by hand.
 ---
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->
