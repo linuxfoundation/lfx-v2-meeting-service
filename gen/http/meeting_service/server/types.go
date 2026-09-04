@@ -409,11 +409,13 @@ type UpdateItxPastMeetingParticipantRequestBody struct {
 	IsInvited *bool `form:"is_invited,omitempty" json:"is_invited,omitempty" xml:"is_invited,omitempty"`
 	// Whether the participant attended (if false, attendee record will be deleted)
 	IsAttended *bool `form:"is_attended,omitempty" json:"is_attended,omitempty" xml:"is_attended,omitempty"`
-	// Email address (used for creation)
+	// Email address (used for creation, or to attach identity to an existing
+	// attendee)
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// LF SSO username (used for creation)
+	// LF SSO username (used for creation, or to attach identity to an existing
+	// attendee)
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// LF user ID (used for creation)
+	// LF user ID (used for creation, or to attach identity to an existing attendee)
 	LfUserID *string `form:"lf_user_id,omitempty" json:"lf_user_id,omitempty" xml:"lf_user_id,omitempty"`
 	// First name (required for invitee updates)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
@@ -429,6 +431,8 @@ type UpdateItxPastMeetingParticipantRequestBody struct {
 	CommitteeVotingStatus *string `form:"committee_voting_status,omitempty" json:"committee_voting_status,omitempty" xml:"committee_voting_status,omitempty"`
 	// Whether the attendee has been verified (attendee only)
 	IsVerified *bool `form:"is_verified,omitempty" json:"is_verified,omitempty" xml:"is_verified,omitempty"`
+	// Whether attendee is marked as unknown (attendee only)
+	IsUnknown *bool `form:"is_unknown,omitempty" json:"is_unknown,omitempty" xml:"is_unknown,omitempty"`
 	// Whether the attendee record was last updated via AI reconciliation (attendee
 	// only)
 	IsAiReconciled *bool `form:"is_ai_reconciled,omitempty" json:"is_ai_reconciled,omitempty" xml:"is_ai_reconciled,omitempty"`
@@ -7927,6 +7931,7 @@ func NewUpdateItxPastMeetingParticipantPayload(body *UpdateItxPastMeetingPartici
 		CommitteeRole:         body.CommitteeRole,
 		CommitteeVotingStatus: body.CommitteeVotingStatus,
 		IsVerified:            body.IsVerified,
+		IsUnknown:             body.IsUnknown,
 		IsAiReconciled:        body.IsAiReconciled,
 		IsAutoMatched:         body.IsAutoMatched,
 		ZoomUserName:          body.ZoomUserName,

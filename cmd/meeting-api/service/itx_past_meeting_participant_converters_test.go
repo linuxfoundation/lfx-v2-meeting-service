@@ -521,3 +521,58 @@ func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing
 		assert.Nil(t, goaResp.IsAutoMatched)
 	})
 }
+
+func TestConvertUpdateParticipantPayload_AttendeeIdentityFields(t *testing.T) {
+	t.Run("identity fields attach a matched identity to an existing attendee", func(t *testing.T) {
+		payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+			FirstName: utils.StringPtrOmitEmpty("Alice"),
+			LastName:  utils.StringPtrOmitEmpty("Example"),
+			Email:     utils.StringPtrOmitEmpty("alice@example.com"),
+			Username:  utils.StringPtrOmitEmpty("alice"),
+			LfUserID:  utils.StringPtrOmitEmpty("sf-001"),
+		}
+
+		_, attendeeReq := ConvertUpdateParticipantPayload(payload)
+
+		require.NotNil(t, attendeeReq, "identity-only fields must still trigger an attendee update")
+		assert.Equal(t, "Alice Example", attendeeReq.Name)
+		assert.Equal(t, "alice@example.com", attendeeReq.Email)
+		assert.Equal(t, "alice", attendeeReq.LFSSO)
+		assert.Equal(t, "sf-001", attendeeReq.LFUserID)
+	})
+
+	t.Run("first_name alone does not trigger an attendee update", func(t *testing.T) {
+		payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+			FirstName: utils.StringPtrOmitEmpty("Alice"),
+		}
+
+		_, attendeeReq := ConvertUpdateParticipantPayload(payload)
+
+		assert.Nil(t, attendeeReq, "first/last name alone are invitee-only fields")
+	})
+
+	t.Run("first_name alone still builds a name once an attendee update is triggered", func(t *testing.T) {
+		payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+			FirstName: utils.StringPtrOmitEmpty("Alice"),
+			Email:     utils.StringPtrOmitEmpty("alice@example.com"),
+		}
+
+		_, attendeeReq := ConvertUpdateParticipantPayload(payload)
+
+		require.NotNil(t, attendeeReq)
+		assert.Equal(t, "Alice", attendeeReq.Name)
+	})
+
+	t.Run("is_unknown is forwarded as a pointer to preserve explicit false", func(t *testing.T) {
+		falseVal := false
+		payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+			IsUnknown: &falseVal,
+		}
+
+		_, attendeeReq := ConvertUpdateParticipantPayload(payload)
+
+		require.NotNil(t, attendeeReq)
+		require.NotNil(t, attendeeReq.IsUnknown)
+		assert.False(t, *attendeeReq.IsUnknown)
+	})
+}

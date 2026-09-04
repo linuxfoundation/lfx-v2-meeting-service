@@ -463,11 +463,16 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 ) (*itx.AttendeeResponse, error) {
 	// Convert UpdateAttendeeRequest to CreateAttendeeRequest
 	createReq := &itx.CreateAttendeeRequest{
+		Name:                  updateReq.Name,
+		Email:                 updateReq.Email,
+		LFUserID:              updateReq.LFUserID,
+		LFSSO:                 updateReq.LFSSO,
 		Org:                   updateReq.Org,
 		JobTitle:              updateReq.JobTitle,
 		CommitteeRole:         updateReq.CommitteeRole,
 		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
 		IsVerified:            updateReq.IsVerified,
+		IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
 		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
 		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
 		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
@@ -544,9 +549,14 @@ func (s *PastMeetingParticipantService) updateAttendee(
 		// reflects them instead of silently reporting zero/omitted values.
 		resp = &itx.AttendeeResponse{
 			ID:                    attendeeID,
+			Name:                  updateReq.Name,
+			Email:                 updateReq.Email,
+			LFUserID:              updateReq.LFUserID,
+			LFSSO:                 updateReq.LFSSO,
 			Org:                   updateReq.Org,
 			JobTitle:              updateReq.JobTitle,
 			IsVerified:            updateReq.IsVerified,
+			IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
 			IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
 			IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
 			ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),

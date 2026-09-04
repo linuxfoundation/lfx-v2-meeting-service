@@ -287,6 +287,89 @@ func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFi
 	assert.Equal(t, "Erin Test", client.attendeeCreateReq.MappedInviteeName)
 }
 
+func TestPastMeetingParticipantService_UpdateParticipant_CarriesIdentityFieldsOnAttendeeCreate(t *testing.T) {
+	// Identity fields set on the update request (attaching a matched identity to
+	// an attendee that doesn't exist yet) must survive the create fallback.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "iris"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: true, attendeeExists: false},
+		reader,
+	)
+
+	trueVal := true
+	falseVal := false
+	_, err := svc.UpdateParticipant(
+		ctxWithPrincipal("iris", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsInvited:     &trueVal,
+			IsAttended:    &trueVal,
+		},
+		&itx.UpdateInviteeRequest{FirstName: "Iris", LastName: "Test"},
+		&itx.UpdateAttendeeRequest{
+			Name:      "Iris Test",
+			Email:     "iris@example.com",
+			LFSSO:     "iris",
+			LFUserID:  "sf-002",
+			IsUnknown: &falseVal,
+		},
+	)
+	require.NoError(t, err)
+
+	require.NotNil(t, client.attendeeCreateReq, "should fall back to create when attendee doesn't exist")
+	assert.Equal(t, "Iris Test", client.attendeeCreateReq.Name)
+	assert.Equal(t, "iris@example.com", client.attendeeCreateReq.Email)
+	assert.Equal(t, "iris", client.attendeeCreateReq.LFSSO)
+	assert.Equal(t, "sf-002", client.attendeeCreateReq.LFUserID)
+	assert.False(t, client.attendeeCreateReq.IsUnknown)
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_EchoesIdentityFieldsOn204(t *testing.T) {
+	// ITX returns 204 No Content on a successful attendee update, so the ITX client
+	// returns (nil, nil). The synchronous API response must still reflect the
+	// identity fields that were just persisted (e.g. a "Confirm Match" action)
+	// instead of silently reporting zero values.
+
+	client := &fake204ParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "jack"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	falseVal := false
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("jack", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name:      "Jack Test",
+			Email:     "jack@example.com",
+			LFSSO:     "jack",
+			LFUserID:  "sf-003",
+			IsUnknown: &falseVal,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.Equal(t, "Jack Test", resp.FirstName)
+	assert.Equal(t, "jack@example.com", resp.Email)
+	assert.Equal(t, "jack", resp.Username)
+	assert.Equal(t, "sf-003", resp.LFUserID)
+	assert.False(t, resp.IsUnknown)
+}
+
 func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {
 	// A reconciliation-only update (isAttended == nil, i.e. no attendance status
 	// change requested) against a participant with no existing attendee record
