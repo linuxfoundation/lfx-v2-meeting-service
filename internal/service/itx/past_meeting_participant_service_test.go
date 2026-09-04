@@ -356,6 +356,49 @@ func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeUpdat
 	assert.Nil(t, resp)
 }
 
+// failingInviteeUpdateClient simulates ITX rejecting an invitee update. It also
+// tracks whether the attendee side was ever invoked, so tests can assert that
+// UpdateParticipant aborts before issuing the attendee operation.
+type failingInviteeUpdateClient struct {
+	fakeParticipantClient
+}
+
+func (f *failingInviteeUpdateClient) UpdateInvitee(_ context.Context, _, _ string, _ *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
+	return nil, errors.New("itx: invitee update rejected")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_AbortsAttendeeOperationOnInviteeError(t *testing.T) {
+	// If the invitee operation fails, UpdateParticipant must return before
+	// attempting the attendee operation at all - running it anyway would
+	// persist partial state and encourage a retry of an already-applied write.
+
+	client := &failingInviteeUpdateClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "jack"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: true, attendeeExists: false},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("jack", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsInvited:     &trueVal,
+			IsAttended:    &trueVal,
+		},
+		&itx.UpdateInviteeRequest{FirstName: "Jack", LastName: "Test"},
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Nil(t, client.attendeeCreateReq, "attendee operation must not run once the invitee operation has failed")
+	assert.Nil(t, client.attendeeUpdateReq, "attendee operation must not run once the invitee operation has failed")
+}
+
 // failingAttendeeDeleteClient simulates ITX rejecting an attendee delete.
 type failingAttendeeDeleteClient struct {
 	fakeParticipantClient

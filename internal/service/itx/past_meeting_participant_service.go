@@ -148,14 +148,18 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 	// profile and the other times out. Matches CreateParticipant's approach.
 	updater := s.buildRequestingUser(ctx)
 
-	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
-	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
-
 	// Surface a failed ITX save as an error instead of silently returning a
 	// successful response that doesn't reflect what was actually persisted.
+	// Abort before the attendee operation if the invitee operation already
+	// failed, mirroring CreateParticipant's sequential-abort pattern - running
+	// the attendee write anyway would persist partial state and encourage a
+	// retry of an already-applied write.
+	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
 	if inviteeErr != nil {
 		return nil, fmt.Errorf("failed to update invitee: %w", inviteeErr)
 	}
+
+	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
 	if attendeeErr != nil {
 		return nil, fmt.Errorf("failed to update attendee: %w", attendeeErr)
 	}
