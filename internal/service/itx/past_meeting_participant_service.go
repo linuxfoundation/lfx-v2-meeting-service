@@ -227,7 +227,10 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 		return nil, false
 	}
 
-	if !attendeeExists && attendeeReq != nil {
+	// Only create a new attendee record when the caller explicitly marked
+	// attendance. A reconciliation-only update (isAttended == nil) against a
+	// participant with no attendee record has nothing to reconcile yet.
+	if !attendeeExists && attendeeReq != nil && isAttended != nil && *isAttended {
 		return s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq, updater), true
 	}
 

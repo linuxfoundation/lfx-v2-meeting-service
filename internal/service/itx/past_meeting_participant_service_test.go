@@ -286,6 +286,37 @@ func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFi
 	assert.Equal(t, "Erin Test", client.attendeeCreateReq.MappedInviteeName)
 }
 
+func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {
+	// A reconciliation-only update (isAttended == nil, i.e. no attendance status
+	// change requested) against a participant with no existing attendee record
+	// must not implicitly create one - there's nothing to reconcile yet.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "frank"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: true, attendeeExists: false},
+		reader,
+	)
+
+	trueVal := true
+	_, err := svc.UpdateParticipant(
+		ctxWithPrincipal("frank", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsInvited:     &trueVal,
+			// IsAttended intentionally omitted (nil): reconciliation-only update.
+		},
+		&itx.UpdateInviteeRequest{FirstName: "Frank", LastName: "Test"},
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+	require.NoError(t, err)
+
+	assert.Nil(t, client.attendeeCreateReq, "should not create an attendee for a reconciliation-only update")
+	assert.Nil(t, client.attendeeUpdateReq, "should not update a non-existent attendee either")
+}
+
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {
 	invitee := &itx.InviteeResponse{UUID: "invitee-1", FirstName: "Bob"}
 
