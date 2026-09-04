@@ -240,7 +240,11 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	var attendeeExists bool
 
 	if attendeeID != "" {
-		attendeeExists = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
+		var err error
+		attendeeExists, err = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
+		if err != nil {
+			return nil, false, err
+		}
 		if attendeeExists {
 			actualAttendeeID = attendeeID
 		}
@@ -352,14 +356,32 @@ func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx cont
 	return exists
 }
 
-func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) bool {
-	attendeeID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
-	exists := attendeeID != "" && err == nil
+// checkAttendeeExistsFromAttendeeID checks if an attendee exists given an
+// already-known attendee ID. See checkInviteeExists for the not-found vs
+// mapping-error distinction: a non-nil error here means the reverse-mapping
+// lookup itself failed (e.g. NATS timeout/unavailability), which must be
+// propagated rather than collapsed to "does not exist" - the latter would
+// let a reconciliation-only update (nil isAttended) silently no-op instead
+// of surfacing the outage.
+func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) (bool, error) {
+	mappedID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "attendee does not exist (reverse mapping not found)",
+				"attendee_id", attendeeID,
+				logging.ErrKey, err)
+			return false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check attendee existence via reverse ID mapping",
+			"attendee_id", attendeeID,
+			logging.ErrKey, err)
+		return false, err
+	}
+	exists := mappedID != ""
 	slog.DebugContext(ctx, "checked attendee existence from attendee ID",
 		"attendee_id", attendeeID,
-		"exists", exists,
-		logging.ErrKey, err)
-	return exists
+		"exists", exists)
+	return exists, nil
 }
 
 // deleteInvitee deletes invitee record

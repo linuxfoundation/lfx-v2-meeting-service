@@ -476,6 +476,50 @@ func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeMappi
 	assert.Nil(t, client.attendeeUpdateReq, "must not update off a mapping error")
 }
 
+// reverseMappingErrorIDMapper simulates a transient failure on the reverse
+// (attendee ID -> participant ID) lookup used when the caller already knows
+// the attendee ID.
+type reverseMappingErrorIDMapper struct {
+	noOpIDMapper
+}
+
+func (m reverseMappingErrorIDMapper) MapAttendeeIDToParticipantV2(_ context.Context, _ string) (string, error) {
+	return "", domain.NewUnavailableError("v1-sync-helper reverse lookup timed out")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeReverseMappingError(t *testing.T) {
+	// A reconciliation-only update (isAttended == nil) supplying an already-known
+	// attendee ID must not silently succeed when the reverse ID-mapper lookup
+	// fails transiently - collapsing that failure to "does not exist" would drop
+	// the write entirely since neither the create nor delete branch fires when
+	// isAttended is nil.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "kate"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		reverseMappingErrorIDMapper{},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("kate", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			AttendeeID:    "att-1",
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Nil(t, client.attendeeCreateReq, "must not create an attendee off a reverse mapping error")
+	assert.Nil(t, client.attendeeUpdateReq, "must not update off a reverse mapping error")
+}
+
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {
 	invitee := &itx.InviteeResponse{UUID: "invitee-1", FirstName: "Bob"}
 
