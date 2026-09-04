@@ -7839,6 +7839,7 @@ components:
                     type: string
                     description: Email address (used for creation, or to attach identity to an existing attendee)
                     example: john.doe@example.com
+                    format: email
                 first_name:
                     type: string
                     description: First name (required for invitee updates)

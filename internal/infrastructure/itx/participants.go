@@ -67,6 +67,21 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 	})
 }
 
+// GetAttendee retrieves the current persisted state of an attendee for a past
+// meeting via the ITX proxy. Used to refetch ground truth after a 204 No
+// Content update response, since ITX omits changed fields it did not return.
+func (c *Client) GetAttendee(ctx context.Context, pastMeetingID, attendeeID string) (*itx.AttendeeResponse, error) {
+	return doJSONTyped[itx.AttendeeResponse](c, ctx, apiRequest{
+		method:      http.MethodGet,
+		path:        "/v2/zoom/past_meetings/%s/attendees/%s",
+		pathArgs:    []any{pastMeetingID, attendeeID},
+		accept:      acceptJSON,
+		debugOp:     "GetAttendee",
+		debugFields: []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
+		parseError:  "failed to unmarshal response",
+	})
+}
+
 // UpdateAttendee updates an attendee for a past meeting via the ITX proxy.
 // ITX returns 204 No Content on success; doJSONTypedOptional returns (nil, nil)
 // on an empty body, preserving the pre-refactor behaviour of always returning nil.

@@ -4584,6 +4584,7 @@ paths:
                             is_attended: false
                             is_auto_matched: false
                             is_invited: false
+                            is_unknown: true
                             is_verified: true
                             job_title: Senior Software Engineer
                             last_name: Doe
@@ -7839,8 +7840,9 @@ components:
                     example: Alt Voting Rep
                 email:
                     type: string
-                    description: Email address (used for creation)
+                    description: Email address (used for creation, or to attach identity to an existing attendee)
                     example: john.doe@example.com
+                    format: email
                 first_name:
                     type: string
                     description: First name (required for invitee updates)
@@ -7865,6 +7867,10 @@ components:
                     type: boolean
                     description: Whether the participant is invited (if false, invitee record will be deleted)
                     example: false
+                is_unknown:
+                    type: boolean
+                    description: Whether attendee is marked as unknown (attendee only)
+                    example: true
                 is_verified:
                     type: boolean
                     description: Whether the attendee has been verified (attendee only)
@@ -7879,7 +7885,7 @@ components:
                     example: Doe
                 lf_user_id:
                     type: string
-                    description: LF user ID (used for creation)
+                    description: LF user ID (used for creation, or to attach identity to an existing attendee)
                     example: abc123
                 mapped_invitee_name:
                     type: string
@@ -7891,7 +7897,7 @@ components:
                     example: Microsoft
                 username:
                     type: string
-                    description: LF SSO username (used for creation)
+                    description: LF SSO username (used for creation, or to attach identity to an existing attendee)
                     example: johndoe
                 zoom_user_name:
                     type: string
@@ -7909,6 +7915,7 @@ components:
                 is_attended: false
                 is_auto_matched: false
                 is_invited: false
+                is_unknown: true
                 is_verified: true
                 job_title: Senior Software Engineer
                 last_name: Doe

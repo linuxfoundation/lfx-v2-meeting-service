@@ -1604,6 +1604,12 @@ func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeet
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_ai_reconciled\": false,\n      \"is_attended\": false,\n      \"is_auto_matched\": false,\n      \"is_invited\": false,\n      \"is_unknown\": true,\n      \"is_verified\": true,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"mapped_invitee_name\": \"John Doe\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\",\n      \"zoom_user_name\": \"John D. (Zoom)\"\n   }'")
 		}
+		if body.Email != nil {
+			err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 	var pastMeetingID string
 	{

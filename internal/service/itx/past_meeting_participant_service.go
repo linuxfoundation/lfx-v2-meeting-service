@@ -545,24 +545,40 @@ func (s *PastMeetingParticipantService) updateAttendee(
 
 	if resp == nil {
 		// ITX returns 204 No Content on a successful update with no response body.
-		// Echo back the values we just persisted so the synchronous API response
-		// reflects them instead of silently reporting zero/omitted values.
-		resp = &itx.AttendeeResponse{
-			ID:                    attendeeID,
-			Name:                  updateReq.Name,
-			Email:                 updateReq.Email,
-			LFUserID:              updateReq.LFUserID,
-			LFSSO:                 updateReq.LFSSO,
-			Org:                   updateReq.Org,
-			JobTitle:              updateReq.JobTitle,
-			IsVerified:            updateReq.IsVerified,
-			IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
-			IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
-			IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
-			ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
-			MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
-			CommitteeRole:         updateReq.CommitteeRole,
-			CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+		// Refetch the persisted record so the synchronous response reflects the
+		// true stored state. Echoing the request values back would incorrectly
+		// collapse omitted pointer fields (e.g. is_unknown left nil to mean
+		// "don't change it") to their zero value, falsely reporting a known
+		// attendee as unknown or vice versa.
+		fetched, getErr := s.participantClient.GetAttendee(ctx, pastMeetingID, attendeeID)
+		if getErr != nil {
+			// The update itself already succeeded (204 confirms the write). A failed
+			// refetch should not fail the overall request, so degrade gracefully to
+			// the old best-effort echo rather than returning an error here.
+			slog.WarnContext(ctx, "failed to refetch attendee after 204 update; echoing request values instead",
+				"participant_id", participantID,
+				"attendee_id", attendeeID,
+				"past_meeting_id", pastMeetingID,
+				logging.ErrKey, getErr)
+			resp = &itx.AttendeeResponse{
+				ID:                    attendeeID,
+				Name:                  updateReq.Name,
+				Email:                 updateReq.Email,
+				LFUserID:              updateReq.LFUserID,
+				LFSSO:                 updateReq.LFSSO,
+				Org:                   updateReq.Org,
+				JobTitle:              updateReq.JobTitle,
+				IsVerified:            updateReq.IsVerified,
+				IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
+				IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+				IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+				ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+				MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
+				CommitteeRole:         updateReq.CommitteeRole,
+				CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+			}
+		} else {
+			resp = fetched
 		}
 	}
 

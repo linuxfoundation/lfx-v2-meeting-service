@@ -370,6 +370,49 @@ func TestPastMeetingParticipantService_UpdateParticipant_EchoesIdentityFieldsOn2
 	assert.False(t, resp.IsUnknown)
 }
 
+func TestPastMeetingParticipantService_UpdateParticipant_RefetchesIsUnknownOn204(t *testing.T) {
+	// Regression test: an identity-only update that omits is_unknown must not
+	// falsely collapse a previously-unknown attendee's is_unknown flag to false.
+	// The 204 fallback must refetch ground truth via GetAttendee rather than
+	// echoing the request, since a nil IsUnknown pointer means "don't change it",
+	// not "set it to false".
+
+	client := &fake204ParticipantClient{
+		getAttendeeResp: &itx.AttendeeResponse{
+			ID:        "attendee-1",
+			Name:      "Karen Test",
+			Email:     "karen@example.com",
+			IsUnknown: true,
+		},
+	}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "karen"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("karen", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name:  "Karen Test",
+			Email: "karen@example.com",
+			// IsUnknown intentionally omitted (nil): identity-only update.
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.True(t, resp.IsUnknown, "must reflect the persisted is_unknown value from the refetch, not falsely collapse the omitted field to false")
+}
+
 func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {
 	// A reconciliation-only update (isAttended == nil, i.e. no attendance status
 	// change requested) against a participant with no existing attendee record
@@ -615,14 +658,29 @@ func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing
 }
 
 // fake204ParticipantClient simulates ITX's real behavior on an attendee update:
-// a 204 No Content response, surfaced here as (nil, nil).
+// a 204 No Content response, surfaced here as (nil, nil). By default GetAttendee
+// is unconfigured and returns an error, exercising the graceful-degradation
+// fallback; set getAttendeeResp to simulate a successful refetch instead.
 type fake204ParticipantClient struct {
 	fakeParticipantClient
+
+	getAttendeeResp *itx.AttendeeResponse
+	getAttendeeErr  error
 }
 
 func (f *fake204ParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
 	f.attendeeUpdateReq = req
 	return nil, nil
+}
+
+func (f *fake204ParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	if f.getAttendeeResp != nil {
+		return f.getAttendeeResp, nil
+	}
+	if f.getAttendeeErr != nil {
+		return nil, f.getAttendeeErr
+	}
+	return nil, errors.New("fake204ParticipantClient: GetAttendee not configured")
 }
 
 func TestPastMeetingParticipantService_UpdateParticipant_EchoesReconciliationFieldsOn204(t *testing.T) {

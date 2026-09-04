@@ -1253,6 +1253,7 @@ var _ = Service("Meeting Service", func() {
 			// Identity fields (used for creating invitee/attendee if they don't exist, or
 			// for attaching a matched identity to an already-existing attendee record)
 			Attribute("email", String, "Email address (used for creation, or to attach identity to an existing attendee)", func() {
+				Format(FormatEmail)
 				Example("john.doe@example.com")
 			})
 			Attribute("username", String, "LF SSO username (used for creation, or to attach identity to an existing attendee)", func() {

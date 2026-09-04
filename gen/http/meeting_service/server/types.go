@@ -8555,6 +8555,15 @@ func ValidateCreateItxPastMeetingParticipantRequestBody(body *CreateItxPastMeeti
 	return
 }
 
+// ValidateUpdateItxPastMeetingParticipantRequestBody runs the validations
+// defined on Update-Itx-Past-Meeting-ParticipantRequestBody
+func ValidateUpdateItxPastMeetingParticipantRequestBody(body *UpdateItxPastMeetingParticipantRequestBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	return
+}
+
 // ValidateCreateItxMeetingAttachmentRequestBody runs the validations defined
 // on Create-Itx-Meeting-AttachmentRequestBody
 func ValidateCreateItxMeetingAttachmentRequestBody(body *CreateItxMeetingAttachmentRequestBody) (err error) {
