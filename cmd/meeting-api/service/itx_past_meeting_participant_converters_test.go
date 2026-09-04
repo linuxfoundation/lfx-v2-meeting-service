@@ -436,3 +436,88 @@ func TestConvertParticipantResponseToGoa(t *testing.T) {
 		assert.Nil(t, g.ModifiedBy)
 	})
 }
+
+func TestConvertCreateParticipantPayload_AttendeeReconciliationFields(t *testing.T) {
+	trueVal := true
+	falseVal := false
+	payload := &meetingservice.CreateItxPastMeetingParticipantPayload{
+		PastMeetingID:     "pm-1",
+		IsAttended:        &trueVal,
+		IsAiReconciled:    &trueVal,
+		IsAutoMatched:     &falseVal,
+		ZoomUserName:      utils.StringPtrOmitEmpty("Alice Example (Zoom)"),
+		MappedInviteeName: utils.StringPtrOmitEmpty("Alice Example"),
+	}
+
+	_, attendeeReq := ConvertCreateParticipantPayload(payload)
+
+	require.NotNil(t, attendeeReq)
+	assert.True(t, attendeeReq.IsAIReconciled)
+	assert.False(t, attendeeReq.IsAutoMatched)
+	assert.Equal(t, "Alice Example (Zoom)", attendeeReq.ZoomUserName)
+	assert.Equal(t, "Alice Example", attendeeReq.MappedInviteeName)
+}
+
+func TestConvertUpdateParticipantPayload_AttendeeReconciliationFields(t *testing.T) {
+	trueVal := true
+	falseVal := false
+	payload := &meetingservice.UpdateItxPastMeetingParticipantPayload{
+		PastMeetingID:     "pm-1",
+		ParticipantID:     "p-1",
+		IsAiReconciled:    &falseVal,
+		IsAutoMatched:     &trueVal,
+		ZoomUserName:      utils.StringPtrOmitEmpty("Bob (Zoom)"),
+		MappedInviteeName: utils.StringPtrOmitEmpty("Bob Fixture"),
+	}
+
+	_, attendeeReq := ConvertUpdateParticipantPayload(payload)
+
+	require.NotNil(t, attendeeReq, "reconciliation-only fields must still trigger an attendee update")
+	require.NotNil(t, attendeeReq.IsAIReconciled)
+	require.NotNil(t, attendeeReq.IsAutoMatched)
+	assert.False(t, *attendeeReq.IsAIReconciled)
+	assert.True(t, *attendeeReq.IsAutoMatched)
+	require.NotNil(t, attendeeReq.ZoomUserName)
+	require.NotNil(t, attendeeReq.MappedInviteeName)
+	assert.Equal(t, "Bob (Zoom)", *attendeeReq.ZoomUserName)
+	assert.Equal(t, "Bob Fixture", *attendeeReq.MappedInviteeName)
+}
+
+func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing.T) {
+	t.Run("carries reconciliation fields through", func(t *testing.T) {
+		resp := &itxservice.ParticipantResponse{
+			AttendeeID:        "attendee-1",
+			IsAttended:        true,
+			IsVerified:        true,
+			IsAIReconciled:    true,
+			IsAutoMatched:     true,
+			ZoomUserName:      "Alice Example (Zoom)",
+			MappedInviteeName: "Alice Example",
+		}
+
+		goaResp := ConvertParticipantResponseToGoa(resp)
+
+		require.NotNil(t, goaResp.IsAiReconciled)
+		require.NotNil(t, goaResp.IsAutoMatched)
+		require.NotNil(t, goaResp.ZoomUserName)
+		require.NotNil(t, goaResp.MappedInviteeName)
+		assert.True(t, *goaResp.IsAiReconciled)
+		assert.True(t, *goaResp.IsAutoMatched)
+		assert.Equal(t, "Alice Example (Zoom)", *goaResp.ZoomUserName)
+		assert.Equal(t, "Alice Example", *goaResp.MappedInviteeName)
+	})
+
+	t.Run("nils out attendee-only reconciliation fields when there is no attendee", func(t *testing.T) {
+		resp := &itxservice.ParticipantResponse{
+			InviteeID: "invitee-1",
+			IsInvited: true,
+		}
+
+		goaResp := ConvertParticipantResponseToGoa(resp)
+
+		assert.Nil(t, goaResp.ZoomUserName)
+		assert.Nil(t, goaResp.MappedInviteeName)
+		assert.Nil(t, goaResp.IsAiReconciled)
+		assert.Nil(t, goaResp.IsAutoMatched)
+	})
+}

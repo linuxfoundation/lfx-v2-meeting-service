@@ -87,6 +87,10 @@ type AttendeeResponse struct {
 	LFUserID              string            `json:"lf_user_id,omitempty"`              // LF user ID
 	IsVerified            bool              `json:"is_verified,omitempty"`             // Whether the attendee has been verified
 	IsUnknown             bool              `json:"is_unknown,omitempty"`              // Whether attendee is marked as unknown
+	IsAIReconciled        bool              `json:"is_ai_reconciled,omitempty"`        // Whether the attendee record was last updated via AI reconciliation
+	IsAutoMatched         bool              `json:"is_auto_matched,omitempty"`         // Whether the attendee was automatically matched to an invitee by name
+	ZoomUserName          string            `json:"zoom_user_name,omitempty"`          // Zoom display name of the attendee
+	MappedInviteeName     string            `json:"mapped_invitee_name,omitempty"`     // Full name of the invitee the attendee was matched to
 	Org                   string            `json:"org,omitempty"`                     // Organization name
 	JobTitle              string            `json:"job_title,omitempty"`               // Job title
 	ProfilePicture        string            `json:"profile_picture,omitempty"`         // URL to profile picture
@@ -113,6 +117,10 @@ type CreateAttendeeRequest struct {
 	ProfilePicture        string            `json:"profile_picture,omitempty"`         // URL to profile picture
 	IsVerified            bool              `json:"is_verified,omitempty"`             // Whether the attendee has been verified
 	IsUnknown             bool              `json:"is_unknown,omitempty"`              // Whether attendee is marked as unknown
+	IsAIReconciled        bool              `json:"is_ai_reconciled,omitempty"`        // Whether the attendee record was last updated via AI reconciliation
+	IsAutoMatched         bool              `json:"is_auto_matched,omitempty"`         // Whether the attendee was automatically matched to an invitee by name
+	ZoomUserName          string            `json:"zoom_user_name,omitempty"`          // Zoom display name of the attendee
+	MappedInviteeName     string            `json:"mapped_invitee_name,omitempty"`     // Full name of the invitee the attendee was matched to
 	CommitteeID           string            `json:"committee_id,omitempty"`            // UUID of associated committee (if applicable)
 	CommitteeRole         string            `json:"committee_role,omitempty"`          // Role within the committee
 	CommitteeVotingStatus string            `json:"committee_voting_status,omitempty"` // Voting status in committee
@@ -128,11 +136,15 @@ type CreateAttendeeRequest struct {
 
 // UpdateAttendeeRequest represents the request to update an attendee
 type UpdateAttendeeRequest struct {
-	Org                   string `json:"org,omitempty"`                     // Organization name
-	JobTitle              string `json:"job_title,omitempty"`               // Job title
-	IsVerified            bool   `json:"is_verified,omitempty"`             // Whether the attendee has been verified
-	CommitteeRole         string `json:"committee_role,omitempty"`          // Role within the committee
-	CommitteeVotingStatus string `json:"committee_voting_status,omitempty"` // Voting status in committee
+	Org                   string  `json:"org,omitempty"`                     // Organization name
+	JobTitle              string  `json:"job_title,omitempty"`               // Job title
+	IsVerified            bool    `json:"is_verified,omitempty"`             // Whether the attendee has been verified
+	IsAIReconciled        *bool   `json:"is_ai_reconciled,omitempty"`        // Whether the attendee record was last updated via AI reconciliation (pointer to preserve explicit false)
+	IsAutoMatched         *bool   `json:"is_auto_matched,omitempty"`         // Whether the attendee was automatically matched to an invitee by name (pointer to preserve explicit false)
+	ZoomUserName          *string `json:"zoom_user_name,omitempty"`          // Zoom display name of the attendee (pointer to preserve explicit clear)
+	MappedInviteeName     *string `json:"mapped_invitee_name,omitempty"`     // Full name of the invitee the attendee was matched to (pointer to preserve explicit clear)
+	CommitteeRole         string  `json:"committee_role,omitempty"`          // Role within the committee
+	CommitteeVotingStatus string  `json:"committee_voting_status,omitempty"` // Voting status in committee
 
 	// UpdatedBy identifies the requesting user on update requests. Populated by the
 	// service from the authenticated principal so ITX overwrites the stored value
