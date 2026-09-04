@@ -507,7 +507,7 @@ func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing
 		assert.Equal(t, "Alice Example", *goaResp.MappedInviteeName)
 	})
 
-	t.Run("omits empty reconciliation fields", func(t *testing.T) {
+	t.Run("nils out attendee-only reconciliation fields when there is no attendee", func(t *testing.T) {
 		resp := &itxservice.ParticipantResponse{
 			InviteeID: "invitee-1",
 			IsInvited: true,
@@ -517,9 +517,7 @@ func TestConvertParticipantResponseToGoa_AttendeeReconciliationFields(t *testing
 
 		assert.Nil(t, goaResp.ZoomUserName)
 		assert.Nil(t, goaResp.MappedInviteeName)
-		require.NotNil(t, goaResp.IsAiReconciled)
-		require.NotNil(t, goaResp.IsAutoMatched)
-		assert.False(t, *goaResp.IsAiReconciled)
-		assert.False(t, *goaResp.IsAutoMatched)
+		assert.Nil(t, goaResp.IsAiReconciled)
+		assert.Nil(t, goaResp.IsAutoMatched)
 	})
 }

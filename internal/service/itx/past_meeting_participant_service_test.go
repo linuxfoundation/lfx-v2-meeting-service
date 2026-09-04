@@ -5,6 +5,7 @@ package itx
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -315,6 +316,44 @@ func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesN
 
 	assert.Nil(t, client.attendeeCreateReq, "should not create an attendee for a reconciliation-only update")
 	assert.Nil(t, client.attendeeUpdateReq, "should not update a non-existent attendee either")
+}
+
+// failingAttendeeUpdateClient simulates ITX rejecting an attendee update (e.g. a
+// 4xx/5xx response) instead of the 204-no-content success case.
+type failingAttendeeUpdateClient struct {
+	fakeParticipantClient
+}
+
+func (f *failingAttendeeUpdateClient) UpdateAttendee(_ context.Context, _, _ string, _ *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	return nil, errors.New("itx: attendee update rejected")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeUpdateError(t *testing.T) {
+	// If ITX fails to persist the attendee update, UpdateParticipant must
+	// return an error instead of silently reporting a fake-successful response.
+
+	client := &failingAttendeeUpdateClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "henry"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("henry", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
 }
 
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {

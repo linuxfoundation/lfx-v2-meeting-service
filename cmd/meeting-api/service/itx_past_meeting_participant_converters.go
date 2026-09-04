@@ -268,14 +268,20 @@ func ConvertParticipantResponseToGoa(resp *itxservice.ParticipantResponse) *meet
 		// Attendee-specific fields
 		IsVerified:        utils.BoolPtr(resp.IsVerified),
 		IsUnknown:         utils.BoolPtr(resp.IsUnknown),
-		IsAiReconciled:    utils.BoolPtr(resp.IsAIReconciled),
-		IsAutoMatched:     utils.BoolPtr(resp.IsAutoMatched),
 		ZoomUserName:      utils.StringPtrOmitEmpty(resp.ZoomUserName),
 		MappedInviteeName: utils.StringPtrOmitEmpty(resp.MappedInviteeName),
 
 		// Audit fields
 		CreatedAt:  utils.StringPtrOmitEmpty(resp.CreatedAt),
 		ModifiedAt: utils.StringPtrOmitEmpty(resp.ModifiedAt),
+	}
+
+	// IsAiReconciled/IsAutoMatched are attendee-only fields. Leave them nil
+	// when there is no attendee record instead of emitting a misleading
+	// explicit false.
+	if resp.AttendeeID != "" {
+		goaResp.IsAiReconciled = utils.BoolPtr(resp.IsAIReconciled)
+		goaResp.IsAutoMatched = utils.BoolPtr(resp.IsAutoMatched)
 	}
 
 	// Add ID (use invitee_id if present, otherwise attendee_id)

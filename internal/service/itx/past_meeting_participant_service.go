@@ -148,8 +148,18 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 	// profile and the other times out. Matches CreateParticipant's approach.
 	updater := s.buildRequestingUser(ctx)
 
-	inviteeResp, inviteeExists := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
-	attendeeResp, attendeeExists := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
+	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
+	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
+
+	// Surface a failed ITX save as an error instead of silently returning a
+	// successful response that doesn't reflect what was actually persisted.
+	if inviteeErr != nil {
+		return nil, fmt.Errorf("failed to update invitee: %w", inviteeErr)
+	}
+	if attendeeErr != nil {
+		return nil, fmt.Errorf("failed to update attendee: %w", attendeeErr)
+	}
+
 	return mergeParticipantResponses(p.PastMeetingID, inviteeResp, attendeeResp, inviteeExists, attendeeExists), nil
 }
 
@@ -159,9 +169,9 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 	isInvited *bool,
 	inviteeReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) (*itx.InviteeResponse, bool) {
+) (*itx.InviteeResponse, bool, error) {
 	if isInvited == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	var actualInviteeID string
@@ -180,18 +190,26 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 		if inviteeExists && actualInviteeID != "" {
 			s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID)
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
 	if !inviteeExists && inviteeReq != nil {
-		return s.createInviteeFromUpdate(ctx, pastMeetingID, inviteeReq, updater), true
+		resp, err := s.createInviteeFromUpdate(ctx, pastMeetingID, inviteeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
 	if inviteeExists && inviteeReq != nil && actualInviteeID != "" {
-		return s.updateInvitee(ctx, pastMeetingID, actualInviteeID, participantID, inviteeReq, updater), true
+		resp, err := s.updateInvitee(ctx, pastMeetingID, actualInviteeID, participantID, inviteeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
-	return nil, inviteeExists
+	return nil, inviteeExists, nil
 }
 
 func (s *PastMeetingParticipantService) handleAttendeeOperation(
@@ -200,12 +218,12 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	isAttended *bool,
 	attendeeReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) (*itx.AttendeeResponse, bool) {
+) (*itx.AttendeeResponse, bool, error) {
 	// A nil isAttended with a non-nil attendeeReq is a reconciliation-only update
 	// (e.g. is_ai_reconciled/zoom_user_name) that carries no attendance status
 	// change; it must still reach ITX rather than being silently dropped.
 	if isAttended == nil && attendeeReq == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	var actualAttendeeID string
@@ -224,21 +242,29 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 		if attendeeExists && actualAttendeeID != "" {
 			s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID)
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
 	// Only create a new attendee record when the caller explicitly marked
 	// attendance. A reconciliation-only update (isAttended == nil) against a
 	// participant with no attendee record has nothing to reconcile yet.
 	if !attendeeExists && attendeeReq != nil && isAttended != nil && *isAttended {
-		return s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq, updater), true
+		resp, err := s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
 	if attendeeExists && attendeeReq != nil && actualAttendeeID != "" {
-		return s.updateAttendee(ctx, pastMeetingID, actualAttendeeID, participantID, attendeeReq, updater), true
+		resp, err := s.updateAttendee(ctx, pastMeetingID, actualAttendeeID, participantID, attendeeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
-	return nil, attendeeExists
+	return nil, attendeeExists, nil
 }
 
 // checkInviteeExists checks if invitee exists by attempting ID mapping
@@ -327,7 +353,7 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 	pastMeetingID string,
 	updateReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) *itx.InviteeResponse {
+) (*itx.InviteeResponse, error) {
 	// Convert UpdateInviteeRequest to CreateInviteeRequest
 	createReq := &itx.CreateInviteeRequest{
 		// Identity fields
@@ -353,10 +379,10 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 		slog.ErrorContext(ctx, "failed to create invitee during update",
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
-		return nil
+		return nil, err
 	}
 
-	return resp
+	return resp, nil
 }
 
 // createAttendeeFromUpdate creates a new attendee from update request
@@ -365,7 +391,7 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 	pastMeetingID string,
 	updateReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) *itx.AttendeeResponse {
+) (*itx.AttendeeResponse, error) {
 	// Convert UpdateAttendeeRequest to CreateAttendeeRequest
 	createReq := &itx.CreateAttendeeRequest{
 		Org:                   updateReq.Org,
@@ -389,10 +415,10 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 		slog.ErrorContext(ctx, "failed to create attendee during update",
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
-		return nil
+		return nil, err
 	}
 
-	return resp
+	return resp, nil
 }
 
 // updateInvitee updates invitee record
@@ -401,7 +427,7 @@ func (s *PastMeetingParticipantService) updateInvitee(
 	pastMeetingID, inviteeID, participantID string,
 	updateReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) *itx.InviteeResponse {
+) (*itx.InviteeResponse, error) {
 	// Stamp updated_by from the requester so ITX overwrites the stored value on the
 	// invitee record instead of preserving stale data. updater is resolved once in
 	// UpdateParticipant to keep the invitee and attendee sides consistent.
@@ -414,11 +440,11 @@ func (s *PastMeetingParticipantService) updateInvitee(
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
-		return nil
+		return nil, err
 	}
 
 	// resp may be nil if ITX returns 204 No Content
-	return resp
+	return resp, nil
 }
 
 // updateAttendee updates attendee record
@@ -427,7 +453,7 @@ func (s *PastMeetingParticipantService) updateAttendee(
 	pastMeetingID, attendeeID, participantID string,
 	updateReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) *itx.AttendeeResponse {
+) (*itx.AttendeeResponse, error) {
 	// Stamp updated_by from the requester so ITX overwrites the stored value on the
 	// attendee record instead of preserving stale data. updater is resolved once in
 	// UpdateParticipant to keep the invitee and attendee sides consistent.
@@ -440,7 +466,7 @@ func (s *PastMeetingParticipantService) updateAttendee(
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
-		return nil
+		return nil, err
 	}
 
 	if resp == nil {
@@ -461,7 +487,7 @@ func (s *PastMeetingParticipantService) updateAttendee(
 		}
 	}
 
-	return resp
+	return resp, nil
 }
 
 // DeleteParticipant deletes a participant
