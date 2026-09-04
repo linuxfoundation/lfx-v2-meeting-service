@@ -356,6 +356,83 @@ func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeUpdat
 	assert.Nil(t, resp)
 }
 
+// failingAttendeeDeleteClient simulates ITX rejecting an attendee delete.
+type failingAttendeeDeleteClient struct {
+	fakeParticipantClient
+}
+
+func (f *failingAttendeeDeleteClient) DeleteAttendee(_ context.Context, _, _ string) error {
+	return errors.New("itx: attendee delete rejected")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeDeleteError(t *testing.T) {
+	// If ITX fails to delete an attendee record on isAttended=false, the record
+	// is still present in ITX and the response must not claim it was removed.
+
+	client := &failingAttendeeDeleteClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "ivy"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{attendeeExists: true},
+		reader,
+	)
+
+	falseVal := false
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("ivy", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &falseVal,
+		},
+		nil,
+		nil,
+	)
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
+}
+
+// mappingErrorIDMapper simulates a transient ID-mapper failure (e.g. NATS
+// timeout) that must be distinguished from a genuine "not found".
+type mappingErrorIDMapper struct {
+	noOpIDMapper
+}
+
+func (m mappingErrorIDMapper) MapParticipantV2ToAttendeeID(_ context.Context, _ string) (string, error) {
+	return "", domain.NewUnavailableError("v1-sync-helper lookup timed out")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeMappingError(t *testing.T) {
+	// A reconciliation-only update (isAttended == nil) must not silently succeed
+	// when the ID mapper fails transiently - that failure must not be
+	// indistinguishable from "attendee genuinely doesn't exist yet".
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "jack"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		mappingErrorIDMapper{},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("jack", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+	)
+
+	require.Error(t, err)
+	assert.Nil(t, resp)
+	assert.Nil(t, client.attendeeCreateReq, "must not create an attendee off a mapping error")
+	assert.Nil(t, client.attendeeUpdateReq, "must not update off a mapping error")
+}
+
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {
 	invitee := &itx.InviteeResponse{UUID: "invitee-1", FirstName: "Bob"}
 

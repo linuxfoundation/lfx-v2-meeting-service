@@ -183,12 +183,18 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 			actualInviteeID = inviteeID
 		}
 	} else {
-		actualInviteeID, inviteeExists = s.checkInviteeExists(ctx, participantID)
+		var err error
+		actualInviteeID, inviteeExists, err = s.checkInviteeExists(ctx, participantID)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	if !*isInvited {
 		if inviteeExists && actualInviteeID != "" {
-			s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID)
+			if err := s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID); err != nil {
+				return nil, false, err
+			}
 		}
 		return nil, false, nil
 	}
@@ -235,12 +241,18 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 			actualAttendeeID = attendeeID
 		}
 	} else {
-		actualAttendeeID, attendeeExists = s.checkAttendeeExists(ctx, participantID)
+		var err error
+		actualAttendeeID, attendeeExists, err = s.checkAttendeeExists(ctx, participantID)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	if isAttended != nil && !*isAttended {
 		if attendeeExists && actualAttendeeID != "" {
-			s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID)
+			if err := s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID); err != nil {
+				return nil, false, err
+			}
 		}
 		return nil, false, nil
 	}
@@ -267,36 +279,63 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	return nil, attendeeExists, nil
 }
 
-// checkInviteeExists checks if invitee exists by attempting ID mapping
-// Returns invitee ID and existence flag
-func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, participantID string) (string, bool) {
+// checkInviteeExists checks if invitee exists by attempting ID mapping.
+// Returns invitee ID and existence flag. A non-nil error means the mapping
+// lookup itself failed (e.g. NATS timeout/unavailability) - distinct from a
+// genuine "not found", which the ID mapper reports as a validation error and
+// is treated here as inviteeExists == false, nil.
+func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, participantID string) (string, bool, error) {
 	inviteeID, err := s.idMapper.MapParticipantV2ToInviteeID(ctx, participantID)
-	if err != nil || inviteeID == "" {
-		slog.DebugContext(ctx, "invitee does not exist (ID mapping failed or empty)",
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "invitee does not exist (mapping not found)",
+				"participant_id", participantID,
+				logging.ErrKey, err)
+			return participantID, false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check invitee existence via ID mapping",
 			"participant_id", participantID,
 			logging.ErrKey, err)
-		return participantID, false
+		return "", false, err
+	}
+	if inviteeID == "" {
+		slog.DebugContext(ctx, "invitee does not exist (empty mapping result)",
+			"participant_id", participantID)
+		return participantID, false, nil
 	}
 
 	slog.DebugContext(ctx, "invitee exists - mapped participant ID to invitee ID",
 		"participant_id", participantID,
 		"invitee_id", inviteeID)
-	return inviteeID, true
+	return inviteeID, true, nil
 }
 
-func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context, participantID string) (string, bool) {
+// checkAttendeeExists checks if attendee exists by attempting ID mapping.
+// See checkInviteeExists for the not-found vs mapping-error distinction.
+func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context, participantID string) (string, bool, error) {
 	attendeeID, err := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID)
-	if err != nil || attendeeID == "" {
-		slog.DebugContext(ctx, "attendee does not exist (ID mapping failed or empty)",
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "attendee does not exist (mapping not found)",
+				"participant_id", participantID,
+				logging.ErrKey, err)
+			return participantID, false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check attendee existence via ID mapping",
 			"participant_id", participantID,
 			logging.ErrKey, err)
-		return participantID, false
+		return "", false, err
+	}
+	if attendeeID == "" {
+		slog.DebugContext(ctx, "attendee does not exist (empty mapping result)",
+			"participant_id", participantID)
+		return participantID, false, nil
 	}
 
 	slog.DebugContext(ctx, "attendee exists - mapped participant ID to attendee ID",
 		"participant_id", participantID,
 		"attendee_id", attendeeID)
-	return attendeeID, true
+	return attendeeID, true, nil
 }
 
 func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx context.Context, inviteeID string) bool {
@@ -323,28 +362,32 @@ func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx co
 func (s *PastMeetingParticipantService) deleteInvitee(
 	ctx context.Context,
 	pastMeetingID, inviteeID, participantID string,
-) {
+) error {
 	if err := s.participantClient.DeleteInvitee(ctx, pastMeetingID, inviteeID); err != nil {
-		slog.WarnContext(ctx, "failed to delete invitee during update",
+		slog.ErrorContext(ctx, "failed to delete invitee during update",
 			"participant_id", participantID,
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
+		return err
 	}
+	return nil
 }
 
 // deleteAttendee deletes attendee record
 func (s *PastMeetingParticipantService) deleteAttendee(
 	ctx context.Context,
 	pastMeetingID, attendeeID, participantID string,
-) {
+) error {
 	if err := s.participantClient.DeleteAttendee(ctx, pastMeetingID, attendeeID); err != nil {
-		slog.WarnContext(ctx, "failed to delete attendee during update",
+		slog.ErrorContext(ctx, "failed to delete attendee during update",
 			"participant_id", participantID,
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
+		return err
 	}
+	return nil
 }
 
 // createInviteeFromUpdate creates a new invitee from update request
