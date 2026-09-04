@@ -162,19 +162,19 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c  # v2.21.0
+      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
         with:
           egress-policy: audit
           disable-sudo: true
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7  # v6.0.0
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c  # v6.2.4
         with:
           role-to-assume: arn:aws:iam::450177423209:role/lfx-v2-github-actions # lfx-core
           aws-region: us-west-2
 
       - name: Get version-bump GitHub App from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@3a411b6ec5cace3d626412dd917e7bfeac242cfa  # v3.0.0
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53  # v3.0.1
         with:
           secret-ids: |
             TRIGGER, /cloudops/managed-secrets/cloud/github/linuxfoundation/lfx-self-serve-release-triggerer-app
