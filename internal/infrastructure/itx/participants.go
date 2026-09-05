@@ -72,13 +72,14 @@ func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *
 // Content update response, since ITX omits changed fields it did not return.
 func (c *Client) GetAttendee(ctx context.Context, pastMeetingID, attendeeID string) (*itx.AttendeeResponse, error) {
 	return doJSONTyped[itx.AttendeeResponse](c, ctx, apiRequest{
-		method:      http.MethodGet,
-		path:        "/v2/zoom/past_meetings/%s/attendees/%s",
-		pathArgs:    []any{pastMeetingID, attendeeID},
-		accept:      acceptJSON,
-		debugOp:     "GetAttendee",
-		debugFields: []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
-		parseError:  "failed to unmarshal response",
+		method:          http.MethodGet,
+		path:            "/v2/zoom/past_meetings/%s/attendees/%s",
+		pathArgs:        []any{pastMeetingID, attendeeID},
+		accept:          acceptJSON,
+		debugOp:         "GetAttendee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
+		parseError:      "failed to unmarshal response",
+		skipResponseLog: true,
 	})
 }
 

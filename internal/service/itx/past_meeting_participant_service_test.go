@@ -52,6 +52,10 @@ func (f *fakeParticipantClient) UpdateAttendee(_ context.Context, _, _ string, r
 
 func (f *fakeParticipantClient) DeleteAttendee(_ context.Context, _, _ string) error { return nil }
 
+func (f *fakeParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	return nil, errors.New("fakeParticipantClient: GetAttendee not configured")
+}
+
 // participantIDMapper lets tests toggle whether the invitee / attendee mappings
 // resolve, which is how the participant service decides between create and update
 // paths on an update request.
@@ -411,6 +415,70 @@ func TestPastMeetingParticipantService_UpdateParticipant_RefetchesIsUnknownOn204
 	require.NotNil(t, resp)
 
 	assert.True(t, resp.IsUnknown, "must reflect the persisted is_unknown value from the refetch, not falsely collapse the omitted field to false")
+}
+
+// fakeDegradedParticipantClient simulates the case where the pre-update snapshot
+// (taken before the write) succeeds, but the post-update refetch (after the 204)
+// fails - exercising the degraded-fallback merge path.
+type fakeDegradedParticipantClient struct {
+	fakeParticipantClient
+
+	preUpdateResp   *itx.AttendeeResponse
+	getAttendeeCall int
+}
+
+func (f *fakeDegradedParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	f.attendeeUpdateReq = req
+	return nil, nil
+}
+
+func (f *fakeDegradedParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	f.getAttendeeCall++
+	if f.getAttendeeCall == 1 {
+		// The pre-update snapshot call.
+		return f.preUpdateResp, nil
+	}
+	// The post-update refetch call - simulate a transient failure.
+	return nil, errors.New("fakeDegradedParticipantClient: post-update refetch failed")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_DegradedFallbackUsesPreUpdateSnapshot(t *testing.T) {
+	// Regression test: when the post-update refetch fails after a 204, the
+	// degraded-fallback response must not collapse an omitted (nil) field to its
+	// Go zero value. It must instead carry forward the pre-update snapshot's true
+	// persisted value, since the update never touched that field.
+
+	client := &fakeDegradedParticipantClient{
+		preUpdateResp: &itx.AttendeeResponse{
+			ID:        "attendee-1",
+			IsUnknown: true,
+		},
+	}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "laura"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("laura", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name: "Laura Test",
+			// IsUnknown intentionally omitted (nil): identity-only update.
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.True(t, resp.IsUnknown, "degraded fallback must carry the pre-update snapshot's true is_unknown value, not collapse the omitted field to false")
 }
 
 func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {
