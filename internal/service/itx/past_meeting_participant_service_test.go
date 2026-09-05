@@ -450,8 +450,10 @@ func TestPastMeetingParticipantService_UpdateParticipant_DegradedFallbackUsesPre
 
 	client := &fakeDegradedParticipantClient{
 		preUpdateResp: &itx.AttendeeResponse{
-			ID:        "attendee-1",
-			IsUnknown: true,
+			ID:         "attendee-1",
+			Email:      "laura@example.com",
+			IsVerified: true,
+			IsUnknown:  true,
 		},
 	}
 	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "laura"}}
@@ -472,13 +474,16 @@ func TestPastMeetingParticipantService_UpdateParticipant_DegradedFallbackUsesPre
 		nil,
 		&itx.UpdateAttendeeRequest{
 			Name: "Laura Test",
-			// IsUnknown intentionally omitted (nil): identity-only update.
+			// Email, IsVerified, and IsUnknown intentionally omitted: identity-only
+			// update via a non-empty field (Name) that doesn't touch these.
 		},
 	)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
 	assert.True(t, resp.IsUnknown, "degraded fallback must carry the pre-update snapshot's true is_unknown value, not collapse the omitted field to false")
+	assert.Equal(t, "laura@example.com", resp.Email, "degraded fallback must carry the pre-update snapshot's persisted email, not collapse the omitted scalar field to an empty string")
+	assert.True(t, resp.IsVerified, "degraded fallback must carry the pre-update snapshot's persisted is_verified, not collapse the omitted scalar field to false")
 }
 
 func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {

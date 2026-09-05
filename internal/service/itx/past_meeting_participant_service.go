@@ -586,9 +586,11 @@ func (s *PastMeetingParticipantService) updateAttendee(
 
 // synthesizeAttendeeResponse builds a best-effort AttendeeResponse for the case where
 // both the post-update refetch and (possibly) the pre-update snapshot are unavailable.
-// Fields explicitly set on updateReq always win; fields left nil fall back to the
-// pre-update snapshot's true persisted value when one was captured, and only collapse
-// to the Go zero value when neither source has data (pre is nil).
+// Fields explicitly set on updateReq always win; fields left nil (pointer fields) or
+// zero-valued (plain scalar fields, since ITX's omitempty means the request never sent
+// them) fall back to the pre-update snapshot's true persisted value when one was
+// captured, and only collapse to the Go zero value when neither source has data (pre
+// is nil).
 func synthesizeAttendeeResponse(attendeeID string, updateReq *itx.UpdateAttendeeRequest, pre *itx.AttendeeResponse) *itx.AttendeeResponse {
 	resp := &itx.AttendeeResponse{
 		ID:                    attendeeID,
@@ -609,6 +611,33 @@ func synthesizeAttendeeResponse(attendeeID string, updateReq *itx.UpdateAttendee
 	}
 	if pre == nil {
 		return resp
+	}
+	if updateReq.Name == "" {
+		resp.Name = pre.Name
+	}
+	if updateReq.Email == "" {
+		resp.Email = pre.Email
+	}
+	if updateReq.LFUserID == "" {
+		resp.LFUserID = pre.LFUserID
+	}
+	if updateReq.LFSSO == "" {
+		resp.LFSSO = pre.LFSSO
+	}
+	if updateReq.Org == "" {
+		resp.Org = pre.Org
+	}
+	if updateReq.JobTitle == "" {
+		resp.JobTitle = pre.JobTitle
+	}
+	if !updateReq.IsVerified {
+		resp.IsVerified = pre.IsVerified
+	}
+	if updateReq.CommitteeRole == "" {
+		resp.CommitteeRole = pre.CommitteeRole
+	}
+	if updateReq.CommitteeVotingStatus == "" {
+		resp.CommitteeVotingStatus = pre.CommitteeVotingStatus
 	}
 	if updateReq.IsUnknown == nil {
 		resp.IsUnknown = pre.IsUnknown
