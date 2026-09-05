@@ -136,9 +136,17 @@ type CreateAttendeeRequest struct {
 
 // UpdateAttendeeRequest represents the request to update an attendee
 type UpdateAttendeeRequest struct {
+	// Identity fields (used for creating an attendee during update if it doesn't
+	// exist, or for attaching a matched identity to an already-existing attendee record)
+	Name     string `json:"name,omitempty"`       // Full name of the attendee
+	Email    string `json:"email,omitempty"`      // Email address
+	LFUserID string `json:"lf_user_id,omitempty"` // LF user ID
+	LFSSO    string `json:"lf_sso,omitempty"`     // LF SSO username
+
 	Org                   string  `json:"org,omitempty"`                     // Organization name
 	JobTitle              string  `json:"job_title,omitempty"`               // Job title
 	IsVerified            bool    `json:"is_verified,omitempty"`             // Whether the attendee has been verified
+	IsUnknown             *bool   `json:"is_unknown,omitempty"`              // Whether attendee is marked as unknown (pointer to preserve explicit false)
 	IsAIReconciled        *bool   `json:"is_ai_reconciled,omitempty"`        // Whether the attendee record was last updated via AI reconciliation (pointer to preserve explicit false)
 	IsAutoMatched         *bool   `json:"is_auto_matched,omitempty"`         // Whether the attendee was automatically matched to an invitee by name (pointer to preserve explicit false)
 	ZoomUserName          *string `json:"zoom_user_name,omitempty"`          // Zoom display name of the attendee (pointer to preserve explicit clear)

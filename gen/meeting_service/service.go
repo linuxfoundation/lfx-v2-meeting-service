@@ -1514,11 +1514,13 @@ type UpdateItxPastMeetingParticipantPayload struct {
 	IsInvited *bool
 	// Whether the participant attended (if false, attendee record will be deleted)
 	IsAttended *bool
-	// Email address (used for creation)
+	// Email address (used for creation, or to attach identity to an existing
+	// attendee)
 	Email *string
-	// LF SSO username (used for creation)
+	// LF SSO username (used for creation, or to attach identity to an existing
+	// attendee)
 	Username *string
-	// LF user ID (used for creation)
+	// LF user ID (used for creation, or to attach identity to an existing attendee)
 	LfUserID *string
 	// First name (required for invitee updates)
 	FirstName *string
@@ -1534,6 +1536,8 @@ type UpdateItxPastMeetingParticipantPayload struct {
 	CommitteeVotingStatus *string
 	// Whether the attendee has been verified (attendee only)
 	IsVerified *bool
+	// Whether attendee is marked as unknown (attendee only)
+	IsUnknown *bool
 	// Whether the attendee record was last updated via AI reconciliation (attendee
 	// only)
 	IsAiReconciled *bool

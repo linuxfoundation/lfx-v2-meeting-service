@@ -52,6 +52,10 @@ func (f *fakeParticipantClient) UpdateAttendee(_ context.Context, _, _ string, r
 
 func (f *fakeParticipantClient) DeleteAttendee(_ context.Context, _, _ string) error { return nil }
 
+func (f *fakeParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	return nil, errors.New("fakeParticipantClient: GetAttendee not configured")
+}
+
 // participantIDMapper lets tests toggle whether the invitee / attendee mappings
 // resolve, which is how the participant service decides between create and update
 // paths on an update request.
@@ -285,6 +289,201 @@ func TestPastMeetingParticipantService_UpdateParticipant_CarriesReconciliationFi
 	assert.True(t, client.attendeeCreateReq.IsAutoMatched)
 	assert.Equal(t, "Erin (Zoom)", client.attendeeCreateReq.ZoomUserName)
 	assert.Equal(t, "Erin Test", client.attendeeCreateReq.MappedInviteeName)
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_CarriesIdentityFieldsOnAttendeeCreate(t *testing.T) {
+	// Identity fields set on the update request (attaching a matched identity to
+	// an attendee that doesn't exist yet) must survive the create fallback.
+
+	client := &fakeParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "iris"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: true, attendeeExists: false},
+		reader,
+	)
+
+	trueVal := true
+	falseVal := false
+	_, err := svc.UpdateParticipant(
+		ctxWithPrincipal("iris", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsInvited:     &trueVal,
+			IsAttended:    &trueVal,
+		},
+		&itx.UpdateInviteeRequest{FirstName: "Iris", LastName: "Test"},
+		&itx.UpdateAttendeeRequest{
+			Name:      "Iris Test",
+			Email:     "iris@example.com",
+			LFSSO:     "iris",
+			LFUserID:  "sf-002",
+			IsUnknown: &falseVal,
+		},
+	)
+	require.NoError(t, err)
+
+	require.NotNil(t, client.attendeeCreateReq, "should fall back to create when attendee doesn't exist")
+	assert.Equal(t, "Iris Test", client.attendeeCreateReq.Name)
+	assert.Equal(t, "iris@example.com", client.attendeeCreateReq.Email)
+	assert.Equal(t, "iris", client.attendeeCreateReq.LFSSO)
+	assert.Equal(t, "sf-002", client.attendeeCreateReq.LFUserID)
+	assert.False(t, client.attendeeCreateReq.IsUnknown)
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_EchoesIdentityFieldsOn204(t *testing.T) {
+	// ITX returns 204 No Content on a successful attendee update, so the ITX client
+	// returns (nil, nil). The synchronous API response must still reflect the
+	// identity fields that were just persisted (e.g. a "Confirm Match" action)
+	// instead of silently reporting zero values.
+
+	client := &fake204ParticipantClient{}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "jack"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	falseVal := false
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("jack", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name:      "Jack Test",
+			Email:     "jack@example.com",
+			LFSSO:     "jack",
+			LFUserID:  "sf-003",
+			IsUnknown: &falseVal,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.Equal(t, "Jack Test", resp.FirstName)
+	assert.Equal(t, "jack@example.com", resp.Email)
+	assert.Equal(t, "jack", resp.Username)
+	assert.Equal(t, "sf-003", resp.LFUserID)
+	assert.False(t, resp.IsUnknown)
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_RefetchesIsUnknownOn204(t *testing.T) {
+	// Regression test: an identity-only update that omits is_unknown must not
+	// falsely collapse a previously-unknown attendee's is_unknown flag to false.
+	// The 204 fallback must refetch ground truth via GetAttendee rather than
+	// echoing the request, since a nil IsUnknown pointer means "don't change it",
+	// not "set it to false".
+
+	client := &fake204ParticipantClient{
+		getAttendeeResp: &itx.AttendeeResponse{
+			ID:        "attendee-1",
+			Name:      "Karen Test",
+			Email:     "karen@example.com",
+			IsUnknown: true,
+		},
+	}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "karen"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("karen", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name:  "Karen Test",
+			Email: "karen@example.com",
+			// IsUnknown intentionally omitted (nil): identity-only update.
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.True(t, resp.IsUnknown, "must reflect the persisted is_unknown value from the refetch, not falsely collapse the omitted field to false")
+}
+
+// fakeDegradedParticipantClient simulates the case where the pre-update snapshot
+// (taken before the write) succeeds, but the post-update refetch (after the 204)
+// fails - exercising the degraded-fallback merge path.
+type fakeDegradedParticipantClient struct {
+	fakeParticipantClient
+
+	preUpdateResp   *itx.AttendeeResponse
+	getAttendeeCall int
+}
+
+func (f *fakeDegradedParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	f.attendeeUpdateReq = req
+	return nil, nil
+}
+
+func (f *fakeDegradedParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	f.getAttendeeCall++
+	if f.getAttendeeCall == 1 {
+		// The pre-update snapshot call.
+		return f.preUpdateResp, nil
+	}
+	// The post-update refetch call - simulate a transient failure.
+	return nil, errors.New("fakeDegradedParticipantClient: post-update refetch failed")
+}
+
+func TestPastMeetingParticipantService_UpdateParticipant_DegradedFallbackUsesPreUpdateSnapshot(t *testing.T) {
+	// Regression test: when the post-update refetch fails after a 204, the
+	// degraded-fallback response must not collapse an omitted (nil) field to its
+	// Go zero value. It must instead carry forward the pre-update snapshot's true
+	// persisted value, since the update never touched that field.
+
+	client := &fakeDegradedParticipantClient{
+		preUpdateResp: &itx.AttendeeResponse{
+			ID:         "attendee-1",
+			Email:      "laura@example.com",
+			IsVerified: true,
+			IsUnknown:  true,
+		},
+	}
+	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "laura"}}
+	svc := NewPastMeetingParticipantService(
+		client,
+		participantIDMapper{inviteeExists: false, attendeeExists: true},
+		reader,
+	)
+
+	trueVal := true
+	resp, err := svc.UpdateParticipant(
+		ctxWithPrincipal("laura", ""),
+		&models.UpdatePastMeetingParticipant{
+			PastMeetingID: "pm-1",
+			ParticipantID: "p-1",
+			IsAttended:    &trueVal,
+		},
+		nil,
+		&itx.UpdateAttendeeRequest{
+			Name: "Laura Test",
+			// Email, IsVerified, and IsUnknown intentionally omitted: identity-only
+			// update via a non-empty field (Name) that doesn't touch these.
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+
+	assert.True(t, resp.IsUnknown, "degraded fallback must carry the pre-update snapshot's true is_unknown value, not collapse the omitted field to false")
+	assert.Equal(t, "laura@example.com", resp.Email, "degraded fallback must carry the pre-update snapshot's persisted email, not collapse the omitted scalar field to an empty string")
+	assert.True(t, resp.IsVerified, "degraded fallback must carry the pre-update snapshot's persisted is_verified, not collapse the omitted scalar field to false")
 }
 
 func TestPastMeetingParticipantService_UpdateParticipant_ReconciliationOnlyDoesNotCreateAttendee(t *testing.T) {
@@ -532,14 +731,29 @@ func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing
 }
 
 // fake204ParticipantClient simulates ITX's real behavior on an attendee update:
-// a 204 No Content response, surfaced here as (nil, nil).
+// a 204 No Content response, surfaced here as (nil, nil). By default GetAttendee
+// is unconfigured and returns an error, exercising the graceful-degradation
+// fallback; set getAttendeeResp to simulate a successful refetch instead.
 type fake204ParticipantClient struct {
 	fakeParticipantClient
+
+	getAttendeeResp *itx.AttendeeResponse
+	getAttendeeErr  error
 }
 
 func (f *fake204ParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
 	f.attendeeUpdateReq = req
 	return nil, nil
+}
+
+func (f *fake204ParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+	if f.getAttendeeResp != nil {
+		return f.getAttendeeResp, nil
+	}
+	if f.getAttendeeErr != nil {
+		return nil, f.getAttendeeErr
+	}
+	return nil, errors.New("fake204ParticipantClient: GetAttendee not configured")
 }
 
 func TestPastMeetingParticipantService_UpdateParticipant_EchoesReconciliationFieldsOn204(t *testing.T) {
