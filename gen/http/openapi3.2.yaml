@@ -1,9 +1,10 @@
-openapi: 3.0.3
+openapi: 3.2.0
 info:
     title: Goa API
     version: 0.0.1
 servers:
     - url: http://localhost:80
+      name: Meeting Service
       description: Default server for Meeting Service
 paths:
     /itx/meeting_count:
@@ -4964,6 +4965,16 @@ paths:
                 - jwt_header_Authorization: []
 components:
     schemas:
+        AllowedVotingStatus:
+            type: string
+            description: Voting status filter for committee members
+            example: alt_voting_rep
+            enum:
+                - voting_rep
+                - alt_voting_rep
+                - observer
+                - emeritus
+                - none
         BadRequestError:
             type: object
             properties:
@@ -4988,15 +4999,7 @@ components:
                 allowed_voting_statuses:
                     type: array
                     items:
-                        type: string
-                        description: Voting status filter for committee members
-                        example: alt_voting_rep
-                        enum:
-                            - voting_rep
-                            - alt_voting_rep
-                            - observer
-                            - emeritus
-                            - none
+                        $ref: '#/components/schemas/AllowedVotingStatus'
                     description: Allowed voting statuses for committee members
                     example:
                         - alt_voting_rep

@@ -199,15 +199,45 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 		}
 	}
 
-	// Check if any attendee-updatable fields are present
+	// Check if any attendee-updatable fields are present. FirstName/LastName alone
+	// are invitee-only (attendee uses a single synthesized Name field, populated
+	// below only when an attendee request is triggered for another reason) - they
+	// must not by themselves cause an attendee update.
 	hasAttendeeFields := payload.OrgName != nil || payload.JobTitle != nil ||
 		payload.CommitteeRole != nil || payload.CommitteeVotingStatus != nil ||
-		payload.IsVerified != nil || payload.IsAiReconciled != nil ||
-		payload.IsAutoMatched != nil || payload.ZoomUserName != nil ||
-		payload.MappedInviteeName != nil
+		payload.IsVerified != nil || payload.IsUnknown != nil ||
+		payload.IsAiReconciled != nil || payload.IsAutoMatched != nil ||
+		payload.ZoomUserName != nil || payload.MappedInviteeName != nil ||
+		payload.Email != nil || payload.LfUserID != nil || payload.Username != nil
 
 	if hasAttendeeFields {
 		attendeeReq = &itx.UpdateAttendeeRequest{}
+
+		// Identity fields (used for creating an attendee if it doesn't exist, or for
+		// attaching a matched identity to an already-existing attendee record)
+		// Attendee uses full name instead of first/last
+		var name string
+		switch {
+		case payload.FirstName != nil && payload.LastName != nil:
+			name = strings.TrimSpace(fmt.Sprintf("%s %s", *payload.FirstName, *payload.LastName))
+		case payload.FirstName != nil:
+			name = *payload.FirstName
+		case payload.LastName != nil:
+			name = *payload.LastName
+		}
+		if name != "" {
+			attendeeReq.Name = name
+		}
+		if payload.Email != nil {
+			attendeeReq.Email = *payload.Email
+		}
+		if payload.Username != nil {
+			attendeeReq.LFSSO = *payload.Username
+		}
+		if payload.LfUserID != nil {
+			attendeeReq.LFUserID = *payload.LfUserID
+		}
+
 		if payload.OrgName != nil {
 			attendeeReq.Org = *payload.OrgName
 		}
@@ -225,6 +255,7 @@ func ConvertUpdateParticipantPayload(payload *meetingservice.UpdateItxPastMeetin
 		}
 		// Pass reconciliation pointers through directly so an explicit false/empty
 		// value is preserved on the wire instead of being dropped by omitempty.
+		attendeeReq.IsUnknown = payload.IsUnknown
 		attendeeReq.IsAIReconciled = payload.IsAiReconciled
 		attendeeReq.IsAutoMatched = payload.IsAutoMatched
 		attendeeReq.ZoomUserName = payload.ZoomUserName

@@ -463,11 +463,16 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 ) (*itx.AttendeeResponse, error) {
 	// Convert UpdateAttendeeRequest to CreateAttendeeRequest
 	createReq := &itx.CreateAttendeeRequest{
+		Name:                  updateReq.Name,
+		Email:                 updateReq.Email,
+		LFUserID:              updateReq.LFUserID,
+		LFSSO:                 updateReq.LFSSO,
 		Org:                   updateReq.Org,
 		JobTitle:              updateReq.JobTitle,
 		CommitteeRole:         updateReq.CommitteeRole,
 		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
 		IsVerified:            updateReq.IsVerified,
+		IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
 		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
 		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
 		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
@@ -528,6 +533,19 @@ func (s *PastMeetingParticipantService) updateAttendee(
 	// UpdateParticipant to keep the invitee and attendee sides consistent.
 	updateReq.UpdatedBy = updater
 
+	// Snapshot the attendee's state before the update so that, if the post-update
+	// refetch below fails, the degraded fallback has a real last-known value for
+	// fields the update didn't touch instead of guessing. Best-effort: a failure
+	// here just means the degraded fallback (if reached) has less to work with.
+	preUpdate, preErr := s.participantClient.GetAttendee(ctx, pastMeetingID, attendeeID)
+	if preErr != nil {
+		slog.WarnContext(ctx, "failed to snapshot attendee before update",
+			"participant_id", participantID,
+			"attendee_id", attendeeID,
+			"past_meeting_id", pastMeetingID,
+			logging.ErrKey, preErr)
+	}
+
 	resp, err := s.participantClient.UpdateAttendee(ctx, pastMeetingID, attendeeID, updateReq)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to update attendee",
@@ -540,23 +558,103 @@ func (s *PastMeetingParticipantService) updateAttendee(
 
 	if resp == nil {
 		// ITX returns 204 No Content on a successful update with no response body.
-		// Echo back the values we just persisted so the synchronous API response
-		// reflects them instead of silently reporting zero/omitted values.
-		resp = &itx.AttendeeResponse{
-			ID:                    attendeeID,
-			Org:                   updateReq.Org,
-			JobTitle:              updateReq.JobTitle,
-			IsVerified:            updateReq.IsVerified,
-			IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
-			IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
-			ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
-			MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
-			CommitteeRole:         updateReq.CommitteeRole,
-			CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+		// Refetch the persisted record so the synchronous response reflects the
+		// true stored state. Echoing the request values back would incorrectly
+		// collapse omitted pointer fields (e.g. is_unknown left nil to mean
+		// "don't change it") to their zero value, falsely reporting a known
+		// attendee as unknown or vice versa.
+		fetched, getErr := s.participantClient.GetAttendee(ctx, pastMeetingID, attendeeID)
+		if getErr != nil {
+			// The update itself already succeeded (204 confirms the write). A failed
+			// refetch should not fail the overall request, so degrade gracefully.
+			// Merge the request's explicitly-set fields onto the pre-update snapshot
+			// (when available) so fields the request left nil keep their true
+			// last-known value instead of collapsing to the Go zero value.
+			slog.WarnContext(ctx, "failed to refetch attendee after 204 update; synthesizing response instead",
+				"participant_id", participantID,
+				"attendee_id", attendeeID,
+				"past_meeting_id", pastMeetingID,
+				logging.ErrKey, getErr)
+			resp = synthesizeAttendeeResponse(attendeeID, updateReq, preUpdate)
+		} else {
+			resp = fetched
 		}
 	}
 
 	return resp, nil
+}
+
+// synthesizeAttendeeResponse builds a best-effort AttendeeResponse for the case where
+// both the post-update refetch and (possibly) the pre-update snapshot are unavailable.
+// Fields explicitly set on updateReq always win; fields left nil (pointer fields) or
+// zero-valued (plain scalar fields, since ITX's omitempty means the request never sent
+// them) fall back to the pre-update snapshot's true persisted value when one was
+// captured, and only collapse to the Go zero value when neither source has data (pre
+// is nil).
+func synthesizeAttendeeResponse(attendeeID string, updateReq *itx.UpdateAttendeeRequest, pre *itx.AttendeeResponse) *itx.AttendeeResponse {
+	resp := &itx.AttendeeResponse{
+		ID:                    attendeeID,
+		Name:                  updateReq.Name,
+		Email:                 updateReq.Email,
+		LFUserID:              updateReq.LFUserID,
+		LFSSO:                 updateReq.LFSSO,
+		Org:                   updateReq.Org,
+		JobTitle:              updateReq.JobTitle,
+		IsVerified:            updateReq.IsVerified,
+		IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
+		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+		MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
+		CommitteeRole:         updateReq.CommitteeRole,
+		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+	}
+	if pre == nil {
+		return resp
+	}
+	if updateReq.Name == "" {
+		resp.Name = pre.Name
+	}
+	if updateReq.Email == "" {
+		resp.Email = pre.Email
+	}
+	if updateReq.LFUserID == "" {
+		resp.LFUserID = pre.LFUserID
+	}
+	if updateReq.LFSSO == "" {
+		resp.LFSSO = pre.LFSSO
+	}
+	if updateReq.Org == "" {
+		resp.Org = pre.Org
+	}
+	if updateReq.JobTitle == "" {
+		resp.JobTitle = pre.JobTitle
+	}
+	if !updateReq.IsVerified {
+		resp.IsVerified = pre.IsVerified
+	}
+	if updateReq.CommitteeRole == "" {
+		resp.CommitteeRole = pre.CommitteeRole
+	}
+	if updateReq.CommitteeVotingStatus == "" {
+		resp.CommitteeVotingStatus = pre.CommitteeVotingStatus
+	}
+	if updateReq.IsUnknown == nil {
+		resp.IsUnknown = pre.IsUnknown
+	}
+	if updateReq.IsAIReconciled == nil {
+		resp.IsAIReconciled = pre.IsAIReconciled
+	}
+	if updateReq.IsAutoMatched == nil {
+		resp.IsAutoMatched = pre.IsAutoMatched
+	}
+	if updateReq.ZoomUserName == nil {
+		resp.ZoomUserName = pre.ZoomUserName
+	}
+	if updateReq.MappedInviteeName == nil {
+		resp.MappedInviteeName = pre.MappedInviteeName
+	}
+	return resp
 }
 
 // DeleteParticipant deletes a participant

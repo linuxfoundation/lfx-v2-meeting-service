@@ -4151,6 +4151,10 @@ func DecodeUpdateItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder fun
 			}
 			return payload, goa.DecodePayloadError(err.Error())
 		}
+		err = ValidateUpdateItxPastMeetingParticipantRequestBody(&body)
+		if err != nil {
+			return payload, err
+		}
 
 		var (
 			pastMeetingID string
