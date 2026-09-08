@@ -6,13 +6,13 @@ module github.com/linuxfoundation/lfx-v2-meeting-service
 go 1.26.8
 
 require (
-	github.com/auth0/go-auth0 v1.47.0
+	github.com/auth0/go-auth0 v1.48.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.1
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
 	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.9
-	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.27
-	github.com/linuxfoundation/lfx-v2-invite-service v0.1.15
+	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.28
+	github.com/linuxfoundation/lfx-v2-invite-service v0.2.0
 	github.com/nats-io/nats.go v1.53.1
 	github.com/remychantenay/slog-otel v1.3.5
 	github.com/stretchr/testify v1.12.1
@@ -33,7 +33,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
 	goa.design/goa/v3 v3.30.0
-	golang.org/x/oauth2 v0.36.0
+	golang.org/x/oauth2 v0.37.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
