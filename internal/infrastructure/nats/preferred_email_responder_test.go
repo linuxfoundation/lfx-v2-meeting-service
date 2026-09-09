@@ -53,7 +53,7 @@ func TestNewErrorReply(t *testing.T) {
 	})
 
 	t.Run("email-not-synced sentinel carries unavailable type and its code", func(t *testing.T) {
-		err := domain.NewUnavailableError(`email "a@b.com" not yet available; retry`, domain.ErrEmailNotSynced)
+		err := domain.NewUnavailableError(`email "alice@example.com" not yet available; retry`, domain.ErrEmailNotSynced)
 		reply := newErrorReply(err)
 		assert.Equal(t, "unavailable", reply.Type)
 		assert.Equal(t, "email_not_synced", reply.Code)

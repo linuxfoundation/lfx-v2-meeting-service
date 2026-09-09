@@ -108,29 +108,38 @@ func (s *PreferredEmailService) getSelf(ctx context.Context, token string) (*dom
 
 // resolveVerifiedEmailID finds the SFDC email-record ID for the given address among the
 // user's emails. The address must be an active, verified record (invites must only route to
-// a verified address): a matching-but-unusable address is a ValidationError, while an
-// unknown address returns a retryable UnavailableError (SFDC emails sync from auth0
-// asynchronously).
+// a verified address): an address that doesn't match any record, or matches an inactive or
+// unverified one, is a ValidationError. An active, verified match whose SFDC ID hasn't synced
+// from auth0 yet returns a retryable UnavailableError wrapping domain.ErrEmailNotSynced.
 func resolveVerifiedEmailID(self *domain.Self, email string) (string, error) {
 	email = strings.TrimSpace(email)
-	matchedUnusable := false
+	matched := false
+	pendingSync := false
 	for _, e := range self.Emails {
-		if e.ID == "" || !strings.EqualFold(strings.TrimSpace(e.Address), email) {
+		if !strings.EqualFold(strings.TrimSpace(e.Address), email) {
 			continue
 		}
-		if e.Active && e.Verified {
+		matched = true
+		if !e.Active || !e.Verified {
+			continue
+		}
+		if e.ID != "" {
 			return e.ID, nil
 		}
-		matchedUnusable = true
+		pendingSync = true
 	}
 
 	// Redact the address in the returned error — it propagates into logs via ErrKey.
 	redactedEmail := redaction.RedactEmail(email)
-	if matchedUnusable {
+	if pendingSync {
+		return "", domain.NewUnavailableError(
+			fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail),
+			domain.ErrEmailNotSynced)
+	}
+	if matched {
 		return "", domain.NewValidationError(
 			fmt.Sprintf("email %q is not an active, verified address on this account", redactedEmail))
 	}
-	return "", domain.NewUnavailableError(
-		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail),
-		domain.ErrEmailNotSynced)
+	return "", domain.NewValidationError(
+		fmt.Sprintf("email %q is not a recognized address on this account", redactedEmail))
 }
