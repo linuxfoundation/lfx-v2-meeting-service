@@ -6,6 +6,7 @@ package nats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -16,6 +17,10 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
+
+// errorCodeEmailNotSynced is the machine-readable code carried in the error envelope when a
+// preferred-email selection matched a known address that hasn't synced from Auth0 to SFDC yet.
+const errorCodeEmailNotSynced = "email_not_synced"
 
 const preferredEmailCallTimeout = 15 * time.Second
 
@@ -43,9 +48,23 @@ type preferredEmailReply struct {
 	Email   *string `json:"email"`
 }
 
-// errorReply is the RPC error envelope.
+// errorReply is the RPC error envelope. Type is the stable domain.ErrorType string; Code is
+// set only for specific, machine-classifiable cases (e.g. "email_not_synced") that a bare
+// type can't disambiguate from other errors of the same type.
 type errorReply struct {
 	Error string `json:"error"`
+	Type  string `json:"type,omitempty"`
+	Code  string `json:"code,omitempty"`
+}
+
+// newErrorReply builds the error envelope for a failed preferred_email RPC so self-serve can
+// classify failures on stable fields instead of matching the free-text error message.
+func newErrorReply(err error) errorReply {
+	reply := errorReply{Error: err.Error(), Type: domain.GetErrorType(err).String()}
+	if errors.Is(err, domain.ErrEmailNotSynced) {
+		reply.Code = errorCodeEmailNotSynced
+	}
+	return reply
 }
 
 // PreferredEmailResponder subscribes to the preferred-email RPC subjects and replies
@@ -171,7 +190,7 @@ func (r *PreferredEmailResponder) decode(msg *natsgo.Msg) (preferredEmailRequest
 	var req preferredEmailRequest
 	if err := json.Unmarshal(msg.Data, &req); err != nil {
 		r.logger.With(logging.ErrKey, err).Warn("failed to parse preferred_email request")
-		r.reply(msg, errorReply{Error: "invalid request payload"})
+		r.reply(msg, newErrorReply(domain.NewValidationError("invalid request payload")))
 		return preferredEmailRequest{}, false
 	}
 	return req, true
@@ -201,7 +220,7 @@ func (r *PreferredEmailResponder) respondError(msg *natsgo.Msg, op string, err e
 		"op", op,
 		"error_type", domain.GetErrorType(err),
 	)
-	r.reply(msg, errorReply{Error: err.Error()})
+	r.reply(msg, newErrorReply(err))
 }
 
 // reply marshals and sends a response, logging any transport failure.

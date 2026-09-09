@@ -131,5 +131,6 @@ func resolveVerifiedEmailID(self *domain.Self, email string) (string, error) {
 			fmt.Sprintf("email %q is not an active, verified address on this account", redactedEmail))
 	}
 	return "", domain.NewUnavailableError(
-		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail))
+		fmt.Sprintf("email %q not yet available in user-service; retry", redactedEmail),
+		domain.ErrEmailNotSynced)
 }
