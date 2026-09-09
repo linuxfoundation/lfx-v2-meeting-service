@@ -56,7 +56,7 @@ func selfWithEmail() *domain.Self {
 		Emails: []domain.SelfEmail{
 			{ID: "e1", Address: "alice@work.com", Active: true, Verified: true},
 			{ID: "e-unverified", Address: "new@work.com", Active: true, Verified: false},
-			{ID: "", Address: "pending@work.com", Active: true, Verified: true},
+			{ID: "", Address: "pending@example.com", Active: true, Verified: true},
 		},
 	}
 }
@@ -142,7 +142,7 @@ func TestSetPreferredEmail(t *testing.T) {
 		client := &mockUserServiceClient{}
 		client.On("GetSelf", ctx, testToken).Return(selfWithEmail(), nil)
 
-		_, err := NewPreferredEmailService(client, slog.Default()).SetPreferredEmail(ctx, testToken, "pending@work.com", "")
+		_, err := NewPreferredEmailService(client, slog.Default()).SetPreferredEmail(ctx, testToken, "pending@example.com", "")
 		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 		assert.ErrorIs(t, err, domain.ErrEmailNotSynced)
 		client.AssertNotCalled(t, "SetMeetingEmailPreference", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
