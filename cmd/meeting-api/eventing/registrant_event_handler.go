@@ -480,6 +480,10 @@ func convertMapToInviteResponseData(
 	if rawResponse.ID == "" || rawResponse.MeetingID == "" {
 		return nil, fmt.Errorf("missing required fields: id or meeting_id")
 	}
+	// "NONE" is a v1 sentinel for invite responses not associated with a meeting — skip silently.
+	if rawResponse.MeetingID == "NONE" {
+		return nil, nil
+	}
 
 	// If username is blank but we have a v1 Platform ID (user_id), lookup the username.
 	username := rawResponse.Username

@@ -162,6 +162,21 @@ func TestConvertMapToInviteResponseData_MailerDaemon(t *testing.T) {
 	}
 }
 
+// TestConvertMapToInviteResponseData_NoneMeetingID verifies that invite responses with
+// meeting_id "NONE" (a v1 sentinel for unassociated responses) are silently skipped.
+func TestConvertMapToInviteResponseData_NoneMeetingID(t *testing.T) {
+	v1Data := map[string]interface{}{
+		"id":         "resp-1",
+		"meeting_id": "NONE",
+		"email":      "user@example.com",
+		"response":   "accepted",
+	}
+	// v1ObjectsKV is nil — the sentinel check must return before any KV call is made.
+	result, err := convertMapToInviteResponseData(context.Background(), v1Data, stubV1UserLookup{}, stubIDMapper{}, nil, slog.Default())
+	require.NoError(t, err)
+	assert.Nil(t, result)
+}
+
 func TestMaybeSendInvite(t *testing.T) {
 	const (
 		registrantUID = "reg-123"
