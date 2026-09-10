@@ -4,7 +4,6 @@
 package domain
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,12 +34,12 @@ func TestErrorType_String(t *testing.T) {
 func TestErrEmailNotSynced(t *testing.T) {
 	t.Run("detectable via errors.Is when wrapped in NewUnavailableError", func(t *testing.T) {
 		err := NewUnavailableError("email not yet available", ErrEmailNotSynced)
-		assert.True(t, errors.Is(err, ErrEmailNotSynced))
+		assert.ErrorIs(t, err, ErrEmailNotSynced)
 		assert.Equal(t, ErrorTypeUnavailable, GetErrorType(err))
 	})
 
 	t.Run("not detected on an unavailable error without the sentinel", func(t *testing.T) {
 		err := NewUnavailableError("upstream unavailable")
-		assert.False(t, errors.Is(err, ErrEmailNotSynced))
+		assert.NotErrorIs(t, err, ErrEmailNotSynced)
 	})
 }

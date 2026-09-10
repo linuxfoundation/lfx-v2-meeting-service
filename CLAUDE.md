@@ -655,3 +655,11 @@ Request/reply subjects served by the preferred-email responder (see User Service
 - `lfx.meeting-service.preferred_email.set` — request `{"token":"<user bearer token>","email":"<verified-address>"}` (or `{"token":"...","email_id":<sfid>}`; `email` wins, `null`/`"primary"` clears) → reply `{"email_id","email"}` or the error envelope below. A verified `email` is resolved to its (auth0→SFDC synced) email-record ID; a not-yet-synced address returns a retryable error.
 
 **Error envelope** (both subjects): `{"error":string,"type":"validation"|"forbidden"|"not_found"|"conflict"|"internal"|"unavailable","code"?:"email_not_synced"}`. `type` is the stable string form of `domain.ErrorType` (`domain.GetErrorType(err).String()`) — use it instead of matching on `error`. `code` is present only when a selected address matched a known email on the profile but hasn't synced from Auth0 to SFDC yet (`domain.ErrEmailNotSynced`); a generic upstream 5xx also reports `type: "unavailable"` but omits `code`.
+
+`preferred_email.set`'s address-resolution outcomes map onto that envelope as follows:
+
+| Selected address | `type` | `code` |
+|---|---|---|
+| Not on the user's profile, or matches an inactive/unverified record | `validation` | — |
+| Matches an active, verified record whose SFDC ID hasn't synced from Auth0 yet | `unavailable` | `email_not_synced` |
+| Matches an active, verified record with a synced SFDC ID | *(success — no error envelope)* | — |

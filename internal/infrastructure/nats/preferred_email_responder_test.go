@@ -57,7 +57,11 @@ func TestNewErrorReply(t *testing.T) {
 		reply := newErrorReply(err)
 		assert.Equal(t, "unavailable", reply.Type)
 		assert.Equal(t, "email_not_synced", reply.Code)
-		assert.True(t, errors.Is(err, domain.ErrEmailNotSynced))
+		assert.ErrorIs(t, err, domain.ErrEmailNotSynced)
+
+		data, jsonErr := json.Marshal(reply)
+		require.NoError(t, jsonErr)
+		assert.JSONEq(t, `{"error":"email \"alice@example.com\" not yet available; retry: email not yet synced","type":"unavailable","code":"email_not_synced"}`, string(data))
 	})
 
 	t.Run("generic unavailable error carries type but no code", func(t *testing.T) {
