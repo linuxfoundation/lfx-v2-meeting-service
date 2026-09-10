@@ -44,6 +44,28 @@ func GetErrorType(err error) ErrorType {
 	return ErrorTypeInternal // default fallback
 }
 
+// String returns the stable wire-format string for the error type. Callers such as the
+// preferred_email NATS responder forward this in the reply envelope so consumers can
+// classify failures without matching on the free-text error message.
+func (t ErrorType) String() string {
+	switch t {
+	case ErrorTypeValidation:
+		return "validation"
+	case ErrorTypeForbidden:
+		return "forbidden"
+	case ErrorTypeNotFound:
+		return "not_found"
+	case ErrorTypeConflict:
+		return "conflict"
+	case ErrorTypeUnavailable:
+		return "unavailable"
+	case ErrorTypeInternal:
+		return "internal"
+	default:
+		return "internal"
+	}
+}
+
 // Error constructors for different types
 func NewValidationError(message string, err ...error) *DomainError {
 	return &DomainError{Type: ErrorTypeValidation, Message: message, Err: errors.Join(err...)}
@@ -71,3 +93,9 @@ func NewForbiddenError(message string, err ...error) *DomainError {
 
 // ErrUserNotFound is returned by UserReader when no registered user matches the lookup.
 var ErrUserNotFound = errors.New("user not found")
+
+// ErrEmailNotSynced marks a preferred-email selection that matched a known address on the
+// user's profile but has not yet synced from Auth0 to SFDC. It is wrapped inside a
+// NewUnavailableError so callers can detect this specific retryable case with errors.Is
+// instead of matching on the error message.
+var ErrEmailNotSynced = errors.New("email not yet synced")
