@@ -475,6 +475,11 @@ func convertMapToInviteResponseData(
 	if emailLocal == "mailer-daemon" {
 		return nil, nil
 	}
+	// "NONE" is a v1 sentinel for invite responses not associated with a meeting — skip silently.
+	// Check before required-field validation so malformed unassociated records are also skipped.
+	if rawResponse.MeetingID == "NONE" {
+		return nil, nil
+	}
 
 	// Validate required fields
 	if rawResponse.ID == "" || rawResponse.MeetingID == "" {
