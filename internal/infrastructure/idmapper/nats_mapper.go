@@ -38,6 +38,9 @@ func NewNATSMapper(cfg Config) (*NATSMapper, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("NATS URL is required")
 	}
+	if cfg.Timeout < 0 {
+		return nil, fmt.Errorf("NATS timeout must not be negative")
+	}
 
 	timeout := cfg.Timeout
 	if timeout == 0 {
