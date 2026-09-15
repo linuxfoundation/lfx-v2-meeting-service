@@ -38,6 +38,9 @@ func NewNATSMapper(cfg Config) (*NATSMapper, error) {
 	if cfg.URL == "" {
 		return nil, fmt.Errorf("NATS URL is required")
 	}
+	if cfg.Timeout < 0 {
+		return nil, fmt.Errorf("NATS timeout must not be negative")
+	}
 
 	timeout := cfg.Timeout
 	if timeout == 0 {
@@ -132,8 +135,12 @@ func (m *NATSMapper) MapCommitteeV1ToV2(ctx context.Context, v1SFID string) (str
 
 // lookup performs the NATS request/reply lookup
 func (m *NATSMapper) lookup(ctx context.Context, key string) (string, error) {
-	// Send request with timeout
-	msg, err := m.conn.RequestWithContext(ctx, lookupSubject, []byte(key))
+	// Apply the mapper's own timeout ceiling while still respecting any shorter
+	// deadline already on ctx (context.WithTimeout picks the sooner of the two).
+	mapperCtx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
+
+	msg, err := m.conn.RequestWithContext(mapperCtx, lookupSubject, []byte(key))
 	if err != nil {
 		if err == context.DeadlineExceeded || err == nats.ErrTimeout {
 			return "", domain.NewUnavailableError("v1-sync-helper lookup timed out", err)
