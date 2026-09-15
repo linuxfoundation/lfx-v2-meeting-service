@@ -66,7 +66,11 @@ func (p *NATSProjectLookup) GetProjectSlug(ctx context.Context, projectUID strin
 	// (plain string or empty body for a project with no slug) is a success value.
 	if code := projectServiceErrorCode(msg.Data); code != "" {
 		if code == "not_found" {
-			return "", domain.NewNotFoundError(fmt.Sprintf("project %q not found", projectUID))
+			// A confirmed absent project is treated the same as a project that
+			// has no slug: return ("", nil) so callers follow the no-slug path
+			// rather than treating the permanent absence as a transient failure
+			// that should be retried.
+			return "", nil
 		}
 		return "", domain.NewInternalError(fmt.Sprintf("project service error for uid %q: %s", projectUID, code))
 	}
