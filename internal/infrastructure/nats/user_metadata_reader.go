@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // userMetadataReaderTimeout is intentionally short: profile enrichment is best-effort and
@@ -112,7 +114,7 @@ func (r *NATSUserMetadataReader) ResolveProfile(ctx context.Context, username st
 	email, err := r.resolveEmail(reqCtx, username)
 	if err != nil {
 		r.logger.WarnContext(ctx, "failed to resolve email for user profile; continuing without it",
-			"username", username, "err", err)
+			"username", redaction.Redact(username), logging.ErrKey, err)
 	} else {
 		profile.Email = email
 	}

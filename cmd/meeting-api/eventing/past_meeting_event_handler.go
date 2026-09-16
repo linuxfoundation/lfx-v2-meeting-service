@@ -24,8 +24,8 @@ import (
 // Past Meeting Event Handler
 // =============================================================================
 
-// PastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
-type PastMeetingDBRaw struct {
+// pastMeetingDBRaw represents raw past meeting data from v1 DynamoDB/NATS KV bucket
+type pastMeetingDBRaw struct {
 	// MeetingAndOccurrenceID is the partition key of the past meeting table
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 
@@ -94,7 +94,7 @@ type PastMeetingDBRaw struct {
 	Visibility string `json:"visibility"`
 
 	// Recurrence is the recurrence of the past meeting
-	Recurrence *RecurrenceDBRaw `json:"recurrence"`
+	Recurrence *recurrenceDBRaw `json:"recurrence"`
 
 	// Restricted is whether the past meeting is restricted to only invited participants
 	Restricted bool `json:"restricted"`
@@ -146,8 +146,8 @@ type PastMeetingDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and int inputs for numeric fields.
-func (p *PastMeetingDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias PastMeetingDBRaw
+func (p *pastMeetingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias pastMeetingDBRaw
 	tmp := struct {
 		Duration      interface{} `json:"duration"`
 		EarlyJoinTime interface{} `json:"early_join_time"`
@@ -245,6 +245,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting update")
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
@@ -264,7 +265,7 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting", "action", string(indexerAction))
 	return false // Success, ACK
 }
 
@@ -276,6 +277,7 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
@@ -297,15 +299,9 @@ func convertMapToPastMeetingData(
 	mappingsKV jetstream.KeyValue,
 	logger *slog.Logger,
 ) (*models.PastMeetingEventData, error) {
-	// Convert map to JSON bytes, then to PastMeetingDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawPastMeeting, err := decodeV1[pastMeetingDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawPastMeeting PastMeetingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawPastMeeting); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal past meeting data: %w", err)
+		return nil, fmt.Errorf("failed to decode past meeting data: %w", err)
 	}
 
 	// Validate required fields
@@ -426,7 +422,7 @@ func convertMapToPastMeetingData(
 
 // buildPastMeetingZoomConfig constructs a ZoomConfig from flat v1 fields on the raw past meeting.
 // Returns nil if no source fields are present so ZoomConfig is omitted from the event payload.
-func buildPastMeetingZoomConfig(m *PastMeetingDBRaw) *models.ZoomConfig {
+func buildPastMeetingZoomConfig(m *pastMeetingDBRaw) *models.ZoomConfig {
 	if m.ZoomAIEnabled == nil && m.RequireAISummaryApproval == nil {
 		return nil
 	}

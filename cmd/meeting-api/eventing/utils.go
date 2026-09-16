@@ -4,11 +4,31 @@
 package eventing
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nats-io/nats.go/jetstream"
 )
+
+// decodeV1 converts a map[string]interface{} v1 KV payload into a typed struct T
+// by routing it through JSON: marshal the map then unmarshal into T. This is the
+// canonical decode pattern for v1 bucket data throughout the eventing package.
+func decodeV1[T any](v1Data map[string]interface{}) (T, error) {
+	var zero T
+	jsonBytes, err := json.Marshal(v1Data)
+	if err != nil {
+		return zero, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
+	}
+	var result T
+	if err := json.Unmarshal(jsonBytes, &result); err != nil {
+		return zero, fmt.Errorf("failed to unmarshal v1Data: %w", err)
+	}
+	return result, nil
+}
 
 func shouldSkipSync(lastModifiedByID string) bool {
 	return lastModifiedByID == "meeting-service" || lastModifiedByID == "lfx-v2-meeting-service"
@@ -51,6 +71,15 @@ func extractIDFromKey(key, prefix string) string {
 		return key[len(prefix):]
 	}
 	return key
+}
+
+// isKVAbsenceError reports whether err means the key does not (and cannot) exist
+// in the KV store. Both ErrKeyNotFound (key was never written or was deleted) and
+// ErrInvalidKey (the key string contains characters that NATS rejects, e.g. spaces
+// in an lf_sso value) are treated as absence: the xref will never be found, so
+// callers should proceed as if the sibling does not exist rather than retrying.
+func isKVAbsenceError(err error) bool {
+	return errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey)
 }
 
 func isTransientError(err error) bool {

@@ -19,8 +19,8 @@ import (
 // Past Meeting Recording Event Handler
 // =============================================================================
 
-// RecordingDBRaw represents raw past meeting recording data from v1 DynamoDB/NATS KV bucket
-type RecordingDBRaw struct {
+// recordingDBRaw represents raw past meeting recording data from v1 DynamoDB/NATS KV bucket
+type recordingDBRaw struct {
 	// MeetingAndOccurrenceID is the primary key of the recording table since there is only one recording record for a past meeting.
 	MeetingAndOccurrenceID string `json:"meeting_and_occurrence_id"`
 
@@ -64,12 +64,12 @@ type RecordingDBRaw struct {
 	RecordingCount int `json:"recording_count"`
 
 	// RecordingFiles is the list of files in the recording.
-	RecordingFiles []RecordingFileDBRaw `json:"recording_files"`
+	RecordingFiles []recordingFileDBRaw `json:"recording_files"`
 
 	// Sessions is the list of sessions in the recording.
 	// There can be multiple sessions in a recording due to the fact that a meeting can be restarted
 	// and that is considered a new session in Zoom.
-	Sessions []RecordingSessionDBRaw `json:"sessions"`
+	Sessions []recordingSessionDBRaw `json:"sessions"`
 
 	// StartTime is the start time of the recording in RFC3339 format.
 	StartTime string `json:"start_time"`
@@ -91,8 +91,8 @@ type RecordingDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (r *RecordingDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias RecordingDBRaw
+func (r *recordingDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias recordingDBRaw
 	tmp := struct {
 		RecordingCount interface{} `json:"recording_count"`
 		TotalSize      interface{} `json:"total_size"`
@@ -114,8 +114,8 @@ func (r *RecordingDBRaw) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// RecordingFileDBRaw represents raw recording file data from v1 DynamoDB/NATS KV bucket
-type RecordingFileDBRaw struct {
+// recordingFileDBRaw represents raw recording file data from v1 DynamoDB/NATS KV bucket
+type recordingFileDBRaw struct {
 	DownloadURL    string `json:"download_url,omitempty"`
 	FileExtension  string `json:"file_extension"`
 	FileSize       int64  `json:"file_size"`
@@ -130,8 +130,8 @@ type RecordingFileDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (r *RecordingFileDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias RecordingFileDBRaw
+func (r *recordingFileDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias recordingFileDBRaw
 	tmp := struct {
 		FileSize interface{} `json:"file_size"`
 		*Alias
@@ -149,8 +149,8 @@ func (r *RecordingFileDBRaw) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// RecordingSessionDBRaw represents raw recording session data from v1 DynamoDB/NATS KV bucket
-type RecordingSessionDBRaw struct {
+// recordingSessionDBRaw represents raw recording session data from v1 DynamoDB/NATS KV bucket
+type recordingSessionDBRaw struct {
 	UUID      string `json:"uuid"`
 	ShareURL  string `json:"share_url"`
 	TotalSize int64  `json:"total_size"`
@@ -159,8 +159,8 @@ type RecordingSessionDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (r *RecordingSessionDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias RecordingSessionDBRaw
+func (r *recordingSessionDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias recordingSessionDBRaw
 	tmp := struct {
 		TotalSize interface{} `json:"total_size"`
 		*Alias
@@ -204,6 +204,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
+	funcLogger.InfoContext(ctx, "processing past meeting recording update")
 
 	// Resolve committees from the parent past meeting record.
 	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
@@ -247,7 +248,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store recording mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting recording")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting recording", "action", string(indexerAction))
 	return false
 }
 
@@ -263,6 +264,7 @@ func (h *EventHandlers) handlePastMeetingRecordingDelete(
 		h.logger.DebugContext(ctx, "recording delete already processed, skipping", "recording_id", recordingID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting recording delete", "recording_id", recordingID)
 	// Delete recording from indexer first (no tombstone yet).
 	if retry := h.handleMeetingTypeDelete(ctx, key, recordingID, []byte(recordingID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_recording",
@@ -287,15 +289,9 @@ func convertMapToRecordingData(
 	idMapper domain.IDMapper,
 	logger *slog.Logger,
 ) (*models.RecordingEventData, *models.TranscriptEventData, error) {
-	// Convert map to JSON bytes, then to RecordingDBRaw
-	jsonBytes, err := json.Marshal(v1Data)
+	rawRecording, err := decodeV1[recordingDBRaw](v1Data)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal v1Data to JSON: %w", err)
-	}
-
-	var rawRecording RecordingDBRaw
-	if err := json.Unmarshal(jsonBytes, &rawRecording); err != nil {
-		return nil, nil, fmt.Errorf("failed to unmarshal recording data: %w", err)
+		return nil, nil, fmt.Errorf("failed to decode recording data: %w", err)
 	}
 
 	// Validate required fields

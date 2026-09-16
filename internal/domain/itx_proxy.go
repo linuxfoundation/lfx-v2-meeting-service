@@ -58,6 +58,7 @@ type ITXInviteeClient interface {
 // ITXAttendeeClient defines the interface for ITX attendee operations
 type ITXAttendeeClient interface {
 	CreateAttendee(ctx context.Context, pastMeetingID string, req *itx.CreateAttendeeRequest) (*itx.AttendeeResponse, error)
+	GetAttendee(ctx context.Context, pastMeetingID, attendeeID string) (*itx.AttendeeResponse, error)
 	UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error)
 	DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID string) error
 }

@@ -32,7 +32,9 @@ YAML_YAMLLINT_CONFIG_FILE: .yamllint
 # Dependabot PRs (401 Unauthorized). Run offline to skip API-dependent checks
 # while keeping all static security audits (template-injection, excessive-
 # permissions, dangerous-triggers, etc.). All actions are already pinned by SHA
-# so artipacked would pass anyway.
+# so artipacked would pass anyway. ACTION_ZIZMOR_UNSECURED_ENV_VARIABLES is
+# intentionally omitted from the workflow env since offline mode doesn't call
+# the GitHub API and doesn't need GITHUB_TOKEN.
 # yamllint disable-line rule:line-length
 ACTION_ZIZMOR_ARGUMENTS: --offline --min-severity low
 # yamllint disable-line rule:line-length

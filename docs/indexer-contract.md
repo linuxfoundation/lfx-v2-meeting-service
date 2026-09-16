@@ -532,6 +532,7 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `username` | string (optional) | LFX username |
 | `is_invited` | bool | Whether the participant was invited |
 | `is_attended` | bool | Whether the participant attended |
+| `is_verified` | bool | Whether the attendee's identity has been confirmed, either automatically or by an organizer (attendee records only; `false` for invitee-only records) |
 | `is_unknown` | bool | Whether the attendee could not be matched to any known user (attendee records only; `false` for invitee-only records) |
 | `is_ai_reconciled` | bool | Whether the attendee record was last updated via AI reconciliation (attendee records only; `false` for invitee-only records) |
 | `is_auto_matched` | bool | Whether the attendee was automatically matched to an invitee by name (attendee records only; `false` for invitee-only records) |

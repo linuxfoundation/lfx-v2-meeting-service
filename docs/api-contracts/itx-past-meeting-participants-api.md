@@ -85,6 +85,10 @@ Content-Type: application/json
   "org_is_project_member": true,
   "is_verified": true,
   "is_unknown": false,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe",
   "sessions": [
     {
       "participant_uuid": "session-uuid",
@@ -113,6 +117,10 @@ Content-Type: application/json
 - `org_is_project_member` (boolean) - Whether org has project membership
 - `is_verified` (boolean) - Whether attendee has been verified (attendee-only field)
 - `is_unknown` (boolean) - Whether attendee is marked as unknown (attendee-only field)
+- `is_ai_reconciled` (boolean) - Whether the attendee record was last updated via AI reconciliation (attendee-only field)
+- `is_auto_matched` (boolean) - Whether the attendee was automatically matched to an invitee by name (attendee-only field)
+- `zoom_user_name` (string) - Zoom display name of the attendee (attendee-only field)
+- `mapped_invitee_name` (string) - Full name of the invitee the attendee was matched to (attendee-only field)
 - `sessions` (array) - Session objects with join/leave times (attendee-only field)
 
 **Response**: `201 Created`
@@ -142,6 +150,10 @@ Content-Type: application/json
   "org_is_project_member": true,
   "is_verified": true,
   "is_unknown": false,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe",
   "average_attendance": 0.85,
   "sessions": [
     {
@@ -220,7 +232,12 @@ Content-Type: application/json
   "avatar_url": "https://example.com/new-avatar.jpg",
   "committee_role": "chair",
   "committee_voting_status": "active",
-  "is_verified": true
+  "is_verified": true,
+  "is_unknown": false,
+  "is_ai_reconciled": false,
+  "is_auto_matched": true,
+  "zoom_user_name": "Jane D. (Zoom)",
+  "mapped_invitee_name": "Jane Doe"
 }
 ```
 
@@ -247,6 +264,10 @@ Content-Type: application/json
    - Setting `is_attended: true` creates or updates the attendee record
    - Setting `is_attended: false` deletes the attendee record if it exists
 
+4. **Attaching identity to an existing attendee**: `email`, `username`, `lf_user_id`, and `is_unknown` are no longer create-time-only. When `is_attended: true` targets an attendee record that already exists, these identity fields are forwarded to the attendee update as well, so an admin can attach a matched identity (or explicitly clear `is_unknown`) after the record was created. Fields omitted from the request are left unchanged on the existing record — they are not reset to empty/false. Because ITX returns `204 No Content` on a successful attendee update, the proxy refetches the attendee (`GET /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`) to build the synchronous response, ensuring omitted fields reflect their true persisted value rather than being echoed back as zero values.
+
+   This refetch-for-ground-truth guarantee is best-effort, not absolute: the write to ITX has already succeeded by the time it runs (the `204` confirms it), but if the refetch itself fails, the proxy falls back to a synthesized response built from a snapshot taken *before* the update plus the fields the request explicitly set. Fields omitted from the request keep the pre-update snapshot's true value in this fallback. Only in the rare case where both the post-update refetch and the pre-update snapshot fail does an omitted boolean/string field collapse to its zero value (`false`/`""`) in the synchronous response — a state that is corrected on the next successful read, since the underlying persisted record was never affected by this degraded path.
+
 **Response**: `200 OK`
 
 Response body is identical to Create Past Meeting Participant response.
@@ -262,6 +283,8 @@ Updates invitee and/or attendee records through the ITX API based on the provide
 **Method (Delete Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
 
 **Method (Create Attendee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/attendees`
+
+**Method (Get Attendee)**: `GET /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}` — used internally by the proxy to refetch ground truth after a `204 No Content` update response; not exposed as its own proxy endpoint.
 
 **Method (Update Attendee)**: `PUT /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`
 
@@ -338,6 +361,10 @@ Deletes both invitee and attendee records if they exist.
 | `org_is_project_member` | `org_is_project_member` | Identical |
 | `is_verified` | `is_verified` | Identical |
 | `is_unknown` | `is_unknown` | Identical |
+| `is_ai_reconciled` | `is_ai_reconciled` | Identical (attendee only) |
+| `is_auto_matched` | `is_auto_matched` | Identical (attendee only) |
+| `zoom_user_name` | `zoom_user_name` | Identical (attendee only) |
+| `mapped_invitee_name` | `mapped_invitee_name` | Identical (attendee only) |
 | `sessions` | `sessions` | Identical |
 | `average_attendance` | `average_attendance` | Identical (read-only) |
 

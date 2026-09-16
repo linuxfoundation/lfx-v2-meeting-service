@@ -162,6 +162,24 @@ func TestConvertMapToInviteResponseData_MailerDaemon(t *testing.T) {
 	}
 }
 
+// TestConvertMapToInviteResponseData_NoneMeetingID verifies that invite responses with
+// meeting_id "NONE" (a v1 sentinel for unassociated responses) are silently skipped,
+// even when other required fields (id) are absent — confirming the guard fires before
+// required-field validation.
+func TestConvertMapToInviteResponseData_NoneMeetingID(t *testing.T) {
+	v1Data := map[string]interface{}{
+		"id":         "",
+		"meeting_id": "NONE",
+		"email":      "user@example.com",
+		"response":   "accepted",
+	}
+	// v1ObjectsKV is nil — the sentinel check must return before any KV call is made.
+	// An empty id would trigger the required-field error if the guard were after validation.
+	result, err := convertMapToInviteResponseData(context.Background(), v1Data, stubV1UserLookup{}, stubIDMapper{}, nil, slog.Default())
+	require.NoError(t, err)
+	assert.Nil(t, result)
+}
+
 func TestMaybeSendInvite(t *testing.T) {
 	const (
 		registrantUID = "reg-123"

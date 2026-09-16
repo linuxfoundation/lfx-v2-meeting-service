@@ -18,8 +18,8 @@ import (
 // Meeting Attachment Event Handler
 // =============================================================================
 
-// AttachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
-type AttachmentDBRaw struct {
+// attachmentDBRaw represents raw meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type attachmentDBRaw struct {
 	ID               string                `json:"id"`
 	MeetingID        string                `json:"meeting_id"`
 	Type             string                `json:"type"`
@@ -43,8 +43,8 @@ type AttachmentDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (a *AttachmentDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias AttachmentDBRaw
+func (a *attachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias attachmentDBRaw
 	tmp := struct {
 		FileSize interface{} `json:"file_size"`
 		*Alias
@@ -93,6 +93,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_id", attachmentData.MeetingID)
+	funcLogger.InfoContext(ctx, "processing meeting attachment update")
 
 	// Look up project UID and primary committee SFID from parent meeting.
 	// lookupProjectFromMeeting returns ("","",nil) when the meeting record is missing.
@@ -156,7 +157,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting attachment mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed meeting attachment")
+	funcLogger.InfoContext(ctx, "successfully processed meeting attachment", "action", string(indexerAction))
 	return false
 }
 
@@ -172,6 +173,7 @@ func (h *EventHandlers) handleMeetingAttachmentDelete(
 		h.logger.DebugContext(ctx, "meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing meeting attachment delete", "attachment_uid", attachmentUID)
 	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_meeting_attachment",
 		tombstoneKeyFmts: []string{"v1_meeting_attachments.%s"},
@@ -180,14 +182,9 @@ func (h *EventHandlers) handleMeetingAttachmentDelete(
 
 // convertMapToMeetingAttachmentData converts a raw v1 map to MeetingAttachmentEventData
 func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.MeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[attachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp AttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)
@@ -248,8 +245,8 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 // Past Meeting Attachment Event Handler
 // =============================================================================
 
-// PastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
-type PastMeetingAttachmentDBRaw struct {
+// pastMeetingAttachmentDBRaw represents raw past meeting attachment data from v1 DynamoDB/NATS KV bucket.
+type pastMeetingAttachmentDBRaw struct {
 	ID                     string                `json:"id"`
 	MeetingAndOccurrenceID string                `json:"meeting_and_occurrence_id"`
 	MeetingID              string                `json:"meeting_id"`
@@ -274,8 +271,8 @@ type PastMeetingAttachmentDBRaw struct {
 }
 
 // UnmarshalJSON implements custom unmarshaling to handle both string and number inputs for numeric fields.
-func (a *PastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias PastMeetingAttachmentDBRaw
+func (a *pastMeetingAttachmentDBRaw) UnmarshalJSON(data []byte) error {
+	type Alias pastMeetingAttachmentDBRaw
 	tmp := struct {
 		FileSize interface{} `json:"file_size"`
 		*Alias
@@ -308,6 +305,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		return false
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
+	funcLogger.InfoContext(ctx, "processing past meeting attachment update")
 
 	// Look up project info and primary committee SFID from the parent past meeting record.
 	// lookupProjectFromPastMeeting returns ("","","",nil) for ErrKeyNotFound (permanent miss)
@@ -356,7 +354,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting attachment mapping")
 	}
 
-	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment")
+	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment", "action", string(indexerAction))
 	return false
 }
 
@@ -372,6 +370,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentDelete(
 		h.logger.DebugContext(ctx, "past meeting attachment delete already processed, skipping", "attachment_uid", attachmentUID)
 		return false
 	}
+	h.logger.InfoContext(ctx, "processing past meeting attachment delete", "attachment_uid", attachmentUID)
 	return h.handleMeetingTypeDelete(ctx, key, attachmentUID, []byte(attachmentUID), meetingDeleteConfig{
 		indexerSubject:   "lfx.index.v1_past_meeting_attachment",
 		tombstoneKeyFmts: []string{"v1_past_meeting_attachments.%s"},
@@ -380,14 +379,9 @@ func (h *EventHandlers) handlePastMeetingAttachmentDelete(
 
 // convertMapToPastMeetingAttachmentData converts a raw v1 map to PastMeetingAttachmentEventData
 func convertMapToPastMeetingAttachmentData(v1Data map[string]interface{}) (*models.PastMeetingAttachmentEventData, error) {
-	raw, err := json.Marshal(v1Data)
+	tmp, err := decodeV1[pastMeetingAttachmentDBRaw](v1Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal v1Data: %w", err)
-	}
-
-	var tmp PastMeetingAttachmentDBRaw
-	if err := json.Unmarshal(raw, &tmp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal past meeting attachment data: %w", err)
+		return nil, fmt.Errorf("failed to decode past meeting attachment data: %w", err)
 	}
 
 	createdAt, _ := parseTime(tmp.CreatedAt)

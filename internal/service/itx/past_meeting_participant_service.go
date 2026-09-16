@@ -10,6 +10,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -66,6 +67,10 @@ type ParticipantResponse struct {
 	// Attendee-specific fields
 	IsVerified        bool
 	IsUnknown         bool
+	IsAIReconciled    bool
+	IsAutoMatched     bool
+	ZoomUserName      string
+	MappedInviteeName string
 	AverageAttendance int
 	Sessions          []itx.AttendeeSession
 
@@ -116,8 +121,10 @@ func (s *PastMeetingParticipantService) CreateParticipant(
 		}
 		resp, err := s.participantClient.CreateAttendee(ctx, pastMeetingID, attendeeReq)
 		if err != nil {
-			// If invitee was created but attendee fails, we have a partial state
-			// ITX handles cleanup, but we return the error
+			if isInvited {
+				slog.WarnContext(ctx, "partial create state: invitee created but attendee creation failed",
+					"past_meeting_id", pastMeetingID)
+			}
 			return nil, fmt.Errorf("failed to create attendee: %w", err)
 		}
 		attendeeResp = resp
@@ -141,8 +148,22 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 	// profile and the other times out. Matches CreateParticipant's approach.
 	updater := s.buildRequestingUser(ctx)
 
-	inviteeResp, inviteeExists := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
-	attendeeResp, attendeeExists := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
+	// Surface a failed ITX save as an error instead of silently returning a
+	// successful response that doesn't reflect what was actually persisted.
+	// Abort before the attendee operation if the invitee operation already
+	// failed, mirroring CreateParticipant's sequential-abort pattern - running
+	// the attendee write anyway would persist partial state and encourage a
+	// retry of an already-applied write.
+	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
+	if inviteeErr != nil {
+		return nil, fmt.Errorf("failed to update invitee: %w", inviteeErr)
+	}
+
+	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
+	if attendeeErr != nil {
+		return nil, fmt.Errorf("failed to update attendee: %w", attendeeErr)
+	}
+
 	return mergeParticipantResponses(p.PastMeetingID, inviteeResp, attendeeResp, inviteeExists, attendeeExists), nil
 }
 
@@ -152,9 +173,9 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 	isInvited *bool,
 	inviteeReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) (*itx.InviteeResponse, bool) {
+) (*itx.InviteeResponse, bool, error) {
 	if isInvited == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	var actualInviteeID string
@@ -166,25 +187,39 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 			actualInviteeID = inviteeID
 		}
 	} else {
-		actualInviteeID, inviteeExists = s.checkInviteeExists(ctx, participantID)
+		var err error
+		actualInviteeID, inviteeExists, err = s.checkInviteeExists(ctx, participantID)
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	if !*isInvited {
 		if inviteeExists && actualInviteeID != "" {
-			s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID)
+			if err := s.deleteInvitee(ctx, pastMeetingID, actualInviteeID, participantID); err != nil {
+				return nil, false, err
+			}
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
 	if !inviteeExists && inviteeReq != nil {
-		return s.createInviteeFromUpdate(ctx, pastMeetingID, inviteeReq, updater), true
+		resp, err := s.createInviteeFromUpdate(ctx, pastMeetingID, inviteeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
 	if inviteeExists && inviteeReq != nil && actualInviteeID != "" {
-		return s.updateInvitee(ctx, pastMeetingID, actualInviteeID, participantID, inviteeReq, updater), true
+		resp, err := s.updateInvitee(ctx, pastMeetingID, actualInviteeID, participantID, inviteeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
-	return nil, inviteeExists
+	return nil, inviteeExists, nil
 }
 
 func (s *PastMeetingParticipantService) handleAttendeeOperation(
@@ -193,119 +228,192 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	isAttended *bool,
 	attendeeReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) (*itx.AttendeeResponse, bool) {
-	if isAttended == nil {
-		return nil, false
+) (*itx.AttendeeResponse, bool, error) {
+	// A nil isAttended with a non-nil attendeeReq is a reconciliation-only update
+	// (e.g. is_ai_reconciled/zoom_user_name) that carries no attendance status
+	// change; it must still reach ITX rather than being silently dropped.
+	if isAttended == nil && attendeeReq == nil {
+		return nil, false, nil
 	}
 
 	var actualAttendeeID string
 	var attendeeExists bool
 
 	if attendeeID != "" {
-		attendeeExists = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
+		var err error
+		attendeeExists, err = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
+		if err != nil {
+			return nil, false, err
+		}
 		if attendeeExists {
 			actualAttendeeID = attendeeID
 		}
 	} else {
-		actualAttendeeID, attendeeExists = s.checkAttendeeExists(ctx, participantID)
-	}
-
-	if !*isAttended {
-		if attendeeExists && actualAttendeeID != "" {
-			s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID)
+		var err error
+		actualAttendeeID, attendeeExists, err = s.checkAttendeeExists(ctx, participantID)
+		if err != nil {
+			return nil, false, err
 		}
-		return nil, false
 	}
 
-	if !attendeeExists && attendeeReq != nil {
-		return s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq, updater), true
+	if isAttended != nil && !*isAttended {
+		if attendeeExists && actualAttendeeID != "" {
+			if err := s.deleteAttendee(ctx, pastMeetingID, actualAttendeeID, participantID); err != nil {
+				return nil, false, err
+			}
+		}
+		return nil, false, nil
+	}
+
+	// Only create a new attendee record when the caller explicitly marked
+	// attendance. A reconciliation-only update (isAttended == nil) against a
+	// participant with no attendee record has nothing to reconcile yet.
+	if !attendeeExists && attendeeReq != nil && isAttended != nil && *isAttended {
+		resp, err := s.createAttendeeFromUpdate(ctx, pastMeetingID, attendeeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
 	if attendeeExists && attendeeReq != nil && actualAttendeeID != "" {
-		return s.updateAttendee(ctx, pastMeetingID, actualAttendeeID, participantID, attendeeReq, updater), true
+		resp, err := s.updateAttendee(ctx, pastMeetingID, actualAttendeeID, participantID, attendeeReq, updater)
+		if err != nil {
+			return nil, false, err
+		}
+		return resp, true, nil
 	}
 
-	return nil, attendeeExists
+	return nil, attendeeExists, nil
 }
 
-// checkInviteeExists checks if invitee exists by attempting ID mapping
-// Returns invitee ID and existence flag
-func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, participantID string) (string, bool) {
+// checkInviteeExists checks if invitee exists by attempting ID mapping.
+// Returns invitee ID and existence flag. A non-nil error means the mapping
+// lookup itself failed (e.g. NATS timeout/unavailability) - distinct from a
+// genuine "not found", which the ID mapper reports as a validation error and
+// is treated here as inviteeExists == false, nil.
+func (s *PastMeetingParticipantService) checkInviteeExists(ctx context.Context, participantID string) (string, bool, error) {
 	inviteeID, err := s.idMapper.MapParticipantV2ToInviteeID(ctx, participantID)
-	if err != nil || inviteeID == "" {
-		slog.DebugContext(ctx, "Invitee does not exist (ID mapping failed or empty)",
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "invitee does not exist (mapping not found)",
+				"participant_id", participantID,
+				logging.ErrKey, err)
+			return participantID, false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check invitee existence via ID mapping",
 			"participant_id", participantID,
-			"error", err)
-		return participantID, false
+			logging.ErrKey, err)
+		return "", false, err
+	}
+	if inviteeID == "" {
+		slog.DebugContext(ctx, "invitee does not exist (empty mapping result)",
+			"participant_id", participantID)
+		return participantID, false, nil
 	}
 
-	slog.DebugContext(ctx, "Invitee exists - mapped participant ID to invitee ID",
+	slog.DebugContext(ctx, "invitee exists - mapped participant ID to invitee ID",
 		"participant_id", participantID,
 		"invitee_id", inviteeID)
-	return inviteeID, true
+	return inviteeID, true, nil
 }
 
-func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context, participantID string) (string, bool) {
+// checkAttendeeExists checks if attendee exists by attempting ID mapping.
+// See checkInviteeExists for the not-found vs mapping-error distinction.
+func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context, participantID string) (string, bool, error) {
 	attendeeID, err := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID)
-	if err != nil || attendeeID == "" {
-		slog.DebugContext(ctx, "Attendee does not exist (ID mapping failed or empty)",
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "attendee does not exist (mapping not found)",
+				"participant_id", participantID,
+				logging.ErrKey, err)
+			return participantID, false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check attendee existence via ID mapping",
 			"participant_id", participantID,
-			"error", err)
-		return participantID, false
+			logging.ErrKey, err)
+		return "", false, err
+	}
+	if attendeeID == "" {
+		slog.DebugContext(ctx, "attendee does not exist (empty mapping result)",
+			"participant_id", participantID)
+		return participantID, false, nil
 	}
 
-	slog.DebugContext(ctx, "Attendee exists - mapped participant ID to attendee ID",
+	slog.DebugContext(ctx, "attendee exists - mapped participant ID to attendee ID",
 		"participant_id", participantID,
 		"attendee_id", attendeeID)
-	return attendeeID, true
+	return attendeeID, true, nil
 }
 
 func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx context.Context, inviteeID string) bool {
 	inviteeID, err := s.idMapper.MapInviteeIDToParticipantV2(ctx, inviteeID)
 	exists := inviteeID != "" && err == nil
-	slog.DebugContext(ctx, "Checked invitee existence from invitee ID",
+	slog.DebugContext(ctx, "checked invitee existence from invitee ID",
 		"invitee_id", inviteeID,
 		"exists", exists,
-		"error", err)
+		logging.ErrKey, err)
 	return exists
 }
 
-func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) bool {
-	attendeeID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
-	exists := attendeeID != "" && err == nil
-	slog.DebugContext(ctx, "Checked attendee existence from attendee ID",
+// checkAttendeeExistsFromAttendeeID checks if an attendee exists given an
+// already-known attendee ID. See checkInviteeExists for the not-found vs
+// mapping-error distinction: a non-nil error here means the reverse-mapping
+// lookup itself failed (e.g. NATS timeout/unavailability), which must be
+// propagated rather than collapsed to "does not exist" - the latter would
+// let a reconciliation-only update (nil isAttended) silently no-op instead
+// of surfacing the outage.
+func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) (bool, error) {
+	mappedID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
+	if err != nil {
+		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
+			slog.DebugContext(ctx, "attendee does not exist (reverse mapping not found)",
+				"attendee_id", attendeeID,
+				logging.ErrKey, err)
+			return false, nil
+		}
+		slog.ErrorContext(ctx, "failed to check attendee existence via reverse ID mapping",
+			"attendee_id", attendeeID,
+			logging.ErrKey, err)
+		return false, err
+	}
+	exists := mappedID != ""
+	slog.DebugContext(ctx, "checked attendee existence from attendee ID",
 		"attendee_id", attendeeID,
-		"exists", exists,
-		"error", err)
-	return exists
+		"exists", exists)
+	return exists, nil
 }
 
 // deleteInvitee deletes invitee record
 func (s *PastMeetingParticipantService) deleteInvitee(
 	ctx context.Context,
 	pastMeetingID, inviteeID, participantID string,
-) {
+) error {
 	if err := s.participantClient.DeleteInvitee(ctx, pastMeetingID, inviteeID); err != nil {
-		slog.WarnContext(ctx, "Failed to delete invitee during update",
+		slog.ErrorContext(ctx, "failed to delete invitee during update",
 			"participant_id", participantID,
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
+		return err
 	}
+	return nil
 }
 
 // deleteAttendee deletes attendee record
 func (s *PastMeetingParticipantService) deleteAttendee(
 	ctx context.Context,
 	pastMeetingID, attendeeID, participantID string,
-) {
+) error {
 	if err := s.participantClient.DeleteAttendee(ctx, pastMeetingID, attendeeID); err != nil {
-		slog.WarnContext(ctx, "Failed to delete attendee during update",
+		slog.ErrorContext(ctx, "failed to delete attendee during update",
 			"participant_id", participantID,
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
+			logging.ErrKey, err)
+		return err
 	}
+	return nil
 }
 
 // createInviteeFromUpdate creates a new invitee from update request
@@ -314,7 +422,7 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 	pastMeetingID string,
 	updateReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) *itx.InviteeResponse {
+) (*itx.InviteeResponse, error) {
 	// Convert UpdateInviteeRequest to CreateInviteeRequest
 	createReq := &itx.CreateInviteeRequest{
 		// Identity fields
@@ -337,13 +445,13 @@ func (s *PastMeetingParticipantService) createInviteeFromUpdate(
 
 	resp, err := s.participantClient.CreateInvitee(ctx, pastMeetingID, createReq)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create invitee during update",
+		slog.ErrorContext(ctx, "failed to create invitee during update",
 			"past_meeting_id", pastMeetingID,
-			"error", err)
-		return nil
+			logging.ErrKey, err)
+		return nil, err
 	}
 
-	return resp
+	return resp, nil
 }
 
 // createAttendeeFromUpdate creates a new attendee from update request
@@ -352,14 +460,23 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 	pastMeetingID string,
 	updateReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) *itx.AttendeeResponse {
+) (*itx.AttendeeResponse, error) {
 	// Convert UpdateAttendeeRequest to CreateAttendeeRequest
 	createReq := &itx.CreateAttendeeRequest{
+		Name:                  updateReq.Name,
+		Email:                 updateReq.Email,
+		LFUserID:              updateReq.LFUserID,
+		LFSSO:                 updateReq.LFSSO,
 		Org:                   updateReq.Org,
 		JobTitle:              updateReq.JobTitle,
 		CommitteeRole:         updateReq.CommitteeRole,
 		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
 		IsVerified:            updateReq.IsVerified,
+		IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
+		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+		MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
 		// This path is exercised when an update targets an attendee that doesn't yet
 		// exist; stamp created_by since ITX will treat this as a fresh record.
 		// updater is resolved once in UpdateParticipant so both the invitee and
@@ -369,13 +486,13 @@ func (s *PastMeetingParticipantService) createAttendeeFromUpdate(
 
 	resp, err := s.participantClient.CreateAttendee(ctx, pastMeetingID, createReq)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create attendee during update",
+		slog.ErrorContext(ctx, "failed to create attendee during update",
 			"past_meeting_id", pastMeetingID,
-			"error", err)
-		return nil
+			logging.ErrKey, err)
+		return nil, err
 	}
 
-	return resp
+	return resp, nil
 }
 
 // updateInvitee updates invitee record
@@ -384,7 +501,7 @@ func (s *PastMeetingParticipantService) updateInvitee(
 	pastMeetingID, inviteeID, participantID string,
 	updateReq *itx.UpdateInviteeRequest,
 	updater *itx.User,
-) *itx.InviteeResponse {
+) (*itx.InviteeResponse, error) {
 	// Stamp updated_by from the requester so ITX overwrites the stored value on the
 	// invitee record instead of preserving stale data. updater is resolved once in
 	// UpdateParticipant to keep the invitee and attendee sides consistent.
@@ -392,16 +509,16 @@ func (s *PastMeetingParticipantService) updateInvitee(
 
 	resp, err := s.participantClient.UpdateInvitee(ctx, pastMeetingID, inviteeID, updateReq)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to update invitee",
+		slog.ErrorContext(ctx, "failed to update invitee",
 			"participant_id", participantID,
 			"invitee_id", inviteeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
-		return nil
+			logging.ErrKey, err)
+		return nil, err
 	}
 
 	// resp may be nil if ITX returns 204 No Content
-	return resp
+	return resp, nil
 }
 
 // updateAttendee updates attendee record
@@ -410,23 +527,133 @@ func (s *PastMeetingParticipantService) updateAttendee(
 	pastMeetingID, attendeeID, participantID string,
 	updateReq *itx.UpdateAttendeeRequest,
 	updater *itx.User,
-) *itx.AttendeeResponse {
+) (*itx.AttendeeResponse, error) {
 	// Stamp updated_by from the requester so ITX overwrites the stored value on the
 	// attendee record instead of preserving stale data. updater is resolved once in
 	// UpdateParticipant to keep the invitee and attendee sides consistent.
 	updateReq.UpdatedBy = updater
 
-	resp, err := s.participantClient.UpdateAttendee(ctx, pastMeetingID, attendeeID, updateReq)
-	if err != nil {
-		slog.ErrorContext(ctx, "Failed to update attendee",
+	// Snapshot the attendee's state before the update so that, if the post-update
+	// refetch below fails, the degraded fallback has a real last-known value for
+	// fields the update didn't touch instead of guessing. Best-effort: a failure
+	// here just means the degraded fallback (if reached) has less to work with.
+	preUpdate, preErr := s.participantClient.GetAttendee(ctx, pastMeetingID, attendeeID)
+	if preErr != nil {
+		slog.WarnContext(ctx, "failed to snapshot attendee before update",
 			"participant_id", participantID,
 			"attendee_id", attendeeID,
 			"past_meeting_id", pastMeetingID,
-			"error", err)
-		return nil
+			logging.ErrKey, preErr)
 	}
 
-	// resp may be nil if ITX returns 204 No Content
+	resp, err := s.participantClient.UpdateAttendee(ctx, pastMeetingID, attendeeID, updateReq)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to update attendee",
+			"participant_id", participantID,
+			"attendee_id", attendeeID,
+			"past_meeting_id", pastMeetingID,
+			logging.ErrKey, err)
+		return nil, err
+	}
+
+	if resp == nil {
+		// ITX returns 204 No Content on a successful update with no response body.
+		// Refetch the persisted record so the synchronous response reflects the
+		// true stored state. Echoing the request values back would incorrectly
+		// collapse omitted pointer fields (e.g. is_unknown left nil to mean
+		// "don't change it") to their zero value, falsely reporting a known
+		// attendee as unknown or vice versa.
+		fetched, getErr := s.participantClient.GetAttendee(ctx, pastMeetingID, attendeeID)
+		if getErr != nil {
+			// The update itself already succeeded (204 confirms the write). A failed
+			// refetch should not fail the overall request, so degrade gracefully.
+			// Merge the request's explicitly-set fields onto the pre-update snapshot
+			// (when available) so fields the request left nil keep their true
+			// last-known value instead of collapsing to the Go zero value.
+			slog.WarnContext(ctx, "failed to refetch attendee after 204 update; synthesizing response instead",
+				"participant_id", participantID,
+				"attendee_id", attendeeID,
+				"past_meeting_id", pastMeetingID,
+				logging.ErrKey, getErr)
+			resp = synthesizeAttendeeResponse(attendeeID, updateReq, preUpdate)
+		} else {
+			resp = fetched
+		}
+	}
+
+	return resp, nil
+}
+
+// synthesizeAttendeeResponse builds a best-effort AttendeeResponse for the case where
+// both the post-update refetch and (possibly) the pre-update snapshot are unavailable.
+// Fields explicitly set on updateReq always win; fields left nil (pointer fields) or
+// zero-valued (plain scalar fields, since ITX's omitempty means the request never sent
+// them) fall back to the pre-update snapshot's true persisted value when one was
+// captured, and only collapse to the Go zero value when neither source has data (pre
+// is nil).
+func synthesizeAttendeeResponse(attendeeID string, updateReq *itx.UpdateAttendeeRequest, pre *itx.AttendeeResponse) *itx.AttendeeResponse {
+	resp := &itx.AttendeeResponse{
+		ID:                    attendeeID,
+		Name:                  updateReq.Name,
+		Email:                 updateReq.Email,
+		LFUserID:              updateReq.LFUserID,
+		LFSSO:                 updateReq.LFSSO,
+		Org:                   updateReq.Org,
+		JobTitle:              updateReq.JobTitle,
+		IsVerified:            updateReq.IsVerified,
+		IsUnknown:             utils.BoolValue(updateReq.IsUnknown),
+		IsAIReconciled:        utils.BoolValue(updateReq.IsAIReconciled),
+		IsAutoMatched:         utils.BoolValue(updateReq.IsAutoMatched),
+		ZoomUserName:          utils.StringValue(updateReq.ZoomUserName),
+		MappedInviteeName:     utils.StringValue(updateReq.MappedInviteeName),
+		CommitteeRole:         updateReq.CommitteeRole,
+		CommitteeVotingStatus: updateReq.CommitteeVotingStatus,
+	}
+	if pre == nil {
+		return resp
+	}
+	if updateReq.Name == "" {
+		resp.Name = pre.Name
+	}
+	if updateReq.Email == "" {
+		resp.Email = pre.Email
+	}
+	if updateReq.LFUserID == "" {
+		resp.LFUserID = pre.LFUserID
+	}
+	if updateReq.LFSSO == "" {
+		resp.LFSSO = pre.LFSSO
+	}
+	if updateReq.Org == "" {
+		resp.Org = pre.Org
+	}
+	if updateReq.JobTitle == "" {
+		resp.JobTitle = pre.JobTitle
+	}
+	if !updateReq.IsVerified {
+		resp.IsVerified = pre.IsVerified
+	}
+	if updateReq.CommitteeRole == "" {
+		resp.CommitteeRole = pre.CommitteeRole
+	}
+	if updateReq.CommitteeVotingStatus == "" {
+		resp.CommitteeVotingStatus = pre.CommitteeVotingStatus
+	}
+	if updateReq.IsUnknown == nil {
+		resp.IsUnknown = pre.IsUnknown
+	}
+	if updateReq.IsAIReconciled == nil {
+		resp.IsAIReconciled = pre.IsAIReconciled
+	}
+	if updateReq.IsAutoMatched == nil {
+		resp.IsAutoMatched = pre.IsAutoMatched
+	}
+	if updateReq.ZoomUserName == nil {
+		resp.ZoomUserName = pre.ZoomUserName
+	}
+	if updateReq.MappedInviteeName == nil {
+		resp.MappedInviteeName = pre.MappedInviteeName
+	}
 	return resp
 }
 
@@ -448,11 +675,11 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	inviteeErr := s.participantClient.DeleteInvitee(ctx, pastMeetingID, idToUseInvitee)
 	if inviteeErr != nil {
-		slog.ErrorContext(ctx, "Failed to delete invitee",
+		slog.WarnContext(ctx, "failed to delete invitee",
 			"participant_id", participantID,
 			"invitee_id", idToUseInvitee,
 			"past_meeting_id", pastMeetingID,
-			"error", inviteeErr)
+			logging.ErrKey, inviteeErr)
 	}
 
 	// Try to map V2 participant ID to attendee ID
@@ -466,11 +693,11 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 
 	attendeeErr := s.participantClient.DeleteAttendee(ctx, pastMeetingID, idToUseAttendee)
 	if attendeeErr != nil {
-		slog.ErrorContext(ctx, "Failed to delete attendee",
+		slog.WarnContext(ctx, "failed to delete attendee",
 			"participant_id", participantID,
 			"attendee_id", idToUseAttendee,
 			"past_meeting_id", pastMeetingID,
-			"error", attendeeErr)
+			logging.ErrKey, attendeeErr)
 	}
 
 	// Return error if either deletion failed
@@ -556,6 +783,10 @@ func mergeParticipantResponses(
 	if attendee != nil {
 		unified.IsVerified = attendee.IsVerified
 		unified.IsUnknown = attendee.IsUnknown
+		unified.IsAIReconciled = attendee.IsAIReconciled
+		unified.IsAutoMatched = attendee.IsAutoMatched
+		unified.ZoomUserName = attendee.ZoomUserName
+		unified.MappedInviteeName = attendee.MappedInviteeName
 		unified.AverageAttendance = attendee.AverageAttendance
 		unified.Sessions = attendee.Sessions
 	}

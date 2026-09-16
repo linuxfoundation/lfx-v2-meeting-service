@@ -6,11 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - `/lfx-skills:lfx` — cross-repo routing, "where does X live", owner/peer repos, missing checkouts.
 > - `/lfx-skills:lfx-platform-architecture` — platform composition, V2 service classes, write/read/access-check flows, NATS/KV ownership, Heimdall, OpenFGA, Helm, ArgoCD.
 > - `/lfx-skills:lfx-itx-integration` — ITX OAuth2 M2M, v1/v2 ID mapping, KV event sync.
->
-> **Repo-local meeting-service skills:**
-> - `.claude/skills/meeting-service-code-reviewer/` — audits a change against this repo's written rule surface (CLAUDE.md, the FGA/indexer/event-processing/ITX contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes the rule it cites.
-> - `.claude/skills/meeting-service-learnings-reviewer/` — matches a change against `docs/reviews/knowledge-base/`, this repo's patterns mined from real past PR review comments.
-> - Run both with `/lfx-skills:lfx-local-review` after every pre-PR commit (see Local work cycle below).
 
 ## Developer Standards
 
@@ -173,11 +168,12 @@ The service follows a clean architecture pattern with:
 - Auth service for JWT validation
 - ITX services in `itx/` subdirectory: `meeting_service.go`, `registrant_service.go`, `past_meeting_service.go`, `past_meeting_summary_service.go`, `past_meeting_participant_service.go`, `meeting_attachment_service.go`, `past_meeting_attachment_service.go`
 - `audit.go` — `auditStamper` embedded by each ITX service; resolves requesting principal to `*itx.User` for `created_by`/`updated_by` stamps
+- `id_mapping.go` — shared v1↔v2 project/committee mapping helpers (`mapProjectFieldV2ToV1`, `mapCommitteeFieldV1ToV2Graceful`, `mapMeetingCommitteesV1ToV2Graceful`, etc.) used by meeting, registrant, and past-meeting services
 - `preferred_email_service.go` — NATS RPC handler for preferred meeting-invite email
 
 **Infrastructure Layer** (`internal/infrastructure/`)
 
-- ITX HTTP client (`proxy/`) with OAuth2 authentication and PII-redacted debug logging
+- ITX HTTP client (`itx/`) — layered, resource-oriented adapter to the ITX Zoom API. Split into `auth.go` (Auth0 M2M), `transport.go` (shared HTTP helpers), `client.go` (config, `NewClient`), `accessors.go` (typed sub-client accessors: `Meetings()`, `Registrants()`, `PastMeetings()`, `PastMeetingSummaries()`, `Participants()`, `MeetingAttachments()`, `PastMeetingAttachments()`), and one file per resource domain (`meetings.go`, `registrants.go`, `past_meetings.go`, `participants.go`, `meeting_attachments.go`, `past_meeting_attachments.go`, `invite_acceptance.go`). PII-redacted debug logging via `logredact.go` in the sibling `proxy/` sub-package.
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing
@@ -263,14 +259,19 @@ directive newer than that bundled version breaks those checks.
 To find MegaLinter's bundled Go version:
 
 ```bash
-# 1. Find the MegaLinter flavor and pinned version tag used in CI.
-grep -A1 'oxsecurity/megalinter' .github/workflows/*.yaml
-# e.g. "uses: oxsecurity/megalinter/flavors/<flavor>@<sha>  # <tag>"
+# 1. Find the MegaLinter flavor and pinned version tag used in CI, and
+#    capture them into variables for the next command.
+set -euo pipefail
+line=$(grep -oE 'flavors/[a-z]+@[0-9a-f]+ *# *v[0-9.]+' .github/workflows/*.yaml | head -1)
+MEGALINTER_FLAVOR=$(echo "$line" | grep -oE 'flavors/[a-z]+' | cut -d/ -f2)
+MEGALINTER_TAG=$(echo "$line" | grep -oE 'v[0-9.]+$')
 
-# 2. Fetch that flavor's Dockerfile and read its GO_ALPINE_VERSION (or
-#    GO_IMAGE_VERSION) build arg.
-curl -s "https://raw.githubusercontent.com/oxsecurity/megalinter/<tag>/flavors/<flavor>/Dockerfile" \
-  | grep -i 'GO_ALPINE_VERSION\|GO_IMAGE_VERSION'
+# 2. Fetch that flavor's Dockerfile and read its GO_ALPINE_VERSION build
+#    arg, this is the bundled Go version used by golangci-lint and other
+#    Go-based linters. GO_IMAGE_VERSION only selects the revive builder
+#    image and is not the bundled Go version.
+curl -fsS "https://raw.githubusercontent.com/oxsecurity/megalinter/${MEGALINTER_TAG}/flavors/${MEGALINTER_FLAVOR}/Dockerfile" \
+  | grep -i 'GO_ALPINE_VERSION'
 ```
 
 `go.mod`'s `go` directive must never exceed that bundled version. Staying
@@ -284,69 +285,26 @@ a given minor version -- query the official `go.dev/dl` JSON feed instead:
 
 ```bash
 # Find the latest patch release for the minor version pinned in go.mod.
+set -euo pipefail
 MINOR=$(grep '^go ' go.mod | awk '{print $2}' | cut -d. -f1,2)
-curl -s "https://go.dev/dl/?mode=json&include=all" \
+result=$(curl -fsS "https://go.dev/dl/?mode=json&include=all" \
   | jq -r --arg m "go${MINOR}." '.[].version | select(startswith($m))' \
-  | sort -V | tail -1
+  | sort -V | tail -1)
+test -n "$result" || { echo "lookup failed" >&2; exit 1; }
+echo "$result"
 ```
 
-## Local work cycle — post-commit and pre-PR review
+## Review lifecycle configuration
 
-This repo runs a local code review before a PR exists. It is an author-side
-workflow: it produces evidence for the developer, and it never posts to GitHub,
-opens or gates a PR, or touches a merge check. It is a **cross-model** review
-only on the Pi path; when Pi is unavailable the trio falls back to Claude, which
-is reported as such and is not cross-model evidence.
+Load and follow `/lfx-skills:lfx-local-review` as the sole owner of the review
+lifecycle. The values below configure that skill and do not replace or override
+its instructions.
 
-- **After every normal signed commit while still pre-PR**, run
-  `/lfx-skills:lfx-local-review`. It runs the `general`, `repo_code` and
-  `repo_learnings` reviewers in parallel against the committed target and returns
-  **ordinary Markdown** reports.
-- **The default is the newest commit only** — `HEAD^..HEAD`, the diff that
-  commit introduced against its first parent. A caller may instead supply a
-  direct base range, which may span more than one commit; it is reviewed exactly
-  as supplied. Either way the reviewers use whatever base the host names and
-  never derive one themselves.
-- **Read the reports in this session and address the findings yourself.** The
-  reviewers never edit code. Fixes are normal signed conventional commits —
-  `fix(<scope>): …` or `fix: …` as appropriate — after which you **rerun the
-  complete trio**.
-- **Before opening a PR**, drain the reviews, then run this repo's native
-  checks: `make check` (gofmt, `golangci-lint`, license headers) and `make test`
-  (`-race -cover`). Run `make deps` first if `golangci-lint` is not installed.
-  There is no separate readiness or preflight skill in this repo.
-
-The trio is the central `general` brain plus this repo's two own brains, which
-live in-repo and are versioned with the code they describe:
-
-- `.claude/skills/meeting-service-code-reviewer/` — audits a change against this
-  repo's written rule surface (`CLAUDE.md`, the FGA/indexer/event-processing/ITX
-  contract docs, the `design/`→`gen/` boundary, the chart). Every finding quotes
-  the rule it cites.
-- `.claude/skills/meeting-service-learnings-reviewer/` — carries the empirical
-  review method and matches a change against `docs/reviews/knowledge-base/`, this
-  repo's patterns mined from real past PR review comments. Every finding quotes
-  its knowledge-base entry. The KB lives under `docs/` because it is repo-owned
-  knowledge versioned with the code it describes, and there is exactly one copy
-  of it.
-
-The generic `local-code-review` and `local-learnings-review` names beside them
-are symlinks; they exist so the launcher's discovery is deterministic, and both
-resolve to the two physical skills above. `.agents/skills/` links to the same
-files for non-Claude agents. There is exactly one copy of each brain.
-
-**An incomplete cycle is not a passing cycle.** If any reviewer's report starts
-`INCOMPLETE — <reason>`, or the host reports a failed or empty reviewer, the
-**whole cycle** is incomplete — successful reports from the other roles do not
-rescue it. Resolve the cause and **rerun the complete trio under one harness**:
-never rerun or replace a single role, and never assemble one cycle out of mixed
-Pi and Claude evidence. A run that fell back to Claude because Pi was
-unavailable is honestly reported as such and is not cross-model evidence.
-
-The cycle **stops at PR open**. After verification the branch may be pushed and
-the PR opened under the coordinator's release instruction; from that point review
-is the PR-side Copilot surface's job (`.github/copilot-instructions.md` and
-`.github/skills/**`), and nothing in the local cycle changes or feeds it.
+- repo code reviewer: `/meeting-service-code-reviewer`
+- repo learnings reviewer: `/meeting-service-learnings-reviewer`
+- readiness action: `make check`
+- preflight action: `make test`
+- post-PR extension: `none`
 
 ## Development Guidelines
 
@@ -741,5 +699,15 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 Request/reply subjects served by the preferred-email responder (see User Service Configuration). The caller forwards the user's bearer token; meeting-service resolves the user (SFID + emails) from it via `GET /v1/me` and proxies to the user-service preferences API **as the user** (Phase 1 storage).
 
-- `lfx.meeting-service.preferred_email.get` — request `{"token":"<user bearer token>"}` → reply `{"email_id":string|null,"email":string|null}` (`null` ⇒ use primary)
-- `lfx.meeting-service.preferred_email.set` — request `{"token":"<user bearer token>","email":"<verified-address>"}` (or `{"token":"...","email_id":<sfid>}`; `email` wins, `null`/`"primary"` clears) → reply `{"email_id","email"}` or `{"error":"..."}`. A verified `email` is resolved to its (auth0→SFDC synced) email-record ID; a not-yet-synced address returns a retryable error.
+- `lfx.meeting-service.preferred_email.get` — request `{"token":"<user bearer token>"}` → reply `{"email_id":string|null,"email":string|null}` (`null` ⇒ use primary) or the error envelope below.
+- `lfx.meeting-service.preferred_email.set` — request `{"token":"<user bearer token>","email":"<verified-address>"}` (or `{"token":"...","email_id":<sfid>}`; `email` wins, `null`/`"primary"` clears) → reply `{"email_id","email"}` or the error envelope below. A verified `email` is resolved to its (auth0→SFDC synced) email-record ID; a not-yet-synced address returns a retryable error.
+
+**Error envelope** (both subjects): `{"error":string,"type":"validation"|"forbidden"|"not_found"|"conflict"|"internal"|"unavailable","code"?:"email_not_synced"}`. `type` is the stable string form of `domain.ErrorType` (`domain.GetErrorType(err).String()`) — use it instead of matching on `error`. `code` is present only when a selected address matched a known email on the profile but hasn't synced from Auth0 to SFDC yet (`domain.ErrEmailNotSynced`); a generic upstream 5xx also reports `type: "unavailable"` but omits `code`.
+
+`preferred_email.set`'s address-resolution outcomes map onto that envelope as follows:
+
+| Selected address | `type` | `code` |
+|---|---|---|
+| Not on the user's profile, or matches an inactive/unverified record | `validation` | — |
+| Matches an active, verified record whose SFDC ID hasn't synced from Auth0 yet | `unavailable` | `email_not_synced` |
+| Matches an active, verified record with a synced SFDC ID | *(success — no error envelope)* | — |

@@ -5,6 +5,7 @@ package nats
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,6 +37,44 @@ func TestNewPreferredEmailReply(t *testing.T) {
 		require.NotNil(t, reply.Email)
 		assert.Equal(t, "e1", *reply.EmailID)
 		assert.Equal(t, "alice@work.com", *reply.Email)
+	})
+}
+
+func TestNewErrorReply(t *testing.T) {
+	t.Run("validation error carries type but no code", func(t *testing.T) {
+		reply := newErrorReply(domain.NewValidationError("bad input"))
+		assert.Equal(t, "bad input", reply.Error)
+		assert.Equal(t, "validation", reply.Type)
+		assert.Empty(t, reply.Code)
+
+		data, err := json.Marshal(reply)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"error":"bad input","type":"validation"}`, string(data))
+	})
+
+	t.Run("email-not-synced sentinel carries unavailable type and its code", func(t *testing.T) {
+		err := domain.NewUnavailableError(`email "alice@example.com" not yet available; retry`, domain.ErrEmailNotSynced)
+		reply := newErrorReply(err)
+		assert.Equal(t, "unavailable", reply.Type)
+		assert.Equal(t, "email_not_synced", reply.Code)
+		assert.ErrorIs(t, err, domain.ErrEmailNotSynced)
+
+		data, jsonErr := json.Marshal(reply)
+		require.NoError(t, jsonErr)
+		assert.JSONEq(t, `{"error":"email \"alice@example.com\" not yet available; retry: email not yet synced","type":"unavailable","code":"email_not_synced"}`, string(data))
+	})
+
+	t.Run("generic unavailable error carries type but no code", func(t *testing.T) {
+		reply := newErrorReply(domain.NewUnavailableError("upstream 503"))
+		assert.Equal(t, "unavailable", reply.Type)
+		assert.Empty(t, reply.Code)
+	})
+
+	t.Run("non-domain error falls back to internal type", func(t *testing.T) {
+		reply := newErrorReply(errors.New("boom"))
+		assert.Equal(t, "boom", reply.Error)
+		assert.Equal(t, "internal", reply.Type)
+		assert.Empty(t, reply.Code)
 	})
 }
 

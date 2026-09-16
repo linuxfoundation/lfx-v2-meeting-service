@@ -25,8 +25,10 @@ func RequestIDMiddleware() func(http.Handler) http.Handler {
 			}
 			w.Header().Set(constants.RequestIDHeader, requestID)
 			ctx := context.WithValue(r.Context(), constants.RequestIDContextID, requestID)
-			// Append to context so the request ID is included in all logs for this request
-			ctx = logging.AppendCtx(ctx, slog.String(constants.RequestIDHeader, requestID))
+			// Append to context so the request ID is included in all logs for this request.
+			// Use "request_id" as the log field name (not the HTTP header name "X-REQUEST-ID")
+			// for consistent snake_case structured log fields.
+			ctx = logging.AppendCtx(ctx, slog.String("request_id", requestID))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

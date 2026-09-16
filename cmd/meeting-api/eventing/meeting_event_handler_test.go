@@ -30,7 +30,7 @@ func TestMeetingDBRawUnmarshalAutoEmailReminderTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var m MeetingDBRaw
+			var m meetingDBRaw
 			err := json.Unmarshal([]byte(tt.json), &m)
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, m.AutoEmailReminderTime)
@@ -48,16 +48,16 @@ func TestMeetingDBRawUnmarshalAutoEmailReminderTimeInvalid(t *testing.T) {
 		{"bool", `{"auto_email_reminder_time":true}`},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			var m MeetingDBRaw
+			var m meetingDBRaw
 			require.Error(t, json.Unmarshal([]byte(tt.json), &m))
 		})
 	}
 }
 
-// v1 sends updated_occurrences recurrence int fields as strings; RecurrenceDBRaw.UnmarshalJSON must coerce them.
+// v1 sends updated_occurrences recurrence int fields as strings; recurrenceDBRaw.UnmarshalJSON must coerce them.
 func TestMeetingDBRawUnmarshalUpdatedOccurrenceRecurrence(t *testing.T) {
 	input := `{"updated_occurrences":[{"recurrence":{"type":"2","repeat_interval":"1","monthly_week":"3","monthly_week_day":"5","end_times":"10"}}]}`
-	var m MeetingDBRaw
+	var m meetingDBRaw
 	require.NoError(t, json.Unmarshal([]byte(input), &m))
 	require.Len(t, m.UpdatedOccurrences, 1)
 	rec := m.UpdatedOccurrences[0].Recurrence
@@ -85,7 +85,7 @@ func TestMeetingDBRawUnmarshalUpdatedOccurrenceDuration(t *testing.T) {
 	}
 	for _, tt := range happyPath {
 		t.Run(tt.name, func(t *testing.T) {
-			var m MeetingDBRaw
+			var m meetingDBRaw
 			require.NoError(t, json.Unmarshal([]byte(tt.json), &m))
 			require.Len(t, m.UpdatedOccurrences, 1)
 			assert.Equal(t, tt.wantDur, m.UpdatedOccurrences[0].Duration)
@@ -102,24 +102,24 @@ func TestMeetingDBRawUnmarshalUpdatedOccurrenceDuration(t *testing.T) {
 	}
 	for _, tt := range invalidTypes {
 		t.Run(tt.name, func(t *testing.T) {
-			var m MeetingDBRaw
+			var m meetingDBRaw
 			require.Error(t, json.Unmarshal([]byte(tt.json), &m))
 		})
 	}
 }
 
-// The owner field from v1 KV meeting data must decode into MeetingDBRaw so it
+// The owner field from v1 KV meeting data must decode into meetingDBRaw so it
 // flows through to the indexer event payload.
 func TestMeetingDBRawUnmarshalOwner(t *testing.T) {
 	input := `{"owner":{"user_id":"user-999","username":"oowner","name":"Olive Owner","email":"olive@example.com"}}`
-	var m MeetingDBRaw
+	var m meetingDBRaw
 	require.NoError(t, json.Unmarshal([]byte(input), &m))
 	assert.Equal(t, "user-999", m.Owner.UserID)
 	assert.Equal(t, "oowner", m.Owner.Username)
 	assert.Equal(t, "Olive Owner", m.Owner.Name)
 	assert.Equal(t, "olive@example.com", m.Owner.Email)
 
-	var empty MeetingDBRaw
+	var empty meetingDBRaw
 	require.NoError(t, json.Unmarshal([]byte(`{}`), &empty))
 	assert.Empty(t, empty.Owner.UserID)
 }

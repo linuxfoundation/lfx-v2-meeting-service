@@ -1,0 +1,111 @@
+// Copyright The Linux Foundation and each contributor to LFX.
+// SPDX-License-Identifier: MIT
+
+package itx
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+)
+
+// CreateInvitee creates an invitee for a past meeting via the ITX proxy.
+func (c *Client) CreateInvitee(ctx context.Context, pastMeetingID string, req *itx.CreateInviteeRequest) (*itx.InviteeResponse, error) {
+	return doJSONTyped[itx.InviteeResponse](c, ctx, apiRequest{
+		method:          http.MethodPost,
+		path:            "/v2/zoom/past_meetings/%s/invitees",
+		pathArgs:        []any{pastMeetingID},
+		body:            req,
+		parseError:      "failed to unmarshal response",
+		debugOp:         "CreateInvitee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID},
+		skipBodyLog:     true,
+		skipResponseLog: true,
+	})
+}
+
+// UpdateInvitee updates an invitee for a past meeting via the ITX proxy.
+// ITX returns 204 No Content on success; doJSONTypedOptional returns (nil, nil)
+// on an empty body, preserving the pre-refactor behaviour of always returning nil.
+func (c *Client) UpdateInvitee(ctx context.Context, pastMeetingID, inviteeID string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
+	return doJSONTypedOptional[itx.InviteeResponse](c, ctx, apiRequest{
+		method:          http.MethodPut,
+		path:            "/v2/zoom/past_meetings/%s/invitees/%s",
+		pathArgs:        []any{pastMeetingID, inviteeID},
+		body:            req,
+		debugOp:         "UpdateInvitee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID, "inviteeID", inviteeID},
+		skipBodyLog:     true,
+		skipResponseLog: true,
+	})
+}
+
+// DeleteInvitee deletes an invitee from a past meeting via the ITX proxy.
+func (c *Client) DeleteInvitee(ctx context.Context, pastMeetingID, inviteeID string) error {
+	return c.doNoContent(ctx, apiRequest{
+		method:      http.MethodDelete,
+		path:        "/v2/zoom/past_meetings/%s/invitees/%s",
+		pathArgs:    []any{pastMeetingID, inviteeID},
+		debugOp:     "DeleteInvitee",
+		debugFields: []any{"pastMeetingID", pastMeetingID, "inviteeID", inviteeID},
+	})
+}
+
+// CreateAttendee creates an attendee for a past meeting via the ITX proxy.
+func (c *Client) CreateAttendee(ctx context.Context, pastMeetingID string, req *itx.CreateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	return doJSONTyped[itx.AttendeeResponse](c, ctx, apiRequest{
+		method:          http.MethodPost,
+		path:            "/v2/zoom/past_meetings/%s/attendees",
+		pathArgs:        []any{pastMeetingID},
+		body:            req,
+		parseError:      "failed to unmarshal response",
+		debugOp:         "CreateAttendee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID},
+		skipBodyLog:     true,
+		skipResponseLog: true,
+	})
+}
+
+// GetAttendee retrieves the current persisted state of an attendee for a past
+// meeting via the ITX proxy. Used to refetch ground truth after a 204 No
+// Content update response, since ITX omits changed fields it did not return.
+func (c *Client) GetAttendee(ctx context.Context, pastMeetingID, attendeeID string) (*itx.AttendeeResponse, error) {
+	return doJSONTyped[itx.AttendeeResponse](c, ctx, apiRequest{
+		method:          http.MethodGet,
+		path:            "/v2/zoom/past_meetings/%s/attendees/%s",
+		pathArgs:        []any{pastMeetingID, attendeeID},
+		accept:          acceptJSON,
+		debugOp:         "GetAttendee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
+		parseError:      "failed to unmarshal response",
+		skipResponseLog: true,
+	})
+}
+
+// UpdateAttendee updates an attendee for a past meeting via the ITX proxy.
+// ITX returns 204 No Content on success; doJSONTypedOptional returns (nil, nil)
+// on an empty body, preserving the pre-refactor behaviour of always returning nil.
+func (c *Client) UpdateAttendee(ctx context.Context, pastMeetingID, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	return doJSONTypedOptional[itx.AttendeeResponse](c, ctx, apiRequest{
+		method:          http.MethodPut,
+		path:            "/v2/zoom/past_meetings/%s/attendees/%s",
+		pathArgs:        []any{pastMeetingID, attendeeID},
+		body:            req,
+		debugOp:         "UpdateAttendee",
+		debugFields:     []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
+		skipBodyLog:     true,
+		skipResponseLog: true,
+	})
+}
+
+// DeleteAttendee deletes an attendee from a past meeting via the ITX proxy.
+func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID string) error {
+	return c.doNoContent(ctx, apiRequest{
+		method:      http.MethodDelete,
+		path:        "/v2/zoom/past_meetings/%s/attendees/%s",
+		pathArgs:    []any{pastMeetingID, attendeeID},
+		debugOp:     "DeleteAttendee",
+		debugFields: []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
+	})
+}

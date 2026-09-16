@@ -22,7 +22,6 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
-	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 // MessageAction represents the type of action performed on an object
@@ -643,11 +642,7 @@ func (p *NATSPublisher) PublishIndexerDelete(ctx context.Context, subject, id st
 // PublishAccessDelete sends a pre-built access control message payload to subject.
 // The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
-	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish access delete", "subject", subject)
-		return err
-	}
-	return nil
+	return p.publishWithSpan(ctx, subject, payload)
 }
 
 // publishWithSpan wraps conn.PublishMsg with an OTel producer span and injects
@@ -679,12 +674,10 @@ func (p *NATSPublisher) publishWithSpan(ctx context.Context, subject string, dat
 func (p *NATSPublisher) publish(ctx context.Context, subject string, data interface{}) error {
 	payload, err := json.Marshal(data)
 	if err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to marshal event data", "subject", subject)
-		return fmt.Errorf("failed to marshal event data: %w", err)
+		return fmt.Errorf("failed to marshal event data for subject %s: %w", subject, err)
 	}
 
 	if err := p.publishWithSpan(ctx, subject, payload); err != nil {
-		p.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish event", "subject", subject)
 		return err
 	}
 

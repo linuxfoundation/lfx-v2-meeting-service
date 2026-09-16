@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -96,11 +97,19 @@ func entryIsTombstoned(entry jetstream.KeyValueEntry) bool {
 }
 
 // tombstoneMapping writes "!del" to mappingKey so that re-deliveries of the same
-// delete event are detected and skipped.
-func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string) {
+// delete event are detected and skipped. Returns nil on success and on ErrInvalidKey
+// (the key contains characters the KV store rejects; the xref could never have existed
+// so the tombstone is a no-op). Any other error is returned to the caller for retry.
+func (h *EventHandlers) tombstoneMapping(ctx context.Context, mappingKey string) error {
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(tombstoneMarker)); err != nil {
-		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to tombstone mapping", "mapping_key", mappingKey)
+		if errors.Is(err, jetstream.ErrInvalidKey) {
+			h.logger.WarnContext(ctx, "skipping tombstone: mapping key contains invalid characters", "mapping_key", mappingKey)
+			return nil
+		}
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to tombstone mapping, will retry", "mapping_key", mappingKey)
+		return err
 	}
+	return nil
 }
 
 // handleMeetingTypeDelete is the generic delete handler for all meeting-related resources.
@@ -129,7 +138,9 @@ func (h *EventHandlers) handleMeetingTypeDelete(
 	}
 
 	for _, keyFmt := range cfg.tombstoneKeyFmts {
-		h.tombstoneMapping(ctx, fmt.Sprintf(keyFmt, id))
+		if err := h.tombstoneMapping(ctx, fmt.Sprintf(keyFmt, id)); err != nil {
+			return true
+		}
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed delete")
@@ -247,7 +258,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
 	// Check for soft delete (record written to KV with _sdc_deleted_at set).
 	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
-		handlers.logger.Info("processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
+		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
 		return routeDelete(ctx, key, data, handlers)
 	}
 
@@ -290,7 +301,7 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 
 	default:
 		// Not a meeting-related event, skip
-		handlers.logger.Debug("skipping non-meeting event", "key", key)
+		handlers.logger.DebugContext(ctx, "skipping non-meeting event", "key", key)
 		return false
 	}
 }
@@ -299,7 +310,7 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 // v1Data is nil for hard KV deletes (DEL/PURGE) and populated for soft deletes
 // (_sdc_deleted_at), allowing handlers to extract fields needed for access control messages.
 func routeDelete(ctx context.Context, key string, v1Data map[string]any, handlers *EventHandlers) (retry bool) {
-	handlers.logger.Info("routing delete operation", "key", key)
+	handlers.logger.InfoContext(ctx, "routing delete operation", "key", key)
 
 	switch {
 	case strings.HasPrefix(key, "itx-zoom-meetings-v2."):
@@ -339,7 +350,7 @@ func routeDelete(ctx context.Context, key string, v1Data map[string]any, handler
 		return handlers.handlePastMeetingAttachmentDelete(ctx, key, v1Data)
 
 	default:
-		handlers.logger.Debug("skipping delete for unrecognized key", "key", key)
+		handlers.logger.DebugContext(ctx, "skipping delete for unrecognized key", "key", key)
 		return false
 	}
 }

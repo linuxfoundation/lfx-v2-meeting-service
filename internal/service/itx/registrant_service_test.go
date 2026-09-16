@@ -249,6 +249,99 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 	})
 }
 
+// =============================================================================
+// enrichRegistrantFromProfile — direct unit tests
+// =============================================================================
+// These tests drive the enricher through its own seam without any service,
+// mock, or NATS dependency. Each test case covers one precedence rule.
+
+func TestEnrichRegistrantFromProfile(t *testing.T) {
+	t.Run("returns validation error when email is empty", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{}
+		err := enrichRegistrantFromProfile(req, nil, "", "alice")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
+	})
+
+	t.Run("sets email and username from arguments; overwrites any request body value", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{Email: "attacker@example.com"}
+		err := enrichRegistrantFromProfile(req, nil, "alice@example.com", "alice")
+		require.NoError(t, err)
+		assert.Equal(t, "alice@example.com", req.Email)
+		assert.Equal(t, "alice", req.Username)
+	})
+
+	t.Run("profile wins over request when profile field is non-empty", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{
+			FirstName: "Al",
+			LastName:  "S",
+			JobTitle:  "Dev",
+			Org:       "Test Org",
+		}
+		profile := &domain.UserProfile{
+			FirstName:    "Alice",
+			LastName:     "Example",
+			JobTitle:     "Engineer",
+			Organization: "Example Foundation",
+		}
+		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", req.FirstName)
+		assert.Equal(t, "Example", req.LastName)
+		assert.Equal(t, "Engineer", req.JobTitle)
+		assert.Equal(t, "Example Foundation", req.Org)
+	})
+
+	t.Run("request payload used as fallback when profile fields are empty", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Example",
+			JobTitle:  "Engineer",
+			Org:       "Test Org",
+		}
+		profile := &domain.UserProfile{} // all enrichment fields empty
+		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", req.FirstName)
+		assert.Equal(t, "Example", req.LastName)
+		assert.Equal(t, "Engineer", req.JobTitle)
+		assert.Equal(t, "Test Org", req.Org)
+	})
+
+	t.Run("nil profile leaves request payload fields intact", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Example",
+		}
+		err := enrichRegistrantFromProfile(req, nil, "alice@example.com", "alice")
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", req.FirstName)
+		assert.Equal(t, "Example", req.LastName)
+	})
+
+	t.Run("profile only partially overrides — empty profile fields leave request values", func(t *testing.T) {
+		req := &itx.ZoomMeetingRegistrant{
+			FirstName: "Al",
+			LastName:  "S",
+			JobTitle:  "Dev",      // profile has no JobTitle → stays
+			Org:       "Test Org", // profile has no Organization → stays
+		}
+		profile := &domain.UserProfile{
+			FirstName: "Alice",   // overrides
+			LastName:  "Example", // overrides
+			// JobTitle and Organization intentionally empty
+		}
+		err := enrichRegistrantFromProfile(req, profile, "alice@example.com", "alice")
+		require.NoError(t, err)
+		assert.Equal(t, "Alice", req.FirstName, "profile first name overrides request")
+		assert.Equal(t, "Example", req.LastName, "profile last name overrides request")
+		assert.Equal(t, "Dev", req.JobTitle, "empty profile job title leaves request value")
+		assert.Equal(t, "Test Org", req.Org, "empty profile org leaves request value")
+	})
+}
+
 func TestRegistrantService_UpdateRegistrant_StampsUpdatedByNotCreatedBy(t *testing.T) {
 	t.Run("stamps only updated_by on update", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
