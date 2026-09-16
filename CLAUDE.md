@@ -246,6 +246,54 @@ The service follows a clean architecture pattern with:
 - **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
 - Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.example.yaml charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
+### Go Toolchain Version
+
+Freely bump `go.mod`'s `go` directive to the latest available *patch*
+release (e.g. `1.X.Y` → `1.X.{Y+1}`) to pick up security fixes. Do **not**
+bump the *minor* version (e.g. `1.X.x` → `1.{X+1}.x`) unless the user
+explicitly asks for it, **and** you've validated it against the Go version
+MegaLinter itself bundles -- MegaLinter runs several linters (e.g.
+`golangci-lint`) against its own bundled Go version, and a `go.mod`
+directive newer than that bundled version breaks those checks.
+
+To find MegaLinter's bundled Go version:
+
+```bash
+# 1. Find the MegaLinter flavor and pinned version tag used in CI, and
+#    capture them into variables for the next command.
+set -euo pipefail
+line=$(grep -oE 'flavors/[a-z]+@[0-9a-f]+ *# *v[0-9.]+' .github/workflows/*.yaml | head -1)
+MEGALINTER_FLAVOR=$(echo "$line" | grep -oE 'flavors/[a-z]+' | cut -d/ -f2)
+MEGALINTER_TAG=$(echo "$line" | grep -oE 'v[0-9.]+$')
+
+# 2. Fetch that flavor's Dockerfile and read its GO_ALPINE_VERSION build
+#    arg, this is the bundled Go version used by golangci-lint and other
+#    Go-based linters. GO_IMAGE_VERSION only selects the revive builder
+#    image and is not the bundled Go version.
+curl -fsS "https://raw.githubusercontent.com/oxsecurity/megalinter/${MEGALINTER_TAG}/flavors/${MEGALINTER_FLAVOR}/Dockerfile" \
+  | grep -i 'GO_ALPINE_VERSION'
+```
+
+`go.mod`'s `go` directive must never exceed that bundled version. Staying
+one minor version behind it (rather than matching its minor *and* patch
+exactly) leaves room to always take the latest patch release for security
+fixes without ever being blocked by MegaLinter's own bundled patch version
+lagging behind a newly disclosed vulnerability.
+
+There's no built-in `go` subcommand to look up the latest patch release for
+a given minor version -- query the official `go.dev/dl` JSON feed instead:
+
+```bash
+# Find the latest patch release for the minor version pinned in go.mod.
+set -euo pipefail
+MINOR=$(grep '^go ' go.mod | awk '{print $2}' | cut -d. -f1,2)
+result=$(curl -fsS "https://go.dev/dl/?mode=json&include=all" \
+  | jq -r --arg m "go${MINOR}." '.[].version | select(startswith($m))' \
+  | sort -V | tail -1)
+test -n "$result" || { echo "lookup failed" >&2; exit 1; }
+echo "$result"
+```
+
 ## Review lifecycle configuration
 
 Load and follow `/lfx-skills:lfx-local-review` as the sole owner of the review
