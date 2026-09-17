@@ -1,0 +1,9 @@
+# OAuth credentials and tokens — never commit these
+client_secret*.json
+client_secret*.txt
+client_id*.txt
+token.json
+
+# Compiled binaries
+google-meet-research
+meet-event-handler
