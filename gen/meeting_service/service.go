@@ -248,6 +248,8 @@ type CreateItxMeetingPayload struct {
 	AutoEmailReminderEnabled *bool
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool
 	// The single user responsible for this meeting. Defaults to the creator on
 	// creation; omitting the field on update preserves the stored owner.
 	Owner *ITXUser
@@ -1130,6 +1132,8 @@ type ITXZoomMeetingResponse struct {
 	AutoEmailReminderEnabled *bool
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool
 	// Status of the last bulk registrant import job
 	LastBulkRegistrantJobStatus *string
 	// Number of records with warnings in the last bulk registrant import job
@@ -1441,6 +1445,8 @@ type UpdateItxMeetingPayload struct {
 	AutoEmailReminderEnabled *bool
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string

@@ -108,6 +108,10 @@ func AutoEmailReminderTimeAttribute() {
 	})
 }
 
+func ShowMeetingAttendeesAttribute() {
+	Attribute("show_meeting_attendees", Boolean, "Whether other guests are visible on the meeting page and in calendar invites")
+}
+
 func LastBulkRegistrantJobStatusAttribute() {
 	Attribute("last_bulk_registrant_job_status", String, "Status of the last bulk registrant import job")
 }
@@ -228,6 +232,7 @@ var ITXZoomMeetingResponse = Type("ITXZoomMeetingResponse", func() {
 	RecurrenceAttribute()
 	AutoEmailReminderEnabledAttribute()
 	AutoEmailReminderTimeAttribute()
+	ShowMeetingAttendeesAttribute()
 	LastBulkRegistrantJobStatusAttribute()
 	LastBulkRegistrantsJobWarningCountAttribute()
 	EmailDeliveryErrorCountAttribute()

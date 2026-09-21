@@ -187,6 +187,7 @@ paths:
                                 weekly_days: Qui provident rem earum eum.
                             require_ai_summary_approval: false
                             restricted: true
+                            show_meeting_attendees: true
                             start_time: "2021-01-01T00:00:00Z"
                             timezone: Consequuntur qui placeat reprehenderit.
                             title: Quo ipsum esse libero quae velit nobis.
@@ -274,6 +275,7 @@ paths:
                                 response_count_no: 8270849906148447925
                                 response_count_yes: 4555557810634877155
                                 restricted: false
+                                show_meeting_attendees: false
                                 start_time: "2021-01-01T00:00:00Z"
                                 timezone: Odio nulla eum et labore eveniet.
                                 title: Fugiat dolor cupiditate reiciendis debitis et odio.
@@ -526,6 +528,7 @@ paths:
                                 response_count_no: 5026264064789505514
                                 response_count_yes: 7108370703069473073
                                 restricted: false
+                                show_meeting_attendees: true
                                 start_time: "2021-01-01T00:00:00Z"
                                 timezone: Eius nihil consectetur officia.
                                 title: Quia ipsum praesentium et.
@@ -676,6 +679,7 @@ paths:
                                 weekly_days: Qui provident rem earum eum.
                             require_ai_summary_approval: false
                             restricted: false
+                            show_meeting_attendees: false
                             start_time: "2021-01-01T00:00:00Z"
                             timezone: Consectetur qui repudiandae nostrum.
                             title: Quaerat tenetur qui consequuntur recusandae ut quaerat.
@@ -5227,6 +5231,10 @@ components:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                     example: true
+                show_meeting_attendees:
+                    type: boolean
+                    description: Whether other guests are visible on the meeting page and in calendar invites
+                    example: true
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -5308,6 +5316,7 @@ components:
                     weekly_days: Qui provident rem earum eum.
                 require_ai_summary_approval: false
                 restricted: true
+                show_meeting_attendees: true
                 start_time: "2021-01-01T00:00:00Z"
                 timezone: Consequuntur qui placeat reprehenderit.
                 title: Quo ipsum esse libero quae velit nobis.
@@ -7094,6 +7103,10 @@ components:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                     example: false
+                show_meeting_attendees:
+                    type: boolean
+                    description: Whether other guests are visible on the meeting page and in calendar invites
+                    example: false
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -7197,6 +7210,7 @@ components:
                 response_count_no: 8270849906148447925
                 response_count_yes: 4555557810634877155
                 restricted: false
+                show_meeting_attendees: false
                 start_time: "2021-01-01T00:00:00Z"
                 timezone: Odio nulla eum et labore eveniet.
                 title: Fugiat dolor cupiditate reiciendis debitis et odio.
@@ -7690,6 +7704,10 @@ components:
                     type: boolean
                     description: The restrictedness of joining the meeting (i.e. is the meeting restricted to only invited users or anyone?)
                     example: false
+                show_meeting_attendees:
+                    type: boolean
+                    description: Whether other guests are visible on the meeting page and in calendar invites
+                    example: false
                 start_time:
                     type: string
                     description: The start time of the meeting in RFC3339 format
@@ -7770,6 +7788,7 @@ components:
                     weekly_days: Qui provident rem earum eum.
                 require_ai_summary_approval: false
                 restricted: false
+                show_meeting_attendees: false
                 start_time: "2021-01-01T00:00:00Z"
                 timezone: Consectetur qui repudiandae nostrum.
                 title: Quaerat tenetur qui consequuntur recusandae ut quaerat.

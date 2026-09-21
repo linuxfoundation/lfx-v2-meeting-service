@@ -58,6 +58,8 @@ type CreateItxMeetingRequestBody struct {
 	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// The single user responsible for this meeting. Defaults to the creator on
 	// creation; omitting the field on update preserves the stored owner.
 	Owner *ITXUserRequestBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
@@ -107,6 +109,8 @@ type UpdateItxMeetingRequestBody struct {
 	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// An optional note to include in the meeting update notification emails sent
 	// to registrants
 	UpdateNote *string `form:"update_note,omitempty" json:"update_note,omitempty" xml:"update_note,omitempty"`
@@ -583,6 +587,8 @@ type CreateItxMeetingResponseBody struct {
 	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// Status of the last bulk registrant import job
 	LastBulkRegistrantJobStatus *string `form:"last_bulk_registrant_job_status,omitempty" json:"last_bulk_registrant_job_status,omitempty" xml:"last_bulk_registrant_job_status,omitempty"`
 	// Number of records with warnings in the last bulk registrant import job
@@ -671,6 +677,8 @@ type GetItxMeetingResponseBody struct {
 	AutoEmailReminderEnabled *bool `form:"auto_email_reminder_enabled,omitempty" json:"auto_email_reminder_enabled,omitempty" xml:"auto_email_reminder_enabled,omitempty"`
 	// Time in minutes before the meeting to send the automatic email reminder
 	AutoEmailReminderTime *int `form:"auto_email_reminder_time,omitempty" json:"auto_email_reminder_time,omitempty" xml:"auto_email_reminder_time,omitempty"`
+	// Whether other guests are visible on the meeting page and in calendar invites
+	ShowMeetingAttendees *bool `form:"show_meeting_attendees,omitempty" json:"show_meeting_attendees,omitempty" xml:"show_meeting_attendees,omitempty"`
 	// Status of the last bulk registrant import job
 	LastBulkRegistrantJobStatus *string `form:"last_bulk_registrant_job_status,omitempty" json:"last_bulk_registrant_job_status,omitempty" xml:"last_bulk_registrant_job_status,omitempty"`
 	// Number of records with warnings in the last bulk registrant import job
@@ -4024,6 +4032,7 @@ func NewCreateItxMeetingRequestBody(p *meetingservice.CreateItxMeetingPayload) *
 		ArtifactVisibility:       p.ArtifactVisibility,
 		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    p.AutoEmailReminderTime,
+		ShowMeetingAttendees:     p.ShowMeetingAttendees,
 	}
 	if p.Committees != nil {
 		body.Committees = make([]*CommitteeRequestBody, len(p.Committees))
@@ -4066,6 +4075,7 @@ func NewUpdateItxMeetingRequestBody(p *meetingservice.UpdateItxMeetingPayload) *
 		ArtifactVisibility:       p.ArtifactVisibility,
 		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    p.AutoEmailReminderTime,
+		ShowMeetingAttendees:     p.ShowMeetingAttendees,
 		UpdateNote:               p.UpdateNote,
 	}
 	if p.Committees != nil {
@@ -4476,6 +4486,7 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		ArtifactVisibility:                       body.ArtifactVisibility,
 		AutoEmailReminderEnabled:                 body.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:                    body.AutoEmailReminderTime,
+		ShowMeetingAttendees:                     body.ShowMeetingAttendees,
 		LastBulkRegistrantJobStatus:              body.LastBulkRegistrantJobStatus,
 		LastBulkRegistrantsJobWarningCount:       body.LastBulkRegistrantsJobWarningCount,
 		EmailDeliveryErrorCount:                  body.EmailDeliveryErrorCount,
@@ -4613,6 +4624,7 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		ArtifactVisibility:                       body.ArtifactVisibility,
 		AutoEmailReminderEnabled:                 body.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:                    body.AutoEmailReminderTime,
+		ShowMeetingAttendees:                     body.ShowMeetingAttendees,
 		LastBulkRegistrantJobStatus:              body.LastBulkRegistrantJobStatus,
 		LastBulkRegistrantsJobWarningCount:       body.LastBulkRegistrantsJobWarningCount,
 		EmailDeliveryErrorCount:                  body.EmailDeliveryErrorCount,

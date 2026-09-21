@@ -79,6 +79,10 @@ type CreateZoomMeetingRequest struct {
 	AutoEmailReminderEnabled *bool `json:"auto_email_reminder_enabled,omitempty"`
 	AutoEmailReminderTime    int   `json:"auto_email_reminder_time,omitempty"`
 
+	// ShowMeetingAttendees is a pointer so presence is preserved on the wire: nil is
+	// omitted (ITX preserves the stored value), while a non-nil false still serializes.
+	ShowMeetingAttendees *bool `json:"show_meeting_attendees,omitempty"`
+
 	// Advanced
 	MailingListGroupIDs []string    `json:"mailing_list_group_ids,omitempty"`
 	Recurrence          *Recurrence `json:"recurrence,omitempty"`
@@ -173,6 +177,7 @@ type ZoomMeetingResponse struct {
 
 	AutoEmailReminderEnabled bool `json:"auto_email_reminder_enabled,omitempty"`
 	AutoEmailReminderTime    int  `json:"auto_email_reminder_time,omitempty"`
+	ShowMeetingAttendees     bool `json:"show_meeting_attendees,omitempty"`
 
 	IsInviteResponsesEnabled bool `json:"is_invite_responses_enabled,omitempty"`
 	ResponseCountYes         int  `json:"response_count_yes,omitempty"`
