@@ -224,8 +224,8 @@ func newRSVPState() *rsvpState {
 }
 
 // poll fetches the current event and fires logRSVPEvent on any status change.
-// Returns true if all non-organizer attendees have given a final answer
-// (accepted or declined).
+// Returns true only when at least one non-organizer attendee exists AND all of
+// them have given a final answer (accepted or declined).
 func (s *rsvpState) poll(ctx context.Context, svc *calendar.Service, eventID string) bool {
 	ev, err := svc.Events.Get("primary", eventID).Context(ctx).Do()
 	if err != nil {
@@ -233,24 +233,32 @@ func (s *rsvpState) poll(ctx context.Context, svc *calendar.Service, eventID str
 		return false
 	}
 
+	hasInvitee := false
 	allFinal := true
 	for _, a := range ev.Attendees {
 		if a.Organizer {
-			continue // skip the organizer's own entry
+			continue // organizer row is never an invitee response
 		}
+		hasInvitee = true
 		prev, seen := s.status[a.Email]
 		if !seen {
-			// First time we see this attendee
 			s.status[a.Email] = a.ResponseStatus
 			logRSVPEvent("INITIAL STATUS", a)
 		} else if prev != a.ResponseStatus {
-			// Status changed
 			s.status[a.Email] = a.ResponseStatus
 			logRSVPEvent(fmt.Sprintf("RSVP CHANGED: %s → %s", prev, a.ResponseStatus), a)
 		}
 		if a.ResponseStatus != "accepted" && a.ResponseStatus != "declined" {
 			allFinal = false
 		}
+	}
+
+	if !hasInvitee {
+		fmt.Println("  ⚠ No invitees found on this event (only the organizer).")
+		fmt.Println("    Make sure TEST_ATTENDEE_EMAIL is a DIFFERENT account from the one")
+		fmt.Println("    you authenticated with — Google Calendar won't create a separate")
+		fmt.Println("    attendee row when the organizer invites themselves.")
+		return false // keep polling; don't exit
 	}
 	return allFinal
 }
@@ -342,10 +350,23 @@ func main() {
 
 	header(2, "INITIAL ATTENDEE STATE")
 
+	hasRealInvitee := false
 	for _, a := range created.Attendees {
 		fmt.Printf("\n  Attendee: %s\n", a.Email)
 		raw, _ := json.MarshalIndent(a, "  ", "  ")
 		fmt.Printf("  %s\n", raw)
+		if !a.Organizer {
+			hasRealInvitee = true
+		}
+	}
+	if !hasRealInvitee {
+		fmt.Println()
+		fmt.Println("  ╔══════════════════════════════════════════════════════════════════╗")
+		fmt.Println("  ║  WARNING: TEST_ATTENDEE_EMAIL appears to be the organizer        ║")
+		fmt.Println("  ║  account. Google Calendar won't create a separate attendee row   ║")
+		fmt.Println("  ║  when you invite yourself. Set TEST_ATTENDEE_EMAIL to a          ║")
+		fmt.Println("  ║  DIFFERENT Google account and re-run.                            ║")
+		fmt.Println("  ╚══════════════════════════════════════════════════════════════════╝")
 	}
 
 	// ── Step 3: Poll for RSVP changes ────────────────────────────────────────

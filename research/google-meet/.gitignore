@@ -4,7 +4,7 @@ client_secret*.txt
 client_id*.txt
 token.json
 
-# Compiled binaries
+# Compiled binaries (exact filenames, not directories)
 google-meet-research
 meet-event-handler
-rsvp-poller
+rsvp-poller/rsvp-poller
