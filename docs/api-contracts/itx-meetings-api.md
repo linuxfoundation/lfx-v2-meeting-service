@@ -88,6 +88,7 @@ Content-Type: application/json
   "artifact_visibility": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "show_meeting_attendees": false,
   "owner": {
     "username": "jdoe",
     "name": "Jane Doe",
@@ -135,6 +136,7 @@ Content-Type: application/json
   "artifact_visibility": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "show_meeting_attendees": false,
   "owner": {
     "username": "jdoe",
     "name": "Jane Doe",
@@ -204,6 +206,7 @@ Content-Type: application/json
   "recording_access": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "show_meeting_attendees": false,
   "recurrence": {
     "type": 2,
     "repeat_interval": 1,
@@ -260,6 +263,7 @@ Content-Type: application/json
   "recording_access": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
+  "show_meeting_attendees": false,
   "recurrence": {
     "type": 2,
     "repeat_interval": 1,
@@ -302,6 +306,7 @@ Content-Type: application/json
 | `auto_email_reminder_enabled` | `auto_email_reminder_enabled` | Whether a reminder email is sent to participants. Optional: when the proxy request omits it, it is also omitted from the ITX request and ITX preserves the stored reminder pair; an explicit `false` is forwarded as-is and disables the reminder (ITX resets the stored time to 0) |
 | `auto_email_reminder_time` | `auto_email_reminder_time` | Minutes before start to send the reminder (120-1440, proxy-validated); omitted when zero — ITX defaults to 1440 when enabled without a time and resets to 0 on explicit disable |
 | `owner` | `owner` | Single user responsible for the meeting (username/name/email/profile_picture). Optional passthrough: when the proxy request omits it, it is also omitted from the ITX request — ITX defaults it to the creator on create and preserves the stored owner on update |
+| `show_meeting_attendees` | `show_meeting_attendees` | Whether other guests are visible on the LFX meeting page and as ICS `ATTENDEE` lines. Optional pointer: when the proxy request omits it, it is also omitted from the ITX request and ITX preserves the stored value on update; an explicit `false` is forwarded and disables visibility |
 | `committees[].uid` | `committees[].id` | Committee identifier |
 | `committees[].allowed_voting_statuses` | `committees[].filters` | Voting status filters |
 | (N/A - added by proxy) | `id` | Zoom meeting ID (response only) |
@@ -395,7 +400,7 @@ Content-Type: application/json
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 
-**Request Body**: Same as ITX Create Meeting request body, except `created_by` is not sent; instead, the proxy stamps `updated_by` with the requesting user (same shape as `created_by`). `owner` remains an optional client passthrough — when omitted, it is also omitted from the ITX request and ITX preserves the stored owner. See [Audit stamping](#audit-stamping).
+**Request Body**: Same as ITX Create Meeting request body, except `created_by` is not sent; instead, the proxy stamps `updated_by` with the requesting user (same shape as `created_by`). `owner` remains an optional client passthrough — when omitted, it is also omitted from the ITX request and ITX preserves the stored owner. `show_meeting_attendees` is the same optional pointer: omit it to leave the stored visibility unchanged; send `false` to turn it off. See [Audit stamping](#audit-stamping).
 
 **Response**: `204 No Content`
 
