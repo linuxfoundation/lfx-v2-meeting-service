@@ -169,3 +169,50 @@ func TestConvertMapToMeetingDataOwner(t *testing.T) {
 		assert.Empty(t, meeting.Owner.Email)
 	})
 }
+
+// Stored show_meeting_attendees is the indexer source of truth — including the formerly
+// special Board + hardcoded-project combination that used to force the flag on.
+func TestConvertMapToMeetingDataShowMeetingAttendees(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	kv := &mockKeyValue{}
+	kv.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+
+	baseData := func() map[string]interface{} {
+		return map[string]interface{}{
+			"meeting_id":   "meeting-1",
+			"proj_id":      "a0941000002wBz9AAE",
+			"topic":        "Test Meeting",
+			"start_time":   "2026-01-01T00:00:00Z",
+			"duration":     30,
+			"meeting_type": "board",
+			"updated_by":   map[string]interface{}{"user_id": "user-1", "username": "alice"},
+		}
+	}
+
+	t.Run("stored true survives including former board-project override pair", func(t *testing.T) {
+		data := baseData()
+		data["show_meeting_attendees"] = true
+
+		meeting, err := convertMapToMeetingData(context.Background(), data, stubIDMapper{}, kv, logger)
+		require.NoError(t, err)
+		require.NotNil(t, meeting)
+		assert.True(t, meeting.ShowMeetingAttendees)
+	})
+
+	t.Run("stored false stays false for the former board-project override pair", func(t *testing.T) {
+		data := baseData()
+		data["show_meeting_attendees"] = false
+
+		meeting, err := convertMapToMeetingData(context.Background(), data, stubIDMapper{}, kv, logger)
+		require.NoError(t, err)
+		require.NotNil(t, meeting)
+		assert.False(t, meeting.ShowMeetingAttendees)
+	})
+
+	t.Run("absent flag stays false", func(t *testing.T) {
+		meeting, err := convertMapToMeetingData(context.Background(), baseData(), stubIDMapper{}, kv, logger)
+		require.NoError(t, err)
+		require.NotNil(t, meeting)
+		assert.False(t, meeting.ShowMeetingAttendees)
+	})
+}

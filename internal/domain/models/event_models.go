@@ -328,8 +328,8 @@ type MeetingEventData struct {
 	// Apply manually (generate uuid and store in this field) when a meeting has calendar issues, and we wish to use a separate unique uuid instead of the meeting ID.
 	UseUniqueICSUID string `json:"use_unique_ics_uid"` // this is a uuid
 
-	// ShowMeetingAttendees determines whether or not LFX One should show data about
-	// meeting attendees to each other
+	// ShowMeetingAttendees determines whether other guests are visible to each other
+	// on the LFX meeting page and as ATTENDEE lines in calendar invites.
 	ShowMeetingAttendees bool `json:"show_meeting_attendees"`
 
 	// Organizers is the list of usernames (Auth0 sub format) that are organizers of the meeting.

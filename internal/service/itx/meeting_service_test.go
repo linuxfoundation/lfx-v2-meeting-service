@@ -292,6 +292,72 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 	})
 }
 
+func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ID:                   "meeting-1",
+			ProjectUID:           "proj-1",
+			Title:                "Test Meeting",
+			StartTime:            "2026-01-01T00:00:00Z",
+			Duration:             30,
+			Visibility:           itx.MeetingVisibilityPublic,
+			ShowMeetingAttendees: utils.BoolPtr(true),
+		}
+	}
+
+	t.Run("create forwards the flag to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		require.NotNil(t, client.lastCreateReq.ShowMeetingAttendees)
+		assert.True(t, *client.lastCreateReq.ShowMeetingAttendees)
+	})
+
+	t.Run("update forwards the flag to ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		require.NotNil(t, client.lastUpdateReq.ShowMeetingAttendees)
+		assert.True(t, *client.lastUpdateReq.ShowMeetingAttendees)
+	})
+
+	t.Run("explicit false serializes on the wire", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.ShowMeetingAttendees = utils.BoolPtr(false)
+		_, err := svc.CreateMeeting(context.Background(), req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+
+		body, err := json.Marshal(client.lastCreateReq)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), `"show_meeting_attendees":false`)
+	})
+
+	t.Run("omitted field stays off the wire so ITX preserves the stored value", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.ShowMeetingAttendees = nil
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+
+		body, err := json.Marshal(client.lastUpdateReq)
+		require.NoError(t, err)
+		assert.NotContains(t, string(body), `"show_meeting_attendees"`)
+	})
+}
+
 func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 	baseReq := func() *models.CreateITXMeetingRequest {
 		return &models.CreateITXMeetingRequest{

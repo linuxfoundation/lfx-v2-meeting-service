@@ -90,7 +90,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `mailing_list_group_ids` | []string | Mailing list group IDs associated with this meeting |
 | `last_mailing_list_members_sync_job_warning_count` | int | Warning count from last mailing list sync job |
 | `use_unique_ics_uid` | string | UUID used as the unique ICS UID for calendar events (empty string when not set) |
-| `show_meeting_attendees` | bool | Whether attendee data is visible to other attendees |
+| `show_meeting_attendees` | bool | Whether other guests are visible on the meeting page and in calendar invites (organizer-controlled; default false) |
 | `organizers` | []string | Auth0 sub-format usernames of meeting organizers |
 | `auto_email_reminder_enabled` | bool | Whether an automatic reminder email is sent to participants before the meeting starts |
 | `auto_email_reminder_time` | int | Minutes before the meeting start time that the reminder email is sent (120-1440; `0` when reminders are disabled) |

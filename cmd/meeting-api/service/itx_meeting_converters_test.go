@@ -53,6 +53,55 @@ func TestConvertCreateITXMeetingPayloadToDomain_AutoEmailReminder(t *testing.T) 
 	})
 }
 
+func TestConvertCreateITXMeetingPayloadToDomain_ShowMeetingAttendees(t *testing.T) {
+	basePayload := func() *meetingservice.CreateItxMeetingPayload {
+		return &meetingservice.CreateItxMeetingPayload{
+			ProjectUID: "proj-1",
+			Title:      "Test Meeting",
+			StartTime:  "2026-01-01T00:00:00Z",
+			Duration:   30,
+			Timezone:   "UTC",
+			Visibility: "public",
+		}
+	}
+
+	t.Run("maps enabled flag", func(t *testing.T) {
+		p := basePayload()
+		p.ShowMeetingAttendees = utils.BoolPtr(true)
+
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		require.NotNil(t, req.ShowMeetingAttendees)
+		assert.True(t, *req.ShowMeetingAttendees)
+	})
+
+	t.Run("maps explicit false distinctly from omission", func(t *testing.T) {
+		p := basePayload()
+		p.ShowMeetingAttendees = utils.BoolPtr(false)
+
+		req := ConvertCreateITXMeetingPayloadToDomain(p)
+		require.NotNil(t, req.ShowMeetingAttendees)
+		assert.False(t, *req.ShowMeetingAttendees)
+	})
+
+	t.Run("preserves omission as nil when field is absent", func(t *testing.T) {
+		req := ConvertCreateITXMeetingPayloadToDomain(basePayload())
+		assert.Nil(t, req.ShowMeetingAttendees)
+	})
+}
+
+func TestConvertITXMeetingResponseToGoa_ShowMeetingAttendees(t *testing.T) {
+	t.Run("maps enabled flag", func(t *testing.T) {
+		g := ConvertITXMeetingResponseToGoa(&itx.ZoomMeetingResponse{ShowMeetingAttendees: true})
+		require.NotNil(t, g.ShowMeetingAttendees)
+		assert.True(t, *g.ShowMeetingAttendees)
+	})
+
+	t.Run("omits false", func(t *testing.T) {
+		g := ConvertITXMeetingResponseToGoa(&itx.ZoomMeetingResponse{ShowMeetingAttendees: false})
+		assert.Nil(t, g.ShowMeetingAttendees)
+	})
+}
+
 func TestConvertCreateITXMeetingPayloadToDomain_Owner(t *testing.T) {
 	basePayload := func() *meetingservice.CreateItxMeetingPayload {
 		return &meetingservice.CreateItxMeetingPayload{

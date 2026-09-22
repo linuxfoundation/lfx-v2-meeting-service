@@ -31,6 +31,7 @@ func ConvertCreateITXMeetingPayloadToDomain(p *meetingservice.CreateItxMeetingPa
 		ArtifactVisibility:       itx.ArtifactAccess(utils.StringValue(p.ArtifactVisibility)),
 		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    utils.IntValue(p.AutoEmailReminderTime),
+		ShowMeetingAttendees:     p.ShowMeetingAttendees,
 		Owner:                    convertGoaITXUserToITX(p.Owner),
 	}
 
@@ -86,6 +87,7 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 		ArtifactVisibility:                 utils.StringPtrOmitEmpty(string(utils.Coalesce(resp.RecordingAccess, resp.TranscriptAccess, resp.AISummaryAccess))),
 		AutoEmailReminderEnabled:           utils.BoolPtrOmitFalse(resp.AutoEmailReminderEnabled),
 		AutoEmailReminderTime:              utils.IntPtrOmitZero(resp.AutoEmailReminderTime),
+		ShowMeetingAttendees:               utils.BoolPtrOmitFalse(resp.ShowMeetingAttendees),
 		IsInviteResponsesEnabled:           utils.BoolPtrOmitFalse(resp.IsInviteResponsesEnabled),
 		ResponseCountYes:                   utils.IntPtrOmitZero(resp.ResponseCountYes),
 		ResponseCountMaybe:                 utils.IntPtrOmitZero(resp.ResponseCountMaybe),

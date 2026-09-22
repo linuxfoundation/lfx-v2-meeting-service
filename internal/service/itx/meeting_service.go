@@ -186,6 +186,7 @@ func (s *MeetingService) transformToITXRequest(req *models.CreateITXMeetingReque
 		RequireAISummaryApproval: req.RequireAISummaryApproval,
 		AutoEmailReminderEnabled: req.AutoEmailReminderEnabled, // nil = omitted, ITX preserves the stored reminder
 		AutoEmailReminderTime:    req.AutoEmailReminderTime,
+		ShowMeetingAttendees:     req.ShowMeetingAttendees, // nil = omitted, ITX preserves the stored value
 		Note:                     req.UpdateNote,
 		Owner:                    req.Owner, // nil = omitted, ITX preserves the stored owner
 	}

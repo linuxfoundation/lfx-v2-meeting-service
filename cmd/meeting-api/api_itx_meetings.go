@@ -60,6 +60,7 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 		Recurrence:               p.Recurrence,
 		AutoEmailReminderEnabled: p.AutoEmailReminderEnabled,
 		AutoEmailReminderTime:    p.AutoEmailReminderTime,
+		ShowMeetingAttendees:     p.ShowMeetingAttendees,
 		Owner:                    p.Owner,
 	})
 
