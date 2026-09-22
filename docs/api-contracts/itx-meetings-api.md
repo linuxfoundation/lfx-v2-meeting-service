@@ -136,7 +136,7 @@ Content-Type: application/json
   "artifact_visibility": "meeting_participants",
   "auto_email_reminder_enabled": true,
   "auto_email_reminder_time": 1440,
-  "show_meeting_attendees": false,
+  "show_meeting_attendees": true,
   "owner": {
     "username": "jdoe",
     "name": "Jane Doe",
