@@ -782,6 +782,7 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `id` | string | Summary unique identifier |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `project_uid` | string | v2 UUID of the associated project |
+| `project_slug` | string | Slug of the associated project (from the parent past meeting; empty when unset) |
 | `meeting_id` | string | ID of the originating active meeting |
 | `occurrence_id` | string | Occurrence ID |
 | `zoom_meeting_uuid` | string | Zoom meeting UUID from the webhook event |
