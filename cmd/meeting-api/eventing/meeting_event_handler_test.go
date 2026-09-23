@@ -216,3 +216,49 @@ func TestConvertMapToMeetingDataShowMeetingAttendees(t *testing.T) {
 		assert.False(t, meeting.ShowMeetingAttendees)
 	})
 }
+
+// The meeting index document carries only the fields index readers use: provider join
+// fields (join_url, zoom passcode, host_key) are not copied, while the LFX meeting
+// password and the zoom_config AI flags are kept.
+func TestConvertMapToMeetingDataOmitsJoinFields(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	kv := &mockKeyValue{}
+	kv.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+
+	const password = "00000000-0000-0000-0000-000000000000"
+	data := map[string]interface{}{
+		"meeting_id":                  "meeting-1",
+		"proj_id":                     "proj-1",
+		"topic":                       "Test Meeting",
+		"start_time":                  "2026-01-01T00:00:00Z",
+		"duration":                    30,
+		"updated_by":                  map[string]interface{}{"user_id": "user-1", "username": "alice"},
+		"join_url":                    "https://example.com/j/meeting-1",
+		"passcode":                    "placeholder-passcode",
+		"host_key":                    "000000",
+		"password":                    password,
+		"zoom_ai_enabled":             true,
+		"ai_summary_require_approval": true,
+	}
+
+	meeting, err := convertMapToMeetingData(context.Background(), data, stubIDMapper{}, kv, logger)
+	require.NoError(t, err)
+	require.NotNil(t, meeting)
+
+	raw, err := json.Marshal(meeting)
+	require.NoError(t, err)
+	var doc map[string]any
+	require.NoError(t, json.Unmarshal(raw, &doc))
+
+	for _, field := range []string{"join_url", "host_key", "passcode"} {
+		assert.NotContains(t, doc, field)
+	}
+	assert.Equal(t, password, doc["password"])
+
+	zoomConfig, ok := doc["zoom_config"].(map[string]any)
+	require.True(t, ok, "zoom_config must be present")
+	assert.NotContains(t, zoomConfig, "passcode")
+	assert.Equal(t, "meeting-1", zoomConfig["meeting_id"])
+	assert.Equal(t, true, zoomConfig["ai_companion_enabled"])
+	assert.Equal(t, true, zoomConfig["ai_summary_require_approval"])
+}

@@ -1042,8 +1042,6 @@ To add a new event type:
             "status": "available"
         }
     ],
-    "passcode": "abc123",
-    "public_link": "https://zoom.us/j/123456789",
     "created_at": "2024-01-10T08:00:00Z",
     "modified_at": "2024-01-10T08:00:00Z",
     "tags": ["project:proj-uuid", "visibility:public", "type:recurring"]
