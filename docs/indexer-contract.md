@@ -57,8 +57,7 @@ These fields are indexed and queryable via `filters` or `cel_filter` in the quer
 | `duration` | int | Meeting duration in minutes |
 | `early_join_time_minutes` | int | Minutes before start time that attendees can join |
 | `last_end_time` | int64 | End time of the last occurrence (Unix timestamp) |
-| `join_url` | string | LFX meeting join page URL |
-| `password` | string | UUID password for the join page |
+| `password` | string | UUID password for the join page. Join links are not indexed; they are served by the meeting service `join_link` API endpoint. |
 | `restricted` | bool | Whether only invited users can join |
 | `artifact_visibility` | string | Visibility of meeting artifacts (recordings, transcripts, summaries) |
 | `recording_enabled` | bool | Whether Zoom recording is enabled |
@@ -162,7 +161,6 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | Field | Type | Description |
 |---|---|---|
 | `meeting_id` | string (optional) | Zoom numeric meeting ID |
-| `passcode` | string (optional) | Zoom meeting passcode |
 | `ai_companion_enabled` | bool | Whether Zoom AI Companion is enabled |
 | `ai_summary_require_approval` | bool | Whether AI summaries require approval before publishing |
 
@@ -453,7 +451,7 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `youtube_link` | string (optional) | YouTube recording link |
 | `platform` | string (optional) | Meeting platform (e.g., `"Zoom"`) |
 | `platform_meeting_id` | string (optional) | Platform-specific meeting ID |
-| `recording_password` | string (optional) | Password for the recording |
+| `meeting_password` | string (optional) | Join page password carried over from the active meeting |
 | `zoom_config` | object (optional) | Zoom-specific configuration (see [Zoom Config schema](#zoom-config-schema)) |
 | `is_manually_created` | bool (optional) | Whether this past meeting was created manually |
 | `sessions` | []object (optional) | Zoom meeting instances within this past meeting (each has `uuid`, `start_time`, `end_time`) |
