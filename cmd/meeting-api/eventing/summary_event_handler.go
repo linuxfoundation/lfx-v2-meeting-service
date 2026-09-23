@@ -48,9 +48,6 @@ type summaryDBRaw struct {
 	// ZoomMeetingTopic is the topic of the meeting associated with the summary.
 	ZoomMeetingTopic string `json:"zoom_meeting_topic"`
 
-	// ZoomWebhookEvent is the original webhook event that triggered the summary.
-	ZoomWebhookEvent string `json:"zoom_webhook_event"`
-
 	// Password is an ITX UUID-generated password for the summary that is used to access the summary.
 	Password string `json:"password"`
 
@@ -180,6 +177,9 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	}
 
 	// Look up project info and ai_summary_access from the parent past meeting record.
+	// ai_summary_access only applies once the summary is approved or does not require
+	// approval; a summary awaiting approval is indexed for organizers only (see
+	// eventing.PastMeetingSummaryIndexingConfig).
 	// ErrKeyNotFound is a permanent miss — skip without retry.
 	// Any other KV or decode error is transient — retry.
 	aiSummaryAccess := ""
@@ -298,7 +298,6 @@ func convertMapToSummaryData(
 		ZoomMeetingHostID:       rawSummary.ZoomMeetingHostID,
 		ZoomMeetingHostEmail:    rawSummary.ZoomMeetingHostEmail,
 		ZoomMeetingTopic:        rawSummary.ZoomMeetingTopic,
-		ZoomWebhookEvent:        rawSummary.ZoomWebhookEvent,
 		SummaryTitle:            rawSummary.SummaryTitle,
 		SummaryStartTime:        rawSummary.SummaryStartTime,
 		SummaryEndTime:          rawSummary.SummaryEndTime,

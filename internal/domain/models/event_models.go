@@ -1213,7 +1213,6 @@ type SummaryEventData struct {
 	ZoomMeetingHostID       string            `json:"zoom_meeting_host_id"`
 	ZoomMeetingHostEmail    string            `json:"zoom_meeting_host_email"`
 	ZoomMeetingTopic        string            `json:"zoom_meeting_topic"`
-	ZoomWebhookEvent        string            `json:"zoom_webhook_event,omitempty"`
 	SummaryTitle            string            `json:"summary_title,omitempty"`
 	SummaryStartTime        string            `json:"summary_start_time,omitempty"`
 	SummaryEndTime          string            `json:"summary_end_time,omitempty"`
@@ -1231,6 +1230,13 @@ type SummaryEventData struct {
 	UpdatedAt               time.Time         `json:"updated_at"`
 	CreatedBy               CreatedBy         `json:"created_by"`
 	UpdatedBy               UpdatedBy         `json:"updated_by"`
+}
+
+// AwaitingApproval reports whether the summary requires approval and has not
+// been approved yet. It mirrors LFX Self Serve's isPastMeetingSummaryAwaitingApproval:
+// such a summary is visible to the meeting organizers only.
+func (s *SummaryEventData) AwaitingApproval() bool {
+	return s.RequiresApproval && !s.Approved
 }
 
 // SortName returns the primary sort name for this summary.

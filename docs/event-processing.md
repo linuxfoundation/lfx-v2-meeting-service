@@ -576,7 +576,7 @@ Past meeting FGA `update_access` messages include three reference keys: `meeting
 
 #### Summary `ai_summary_access` Lookup
 
-The `ai_summary_access` value used for summary FGA publishing is **not stored on the summary record itself**. It is looked up at publish time from the parent past meeting record in the `v1-objects` KV bucket:
+The `ai_summary_access` value used for summary indexing is **not stored on the summary record itself**. It is looked up at publish time from the parent past meeting record in the `v1-objects` KV bucket:
 
 ```go
 // Key: itx-zoom-past-meetings.{meeting_and_occurrence_id}
@@ -589,7 +589,9 @@ aiSummaryAccess = pastMeetingData["ai_summary_access"].(string)
 publisher.PublishPastMeetingSummaryEvent(ctx, action, summaryData, aiSummaryAccess)
 ```
 
-If the past meeting record cannot be fetched, `ai_summary_access` defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
+If the parent past meeting record does not exist, the summary is skipped without retry; any other KV or decode error is retried. A missing `ai_summary_access` field defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
+
+`ai_summary_access` only applies once the summary is approved or does not require approval. While a summary awaits approval (`requires_approval && !approved`), the publisher indexes it as non-public with `v1_past_meeting#organizer` for both the access and the history check, matching LFX Self Serve's organizer-only rule. Approving the summary changes the v1 summary record, the KV watcher republishes it as `updated`, and the document is re-indexed with `ai_summary_viewer`. See the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 
 #### `UpdatedOccurrences` Duration Coercion
 

@@ -526,40 +526,71 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 	return nil
 }
 
-// PublishPastMeetingSummaryEvent publishes a summary event to indexer and FGA-sync services.
+// PublishPastMeetingSummaryEvent publishes a summary event to the indexer.
 // summaryAccess is the ai_summary_access value from the parent past meeting record.
+// The index access relation depends on the summary's approval state; see
+// PastMeetingSummaryIndexingConfig.
 func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, summaryAccess string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting summary event", "action", action, "summary_id", summary.ID)
 
-	isPublic := summaryAccess == "public"
-	tags := summary.Tags()
+	indexingConfig := PastMeetingSummaryIndexingConfig(summary, summaryAccess)
 	indexerMsg := indexerTypes.IndexerMessageEnvelope{
-		Action:  indexerConstants.MessageAction(action),
-		Headers: map[string]string{"authorization": authorizationHeaderValue},
-		Data:    summary,
-		Tags:    tags,
-		IndexingConfig: &indexerTypes.IndexingConfig{
-			ObjectID:             summary.ID,
-			Public:               &isPublic,
-			AccessCheckObject:    objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
-			AccessCheckRelation:  "ai_summary_viewer",
-			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID,
-			HistoryCheckRelation: "auditor",
-			ParentRefs:           summary.ParentRefs(),
-			Tags:                 tags,
-			SortName:             summary.SortName(),
-			NameAndAliases:       summary.NameAndAliases(),
-			Fulltext:             summary.FullText(),
-		},
+		Action:         indexerConstants.MessageAction(action),
+		Headers:        map[string]string{"authorization": authorizationHeaderValue},
+		Data:           summary,
+		Tags:           indexingConfig.Tags,
+		IndexingConfig: indexingConfig,
 	}
 
 	if err := p.publish(ctx, IndexV1PastMeetingSummarySubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish summary to indexer: %w", err)
 	}
 
-	// FGA access for summaries is managed in PublishPastMeetingEvent, not here,
-	// because ai_summary_access lives on the past meeting record.
+	// No FGA message is sent for summaries: the ai_summary_viewer tuples live on the
+	// past meeting and are written by PublishPastMeetingEvent, because
+	// ai_summary_access lives on the past meeting record. Approval state only
+	// narrows the relation the index checks against.
 	return nil
+}
+
+// PastMeetingSummaryIndexingConfig builds the indexing config for a past meeting summary.
+//
+// A summary awaiting approval (requires_approval && !approved) is visible to the
+// meeting organizers only, matching LFX Self Serve: it is indexed as non-public with
+// v1_past_meeting#organizer for both the access and the history check, regardless of
+// ai_summary_access. The history check uses organizer as well because auditor is
+// broader than organizer, and the history audience must not exceed the access
+// audience.
+//
+// Any other summary is public when ai_summary_access is "public" and is checked
+// against v1_past_meeting#ai_summary_viewer, with auditor for history.
+//
+// Every publish carries the full config, so approving a summary (or revoking an
+// approval) re-indexes the document with the matching relation.
+func PastMeetingSummaryIndexingConfig(summary *models.SummaryEventData, summaryAccess string) *indexerTypes.IndexingConfig {
+	isPublic := summaryAccess == "public"
+	accessRelation := "ai_summary_viewer"
+	historyRelation := "auditor"
+	if summary.AwaitingApproval() {
+		isPublic = false
+		accessRelation = "organizer"
+		historyRelation = "organizer"
+	}
+
+	pastMeetingObject := objectTypeV1PastMeeting + ":" + summary.MeetingAndOccurrenceID
+	return &indexerTypes.IndexingConfig{
+		ObjectID:             summary.ID,
+		Public:               &isPublic,
+		AccessCheckObject:    pastMeetingObject,
+		AccessCheckRelation:  accessRelation,
+		HistoryCheckObject:   pastMeetingObject,
+		HistoryCheckRelation: historyRelation,
+		ParentRefs:           summary.ParentRefs(),
+		Tags:                 summary.Tags(),
+		SortName:             summary.SortName(),
+		NameAndAliases:       summary.NameAndAliases(),
+		Fulltext:             summary.FullText(),
+	}
 }
 
 // PublishMeetingAttachmentEvent publishes a meeting attachment event to indexer and FGA-sync services
