@@ -586,8 +586,11 @@ The `ai_summary_access` value used for summary indexing is **not stored on the s
 // Key: itx-zoom-past-meetings.{meeting_and_occurrence_id}
 pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
 entry, _ := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
-// Extract ai_summary_access from past meeting data
-aiSummaryAccess = pastMeetingData["ai_summary_access"].(string)
+// Extract ai_summary_access; missing or non-string defaults to ""
+aiSummaryAccess := ""
+if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
+    aiSummaryAccess = access
+}
 
 // Pass to publisher
 publisher.PublishPastMeetingSummaryEvent(ctx, action, summaryData, aiSummaryAccess)
@@ -1119,6 +1122,8 @@ To add a new event type:
 ```
 
 ### Recording Event
+
+Recording, transcript, and summary tags start with the document's own ID as a bare value, followed by `key:value` tags.
 
 ```json
 {
