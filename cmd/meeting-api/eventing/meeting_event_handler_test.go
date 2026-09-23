@@ -217,9 +217,8 @@ func TestConvertMapToMeetingDataShowMeetingAttendees(t *testing.T) {
 	})
 }
 
-// The meeting index document carries only the fields index readers use: provider join
-// fields (join_url, zoom passcode, host_key) are not copied, while the LFX meeting
-// password and the zoom_config AI flags are kept.
+// The meeting index document no longer carries join_url or zoom_config.passcode, while
+// the LFX meeting password and the zoom_config AI flags are kept.
 func TestConvertMapToMeetingDataOmitsJoinFields(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	kv := &mockKeyValue{}
@@ -235,7 +234,6 @@ func TestConvertMapToMeetingDataOmitsJoinFields(t *testing.T) {
 		"updated_by":                  map[string]interface{}{"user_id": "user-1", "username": "alice"},
 		"join_url":                    "https://example.com/j/meeting-1",
 		"passcode":                    "placeholder-passcode",
-		"host_key":                    "000000",
 		"password":                    password,
 		"zoom_ai_enabled":             true,
 		"ai_summary_require_approval": true,
@@ -250,9 +248,7 @@ func TestConvertMapToMeetingDataOmitsJoinFields(t *testing.T) {
 	var doc map[string]any
 	require.NoError(t, json.Unmarshal(raw, &doc))
 
-	for _, field := range []string{"join_url", "host_key", "passcode"} {
-		assert.NotContains(t, doc, field)
-	}
+	assert.NotContains(t, doc, "join_url")
 	assert.Equal(t, password, doc["password"])
 
 	zoomConfig, ok := doc["zoom_config"].(map[string]any)

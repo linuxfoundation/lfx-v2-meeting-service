@@ -160,8 +160,12 @@ file and function, and say what an attacker controls.
 
 - **Meeting join credentials are data this service handles routinely.** Zoom
   passcodes, the host key, the join URL, and the join-page password flow through
-  the ITX models, the event handlers, and the indexer payload — the indexed
-  meeting record deliberately carries them. That makes it normal for
+  the ITX models and the event handlers. Of these, the index documents carry
+  only the join-page password (`password` on `v1_meeting`, `meeting_password`
+  on `v1_past_meeting`); the host key has its own
+  `v1_meeting_host_credentials` document, and the join URL and Zoom passcode
+  are served by the API only — re-adding `join_url` or `zoom_config.passcode`
+  to an index document is a regression. That makes it normal for
   them to appear in a diff and abnormal for them to appear anywhere new:
   in a log line, an error message, a trace attribute, a test fixture committed
   with a real value, or a response shape a caller was not already entitled to.
