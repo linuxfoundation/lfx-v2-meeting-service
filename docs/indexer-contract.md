@@ -780,13 +780,13 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `id` | string | Summary unique identifier |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `project_uid` | string | v2 UUID of the associated project |
+| `project_slug` | string | Slug of the associated project (from the parent past meeting; empty when unset) |
 | `meeting_id` | string | ID of the originating active meeting |
 | `occurrence_id` | string | Occurrence ID |
 | `zoom_meeting_uuid` | string | Zoom meeting UUID from the webhook event |
 | `zoom_meeting_host_id` | string | Zoom user ID of the host |
 | `zoom_meeting_host_email` | string | Email of the host |
 | `zoom_meeting_topic` | string | Zoom meeting topic |
-| `zoom_webhook_event` | string (optional) | Zoom webhook event type that triggered this summary |
 | `summary_title` | string (optional) | AI-generated summary title |
 | `summary_start_time` | string (optional) | Summary start time (RFC3339) |
 | `summary_end_time` | string (optional) | Summary end time (RFC3339) |
@@ -805,6 +805,8 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
+The summary document does not carry `ai_summary_access`. That attribute belongs to the parent past meeting (see [V1 Past Meeting](#v1-past-meeting)). It only decides the summary's `public` flag below, and only once the summary is approved or does not require approval; the access relation follows the summary's approval state. Readers that need it should read the parent `v1_past_meeting` document, not the summary's `data`.
+
 ### Tags
 
 | Tag Format | Example | Purpose |
@@ -814,18 +816,26 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find summaries for a past meeting |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find summaries for a meeting |
 | `platform:Zoom` | `platform:Zoom` | All summaries (platform is always Zoom) |
+| `project_uid:{value}` | `project_uid:abc123...` | Find summaries by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find summaries by project slug |
 | `title:{value}` | `title:TSC Monthly Meeting` | Find summaries by Zoom meeting topic |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find summaries by committee |
 
 ### Access Control (IndexingConfig)
 
-| Field | Value |
-|---|---|
-| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
-| `access_check_relation` | `ai_summary_viewer` |
-| `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
-| `history_check_relation` | `auditor` |
-| `public` | `true` when `ai_summary_access == "public"`, `false` otherwise |
+The access relation depends on the summary's approval state. A summary awaiting approval (`requires_approval == true` and `approved != true`) is visible to the meeting organizers only, matching LFX Self Serve; `ai_summary_access` from the parent past meeting is ignored until the summary is approved.
+
+| Field | Awaiting approval | Approved, or approval not required |
+|---|---|---|
+| `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` | `v1_past_meeting:{meeting_and_occurrence_id}` |
+| `access_check_relation` | `organizer` | `ai_summary_viewer` |
+| `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` | `v1_past_meeting:{meeting_and_occurrence_id}` |
+| `history_check_relation` | `organizer` | `auditor` |
+| `public` | `false` | `true` when `ai_summary_access == "public"`, `false` otherwise |
+
+The history check uses `organizer` while a summary awaits approval because `auditor` is broader than `organizer` in the platform model; the history audience never exceeds the access audience.
+
+Every summary publish carries the full config, so approving a summary (or revoking an approval) re-indexes the document with the matching relation. Documents indexed before this rule change keep their previous access fields until they are republished; run `go run ./scripts/reindex_meetings/ -types v1_past_meeting_summary -reindex` to apply it to all of them.
 
 ### Search Behavior
 
