@@ -815,6 +815,8 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find summaries for a past meeting |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find summaries for a meeting |
 | `platform:Zoom` | `platform:Zoom` | All summaries (platform is always Zoom) |
+| `project_uid:{value}` | `project_uid:abc123...` | Find summaries by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find summaries by project slug |
 | `title:{value}` | `title:TSC Monthly Meeting` | Find summaries by Zoom meeting topic |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find summaries by committee |
 

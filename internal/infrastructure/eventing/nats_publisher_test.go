@@ -117,3 +117,54 @@ func TestPastMeetingSummaryIndexingConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestPastMeetingSummaryIndexerMessage(t *testing.T) {
+	const meetingAndOccID = "12345678901-1700000000000"
+
+	tests := []struct {
+		name        string
+		approved    bool
+		wantAccess  string
+		wantHistory string
+		wantPublic  bool
+	}{
+		{
+			name:        "summary awaiting approval is indexed for organizers only",
+			approved:    false,
+			wantAccess:  "organizer",
+			wantHistory: "organizer",
+			wantPublic:  false,
+		},
+		{
+			name:        "approved summary is indexed for ai summary viewers",
+			approved:    true,
+			wantAccess:  "ai_summary_viewer",
+			wantHistory: "auditor",
+			wantPublic:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			summary := &models.SummaryEventData{
+				ID:                     "00000000-0000-0000-0000-000000000001",
+				MeetingAndOccurrenceID: meetingAndOccID,
+				MeetingID:              "12345678901",
+				RequiresApproval:       true,
+				Approved:               tt.approved,
+			}
+
+			msg := pastMeetingSummaryIndexerMessage("updated", summary, "public")
+
+			assert.Equal(t, "updated", string(msg.Action))
+			assert.Equal(t, summary, msg.Data)
+			assert.Equal(t, summary.Tags(), msg.Tags)
+			require.NotNil(t, msg.IndexingConfig)
+			require.NotNil(t, msg.IndexingConfig.Public)
+			assert.Equal(t, tt.wantPublic, *msg.IndexingConfig.Public)
+			assert.Equal(t, "v1_past_meeting:"+meetingAndOccID, msg.IndexingConfig.AccessCheckObject)
+			assert.Equal(t, tt.wantAccess, msg.IndexingConfig.AccessCheckRelation)
+			assert.Equal(t, tt.wantHistory, msg.IndexingConfig.HistoryCheckRelation)
+		})
+	}
+}

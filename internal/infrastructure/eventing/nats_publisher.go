@@ -533,14 +533,7 @@ func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, a
 func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, action string, summary *models.SummaryEventData, summaryAccess string) error {
 	p.logger.InfoContext(ctx, "publishing past meeting summary event", "action", action, "summary_id", summary.ID)
 
-	indexingConfig := PastMeetingSummaryIndexingConfig(summary, summaryAccess)
-	indexerMsg := indexerTypes.IndexerMessageEnvelope{
-		Action:         indexerConstants.MessageAction(action),
-		Headers:        map[string]string{"authorization": authorizationHeaderValue},
-		Data:           summary,
-		Tags:           indexingConfig.Tags,
-		IndexingConfig: indexingConfig,
-	}
+	indexerMsg := pastMeetingSummaryIndexerMessage(action, summary, summaryAccess)
 
 	if err := p.publish(ctx, IndexV1PastMeetingSummarySubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish summary to indexer: %w", err)
@@ -551,6 +544,19 @@ func (p *NATSPublisher) PublishPastMeetingSummaryEvent(ctx context.Context, acti
 	// ai_summary_access lives on the past meeting record. Approval state only
 	// narrows the relation the index checks against.
 	return nil
+}
+
+// pastMeetingSummaryIndexerMessage builds the indexer envelope that
+// PublishPastMeetingSummaryEvent sends for a past meeting summary.
+func pastMeetingSummaryIndexerMessage(action string, summary *models.SummaryEventData, summaryAccess string) indexerTypes.IndexerMessageEnvelope {
+	indexingConfig := PastMeetingSummaryIndexingConfig(summary, summaryAccess)
+	return indexerTypes.IndexerMessageEnvelope{
+		Action:         indexerConstants.MessageAction(action),
+		Headers:        map[string]string{"authorization": authorizationHeaderValue},
+		Data:           summary,
+		Tags:           indexingConfig.Tags,
+		IndexingConfig: indexingConfig,
+	}
 }
 
 // PastMeetingSummaryIndexingConfig builds the indexing config for a past meeting summary.

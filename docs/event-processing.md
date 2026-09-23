@@ -451,7 +451,9 @@ Most events are published to **both** indexer and FGA-sync services:
 
 All FGA messages use the `GenericFGAMessage` format. There are two operation types:
 
-**Access control** (meetings, past meetings, recordings, transcripts, summaries):
+**Access control** (meetings, past meetings):
+
+Recordings, transcripts and summaries send no FGA messages; they are indexed only and access-checked against their parent `v1_past_meeting` (see the [FGA contract](fga-contract.md)).
 
 Subject: `lfx.fga-sync.update_access`
 
@@ -507,15 +509,17 @@ For past meeting participants, all applicable relations (`"host"`, `"invitee"`, 
 }
 ```
 
-**Artifact visibility via `references` keys** (recordings, transcripts, summaries):
+**Artifact visibility on the past meeting** (recordings, transcripts, summaries):
 
-The `references` map in the FGA message controls which past meeting role relations grant access:
+The `v1_past_meeting` `update_access` message, sent from the past meeting record, carries the per-artifact viewer relations. For each artifact kind (`{kind}` is `recording`, `transcript` or `summary`), the matching access field on the past meeting selects what is written; each reference points at the same `v1_past_meeting` object:
 
-| `recording_access` / `transcript_access` / `ai_summary_access` | `public` flag | `references` keys included |
-| --------------------------------------------------------------- | ------------- | -------------------------- |
-| `"public"` | `true` | `past_meeting` only (`public` flag handles viewer access) |
-| `"meeting_participants"` | `false` | `past_meeting`, `past_meeting_for_host_view`, `past_meeting_for_attendee_view`, `past_meeting_for_participant_view` |
-| `"meeting_hosts"` or unset | `false` | `past_meeting`, `past_meeting_for_host_view` |
+| `recording_access` / `transcript_access` / `ai_summary_access` | What is written |
+| --------------------------------------------------------------- | --------------- |
+| `"public"` | `recording_viewer` / `transcript_viewer` / `ai_summary_viewer` relation to `*` |
+| `"meeting_participants"` | `references` keys `past_meeting_for_host_{kind}_view`, `past_meeting_for_attendee_{kind}_view`, `past_meeting_for_participant_{kind}_view` |
+| `"meeting_hosts"` or unset | `references` key `past_meeting_for_host_{kind}_view` |
+
+Summary index documents check `v1_past_meeting#organizer` instead of `ai_summary_viewer` while the summary awaits approval; see [Summary `ai_summary_access` Lookup](#summary-ai_summary_access-lookup) below and the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 
 ### Actions
 
@@ -1170,7 +1174,7 @@ To add a new event type:
     "total_size": 52438800,
     "created_at": "2024-01-15T10:35:00Z",
     "updated_at": "2024-01-15T10:35:00Z",
-    "tags": ["project:proj-uuid", "has_transcript:true"]
+    "tags": ["recording-uuid", "past_meeting_recording_id:recording-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "platform_meeting_id:123456789", "project_uid:proj-uuid", "platform_meeting_instance_id:session-uuid"]
 }
 ```
 
@@ -1199,7 +1203,7 @@ To add a new event type:
     "email_sent": false,
     "created_at": "2024-01-15T11:00:00Z",
     "updated_at": "2024-01-15T11:30:00Z",
-    "tags": ["project:proj-uuid", "approved:false", "requires_approval:true"]
+    "tags": ["summary-uuid", "past_meeting_summary_id:summary-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_id:meeting-uuid", "platform:Zoom", "project_uid:proj-uuid", "title:Weekly Team Sync"]
 }
 ```
 
