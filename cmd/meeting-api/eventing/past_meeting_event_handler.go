@@ -102,11 +102,6 @@ type pastMeetingDBRaw struct {
 	// IsManuallyCreated indicates whether the past meeting was created manually
 	IsManuallyCreated bool `json:"is_manually_created"`
 
-	// RecordingPassword is the password of the past meeting recording
-	// This is no longer relevant for recordings since sometime in 2023 because now the recordings
-	// aren't hidden behind a password to access them.
-	RecordingPassword string `json:"recording_password"`
-
 	// MeetingPassword is the ITX-generated UUID password from the active meeting record,
 	// used to secure the past meeting join page URL.
 	MeetingPassword string `json:"meeting_password"`
@@ -407,7 +402,6 @@ func convertMapToPastMeetingData(
 		RequireAISummaryApproval: rawPastMeeting.RequireAISummaryApproval,
 		EarlyJoinTimeMinutes:     rawPastMeeting.EarlyJoinTime,
 		YoutubeLink:              rawPastMeeting.YoutubeLink,
-		RecordingPassword:        rawPastMeeting.RecordingPassword,
 		MeetingPassword:          rawPastMeeting.MeetingPassword,
 		ZoomConfig:               zoomConfig,
 		IsManuallyCreated:        rawPastMeeting.IsManuallyCreated,

@@ -6,7 +6,7 @@ The full OpenFGA type definitions (relations, schema) for all object types are d
 
 **Update this document in the same PR as any change to FGA message construction.**
 
-> **Note:** `v1_meeting_rsvp`, `v1_meeting_attachment`, `v1_past_meeting_attachment`, `v1_past_meeting_recording`, `v1_past_meeting_transcript`, and `v1_past_meeting_summary` do not send FGA messages — they are indexed only. Access for recordings, transcripts, and summaries is checked via the parent `v1_past_meeting` object.
+> **Note:** `v1_meeting_rsvp`, `v1_meeting_attachment`, `v1_past_meeting_attachment`, `v1_past_meeting_recording`, `v1_past_meeting_transcript`, and `v1_past_meeting_summary` do not send FGA messages — they are indexed only. Access for recordings, transcripts, and summaries is checked via the parent `v1_past_meeting` object. Summary index documents check `v1_past_meeting#organizer` while the summary awaits approval (`requires_approval && !approved`) and `v1_past_meeting#ai_summary_viewer` otherwise; see the [indexer contract](indexer-contract.md#v1-past-meeting-summary). The `ai_summary_viewer` tuples written from the past meeting record are unaffected by summary approval state.
 
 ---
 
@@ -199,7 +199,7 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Delete recording | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Create/update transcript | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Delete transcript | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
-| Create/update summary | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
+| Create/update summary | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` (`organizer` while awaiting approval, `ai_summary_viewer` otherwise) |
 | Delete summary | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Create/update meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
