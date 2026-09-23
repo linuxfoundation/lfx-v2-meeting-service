@@ -807,7 +807,7 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
-The summary document does not carry `ai_summary_access`. That attribute belongs to the parent past meeting (see [V1 Past Meeting](#v1-past-meeting)). It only decides the summary's `public` flag and access relation below. Readers that need it should read the parent `v1_past_meeting` document, not the summary's `data`.
+The summary document does not carry `ai_summary_access`. That attribute belongs to the parent past meeting (see [V1 Past Meeting](#v1-past-meeting)). It only decides the summary's `public` flag below, and only once the summary is approved or does not require approval; the access relation follows the summary's approval state. Readers that need it should read the parent `v1_past_meeting` document, not the summary's `data`.
 
 ### Tags
 
