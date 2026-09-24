@@ -986,7 +986,8 @@ type ParticipantSession struct {
 	LeaveReason string     `json:"leave_reason,omitempty"`
 }
 
-// RecordingEventData represents a recording artifact event
+// RecordingEventData represents a recording artifact event. RecordingFiles holds every file of the
+// v1 recording record except TRANSCRIPT and TIMELINE files, which go to TranscriptEventData.
 type RecordingEventData struct {
 	ID                     string             `json:"id"`
 	MeetingAndOccurrenceID string             `json:"meeting_and_occurrence_id"`
@@ -1104,7 +1105,8 @@ type RecordingSession struct {
 	StartTime time.Time `json:"start_time"`
 }
 
-// TranscriptEventData represents a transcript artifact event
+// TranscriptEventData represents a transcript artifact event, built from the same v1 recording
+// record as RecordingEventData. RecordingFiles holds only its TRANSCRIPT and TIMELINE files.
 type TranscriptEventData struct {
 	ID                     string             `json:"id"`
 	MeetingAndOccurrenceID string             `json:"meeting_and_occurrence_id"`

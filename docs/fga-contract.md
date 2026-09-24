@@ -120,7 +120,13 @@ Published to `lfx.fga-sync.update_access` on past meeting create or update.
 
 #### Relations
 
-_(none set by this service)_
+Only the public artifact viewer relations are set, one per artifact access field on the past meeting record:
+
+| Relation | Value | Condition |
+|---|---|---|
+| `recording_viewer` | `["*"]` | When `RecordingAccess == "public"` |
+| `transcript_viewer` | `["*"]` | When `TranscriptAccess == "public"` |
+| `ai_summary_viewer` | `["*"]` | When `AISummaryAccess == "public"` |
 
 #### References
 
@@ -129,8 +135,17 @@ _(none set by this service)_
 | `meeting` | `"v1_meeting:{MeetingID}"` | Only when `MeetingID` is non-empty |
 | `project` | `ProjectUID` | Only when `ProjectUID` is non-empty |
 | `committee` | `CommitteeUID` per committee | One entry per committee with a non-empty `UID` |
+| `past_meeting_for_host_{kind}_view` | `"v1_past_meeting:{MeetingAndOccurrenceID}"` | When the matching access field is anything other than `"public"`: `"meeting_participants"`, `"meeting_hosts"`, unset, or any unrecognised value |
+| `past_meeting_for_attendee_{kind}_view` | `"v1_past_meeting:{MeetingAndOccurrenceID}"` | When the matching access field is `"meeting_participants"` |
+| `past_meeting_for_participant_{kind}_view` | `"v1_past_meeting:{MeetingAndOccurrenceID}"` | When the matching access field is `"meeting_participants"` |
+
+`{kind}` is `recording` (from `RecordingAccess`), `transcript` (from `TranscriptAccess`) or `summary` (from `AISummaryAccess`). Each `past_meeting_for_*` reference points at the past meeting itself, so access resolves through the `host`, `attendee` and `invitee` tuples on the same object (the platform model defines which role each reference admits). No `past_meeting_for_*` reference is written for a kind whose access field is `"public"`.
 
 > Note: the `meeting` reference value includes the type prefix (`v1_meeting:`) because the FGA model defines `meeting: [v1_meeting]`.
+
+#### Exclude Relations
+
+`exclude_relations: ["host", "invitee", "attendee"]` — always set. These relations are managed separately via `member_put` (see participant events below) and should not be overwritten by the `update_access` handler.
 
 ### member_put (Participant)
 

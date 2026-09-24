@@ -229,13 +229,13 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Publish recording event to indexer and FGA-sync
+	// Publish recording event to the indexer (recordings send no FGA message)
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording event")
 		return isTransientError(err)
 	}
 
-	// If transcript is enabled, publish separate transcript event
+	// If the record has TRANSCRIPT or TIMELINE files, publish a separate transcript event
 	if transcriptData != nil {
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
