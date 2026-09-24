@@ -443,9 +443,9 @@ if err != nil {
 
 ## Publishing
 
-### Dual Publishing Architecture
+### Publishing Destinations
 
-Most events are published to **both** indexer and FGA-sync services:
+Every event type is published to the indexer. Meetings, past meetings, registrants and past meeting participants are also published to FGA-sync. Host credentials, invite responses, recordings, transcripts, summaries and attachments go to the indexer only (see [Actions](#actions)).
 
 #### Indexer Service
 
@@ -453,7 +453,7 @@ Most events are published to **both** indexer and FGA-sync services:
 
 **Subject pattern**: `lfx.index.{object_type}`
 
-**Message format**: an `IndexerMessageEnvelope` from `lfx-v2-indexer-service/pkg/types`. The object type is taken from the subject, not from a field. This example is a past meeting recording on `lfx.index.v1_past_meeting_recording`, with `data` cut down to a few fields. Its tags and parent references are the ones those fields produce; a real recording also carries project slug, session and committee tags and committee parent references (see [Recording Event](#recording-event) for the full object and tag list):
+**Message format**: an `IndexerMessageEnvelope` from `lfx-v2-indexer-service/pkg/types`. The object type is taken from the subject, not from a field. This example is a past meeting recording on `lfx.index.v1_past_meeting_recording`, with `data` cut down to a few fields. Its tags and parent references are the ones these fields produce, plus the fixed `platform:Zoom` tag and the `platform_meeting_id:` tag, which is always emitted and always empty. A real recording also carries project slug, session and committee tags and committee parent references (see [Recording Event](#recording-event) for the full object and tag list):
 
 ```json
 {
