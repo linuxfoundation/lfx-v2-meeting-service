@@ -2,7 +2,7 @@
 
 ## Overview
 
-The LFX Meeting Service implements a comprehensive event processing system that watches NATS JetStream KV buckets for meeting-related data changes from the v1 system. When changes are detected, the service transforms the data from v1 to v2 format and publishes events to both the indexer service (for search) and FGA-sync service (for access control).
+The LFX Meeting Service implements a comprehensive event processing system that watches NATS JetStream KV buckets for meeting-related data changes from the v1 system. When changes are detected, the service transforms the data from v1 to v2 format and publishes events to the indexer service (for search) and, for meetings, past meetings, registrants and past meeting participants, to the FGA-sync service (for access control).
 
 This document describes the architecture, configuration, data transformation patterns, and operational aspects of the event processing system.
 
@@ -73,7 +73,7 @@ This document describes the architecture, configuration, data transformation pat
 4. **Routing**: KV handler routes events by key prefix to appropriate handler
 5. **Transformation**: Handler converts v1 data to v2 format, enriches with user data, calculates occurrences
 6. **ID Mapping**: SFIDs mapped to UUIDs via ID mapper service
-7. **Publishing**: Events published to indexer (search) and FGA-sync (access control)
+7. **Publishing**: Events published to indexer (search) and, for meetings, past meetings, registrants and past meeting participants, to FGA-sync (access control)
 8. **Mapping Storage**: v1→v2 ID mappings stored in `v1-mappings` KV bucket
 
 ## Event Types
@@ -453,7 +453,7 @@ Most events are published to **both** indexer and FGA-sync services:
 
 **Subject pattern**: `lfx.index.{object_type}`
 
-**Message format**: an `IndexerMessageEnvelope` from `lfx-v2-indexer-service/pkg/types`. The object type is taken from the subject, not from a field. This example is a past meeting recording on `lfx.index.v1_past_meeting_recording`, with `data` abbreviated (see [Recording Event](#recording-event) for the full object):
+**Message format**: an `IndexerMessageEnvelope` from `lfx-v2-indexer-service/pkg/types`. The object type is taken from the subject, not from a field. This example is a past meeting recording on `lfx.index.v1_past_meeting_recording`, with `data` cut down to a few fields. Its tags and parent references are the ones those fields produce; a real recording also carries project slug, session and committee tags and committee parent references (see [Recording Event](#recording-event) for the full object and tag list):
 
 ```json
 {
@@ -507,13 +507,12 @@ Subject: `lfx.fga-sync.update_access`
     "data": {
         "uid": "550e8400-e29b-41d4-a716-446655440000",
         "public": false,
-        "relations": {
-            "organizer": ["jdoe"]
-        },
+        "relations": {},
         "references": {
             "project": ["project-uuid"],
             "committee": ["committee-uuid-1", "committee-uuid-2"]
-        }
+        },
+        "exclude_relations": ["participant", "host"]
     }
 }
 ```
@@ -573,6 +572,8 @@ Events use these action types:
 | `created` | `lfx.index.{type}` | `lfx.fga-sync.update_access` | New resource created |
 | `updated` | `lfx.index.{type}` | `lfx.fga-sync.update_access` | Resource modified |
 | `deleted` | `lfx.index.{type}` | `lfx.fga-sync.delete_access` | Resource removed |
+
+The FGA-sync subjects above apply to meetings and past meetings. Registrants and past meeting participants use `lfx.fga-sync.member_put` and `lfx.fga-sync.member_remove` instead. Host credentials, invite responses, recordings, transcripts, summaries and attachments use only the indexer subject and send no FGA-sync message for any action.
 
 ### Special Cases
 
@@ -1094,7 +1095,7 @@ To add a new event type:
         }
     ],
     "created_at": "2024-01-10T08:00:00Z",
-    "modified_at": "2024-01-10T08:00:00Z"
+    "updated_at": "2024-01-10T08:00:00Z"
 }
 ```
 
@@ -1110,7 +1111,6 @@ Envelope `tags` (also sent as `indexing_config.tags`; the data object has no `ta
 {
     "uid": "reg-uuid",
     "meeting_id": "meeting-uuid",
-    "project_uid": "proj-uuid",
     "committee_uid": "committee-uuid",
     "user_id": "platform-user-id",
     "username": "jdoe",
@@ -1121,7 +1121,7 @@ Envelope `tags` (also sent as `indexing_config.tags`; the data object has no `ta
     "org_name": "ACME Corporation",
     "host": true,
     "created_at": "2024-01-10T08:30:00Z",
-    "modified_at": "2024-01-10T08:30:00Z"
+    "updated_at": "2024-01-10T08:30:00Z"
 }
 ```
 
@@ -1166,7 +1166,7 @@ Envelope `tags`:
         }
     ],
     "created_at": "2024-01-15T10:02:00Z",
-    "modified_at": "2024-01-15T10:32:00Z"
+    "updated_at": "2024-01-15T10:32:00Z"
 }
 ```
 
