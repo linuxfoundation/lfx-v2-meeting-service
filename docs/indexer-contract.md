@@ -6,6 +6,8 @@ This document is the authoritative reference for all data the meeting service se
 
 **Convention:** Tags and parent refs containing a `{value}` placeholder are only emitted when the corresponding field is non-empty.
 
+**ID mapping:** fields described below as a v2 UUID (`project_uid`, `committee_uid`) carry the v2 UUID when the ID mapper is active. When the service runs with the no-op mapper, the v1 SFID passes through unchanged. That happens when `ID_MAPPING_DISABLED` is `true`, when `NATS_URL` is not set, or when the NATS mapper fails to start. See [ID Mapping](event-processing.md#id-mapping).
+
 ---
 
 ## Resource Types

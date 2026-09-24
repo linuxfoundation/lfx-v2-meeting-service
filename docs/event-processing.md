@@ -342,7 +342,7 @@ Registrant and past meeting participant FGA `member_put` / `member_remove` messa
 
 ### ID Mapping
 
-Project and committee IDs are mapped from v1 SFIDs to v2 UUIDs:
+Project and committee IDs are mapped from v1 SFIDs to v2 UUIDs. When the service runs with the no-op mapper, the SFID passes through unchanged, so `project_uid` and `committee_uid` carry the v1 SFID. That happens when `ID_MAPPING_DISABLED` is `true`, when `NATS_URL` is not set, or when the NATS mapper fails to start (`cmd/meeting-api/main.go`). The [v1 → v2 Field Mappings](#v1--v2-field-mappings) tables describe the mapped case.
 
 ```go
 // Map project SFID to UUID
