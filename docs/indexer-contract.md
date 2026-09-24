@@ -591,46 +591,57 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 **Source struct:** `internal/domain/models/event_models.go` — `RecordingEventData`
 
-**Indexed on:** create, update, delete of a past meeting recording.
+**Built by:** `handlePastMeetingRecordingUpdate` / `convertMapToRecordingData` in `cmd/meeting-api/eventing/recording_event_handler.go`, from a v1 `itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}` record. There is one recording record per past meeting; the same record also produces the [transcript document](#v1-past-meeting-transcript).
+
+**Indexed on:** every create or update of the recording record. Deleting the record sends a `deleted` message for this document and for the transcript document. The record is skipped (not indexed) when its `proj_id` is empty or has no v2 project mapping.
+
+**File split:** each entry in the record's `recording_files` goes to exactly one document, by its Zoom `file_type`:
+
+| `file_type` | Document |
+|---|---|
+| `TRANSCRIPT` (VTT transcript), `TIMELINE` (JSON timeline) | [Transcript](#v1-past-meeting-transcript) `recording_files` |
+| Any other value (for example `MP4` video, `M4A` audio, `CHAT` chat log, `CC` closed captions) | Recording `recording_files` |
 
 ### Data Schema
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string | Recording unique identifier |
+| `id` | string | Same value as `meeting_and_occurrence_id`; the record has no separate recording ID. Used as the object ID |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
-| `project_uid` | string | v2 UUID of the associated project |
-| `project_slug` | string | URL slug of the associated project |
-| `host_email` | string | Email of the meeting host |
+| `project_uid` | string | v2 UUID of the project, mapped from the record's `proj_id` (always set: records without one are skipped) |
+| `project_slug` | string | Project slug copied from the record's `project_slug`; empty string when the record has none |
+| `host_email` | string | Email of the meeting host (from Zoom) |
 | `host_id` | string | Zoom user ID of the host |
 | `meeting_id` | string | ID of the originating active meeting |
 | `occurrence_id` | string | Occurrence ID |
 | `platform` | string | Meeting platform (always `"Zoom"`) |
-| `platform_meeting_id` | string | Zoom numeric meeting ID |
-| `recording_access` | string | Access level (`"public"`, `"meeting_hosts"`, `"meeting_participants"`) |
-| `title` | string | Recording title |
-| `transcript_access` | string (optional) | Transcript access level |
-| `transcript_enabled` | bool | Whether transcript is enabled |
-| `visibility` | string | Recording visibility |
-| `recording_count` | int | Number of recording files |
-| `recording_files` | []object | Recording files (see [Recording File schema](#recording-file-schema)) |
+| `platform_meeting_id` | string | Present in the schema but not populated by the handler: always `""` |
+| `recording_access` | string | The record's `recording_access` (`"public"`, `"meeting_hosts"`, `"meeting_participants"`); defaults to `"meeting_hosts"` when empty |
+| `title` | string | Meeting topic (from the record's `topic`) |
+| `transcript_access` | string (optional) | The record's `transcript_access`; defaults to `"meeting_hosts"` when empty and the record has transcript files. Omitted when empty |
+| `transcript_enabled` | bool | `true` when the record has at least one `TRANSCRIPT` or `TIMELINE` file. Derived from the files, not copied from the record's `transcript_enabled` |
+| `visibility` | string | The record's `visibility`, copied as is. It does not drive the `public` flag |
+| `recording_count` | int | The record's `recording_count`, copied as is. It counts the source files before the split, so it can be larger than the length of `recording_files` |
+| `recording_files` | []object | Non-transcript files only (see **File split** above and the [Recording File schema](#recording-file-schema)); `null` when the record has none |
 | `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
 | `start_time` | string (RFC3339) | Recording start time |
-| `total_size` | int64 | Total size of all recording files in bytes |
+| `total_size` | int64 | The record's `total_size` in bytes, copied as is (covers all source files, including transcript files) |
 | `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
-| `updated_at` | string (RFC3339) | Last update time |
+| `updated_at` | string (RFC3339) | Last update time (from the record's `modified_at`) |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
 #### Recording File Schema
 
+Used by `recording_files` on both the recording and the transcript document. Every field is copied from the matching Zoom file entry.
+
 | Field | Type | Description |
 |---|---|---|
 | `id` | string | File unique identifier |
 | `meeting_id` | string | Associated meeting ID |
-| `file_type` | string | File type (e.g., `"MP4"`, `"M4A"`) |
-| `file_extension` | string | File extension |
+| `file_type` | string | Zoom file type (for example `"MP4"`, `"M4A"`, `"CHAT"`, `"CC"` on the recording; `"TRANSCRIPT"`, `"TIMELINE"` on the transcript) |
+| `file_extension` | string | File extension (for example `"MP4"`, `"M4A"`, `"VTT"`, `"JSON"`) |
 | `file_size` | int64 | File size in bytes |
 | `recording_type` | string | Zoom recording type (e.g., `"shared_screen_with_speaker_view"`) |
 | `status` | string | File status |
@@ -640,6 +651,8 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `play_url` | string (optional) | Playback URL |
 
 #### Recording Session Schema
+
+Used by `sessions` on both the recording and the transcript document. The session `password` in the source record is not indexed.
 
 | Field | Type | Description |
 |---|---|---|
@@ -652,11 +665,13 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 | Tag Format | Example | Purpose |
 |---|---|---|
-| `{id}` | `abc123-...` | Direct lookup by recording ID |
-| `past_meeting_recording_id:{id}` | `past_meeting_recording_id:abc123-...` | Namespaced lookup by recording ID |
+| `{id}` | `93699735000:1700000000` | Direct lookup by document ID (the past meeting's `meeting_and_occurrence_id`) |
+| `past_meeting_recording_id:{id}` | `past_meeting_recording_id:93699735000:1700000000` | Namespaced lookup by document ID (the past meeting's `meeting_and_occurrence_id`) |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find recordings for a past meeting |
 | `platform:Zoom` | `platform:Zoom` | All recordings (platform is always Zoom) |
-| `platform_meeting_id:{value}` | `platform_meeting_id:93699735000` | Find recordings by Zoom meeting ID |
+| `platform_meeting_id:{value}` | `platform_meeting_id:` | Always emitted, and always with an empty value, because `platform_meeting_id` is not populated (an exception to the convention above) |
+| `project_uid:{value}` | `project_uid:abc123...` | Find recordings by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find recordings by project slug |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find recordings by Zoom session UUID |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find recordings by committee |
 
@@ -668,7 +683,9 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `access_check_relation` | `recording_viewer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
 | `history_check_relation` | `auditor` |
-| `public` | `true` when `recording_access == "public"`, `false` otherwise |
+| `public` | `true` when the document's `recording_access` is `"public"`, `false` otherwise |
+
+The `public` flag is read from the recording record's own `recording_access`. The `recording_viewer` tuples that the access check resolves are written from the parent past meeting record's `recording_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
 
 ### Search Behavior
 
@@ -696,31 +713,33 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 **Source struct:** `internal/domain/models/event_models.go` — `TranscriptEventData`
 
-**Indexed on:** create, update, delete of a past meeting transcript.
+**Built by:** the recording handler (`handlePastMeetingRecordingUpdate` / `convertMapToRecordingData` in `cmd/meeting-api/eventing/recording_event_handler.go`), from the same v1 `itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}` record as the [recording document](#v1-past-meeting-recording). There is no separate transcript record in v1.
+
+**Indexed on:** every create or update of the recording record that has at least one `TRANSCRIPT` or `TIMELINE` file; a record without such files publishes no transcript message. Deleting the recording record sends a `deleted` message for this document. A later update that no longer carries transcript files does not delete an already indexed transcript document.
 
 ### Data Schema
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string | Transcript unique identifier |
+| `id` | string | Same value as `meeting_and_occurrence_id` (and as the recording document's `id`). Used as the object ID |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
-| `project_uid` | string | v2 UUID of the associated project |
-| `project_slug` | string | URL slug of the associated project |
-| `host_email` | string | Email of the meeting host |
+| `project_uid` | string | v2 UUID of the project, mapped from the record's `proj_id` |
+| `project_slug` | string | Project slug copied from the record's `project_slug`; empty string when the record has none |
+| `host_email` | string | Email of the meeting host (from Zoom) |
 | `host_id` | string | Zoom user ID of the host |
 | `meeting_id` | string | ID of the originating active meeting |
 | `occurrence_id` | string | Occurrence ID |
 | `platform` | string | Meeting platform (always `"Zoom"`) |
-| `transcript_access` | string | Access level (`"public"`, `"meeting_hosts"`, `"meeting_participants"`) |
-| `title` | string | Transcript title |
-| `visibility` | string | Transcript visibility |
-| `recording_files` | []object | Associated recording files (see [Recording File schema](#recording-file-schema)) |
-| `sessions` | []object | Recording sessions (see [Recording Session schema](#recording-session-schema)) |
-| `start_time` | string (RFC3339) | Transcript start time |
-| `total_size` | int64 | Total size in bytes |
+| `transcript_access` | string | The record's `transcript_access` (`"public"`, `"meeting_hosts"`, `"meeting_participants"`); defaults to `"meeting_hosts"` when empty |
+| `title` | string | Meeting topic (from the record's `topic`) |
+| `visibility` | string | The record's `visibility`, copied as is. It does not drive the `public` flag |
+| `recording_files` | []object | The record's `TRANSCRIPT` and `TIMELINE` files only (see [Recording File schema](#recording-file-schema)); never empty |
+| `sessions` | []object | Recording sessions, the same list as on the recording document (see [Recording Session schema](#recording-session-schema)) |
+| `start_time` | string (RFC3339) | Recording start time |
+| `total_size` | int64 | The record's `total_size` in bytes, copied as is (covers all source files, not only the transcript files) |
 | `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
-| `updated_at` | string (RFC3339) | Last update time |
+| `updated_at` | string (RFC3339) | Last update time (from the record's `modified_at`) |
 | `created_by` | object | User who created the record (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the record (see [User Reference schema](#user-reference-schema)) |
 
@@ -728,10 +747,12 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 
 | Tag Format | Example | Purpose |
 |---|---|---|
-| `{id}` | `abc123-...` | Direct lookup by transcript ID |
-| `past_meeting_transcript_id:{id}` | `past_meeting_transcript_id:abc123-...` | Namespaced lookup by transcript ID |
+| `{id}` | `93699735000:1700000000` | Direct lookup by document ID (the past meeting's `meeting_and_occurrence_id`) |
+| `past_meeting_transcript_id:{id}` | `past_meeting_transcript_id:93699735000:1700000000` | Namespaced lookup by document ID (the past meeting's `meeting_and_occurrence_id`) |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find transcripts for a past meeting |
 | `platform:Zoom` | `platform:Zoom` | All transcripts (platform is always Zoom) |
+| `project_uid:{value}` | `project_uid:abc123...` | Find transcripts by project |
+| `project_slug:{value}` | `project_slug:my-project` | Find transcripts by project slug |
 | `platform_meeting_instance_id:{uuid}` | `platform_meeting_instance_id:abc...` | Find transcripts by Zoom session UUID |
 | `committee_uid:{value}` | `committee_uid:abc123...` | Find transcripts by committee |
 
@@ -743,7 +764,9 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `access_check_relation` | `transcript_viewer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
 | `history_check_relation` | `auditor` |
-| `public` | `true` when `transcript_access == "public"`, `false` otherwise |
+| `public` | `true` when the document's `transcript_access` is `"public"`, `false` otherwise |
+
+The `public` flag is read from the recording record's own `transcript_access`. The `transcript_viewer` tuples that the access check resolves are written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
 
 ### Search Behavior
 
@@ -863,33 +886,35 @@ Every summary publish carries the full config, so approving a summary (or revoki
 
 **Source struct:** `internal/domain/models/event_models.go` — `MeetingAttachmentEventData`
 
-**Indexed on:** create, update, delete of an attachment on an active meeting.
+**Built by:** `handleMeetingAttachmentUpdate` / `convertMapToMeetingAttachmentData` in `cmd/meeting-api/eventing/attachment_event_handler.go`, from a v1 `itx-zoom-meetings-attachments-v2.{id}` record.
+
+**Indexed on:** create, update, delete of an attachment on an active meeting. The attachment is retried while its parent meeting record is not yet in the v1 objects bucket, and skipped (not indexed) when the parent meeting has no `proj_id` or that project has no v2 mapping.
 
 ### Data Schema
 
 | Field | Type | Description |
 |---|---|---|
-| `uid` | string | Attachment unique identifier |
+| `uid` | string | Attachment unique identifier (the record's `id`) |
 | `meeting_id` | string | ID of the parent meeting |
-| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
+| `project_uid` | string | v2 UUID of the parent meeting's project (always set: attachments without a mapped project are skipped) |
 | `project_slug` | string (optional) | URL slug of the parent project (resolved via `lfx.projects-api.get_slug`; omitted when unavailable) |
-| `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
-| `category` | string (optional) | Attachment category |
-| `link` | string (optional) | Link URL (for link-type attachments) |
+| `type` | string | Attachment type: `"file"` or `"link"` |
+| `category` | string (optional) | Attachment category (for example `"Meeting Minutes"`, `"Notes"`, `"Presentation"`, `"Other"`) |
+| `link` | string (optional) | Link URL (link-type attachments) |
 | `name` | string | Attachment display name |
 | `description` | string (optional) | Attachment description |
-| `source` | string (optional) | Attachment source |
-| `file_name` | string (optional) | Uploaded file name |
-| `file_size` | int (optional) | File size in bytes |
-| `file_url` | string (optional) | URL to the uploaded file |
-| `file_uploaded` | bool (optional) | Whether the file has been uploaded |
-| `file_upload_status` | string (optional) | Upload status |
-| `file_content_type` | string (optional) | MIME content type |
-| `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
-| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `source` | string (optional) | Attachment source (for example `"api"`) |
+| `file_name` | string (optional) | Uploaded file name (file-type attachments) |
+| `file_size` | int (optional) | File size in bytes (file-type attachments); omitted when `0` |
+| `file_url` | string (optional) | Stored file location, copied from the record as is. The ITX attachment model documents it as a storage key path, not a download URL; downloads go through the attachment `download` endpoint |
+| `file_uploaded` | bool (optional) | Whether the file has been uploaded; omitted when the record does not carry the field |
+| `file_upload_status` | string (optional) | Upload status (`"ongoing"`, `"completed"`, `"failed"`) |
+| `file_content_type` | string (optional) | MIME content type of the file |
+| `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)); `user_id` is copied from `file_uploaded_by.id` in the source record |
+| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded; omitted when the record's value is empty or not a parseable time |
 | `committees` | []object (optional) | Associated committees sourced from the parent meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
-| `modified_at` | string (RFC3339) | Last modification time |
+| `modified_at` | string (RFC3339) | Last modification time (from the record's `updated_at`) |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the attachment (see [User Reference schema](#user-reference-schema)) |
 
@@ -940,34 +965,36 @@ Every summary publish carries the full config, so approving a summary (or revoki
 
 **Source struct:** `internal/domain/models/event_models.go` — `PastMeetingAttachmentEventData`
 
-**Indexed on:** create, update, delete of an attachment on a past meeting.
+**Built by:** `handlePastMeetingAttachmentUpdate` / `convertMapToPastMeetingAttachmentData` in `cmd/meeting-api/eventing/attachment_event_handler.go`, from a v1 `itx-zoom-past-meetings-attachments.{id}` record.
+
+**Indexed on:** create, update, delete of an attachment on a past meeting. The attachment is skipped (not indexed, not retried) when its parent past meeting record is missing, has no `proj_id`, or that project has no v2 mapping.
 
 ### Data Schema
 
 | Field | Type | Description |
 |---|---|---|
-| `uid` | string | Attachment unique identifier |
+| `uid` | string | Attachment unique identifier (the record's `id`) |
 | `meeting_and_occurrence_id` | string | Combined meeting+occurrence ID of the parent past meeting |
 | `meeting_id` | string | ID of the originating active meeting |
-| `project_uid` | string (optional) | v2 UUID of the parent project (omitted when project not yet in v2) |
-| `project_slug` | string (optional) | URL slug of the parent project (sourced from the past meeting KV record) |
-| `type` | string | Attachment type (e.g., `"link"`, `"file"`) |
-| `category` | string (optional) | Attachment category |
-| `link` | string (optional) | Link URL (for link-type attachments) |
+| `project_uid` | string | v2 UUID of the parent past meeting's project (always set: attachments without a mapped project are skipped) |
+| `project_slug` | string | URL slug of the parent project, copied from the parent past meeting record's `project_slug`; empty string when that record has none |
+| `type` | string | Attachment type: `"file"` or `"link"` |
+| `category` | string (optional) | Attachment category (for example `"Meeting Minutes"`, `"Notes"`, `"Presentation"`, `"Other"`) |
+| `link` | string (optional) | Link URL (link-type attachments) |
 | `name` | string | Attachment display name |
 | `description` | string (optional) | Attachment description |
-| `source` | string (optional) | Attachment source |
-| `file_name` | string (optional) | Uploaded file name |
-| `file_size` | int (optional) | File size in bytes |
-| `file_url` | string (optional) | URL to the uploaded file |
-| `file_uploaded` | bool (optional) | Whether the file has been uploaded |
-| `file_upload_status` | string (optional) | Upload status |
-| `file_content_type` | string (optional) | MIME content type |
-| `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)) |
-| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded |
+| `source` | string (optional) | Attachment source (for example `"api"`) |
+| `file_name` | string (optional) | Uploaded file name (file-type attachments) |
+| `file_size` | int (optional) | File size in bytes (file-type attachments); omitted when `0` |
+| `file_url` | string (optional) | Stored file location, copied from the record as is. The ITX attachment model documents it as a storage key path, not a download URL; downloads go through the attachment `download` endpoint |
+| `file_uploaded` | bool (optional) | Whether the file has been uploaded; omitted when the record does not carry the field |
+| `file_upload_status` | string (optional) | Upload status (`"ongoing"`, `"completed"`, `"failed"`) |
+| `file_content_type` | string (optional) | MIME content type of the file |
+| `file_uploaded_by` | object (optional) | User who uploaded the file (see [User Reference schema](#user-reference-schema)); `user_id` is copied from `file_uploaded_by.id` in the source record |
+| `file_uploaded_at` | string (RFC3339) (optional) | Time the file was uploaded; omitted when the record's value is empty or not a parseable time |
 | `committees` | []object (optional) | Associated committees sourced from the parent past meeting (see [Committee schema](#committee-schema)) |
 | `created_at` | string (RFC3339) | Creation time |
-| `modified_at` | string (RFC3339) | Last modification time |
+| `modified_at` | string (RFC3339) | Last modification time (from the record's `updated_at`) |
 | `created_by` | object | User who created the attachment (see [User Reference schema](#user-reference-schema)) |
 | `updated_by` | object | User who last updated the attachment (see [User Reference schema](#user-reference-schema)) |
 
@@ -977,7 +1004,7 @@ Every summary publish carries the full config, so approving a summary (or revoki
 |---|---|---|
 | `past_meeting_attachment_uid:{uid}` | `past_meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_and_occurrence_id:{value}` | `meeting_and_occurrence_id:93699735000:1700000000` | Find attachments for a past meeting |
-| `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments by originating meeting |
+| `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments by originating meeting (always emitted, even when `meeting_id` is empty) |
 | `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
 | `project_slug:{value}` | `project_slug:my-project` | Find attachments by project slug |
 | `type:{value}` | `type:link` | Find attachments by type |

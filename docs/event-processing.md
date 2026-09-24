@@ -98,7 +98,7 @@ The system processes 12 different event types:
 | Past Meeting Mapping | `itx-zoom-past-meetings-mappings.` | Past meeting committee associations |
 | Invitee | `itx-zoom-past-meetings-invitees.` | Users invited to past meetings |
 | Attendee | `itx-zoom-past-meetings-attendees.` | Users who attended with session tracking |
-| Recording | `itx-zoom-past-meetings-recordings.` | Meeting recordings and transcripts |
+| Recording | `itx-zoom-past-meetings-recordings.` | One record per past meeting with all its Zoom files; indexed as a recording document and, when it has transcript files, a transcript document (see [Recording and Transcript Split](#recording-and-transcript-split)) |
 | Summary | `itx-zoom-past-meetings-summaries.` | AI-generated meeting summaries |
 | Past Meeting Attachment | `itx-zoom-past-meetings-attachments.` | Files and links attached to past meetings |
 
@@ -226,6 +226,46 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 | `profile_picture` | `avatar_url` | Direct copy |
 | `registrant_id` | - | Used for host lookup |
 | `sessions` | `sessions` | Transform session array |
+
+#### Recording Fields
+
+One v1 recording record produces the recording document and, when it has transcript files, the transcript document. Unless noted, a field is copied to both.
+
+| v1 Field | v2 Field | Transformation |
+| -------- | -------- | -------------- |
+| `meeting_and_occurrence_id` | `id`, `meeting_and_occurrence_id` | Direct copy; the record has no separate recording ID |
+| `proj_id` | `project_uid` | Map SFID → UUID via IDMapper; the record is skipped when `proj_id` is empty or has no mapping |
+| `project_slug` | `project_slug` | Direct copy |
+| `topic` | `title` | Direct copy |
+| `host_email`, `host_id`, `meeting_id`, `occurrence_id`, `visibility` | same names | Direct copy |
+| `recording_access` | `recording_access` | Recording document only; defaults to `"meeting_hosts"` when empty |
+| `transcript_access` | `transcript_access` | Defaults to `"meeting_hosts"` when empty and the record has transcript files |
+| `transcript_enabled` | - | Ignored; `transcript_enabled` on the recording document is `true` when the record has a `TRANSCRIPT` or `TIMELINE` file |
+| `recording_files` | `recording_files` | Split by `file_type`: `TRANSCRIPT` and `TIMELINE` files go to the transcript document, all others to the recording document |
+| `recording_count` | `recording_count` | Recording document only; direct copy (counts the files before the split) |
+| `sessions` | `sessions` | Copied without the session `password` |
+| `start_time`, `created_at` | same names | Parse to time |
+| `modified_at` | `updated_at` | Parse to time |
+| `total_size` | `total_size` | Direct copy (string or number accepted) |
+| `created_by`, `updated_by` | same names | Direct copy |
+
+#### Attachment Fields
+
+Meeting attachment and past meeting attachment records use the same field names; past meeting attachments also carry `meeting_and_occurrence_id`.
+
+| v1 Field | v2 Field | Transformation |
+| -------- | -------- | -------------- |
+| `id` | `uid` | Direct copy |
+| `meeting_id`, `meeting_and_occurrence_id` | same names | Direct copy |
+| `type`, `category`, `link`, `name`, `description`, `source` | same names | Direct copy |
+| `file_name`, `file_url`, `file_uploaded`, `file_upload_status`, `file_content_type` | same names | Direct copy |
+| `file_size` | `file_size` | String or number accepted |
+| `file_uploaded_at` | `file_uploaded_at` | Parse to time; omitted when empty or not parseable |
+| `created_at` | `created_at` | Parse to time |
+| `updated_at` | `modified_at` | Parse to time |
+| `created_by`, `updated_by`, `file_uploaded_by` | same names | `id` → `user_id`; `username`, `email`, `name`, `profile_picture` copied |
+| - | `project_uid` | Mapped from the parent meeting's (or past meeting's) `proj_id`; the attachment is skipped when no mapping exists |
+| - | `project_slug` | Meeting attachments: looked up by `project_uid` on `lfx.projects-api.get_slug`. Past meeting attachments: the parent past meeting's `project_slug` |
 
 ### RRULE Occurrence Calculation
 
@@ -394,12 +434,12 @@ if err != nil {
 
 - Registrant → Meeting (validate meeting exists)
 - Invite Response → Meeting (validate meeting exists)
-- Meeting Attachment → Meeting (validate meeting exists)
+- Meeting Attachment → Meeting (retries while the meeting record is missing from `v1-objects`; skips when the meeting has no project or the project has no v2 mapping)
 - Past Meeting Invitee → Past Meeting (validate past meeting exists)
 - Past Meeting Attendee → Past Meeting (validate past meeting exists)
-- Recording → Past Meeting (validate past meeting exists)
+- Recording → Past Meeting (committees only: the recording is published whether or not the past meeting record exists; it is skipped when its own `proj_id` is empty or has no v2 mapping)
 - Summary → Past Meeting (validate past meeting exists)
-- Past Meeting Attachment → Past Meeting (validate past meeting exists)
+- Past Meeting Attachment → Past Meeting (skips without retry when the past meeting record is missing, has no project, or the project has no v2 mapping)
 
 ## Publishing
 
@@ -413,35 +453,38 @@ Most events are published to **both** indexer and FGA-sync services:
 
 **Subject pattern**: `lfx.index.{object_type}`
 
-**Message format**:
+**Message format**: an `IndexerMessageEnvelope` from `lfx-v2-indexer-service/pkg/types`. The object type is taken from the subject, not from a field. This example is a past meeting recording on `lfx.index.v1_past_meeting_recording`, with `data` abbreviated (see [Recording Event](#recording-event) for the full object):
 
 ```json
 {
     "action": "created",
-    "object_type": "v1_meeting",
-    "object_id": "550e8400-e29b-41d4-a716-446655440000",
-    "data": {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "project_uid": "project-uuid",
-        "title": "Weekly Team Sync",
-        "description": "Discuss project progress",
-        "start_time": "2024-01-15T10:00:00Z",
-        "tags": ["project:project-uuid", "visibility:public"]
+    "headers": {
+        "authorization": "Bearer lfx-v2-meeting-service"
     },
+    "data": {
+        "id": "meeting-uuid_2024-01-15T10:00:00Z",
+        "meeting_and_occurrence_id": "meeting-uuid_2024-01-15T10:00:00Z",
+        "project_uid": "proj-uuid",
+        "title": "Weekly Team Sync"
+    },
+    "tags": ["meeting-uuid_2024-01-15T10:00:00Z", "past_meeting_recording_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "platform_meeting_id:", "project_uid:proj-uuid"],
     "indexing_config": {
-        "access_check_objects": [
-            {"type": "project", "id": "project-uuid"}
-        ],
-        "parent_references": {
-            "project": "project-uuid"
-        },
-        "fulltext_content": [
-            "Weekly Team Sync",
-            "Discuss project progress"
-        ]
+        "object_id": "meeting-uuid_2024-01-15T10:00:00Z",
+        "public": false,
+        "access_check_object": "v1_past_meeting:meeting-uuid_2024-01-15T10:00:00Z",
+        "access_check_relation": "recording_viewer",
+        "history_check_object": "v1_past_meeting:meeting-uuid_2024-01-15T10:00:00Z",
+        "history_check_relation": "auditor",
+        "sort_name": "Weekly Team Sync",
+        "name_and_aliases": ["Weekly Team Sync"],
+        "parent_refs": ["past_meeting:meeting-uuid_2024-01-15T10:00:00Z", "project:proj-uuid"],
+        "tags": ["meeting-uuid_2024-01-15T10:00:00Z", "past_meeting_recording_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "platform_meeting_id:", "project_uid:proj-uuid"],
+        "fulltext": "Weekly Team Sync"
     }
 }
 ```
+
+A delete is sent on the same subject as `{"action": "deleted", "headers": {...}, "data": "<object id>", "tags": []}`, with no `indexing_config`.
 
 #### FGA-Sync Service
 
@@ -453,7 +496,7 @@ All FGA messages use the `GenericFGAMessage` format. There are two operation typ
 
 **Access control** (meetings, past meetings):
 
-Recordings, transcripts and summaries send no FGA messages; they are indexed only and access-checked against their parent `v1_past_meeting` (see the [FGA contract](fga-contract.md)).
+Recordings, transcripts and summaries send no FGA messages; they are indexed only and access-checked against their parent `v1_past_meeting` (see the [FGA contract](fga-contract.md)). Meeting and past meeting attachments send none either; they are access-checked with `viewer` on their parent `v1_meeting` or `v1_past_meeting`.
 
 Subject: `lfx.fga-sync.update_access`
 
@@ -517,7 +560,7 @@ The `v1_past_meeting` `update_access` message, sent from the past meeting record
 | --------------------------------------------------------------- | --------------- |
 | `"public"` | `recording_viewer` / `transcript_viewer` / `ai_summary_viewer` relation to `*` |
 | `"meeting_participants"` | `references` keys `past_meeting_for_host_{kind}_view`, `past_meeting_for_attendee_{kind}_view`, `past_meeting_for_participant_{kind}_view` |
-| `"meeting_hosts"` or unset | `references` key `past_meeting_for_host_{kind}_view` |
+| `"meeting_hosts"`, unset, or any other value | `references` key `past_meeting_for_host_{kind}_view` |
 
 Summary index documents check `v1_past_meeting#organizer` instead of `ai_summary_viewer` while the summary awaits approval; see [Summary `ai_summary_access` Lookup](#summary-ai_summary_access-lookup) below and the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 
@@ -533,33 +576,25 @@ Events use these action types:
 
 ### Special Cases
 
-#### Recording Dual Publishing
+#### Recording and Transcript Split
 
-Recordings trigger TWO separate event publications:
+A v1 recording record (`itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}`) is the only source of both the recording and the transcript documents. `convertMapToRecordingData` sorts the record's `recording_files` by `file_type`:
 
-1. **Recording Event**: Always published
-2. **Transcript Event**: Published if `file_type` is `"TRANSCRIPT"` or `"TIMELINE"`
+- `TRANSCRIPT` (VTT transcript) and `TIMELINE` (JSON timeline) files go to the transcript document.
+- Every other file type (for example `MP4` video, `M4A` audio, `CHAT` chat log, `CC` closed captions) goes to the recording document.
 
-```go
-// Publish recording event
-publisher.PublishPastMeetingRecordingEvent(ctx, "created", recordingData)
+`handlePastMeetingRecordingUpdate` then publishes:
 
-// Conditionally publish transcript event
-if hasTranscript {
-    transcriptData := &models.TranscriptEventData{
-        ID:                     recordingData.ID,
-        MeetingAndOccurrenceID: recordingData.MeetingAndOccurrenceID,
-        ProjectUID:             recordingData.ProjectUID,
-        TranscriptAccess:       recordingData.TranscriptAccess,
-        Platform:               "Zoom",
-    }
-    publisher.PublishPastMeetingTranscriptEvent(ctx, "created", transcriptData)
-}
-```
+1. **Recording document** (`lfx.index.v1_past_meeting_recording`): always, with the non-transcript files.
+2. **Transcript document** (`lfx.index.v1_past_meeting_transcript`): only when the record has at least one `TRANSCRIPT` or `TIMELINE` file, with those files only.
+
+Both documents use the record's `meeting_and_occurrence_id` as their ID and share one `created`/`updated` action, taken from the `v1_past_meeting_recordings.{id}` key in `v1-mappings`. Neither sends an FGA message. A recording delete sends a `deleted` indexer message on both subjects. An update whose record no longer has transcript files publishes only the recording document; it does not delete an already indexed transcript document.
 
 #### Past Meeting FGA References
 
-Past meeting FGA `update_access` messages include three reference keys: `meeting`, `project`, and `committee`. The `meeting` reference links the past meeting record back to its originating active meeting:
+Past meeting FGA `update_access` messages carry the `meeting`, `project` and `committee` references plus the per-artifact viewer relations and `past_meeting_for_*_{kind}_view` self-references described in [Artifact visibility on the past meeting](#fga-sync-service) above; see also the [FGA contract](fga-contract.md#v1-past-meeting). The `meeting` reference links the past meeting record back to its originating active meeting and carries the `v1_meeting:` type prefix. `exclude_relations` is always `["host", "invitee", "attendee"]`, because those tuples are managed by the participant `member_put` messages.
+
+This sample assumes `recording_access` is `"public"`, `transcript_access` is `"meeting_participants"` and `ai_summary_access` is `"meeting_hosts"`:
 
 ```json
 {
@@ -568,12 +603,19 @@ Past meeting FGA `update_access` messages include three reference keys: `meeting
     "data": {
         "uid": "past-meeting-uuid",
         "public": false,
-        "relations": {},
+        "relations": {
+            "recording_viewer": ["*"]
+        },
         "references": {
-            "meeting": ["meeting-uuid"],
+            "meeting": ["v1_meeting:meeting-uuid"],
             "project": ["project-uuid"],
-            "committee": ["committee-uuid-1", "committee-uuid-2"]
-        }
+            "committee": ["committee-uuid-1", "committee-uuid-2"],
+            "past_meeting_for_host_transcript_view": ["v1_past_meeting:past-meeting-uuid"],
+            "past_meeting_for_attendee_transcript_view": ["v1_past_meeting:past-meeting-uuid"],
+            "past_meeting_for_participant_transcript_view": ["v1_past_meeting:past-meeting-uuid"],
+            "past_meeting_for_host_summary_view": ["v1_past_meeting:past-meeting-uuid"]
+        },
+        "exclude_relations": ["host", "invitee", "attendee"]
     }
 }
 ```
@@ -614,7 +656,7 @@ Additionally, the `occurrences` array from the raw KV data is **always ignored**
 
 #### `FileUploadedAt` as Optional Pointer
 
-The `FileUploadedAt` field on `MeetingAttachmentEventData` and `PastMeetingAttachmentEventData` is typed as `*time.Time`. When the field is absent from the source data, it is `nil` and is omitted from the serialized JSON output. This prevents zero-value timestamps (`0001-01-01T00:00:00Z`) from being published for attachments that have not been uploaded yet.
+The `FileUploadedAt` field on `MeetingAttachmentEventData` and `PastMeetingAttachmentEventData` is typed as `*time.Time`. When the field is absent, empty or not a parseable time in the source data, it is `nil` and is omitted from the serialized JSON output. This prevents zero-value timestamps (`0001-01-01T00:00:00Z`) from being published for attachments that have not been uploaded yet.
 
 #### `MeetingAndOccurrenceID` Validation for Participants
 
@@ -1052,9 +1094,14 @@ To add a new event type:
         }
     ],
     "created_at": "2024-01-10T08:00:00Z",
-    "modified_at": "2024-01-10T08:00:00Z",
-    "tags": ["project:proj-uuid", "visibility:public", "type:recurring"]
+    "modified_at": "2024-01-10T08:00:00Z"
 }
+```
+
+Envelope `tags` (also sent as `indexing_config.tags`; the data object has no `tags` field):
+
+```json
+["550e8400-e29b-41d4-a716-446655440000", "meeting_id:550e8400-e29b-41d4-a716-446655440000", "project_uid:proj-uuid", "title:Weekly Team Sync", "visibility:public", "meeting_type:recurring", "committee_uid:committee-uuid-1"]
 ```
 
 ### Registrant Event
@@ -1074,9 +1121,14 @@ To add a new event type:
     "org_name": "ACME Corporation",
     "host": true,
     "created_at": "2024-01-10T08:30:00Z",
-    "modified_at": "2024-01-10T08:30:00Z",
-    "tags": ["project:proj-uuid", "host:true", "user:jdoe"]
+    "modified_at": "2024-01-10T08:30:00Z"
 }
+```
+
+Envelope `tags`:
+
+```json
+["registrant_uid:reg-uuid", "committee_uid:committee-uuid", "username:jdoe", "email:john.doe@example.com", "host:true"]
 ```
 
 ### Participant Event
@@ -1114,32 +1166,40 @@ To add a new event type:
         }
     ],
     "created_at": "2024-01-15T10:02:00Z",
-    "modified_at": "2024-01-15T10:32:00Z",
-    "tags": ["project:proj-uuid", "attended:true", "invited:true"]
+    "modified_at": "2024-01-15T10:32:00Z"
 }
+```
+
+Envelope `tags`:
+
+```json
+["past_meeting_participant_uid:participant-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "project_uid:proj-uuid", "username:jsmith", "email:jane.smith@example.com", "is_invited:true", "is_attended:true"]
 ```
 
 ### Recording Event
 
 Recording, transcript, and summary tags start with the document's own ID as a bare value, followed by `key:value` tags.
 
+The sample below is the `data` object of a `v1_past_meeting_recording` envelope, followed by the envelope's `tags`. It comes from a record with three files: the `MP4` and `M4A` files stay on the recording, while the `TRANSCRIPT` file goes to the [transcript document](#transcript-event). `recording_count` and `total_size` are copied from the record and still count the transcript file. `platform_meeting_id` is not populated by the handler.
+
 ```json
 {
-    "id": "recording-uuid",
+    "id": "meeting-uuid_2024-01-15T10:00:00Z",
     "meeting_and_occurrence_id": "meeting-uuid_2024-01-15T10:00:00Z",
     "project_uid": "proj-uuid",
+    "project_slug": "my-project",
     "host_email": "host@example.com",
     "host_id": "host-zoom-id",
     "meeting_id": "meeting-uuid",
     "occurrence_id": "2024-01-15T10:00:00Z",
     "platform": "Zoom",
-    "platform_meeting_id": "123456789",
+    "platform_meeting_id": "",
     "recording_access": "meeting_hosts",
-    "title": "Weekly Team Sync - Jan 15, 2024",
+    "title": "Weekly Team Sync",
     "transcript_access": "meeting_hosts",
     "transcript_enabled": true,
     "visibility": "public",
-    "recording_count": 2,
+    "recording_count": 3,
     "recording_files": [
         {
             "download_url": "https://zoom.us/rec/download/...",
@@ -1155,13 +1215,16 @@ Recording, transcript, and summary tags start with the document's own ID as a ba
             "status": "completed"
         },
         {
-            "file_extension": "VTT",
-            "file_size": 10240,
-            "file_type": "TRANSCRIPT",
+            "download_url": "https://zoom.us/rec/download/...",
+            "file_extension": "M4A",
+            "file_size": 4194304,
+            "file_type": "M4A",
             "id": "file-uuid-2",
             "meeting_id": "123456789",
+            "play_url": "https://zoom.us/rec/play/...",
             "recording_start": "2024-01-15T10:00:00Z",
             "recording_end": "2024-01-15T10:30:00Z",
+            "recording_type": "audio_only",
             "status": "completed"
         }
     ],
@@ -1169,16 +1232,88 @@ Recording, transcript, and summary tags start with the document's own ID as a ba
         {
             "uuid": "session-uuid",
             "share_url": "https://zoom.us/rec/share/...",
-            "total_size": 52438800,
+            "total_size": 56633344,
             "start_time": "2024-01-15T10:00:00Z"
         }
     ],
     "start_time": "2024-01-15T10:00:00Z",
-    "total_size": 52438800,
+    "total_size": 56633344,
+    "committees": [
+        {
+            "uid": "committee-uuid-1"
+        }
+    ],
     "created_at": "2024-01-15T10:35:00Z",
     "updated_at": "2024-01-15T10:35:00Z",
-    "tags": ["recording-uuid", "past_meeting_recording_id:recording-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "platform_meeting_id:123456789", "project_uid:proj-uuid", "platform_meeting_instance_id:session-uuid"]
+    "created_by": {},
+    "updated_by": {}
 }
+```
+
+Envelope `tags` (also sent as `indexing_config.tags`):
+
+```json
+["meeting-uuid_2024-01-15T10:00:00Z", "past_meeting_recording_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "platform_meeting_id:", "project_uid:proj-uuid", "project_slug:my-project", "platform_meeting_instance_id:session-uuid", "committee_uid:committee-uuid-1"]
+```
+
+### Transcript Event
+
+The transcript document built from the same record, sent on `lfx.index.v1_past_meeting_transcript`. It carries only the `TRANSCRIPT` and `TIMELINE` files and has no `recording_access`, `transcript_enabled`, `recording_count` or `platform_meeting_id` fields.
+
+```json
+{
+    "id": "meeting-uuid_2024-01-15T10:00:00Z",
+    "meeting_and_occurrence_id": "meeting-uuid_2024-01-15T10:00:00Z",
+    "project_uid": "proj-uuid",
+    "project_slug": "my-project",
+    "host_email": "host@example.com",
+    "host_id": "host-zoom-id",
+    "meeting_id": "meeting-uuid",
+    "occurrence_id": "2024-01-15T10:00:00Z",
+    "platform": "Zoom",
+    "transcript_access": "meeting_hosts",
+    "title": "Weekly Team Sync",
+    "visibility": "public",
+    "recording_files": [
+        {
+            "download_url": "https://zoom.us/rec/download/...",
+            "file_extension": "VTT",
+            "file_size": 10240,
+            "file_type": "TRANSCRIPT",
+            "id": "file-uuid-3",
+            "meeting_id": "123456789",
+            "recording_start": "2024-01-15T10:00:00Z",
+            "recording_end": "2024-01-15T10:30:00Z",
+            "recording_type": "audio_transcript",
+            "status": "completed"
+        }
+    ],
+    "sessions": [
+        {
+            "uuid": "session-uuid",
+            "share_url": "https://zoom.us/rec/share/...",
+            "total_size": 56633344,
+            "start_time": "2024-01-15T10:00:00Z"
+        }
+    ],
+    "start_time": "2024-01-15T10:00:00Z",
+    "total_size": 56633344,
+    "committees": [
+        {
+            "uid": "committee-uuid-1"
+        }
+    ],
+    "created_at": "2024-01-15T10:35:00Z",
+    "updated_at": "2024-01-15T10:35:00Z",
+    "created_by": {},
+    "updated_by": {}
+}
+```
+
+Envelope `tags`:
+
+```json
+["meeting-uuid_2024-01-15T10:00:00Z", "past_meeting_transcript_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "platform:Zoom", "project_uid:proj-uuid", "project_slug:my-project", "platform_meeting_instance_id:session-uuid", "committee_uid:committee-uuid-1"]
 ```
 
 ### Summary Event
@@ -1188,6 +1323,7 @@ Recording, transcript, and summary tags start with the document's own ID as a ba
     "id": "summary-uuid",
     "meeting_and_occurrence_id": "meeting-uuid_2024-01-15T10:00:00Z",
     "project_uid": "proj-uuid",
+    "project_slug": "my-project",
     "meeting_id": "meeting-uuid",
     "occurrence_id": "2024-01-15T10:00:00Z",
     "zoom_meeting_uuid": "zoom-uuid",
@@ -1204,10 +1340,22 @@ Recording, transcript, and summary tags start with the document's own ID as a ba
         "meeting_uuid": "zoom-uuid"
     },
     "email_sent": false,
+    "committees": [
+        {
+            "uid": "committee-uuid-1"
+        }
+    ],
     "created_at": "2024-01-15T11:00:00Z",
     "updated_at": "2024-01-15T11:30:00Z",
-    "tags": ["summary-uuid", "past_meeting_summary_id:summary-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_id:meeting-uuid", "platform:Zoom", "project_uid:proj-uuid", "title:Weekly Team Sync"]
+    "created_by": {},
+    "updated_by": {}
 }
+```
+
+Envelope `tags` (also sent as `indexing_config.tags`):
+
+```json
+["summary-uuid", "past_meeting_summary_id:summary-uuid", "meeting_and_occurrence_id:meeting-uuid_2024-01-15T10:00:00Z", "meeting_id:meeting-uuid", "platform:Zoom", "project_uid:proj-uuid", "project_slug:my-project", "title:Weekly Team Sync", "committee_uid:committee-uuid-1"]
 ```
 
 ---

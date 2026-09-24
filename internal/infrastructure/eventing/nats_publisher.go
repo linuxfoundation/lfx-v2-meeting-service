@@ -341,7 +341,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		pastMeetingRefs["past_meeting_for_host_recording_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_recording_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_participant_recording_view"] = []string{selfRef}
-	default: // meeting_hosts or unset
+	default: // meeting_hosts, unset, or any unrecognised value
 		pastMeetingRefs["past_meeting_for_host_recording_view"] = []string{selfRef}
 	}
 
@@ -352,7 +352,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		pastMeetingRefs["past_meeting_for_host_transcript_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_transcript_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_participant_transcript_view"] = []string{selfRef}
-	default: // meeting_hosts or unset
+	default: // meeting_hosts, unset, or any unrecognised value
 		pastMeetingRefs["past_meeting_for_host_transcript_view"] = []string{selfRef}
 	}
 
@@ -363,7 +363,7 @@ func (p *NATSPublisher) PublishPastMeetingEvent(ctx context.Context, action stri
 		pastMeetingRefs["past_meeting_for_host_summary_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_attendee_summary_view"] = []string{selfRef}
 		pastMeetingRefs["past_meeting_for_participant_summary_view"] = []string{selfRef}
-	default: // meeting_hosts or unset
+	default: // meeting_hosts, unset, or any unrecognised value
 		pastMeetingRefs["past_meeting_for_host_summary_view"] = []string{selfRef}
 	}
 
@@ -455,7 +455,8 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 	return nil
 }
 
-// PublishPastMeetingRecordingEvent publishes a recording event to indexer and FGA-sync services
+// PublishPastMeetingRecordingEvent publishes a recording event to the indexer only; it sends no
+// FGA message (see the note at the end of the function).
 func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, action string, recording *models.RecordingEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting recording event", "action", action, "recording_id", recording.ID)
 
@@ -491,7 +492,8 @@ func (p *NATSPublisher) PublishPastMeetingRecordingEvent(ctx context.Context, ac
 	return nil
 }
 
-// PublishPastMeetingTranscriptEvent publishes a transcript event to indexer and FGA-sync services
+// PublishPastMeetingTranscriptEvent publishes a transcript event to the indexer only; it sends no
+// FGA message (see the note at the end of the function).
 func (p *NATSPublisher) PublishPastMeetingTranscriptEvent(ctx context.Context, action string, transcript *models.TranscriptEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting transcript event", "action", action, "transcript_id", transcript.ID)
 
@@ -599,7 +601,8 @@ func PastMeetingSummaryIndexingConfig(summary *models.SummaryEventData, summaryA
 	}
 }
 
-// PublishMeetingAttachmentEvent publishes a meeting attachment event to indexer and FGA-sync services
+// PublishMeetingAttachmentEvent publishes a meeting attachment event to the indexer only. It sends
+// no FGA message: the document is access-checked with viewer on the parent v1_meeting.
 func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.MeetingAttachmentEventData) error {
 	p.logger.InfoContext(ctx, "publishing meeting attachment event", "action", action, "attachment_uid", attachment.UID)
 
@@ -632,7 +635,8 @@ func (p *NATSPublisher) PublishMeetingAttachmentEvent(ctx context.Context, actio
 	return nil
 }
 
-// PublishPastMeetingAttachmentEvent publishes a past meeting attachment event to indexer and FGA-sync services
+// PublishPastMeetingAttachmentEvent publishes a past meeting attachment event to the indexer only.
+// It sends no FGA message: the document is access-checked with viewer on the parent v1_past_meeting.
 func (p *NATSPublisher) PublishPastMeetingAttachmentEvent(ctx context.Context, action string, attachment *models.PastMeetingAttachmentEventData) error {
 	p.logger.InfoContext(ctx, "publishing past meeting attachment event", "action", action, "attachment_uid", attachment.UID)
 
