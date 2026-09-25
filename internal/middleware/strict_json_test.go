@@ -184,6 +184,60 @@ func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousCommitteeUIDRejected(t *
 
 // ---- checkAmbiguousJSONKeys unit tests ----
 
+// ---- body size limit tests ----
+
+func TestStrictCreateBodyMiddleware_BodyExceedsLimitRejected(t *testing.T) {
+	// Build a body slightly larger than the 1 MiB cap by padding with whitespace.
+	padding := strings.Repeat(" ", int(maxCreateBodyBytes)+1)
+	body := `{"project_uid":"p"}` + padding
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusRequestEntityTooLarge, rr.Code)
+	assert.Contains(t, rr.Body.String(), "too large")
+}
+
+func TestStrictCreateBodyMiddleware_BodyAtLimitPassesThrough(t *testing.T) {
+	// A body exactly at the limit should pass (MaxBytesReader allows <= limit).
+	body := `{"project_uid":"proj-1","title":"T"}`
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+}
+
+// ---- Unicode fold tests ----
+
+func TestStrictCreateBodyMiddleware_UnicodeLongSFoldRejected(t *testing.T) {
+	// "committeeſ" (U+017F long s) folds to "committees" under encoding/json's
+	// bytes.EqualFold semantics but not under strings.ToLower. This is the
+	// canonical Unicode bypass that the foldKey fix addresses.
+	body := "{\"project_uid\":\"mine\",\"committees\":[{\"uid\":\"c1\"}],\"committee\u017f\":[{\"uid\":\"victim\"}]}"
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "ambiguous")
+}
+
+func TestStrictCreateBodyMiddleware_UnicodeKelvinSignFoldRejected(t *testing.T) {
+	// U+212A (Kelvin sign) folds to 'k' under Unicode simple case folding.
+	// A key like "\u212aey" collides with "key".
+	body := "{\"project_uid\":\"mine\",\"\u212aey\":\"v1\",\"key\":\"v2\"}"
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
 func TestCheckAmbiguousJSONKeys_Clean(t *testing.T) {
 	cases := []struct {
 		name string
@@ -214,6 +268,10 @@ func TestCheckAmbiguousJSONKeys_Ambiguous(t *testing.T) {
 		{"nested case variant", `{"x":{"uid":"a","UID":"b"}}`},
 		{"array element case variant", `[{"uid":"a","Uid":"b"}]`},
 		{"mid-word case variant", `{"fooBar":1,"foobar":2}`},
+		// Unicode simple case folding: ſ (U+017F) folds to s.
+		{"long s vs s", "{\"committee\u017f\":\"a\",\"committees\":\"b\"}"},
+		// Unicode simple case folding: K (U+212A Kelvin) folds to k.
+		{"kelvin vs k", "{\"\u212aey\":\"a\",\"key\":\"b\"}"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -6,11 +6,18 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"unicode"
 )
+
+// maxCreateBodyBytes is the maximum request body size accepted on the guarded
+// create endpoints. Bodies larger than this are rejected with 413 before any
+// JSON parsing occurs, preventing memory exhaustion from unbounded io.ReadAll.
+const maxCreateBodyBytes int64 = 1 << 20 // 1 MiB
 
 // strictCreatePaths is the set of POST endpoints whose JSON bodies are
 // independently parsed by both Heimdall (case-sensitive key lookup) and
@@ -24,7 +31,8 @@ var strictCreatePaths = map[string]struct{}{
 // StrictCreateBodyMiddleware rejects POST /itx/meetings and POST
 // /itx/past_meetings requests whose JSON body contains two keys within the
 // same JSON object that are distinct strings but compare equal under
-// strings.EqualFold (e.g. "project_uid" and "Project_UID").
+// encoding/json's Unicode simple case-folding semantics (e.g. "project_uid"
+// and "Project_UID", or "committees" and "committeeſ").
 //
 // Background: Heimdall authorizes these create endpoints by looking up
 // .Request.Body.project_uid in its case-sensitive generic JSON parse of the
@@ -49,9 +57,18 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Cap the body size before buffering to prevent memory exhaustion.
+		r.Body = http.MaxBytesReader(w, r.Body, maxCreateBodyBytes)
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			// Cannot read body; pass through and let Goa surface the error.
+			var maxErr *http.MaxBytesError
+			if errors.As(err, &maxErr) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusRequestEntityTooLarge)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "request body too large"})
+				return
+			}
+			// Other read errors — pass through and let Goa surface the error.
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -81,10 +98,11 @@ func isStrictJSONTarget(r *http.Request) bool {
 }
 
 // checkAmbiguousJSONKeys returns an error if data contains any JSON object
-// with two keys k1 and k2 where k1 != k2 but strings.EqualFold(k1, k2) is
-// true. Such a key pair causes Heimdall (case-sensitive parse) and
-// encoding/json (case-insensitive struct decode) to bind the field to
-// different values.
+// with two keys k1 and k2 where k1 != k2 but encoding/json would fold them
+// to the same struct field (Unicode simple case folding, matching the
+// semantics of bytes.EqualFold / strings.EqualFold). Such a key pair causes
+// Heimdall (case-sensitive parse) and encoding/json (case-insensitive struct
+// decode) to bind the field to different values.
 //
 // Non-JSON input and JSON parse errors are silently ignored (return nil) so
 // that Goa's decoder can produce the authoritative validation error.
@@ -92,6 +110,28 @@ func checkAmbiguousJSONKeys(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber() // preserve numbers exactly; we only care about structure
 	return walkJSONValue(dec)
+}
+
+// foldKey returns a canonical string for key such that two keys produce the
+// same foldKey if and only if strings.EqualFold reports them equal. This
+// mirrors encoding/json's field-name matching, which uses bytes.EqualFold —
+// Unicode simple case folding — rather than strings.ToLower.
+//
+// For each rune r, we walk the SimpleFold orbit (r → SimpleFold(r) → … → r)
+// and keep the smallest rune in the orbit as the canonical representative.
+func foldKey(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		min := r
+		for f := unicode.SimpleFold(r); f != r; f = unicode.SimpleFold(f) {
+			if f < min {
+				min = f
+			}
+		}
+		b.WriteRune(min)
+	}
+	return b.String()
 }
 
 // walkJSONValue consumes exactly one JSON value from dec.
@@ -116,8 +156,13 @@ func walkJSONValue(dec *json.Decoder) error {
 // walkJSONObject checks the current object for case-fold key collisions and
 // recurses into nested values. dec must be positioned immediately after the
 // opening '{'.
+//
+// The seen map keys on foldKey(key) — the canonical Unicode simple-fold
+// representative — so that variants like "committees" and "committeeſ" (long s,
+// U+017F) are detected as collisions, matching encoding/json's field-matching
+// semantics exactly.
 func walkJSONObject(dec *json.Decoder) error {
-	// seen maps strings.ToLower(key) → first exact-case key observed.
+	// seen maps foldKey(key) → first exact-case key observed.
 	seen := make(map[string]string)
 
 	for dec.More() {
@@ -130,8 +175,8 @@ func walkJSONObject(dec *json.Decoder) error {
 			return nil
 		}
 
-		lower := strings.ToLower(key)
-		if orig, exists := seen[lower]; exists && orig != key {
+		fold := foldKey(key)
+		if orig, exists := seen[fold]; exists && orig != key {
 			// Two distinct strings that fold to the same field name — reject.
 			return fmt.Errorf(
 				"request body contains ambiguous JSON fields %q and %q: "+
@@ -140,8 +185,8 @@ func walkJSONObject(dec *json.Decoder) error {
 				orig, key,
 			)
 		}
-		if _, exists := seen[lower]; !exists {
-			seen[lower] = key
+		if _, exists := seen[fold]; !exists {
+			seen[fold] = key
 		}
 
 		// Recurse into the value regardless of whether the key was a duplicate.
