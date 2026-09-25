@@ -294,17 +294,26 @@ test -n "$result" || { echo "lookup failed" >&2; exit 1; }
 echo "$result"
 ```
 
-## Review lifecycle configuration
+## Pre-PR review
 
-Load and follow `/lfx-skills:lfx-local-review` as the sole owner of the review
-lifecycle. The values below configure that skill and do not replace or override
-its instructions.
+> **IMPORTANT — follow this exactly.** When the implementation is complete
+> and committed and you are about to open a PR:
+>
+> 1. **Review once.** Load `/lfx-skills:lfx-pre-pr-review` with the Skill
+>    tool and follow it: it tells you how to launch the reviewers. You run
+>    **one** review round of the whole branch and land **all accepted
+>    findings in exactly one fix commit** (none if there is nothing to fix).
+>    Do not work from memory: **load the skill before launching the
+>    reviewers**.
+> 2. **Preflight.** Run the `Preflight` value below and make it pass. It is
+>    deterministic checks, not a review: fix what it reports in its own
+>    commit(s), as many as it takes, and rerun it — never the reviewers.
+> 3. **Open the PR.** From then on there are **no local reviews of any
+>    kind** — iterate only on the PR's bot and human feedback, still running
+>    tests and checks.
 
-- repo code reviewer: `/meeting-service-code-reviewer`
-- repo learnings reviewer: `/meeting-service-learnings-reviewer`
-- readiness action: `make check`
-- preflight action: `make test`
-- post-PR extension: `none`
+- KB review skill: `/meeting-service-learnings-reviewer`
+- Preflight: `make check && make test`
 
 ## Development Guidelines
 

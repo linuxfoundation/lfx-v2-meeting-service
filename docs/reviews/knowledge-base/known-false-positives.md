@@ -66,8 +66,10 @@ reverted outcome means the finding class costs more than this team will pay;
 promoting it manufactures a reviewer that gets skimmed and ignored.
 
 This does **not** mean tests never matter. A narrowly scoped test finding tied to
-a named contract or security consequence is still legitimate — but it belongs to
-the sibling `repo_code` reviewer under `CLAUDE.md`'s testing guidance, not here.
+a named contract or security consequence — a converter mapping an unset value,
+an occurrence calculation, a KV routing decision, a retry classification — is
+still legitimate, but it belongs to the sibling `general` reviewer under
+`CLAUDE.md`'s testing guidance, not here.
 
 ### Unrelated dependency bundling in a scoped PR — never a finding
 

@@ -5,16 +5,19 @@
 
 Patterns extracted from **real GitHub Copilot review comments on this
 repository that a developer actually fixed**. This is the rulebook for the
-`repo_learnings` role of this repo's local pre-PR review; the brain that loads it is
+knowledge-base (`kb`) reviewer of this repo's pre-PR review round (`CLAUDE.md`
+§ Pre-PR review), and only that reviewer applies it — the general and security
+reviewers and the PR's bots and humans do not read it. The brain that loads it is
 [`.claude/skills/meeting-service-learnings-reviewer/SKILL.md`](../../../.claude/skills/meeting-service-learnings-reviewer/SKILL.md),
 which carries the review method and points here. This directory is the single
 copy of the empirical KB — the skill does not duplicate it.
 
 It is deliberately *not* a general review checklist. Correctness, security and
-test quality in the abstract belong to the central `general` reviewer, and this
-repo's written conventions and contracts belong to the sibling
-`meeting-service-code-reviewer`. What lives here is only what this repo's own
-review history proves, mechanically, about itself.
+test quality in the abstract, together with this repo's written conventions and
+contracts, belong to the central `general` reviewer
+(`/lfx-skills:lfx-general-code-review`), which reads those rules from
+`CLAUDE.md` and `docs/`. What lives here is only what this repo's own review
+history proves, mechanically, about itself.
 
 ## Evidence window
 

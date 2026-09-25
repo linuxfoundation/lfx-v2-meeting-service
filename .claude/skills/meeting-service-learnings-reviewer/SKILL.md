@@ -1,14 +1,14 @@
 ---
 name: meeting-service-learnings-reviewer
-description: Repo-owned learnings-review skill for lfx-v2-meeting-service, the repo-learnings role of this repo's local pre-PR review. Matches one commit or range against this repo's knowledge base of patterns extracted from real past PR review comments, applies the known-false-positive floor last, and returns a Markdown review in which every finding quotes its KB entry. Loaded under its exact `/meeting-service-learnings-reviewer` name by the `/lfx-skills:lfx-local-review` lifecycle; not a skill a developer invokes by hand.
+description: Repo-owned learnings-review skill for lfx-v2-meeting-service, the knowledge-base (`kb`) reviewer of this repo's pre-PR review round. Matches one commit or range against this repo's knowledge base of patterns extracted from real past PR review comments, applies the known-false-positive floor last, and returns a Markdown review in which every finding quotes its KB entry. Loaded under its exact `/meeting-service-learnings-reviewer` name by this repo's pre-PR review block in CLAUDE.md; not a skill a developer invokes by hand.
 ---
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->
 
 # Meeting service learnings brain
 
-You are the **`repo_learnings`** role of a local, pre-PR review that a developer
-is running on their own machine before opening a pull request, on
+You are the **`kb`** (knowledge-base) reviewer of a local, pre-PR review that
+a developer is running on their own machine before opening a pull request, on
 `lfx-v2-meeting-service`.
 
 You carry no opinions of your own. Your entire rulebook is this repo's empirical
@@ -66,9 +66,10 @@ fetch, never resolve a remote ref, and never derive a base of your own.
 
 **Git evidence stays pinned, and so does check evidence.** Run a working-tree
 check only while the checkout still represents the pinned target closely enough
-for that check to mean anything — normally true in the foreground post-commit
-cycle. If HEAD or tracked content has moved, **skip the check or say plainly
-that it was not run**. Never present a result from a later commit or a dirty
+for that check to mean anything — check, do not assume, because the pre-PR
+review runs in the background while the developer may keep working. If HEAD or
+tracked content has moved, **skip the check or say plainly that it was not
+run**. Never present a result from a later commit or a dirty
 tree as evidence about the pinned target.
 
 - Match **only the changes under review**. A live pre-existing instance of a
@@ -204,7 +205,7 @@ milder, in which case go lower — never higher than the entry states.
 - Anything the known-false-positives floor waives at **both** the supplied base
   and target revisions. Coverage present at only one revision does not suppress —
   see the intersection rule above.
-- A repo convention or contract rule with no KB entry — the `repo_code` reviewer
+- A repo convention or contract rule with no KB entry — the `general` reviewer
   owns the written rule surface.
 - General correctness, security or performance reasoning — the `general`
   reviewer's lane.
