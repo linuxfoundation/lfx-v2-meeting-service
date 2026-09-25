@@ -13,7 +13,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ .Chart.Name }}
+      app: {{ .Chart.Name }}
   policyTypes:
     - Ingress
   ingress:
