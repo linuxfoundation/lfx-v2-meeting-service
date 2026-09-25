@@ -5,7 +5,9 @@
 
 Patterns extracted from **real GitHub Copilot review comments on this
 repository that a developer actually fixed**. This is the rulebook for the
-`repo_learnings` role of this repo's local pre-PR review; the brain that loads it is
+knowledge-base (`kb`) reviewer of this repo's pre-PR review round (`CLAUDE.md`
+§ Pre-PR review), and only that reviewer applies it — the general and security
+reviewers and the PR's bots and humans do not read it. The brain that loads it is
 [`.claude/skills/meeting-service-learnings-reviewer/SKILL.md`](../../../.claude/skills/meeting-service-learnings-reviewer/SKILL.md),
 which carries the review method and points here. This directory is the single
 copy of the empirical KB — the skill does not duplicate it.

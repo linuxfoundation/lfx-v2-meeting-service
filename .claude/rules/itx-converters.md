@@ -2,6 +2,7 @@
 paths:
   - "cmd/meeting-api/service/itx_*_converters.go"
   - "pkg/models/itx/**"
+  - "internal/service/itx/**"
 ---
 <!-- Copyright The Linux Foundation and each contributor to LFX. -->
 <!-- SPDX-License-Identifier: MIT -->
