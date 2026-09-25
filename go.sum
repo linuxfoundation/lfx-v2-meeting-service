@@ -1,7 +1,7 @@
 github.com/PuerkitoBio/rehttp v1.4.0 h1:rIN7A2s+O9fmHUM1vUcInvlHj9Ysql4hE+Y0wcl/xk8=
 github.com/PuerkitoBio/rehttp v1.4.0/go.mod h1:LUwKPoDbDIA2RL5wYZCNsQ90cx4OJ4AWBmq6KzWZL1s=
-github.com/auth0/go-auth0 v1.49.0 h1:JQH/zoHjeKywqJHu0qUWJP7RAE7IET8yU8SvqIFNKKg=
-github.com/auth0/go-auth0 v1.49.0/go.mod h1:32sQB1uAn+99fJo6N819EniKq8h785p0ag0lMWhiTaE=
+github.com/auth0/go-auth0 v1.50.0 h1:8gMJ/zPxHbDzcPn0n1E92HpjuwhNjzmWLriMnvs3Fsk=
+github.com/auth0/go-auth0 v1.50.0/go.mod h1:32sQB1uAn+99fJo6N819EniKq8h785p0ag0lMWhiTaE=
 github.com/auth0/go-jwt-middleware/v2 v2.3.1 h1:lbDyWE9aLydb3zrank+Gufb9qGJN9u//7EbJK07pRrw=
 github.com/auth0/go-jwt-middleware/v2 v2.3.1/go.mod h1:mqVr0gdB5zuaFyQFWMJH/c/2hehNjbYUD4i8Dpyf+Hc=
 github.com/aybabtme/iocontrol v0.0.0-20150809002002-ad15bcfc95a0 h1:0NmehRCgyk5rljDQLKUO+cRJCnduDyn11+zGZIc9Z48=
@@ -65,8 +65,8 @@ github.com/lestrrat-go/option v1.0.1 h1:oAzP2fvZGQKWkvHa1/SAcFolBEca1oN+mQ7eooNB
 github.com/lestrrat-go/option v1.0.1/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
 github.com/linuxfoundation/lfx-v2-fga-sync v0.3.11 h1:XzgaoxUUkSRzJM2EgsrYAG+VfFTfn1DgusAyz/Q+zfU=
 github.com/linuxfoundation/lfx-v2-fga-sync v0.3.11/go.mod h1:FBjqq0YJHYu4kYDWpjT1fsvr+uaER85LdVbWwGHbkrQ=
-github.com/linuxfoundation/lfx-v2-indexer-service v0.5.2 h1:XixED7zGNxs7wbU4T5gwy/tqsz1R1ee3yn8yfDcbeV0=
-github.com/linuxfoundation/lfx-v2-indexer-service v0.5.2/go.mod h1:4hJIVdmPiR4nSknZ3XkjQ+LAiZsx4g1tdyHdyIs11+I=
+github.com/linuxfoundation/lfx-v2-indexer-service v0.5.3 h1:qTp/6NsKP7NHaziIsWTwBvqqOO+Qx4O776AEDsg9X/g=
+github.com/linuxfoundation/lfx-v2-indexer-service v0.5.3/go.mod h1:4hJIVdmPiR4nSknZ3XkjQ+LAiZsx4g1tdyHdyIs11+I=
 github.com/linuxfoundation/lfx-v2-invite-service v0.2.3 h1:ShC2wXdSh5NCgcU9xURlBoqHFLlkT9iABMCnesU/xl8=
 github.com/linuxfoundation/lfx-v2-invite-service v0.2.3/go.mod h1:FzTR1EH2FNPBNBCPYnkS5Jnn5pr6SQNvMbkSZFxP40Q=
 github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d h1:Zj+PHjnhRYWBK6RqCDBcAhLXoi3TzC27Zad/Vn+gnVQ=
