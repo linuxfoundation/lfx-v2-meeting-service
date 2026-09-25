@@ -67,7 +67,7 @@ promoting it manufactures a reviewer that gets skimmed and ignored.
 
 This does **not** mean tests never matter. A narrowly scoped test finding tied to
 a named contract or security consequence is still legitimate — but it belongs to
-the sibling `repo_code` reviewer under `CLAUDE.md`'s testing guidance, not here.
+the sibling `general` reviewer under `CLAUDE.md`'s testing guidance, not here.
 
 ### Unrelated dependency bundling in a scoped PR — never a finding
 

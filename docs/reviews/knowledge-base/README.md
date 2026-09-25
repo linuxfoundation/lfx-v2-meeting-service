@@ -11,10 +11,11 @@ which carries the review method and points here. This directory is the single
 copy of the empirical KB — the skill does not duplicate it.
 
 It is deliberately *not* a general review checklist. Correctness, security and
-test quality in the abstract belong to the central `general` reviewer, and this
-repo's written conventions and contracts belong to the sibling
-`meeting-service-code-reviewer`. What lives here is only what this repo's own
-review history proves, mechanically, about itself.
+test quality in the abstract, together with this repo's written conventions and
+contracts, belong to the central `general` reviewer
+(`/lfx-skills:lfx-general-code-review`), which reads those rules from
+`CLAUDE.md` and `docs/`. What lives here is only what this repo's own review
+history proves, mechanically, about itself.
 
 ## Evidence window
 
