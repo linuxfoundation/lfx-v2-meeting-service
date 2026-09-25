@@ -28,6 +28,11 @@ address-taking is neither always fine nor always wrong.
 is the **ITX model field type and JSON tag**: a non-pointer field with
 `omitempty` (for example `Host bool` in `pkg/models/itx/meeting_registrants.go`)
 silently drops a deliberate `false`. When an explicit zero, empty string or
-`false` must reach ITX, the fix is a pointer field in the ITX model (as
-`Approved *bool` in `pkg/models/itx/past_meeting_summaries.go`), not a
-converter change.
+`false` must reach ITX, the root cause is the ITX model field type, so the
+fix starts there: make the field a pointer (as `Approved *bool` in
+`pkg/models/itx/past_meeting_summaries.go`) and then update the converter or
+service assignment to carry the payload's pointer through unchanged (as
+`itx_past_meeting_summary_converters.go` does for `Approved`) instead of
+dereferencing it with `utils.BoolValue` and the like. A helper-only or
+converter-only fix cannot do it: the field type discards the value before it
+is serialized.
