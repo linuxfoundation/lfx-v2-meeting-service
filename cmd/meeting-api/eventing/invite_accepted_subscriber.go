@@ -42,6 +42,15 @@ const (
 // every Zoom record for an email address using the service's own privileged ITX
 // credential, every event is re-verified against the invite service (the owner of
 // invite state) before any ITX call is made — see processInviteAcceptedEvent.
+//
+// That verification is defense in depth, not a complete origin control. The get_invite
+// request/reply it relies on rides the same credential-free bus: a workload that can
+// forge an acceptance event can also race or impersonate the responder and forge the
+// reply that verifies it. Closing the hole outright needs a control this service cannot
+// implement on its own — NATS account permissions restricting publish and reply on the
+// invite-service subjects to the invite service identity (platform NATS configuration),
+// or a cryptographically signed acceptance assertion from the invite service. Until one
+// of those exists, this check raises the cost of the attack; it does not eliminate it.
 type InviteAcceptedSubscriber struct {
 	nc               *natsgo.Conn
 	acceptanceClient domain.InviteAcceptanceClient
@@ -202,6 +211,15 @@ func processInviteAcceptedEvent(
 		}
 		return fmt.Errorf("failed to verify invite %q: %w", inviteUID, err)
 	}
+	// A lookup returning no record and no error would otherwise panic on the field
+	// accesses below, and this runs on a NATS callback goroutine where a panic takes
+	// the process down. The interface permits it; treat it as unverified.
+	if invite == nil {
+		logger.WarnContext(ctx, "invite lookup returned no record; discarding unverified invite_accepted event",
+			"invite_uid", inviteUID,
+		)
+		return nil
+	}
 
 	// Use the invite service's record, not the event body, for everything that follows.
 	verifiedEmail := strings.TrimSpace(invite.Recipient.Email)
@@ -210,7 +228,7 @@ func processInviteAcceptedEvent(
 	if invite.Status != inviteapi.InviteStatusAccepted || verifiedEmail == "" || verifiedUsername == "" {
 		logger.WarnContext(ctx, "invite_accepted event for an invite the invite service does not report as accepted; discarding",
 			"invite_uid", inviteUID,
-			"status", string(invite.Status),
+			"status", boundedStatus(invite.Status),
 		)
 		return nil
 	}
@@ -247,4 +265,18 @@ func processInviteAcceptedEvent(
 		"username", redaction.Redact(verifiedUsername),
 	)
 	return nil
+}
+
+// boundedStatus renders an invite status for logging. InviteStatus is an open string
+// type carried in a reply, so an unrecognised value is reported as a fixed placeholder
+// rather than echoed at whatever length the responder chose.
+func boundedStatus(status inviteapi.InviteStatus) string {
+	switch status {
+	case inviteapi.InviteStatusPending, inviteapi.InviteStatusAccepted:
+		return string(status)
+	case "":
+		return "(empty)"
+	default:
+		return "(unrecognised)"
+	}
 }

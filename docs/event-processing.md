@@ -145,7 +145,7 @@ reconciliation behavior).
 
 The subscriber uses the process shutdown context, drains on stop, and waits for in-flight handlers to finish.
 
-##### Event verification (required before any ITX call)
+##### Event verification (defense in depth, not a complete origin control)
 
 The subject sits on the shared platform bus, so an incoming message is an unauthenticated notification —
 any workload with network reach to NATS can publish one. The ITX call binds an LFID to *every* registrant,
@@ -166,10 +166,24 @@ Every other outcome — unknown invite, still pending, mismatch, or a lookup tha
 results in **no ITX call** (fail closed). Verification failures are logged with the invite UID and
 redacted identity fields.
 
-> **Deployment note:** subscriber-side verification is the service-level control. It should be paired with
-> NATS account/user permissions on the platform NATS deployment that restrict *publishing* on
-> `lfx.invite-service.invite_accepted` to the invite service identity. That authorization lives in the
-> platform NATS configuration, not in this service's chart.
+> **⚠️ Deployment note — this check alone does not close the hole.** The `get_invite` request/reply the
+> verification depends on rides the same credential-free bus as the event it is verifying. A workload that
+> can forge an acceptance event can also subscribe to `lfx.invite-service.get_invite` (or join the invite
+> service's queue group) and forge the reply that verifies it. The subscriber-side check raises the cost of
+> the attack and stops replay of stale or malformed events; it does not make the origin trustworthy.
+>
+> Completing the control requires one of the following, neither of which can be implemented in this
+> service:
+>
+> 1. **NATS account/user permissions** on the platform NATS deployment restricting *publish* on
+>    `lfx.invite-service.invite_accepted` — and *subscribe/reply* on `lfx.invite-service.get_invite` — to the
+>    invite service identity. This authorization lives in the platform NATS configuration, not in this
+>    service's chart. **This is the recommended fix.**
+> 2. **A signed acceptance assertion** from the invite service (e.g. a detached signature over
+>    `uid|recipient.email|accepted_by` verified here against the invite service's public key), which would
+>    require a change to the invite service's published contract.
+>
+> Until one of those is deployed, treat the `invite_accepted` path as mitigated, not fixed.
 
 ### Consumer Configuration
 

@@ -141,7 +141,7 @@ The service follows a clean architecture pattern with:
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
-- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted (every acceptance is verified against the invite service before any ITX write)
+- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted. Every acceptance is re-verified against the invite service before any ITX write — this is defense in depth, not a complete origin control: it only becomes one once NATS publish/subscribe authorization (or a signed acceptance) is in place. See [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control).
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications served at `/_meetings/openapi.*`

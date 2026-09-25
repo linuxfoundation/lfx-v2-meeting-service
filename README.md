@@ -80,7 +80,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Past Meeting Participant Operations**: Add, update, and delete past meeting participants
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (12 event families)
-- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted
+- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted (acceptances are re-verified against the invite service before any ITX write — see [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control))
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications served at `/_meetings/openapi.*`
@@ -159,7 +159,7 @@ The service includes a comprehensive event processing system for v1→v2 data sy
 - v1 user enrichment and Auth0 mapping
 - Dual publishing architecture (indexer + FGA-sync)
 - Parent-child dependency handling with retry logic
-- Separate `invite_accepted` NATS queue subscriber (not KV-based)
+- Separate `invite_accepted` NATS queue subscriber (not KV-based); every acceptance is re-verified against the invite service before the privileged ITX enrichment call, and the bus-level publish restriction that completes that control is a platform NATS deployment concern — see [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control)
 
 For complete details, see **[Event Processing Documentation](docs/event-processing.md)**.
 

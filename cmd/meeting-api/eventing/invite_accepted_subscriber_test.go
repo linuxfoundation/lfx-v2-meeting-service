@@ -196,6 +196,53 @@ func TestProcessInviteAcceptedEvent(t *testing.T) {
 		assert.Empty(t, client.calls, "no ITX call for an invite that has not been accepted")
 	})
 
+	t.Run("discards a non-accepted invite whose accepted_by matches the event", func(t *testing.T) {
+		// Isolates the status check: every other guard passes, so only the status
+		// gate can reject this. A re-issued, revoked or partially-written record
+		// reaches this shape with a populated accepted_by.
+		for _, status := range []inviteapi.InviteStatus{inviteapi.InviteStatusPending, "revoked", ""} {
+			t.Run(string(status), func(t *testing.T) {
+				invite := acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)
+				invite.Status = status
+				lookup := &fakeInviteLookup{invite: invite}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx,
+					acceptedEvent(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+					lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "only status = accepted may reach ITX")
+			})
+		}
+	})
+
+	t.Run("discards when the lookup returns no record and no error", func(t *testing.T) {
+		// The interface permits (nil, nil); this must not panic the process.
+		lookup := &fakeInviteLookup{}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls)
+	})
+
+	t.Run("enriches an invite with no resource type", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, "")}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, ""),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, victim, client.calls[0].email)
+	})
+
 	t.Run("discards an accepted record with an empty accepted_by", func(t *testing.T) {
 		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, "", meetingconstants.ResourceTypeMeeting)}
 		client := &fakeAcceptanceClient{}

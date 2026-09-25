@@ -57,7 +57,16 @@ func (l *NATSInviteLookup) GetInvite(ctx context.Context, uid string) (*inviteap
 		return nil, fmt.Errorf("failed to parse get_invite response: %w", err)
 	}
 	if resp.Error != "" {
-		return nil, fmt.Errorf("invite service returned error: %s", resp.Error)
+		// A reply that reports the invite does not exist is the expected answer for a
+		// forged or stale event, not an operational fault: map it to ErrInviteNotFound
+		// so the caller discards quietly instead of raising an error for every such
+		// event. The contract carries no typed error code (GetInviteResponse.Error is a
+		// free-form string), so this matches on the known spellings and treats anything
+		// else as a genuine failure — which still fails closed, just loudly.
+		if isNotFoundError(resp.Error) {
+			return nil, domain.ErrInviteNotFound
+		}
+		return nil, fmt.Errorf("invite service returned error: %q", truncateForLog(resp.Error))
 	}
 	// Invite is an embedded pointer: it stays nil when the reply carried no record.
 	if resp.Invite == nil {
@@ -69,6 +78,23 @@ func (l *NATSInviteLookup) GetInvite(ctx context.Context, uid string) (*inviteap
 	}
 
 	return resp.Invite, nil
+}
+
+// isNotFoundError reports whether an invite service error string means "no such invite".
+func isNotFoundError(s string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
+	return s == "not_found" || s == "not found" || s == "invite not found"
+}
+
+// truncateForLog bounds a string taken from a reply before it reaches a log line or an
+// error message. The reply is attacker-influenceable on an unauthenticated bus, so its
+// length must not be.
+func truncateForLog(s string) string {
+	const maxLen = 120
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "…"
 }
 
 // Ensure NATSInviteLookup implements domain.InviteLookup.

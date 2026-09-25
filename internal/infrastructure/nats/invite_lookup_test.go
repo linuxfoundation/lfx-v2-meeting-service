@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
@@ -75,15 +76,55 @@ func TestNATSInviteLookup_GetInvite(t *testing.T) {
 		assert.Nil(t, invite)
 	})
 
-	t.Run("errors when the invite service reports an error", func(t *testing.T) {
+	t.Run("maps a not-found error reply to ErrInviteNotFound", func(t *testing.T) {
+		for _, spelling := range []string{"not_found", "not found", "Invite Not Found", "  NOT_FOUND  "} {
+			t.Run(spelling, func(t *testing.T) {
+				requester := &MockRequester{}
+				requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+					Return(replyWith(t, inviteapi.GetInviteResponse{Error: spelling}), nil)
+
+				invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+				// The caller distinguishes "no such invite" (discard quietly) from an
+				// operational fault (log loudly) purely by this error identity.
+				require.ErrorIs(t, err, domain.ErrInviteNotFound)
+				assert.Nil(t, invite)
+			})
+		}
+	})
+
+	t.Run("errors when the invite service reports a non-not-found error", func(t *testing.T) {
+		// The reply also carries a record: a responder that sets Error must not have its
+		// payload used regardless, so dropping the Error check would let this invite
+		// through instead of failing closed.
 		requester := &MockRequester{}
 		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
-			Return(replyWith(t, inviteapi.GetInviteResponse{Error: "not_found"}), nil)
+			Return(replyWith(t, inviteapi.GetInviteResponse{
+				Error: "internal server error",
+				Invite: &inviteapi.Invite{
+					UID:        uid,
+					Status:     inviteapi.InviteStatusAccepted,
+					AcceptedBy: "attacker-lfid",
+				},
+			}), nil)
+
+		invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+		require.Error(t, err)
+		assert.NotErrorIs(t, err, domain.ErrInviteNotFound)
+		assert.Nil(t, invite)
+	})
+
+	t.Run("bounds an oversized error string before it reaches the error message", func(t *testing.T) {
+		requester := &MockRequester{}
+		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+			Return(replyWith(t, inviteapi.GetInviteResponse{Error: strings.Repeat("A", 5000)}), nil)
 
 		invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
 
 		require.Error(t, err)
 		assert.Nil(t, invite)
+		assert.Less(t, len(err.Error()), 300, "attacker-controlled reply text must not set the log line length")
 	})
 
 	t.Run("errors when the reply answers a different invite uid", func(t *testing.T) {
