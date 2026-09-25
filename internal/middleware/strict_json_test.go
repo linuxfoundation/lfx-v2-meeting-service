@@ -81,6 +81,8 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDRejected(t *testin
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.Contains(t, rr.Body.String(), `"code"`)
+	assert.Contains(t, rr.Body.String(), `"message"`)
 }
 
 func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDReversedOrderRejected(t *testing.T) {
@@ -197,11 +199,19 @@ func TestStrictCreateBodyMiddleware_BodyExceedsLimitRejected(t *testing.T) {
 
 	assert.Equal(t, http.StatusRequestEntityTooLarge, rr.Code)
 	assert.Contains(t, rr.Body.String(), "too large")
+	assert.Contains(t, rr.Body.String(), "413")
 }
 
-func TestStrictCreateBodyMiddleware_BodyAtLimitPassesThrough(t *testing.T) {
-	// A body exactly at the limit should pass (MaxBytesReader allows <= limit).
-	body := `{"project_uid":"proj-1","title":"T"}`
+func TestStrictCreateBodyMiddleware_BodyClearlyUnderLimitPassesThrough(t *testing.T) {
+	// Build a body of exactly maxCreateBodyBytes-1 bytes to verify the boundary
+	// is correctly placed: a body one byte under the cap must pass through.
+	// (Using the constant explicitly so the test breaks if the limit changes.)
+	prefix := `{"project_uid":"proj-1"}`
+	paddingLen := int(maxCreateBodyBytes) - 1 - len(prefix)
+	require.Positive(t, paddingLen, "prefix must be shorter than maxCreateBodyBytes")
+	body := prefix + strings.Repeat(" ", paddingLen)
+	require.Equal(t, int(maxCreateBodyBytes)-1, len(body))
+
 	req := postJSON("/itx/meetings", body)
 	rr := httptest.NewRecorder()
 

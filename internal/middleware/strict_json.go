@@ -65,7 +65,7 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 			if errors.As(err, &maxErr) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusRequestEntityTooLarge)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "request body too large"})
+				_ = json.NewEncoder(w).Encode(strictErrorBody("413", "request body too large"))
 				return
 			}
 			// Other read errors — pass through and let Goa surface the error.
@@ -79,13 +79,21 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 			if ambiguousErr := checkAmbiguousJSONKeys(body); ambiguousErr != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": ambiguousErr.Error()})
+				_ = json.NewEncoder(w).Encode(strictErrorBody("400", ambiguousErr.Error()))
 				return
 			}
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// strictErrorBody returns a JSON-encodable error object whose shape matches
+// the BadRequestError type declared in the Goa design ({code, message}),
+// so that middleware-level rejections on these endpoints are parseable by
+// generated clients using the same schema as handler-level errors.
+func strictErrorBody(code, message string) map[string]string {
+	return map[string]string{"code": code, "message": message}
 }
 
 // isStrictJSONTarget reports whether r is a POST to one of the guarded paths.
