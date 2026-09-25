@@ -82,17 +82,22 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 		return err
 	}
 
+	// Guard against re-parenting: verify project and committees have not changed.
+	// Both req and current are in v1 SFID space at this point.
+	current, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
+	if err != nil {
+		return err
+	}
+	if err := validateNoReparenting(req, current); err != nil {
+		return err
+	}
+
 	itxReq := s.transformToITXRequest(req)
 	// Stamp updated_by from the authenticated principal. ITX only overwrites the stored
 	// updated_by / updated_by_list when this field is non-zero, so omitting it leaves a
 	// stale value on the record (typically the original creator or last PIS updater).
 	itxReq.UpdatedBy = s.buildRequestingUser(ctx)
-	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 }
 
 // DeleteMeeting deletes a meeting via ITX proxy
@@ -152,6 +157,31 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 // SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
 func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+}
+
+// validateNoReparenting rejects updates that attempt to move a meeting to a different
+// project or attach/detach committees. req must already be in v1 SFID space (post-mapping);
+// current is the live ITX record, also in v1 SFID space.
+func validateNoReparenting(req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
+	if req.ProjectUID != current.Project {
+		return domain.NewForbiddenError("project_uid cannot be changed after a meeting is created")
+	}
+
+	if len(req.Committees) != len(current.Committees) {
+		return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
+	}
+
+	currentIDs := make(map[string]struct{}, len(current.Committees))
+	for _, c := range current.Committees {
+		currentIDs[c.ID] = struct{}{}
+	}
+	for _, c := range req.Committees {
+		if _, ok := currentIDs[c.UID]; !ok {
+			return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
+		}
+	}
+
+	return nil
 }
 
 // validateMeetingRequest validates a meeting create/update request before sending to ITX

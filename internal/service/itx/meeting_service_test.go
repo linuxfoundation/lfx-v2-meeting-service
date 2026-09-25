@@ -28,6 +28,10 @@ type fakeMeetingClient struct {
 	lastUpdateOccurrence   *itx.UpdateOccurrenceRequest
 	createResp             *itx.ZoomMeetingResponse
 	createErr              error
+	// getResp/getErr control GetZoomMeeting; used by update tests to set the
+	// current stored meeting for the re-parenting guard.
+	getResp *itx.ZoomMeetingResponse
+	getErr  error
 }
 
 func (f *fakeMeetingClient) CreateZoomMeeting(_ context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error) {
@@ -37,6 +41,16 @@ func (f *fakeMeetingClient) CreateZoomMeeting(_ context.Context, req *itx.Create
 	}
 	if f.createResp != nil {
 		return f.createResp, nil
+	}
+	return &itx.ZoomMeetingResponse{}, nil
+}
+
+func (f *fakeMeetingClient) GetZoomMeeting(_ context.Context, _ string) (*itx.ZoomMeetingResponse, error) {
+	if f.getErr != nil {
+		return nil, f.getErr
+	}
+	if f.getResp != nil {
+		return f.getResp, nil
 	}
 	return &itx.ZoomMeetingResponse{}, nil
 }
@@ -142,9 +156,11 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 			Visibility: itx.MeetingVisibilityPublic,
 		}
 	}
+	// currentMeeting matches baseReq so the re-parenting guard passes.
+	currentMeeting := &itx.ZoomMeetingResponse{Project: "proj-1"}
 
 	t.Run("stamps updated_by from resolved profile and never touches created_by", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", AvatarURL: "https://example.com/a.jpg", Email: "alice@example.com"},
 		}
@@ -167,7 +183,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	})
 
 	t.Run("falls back to JWT email when profile has none", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example"},
 		}
@@ -180,7 +196,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	})
 
 	t.Run("degrades to username/email when resolver errors", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{err: errors.New("auth service unavailable")}
 		svc := NewMeetingService(client, noOpIDMapper{}, reader)
 
@@ -193,7 +209,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	})
 
 	t.Run("degrades to username/email when reader is nil (NATS disabled)", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: currentMeeting}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		err := svc.UpdateMeeting(ctxWithPrincipal("carol", "carol@heimdall.example.com"), "meeting-1", baseReq())
@@ -203,7 +219,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	})
 
 	t.Run("omits updated_by when there is no principal in context", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "alice"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, reader)
 
@@ -242,7 +258,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("update forwards reminder fields to ITX", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
@@ -273,7 +289,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("omitted reminder field stays off the wire so ITX preserves the stored pair", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
@@ -317,7 +333,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("update forwards the flag to ITX", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
@@ -343,7 +359,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("omitted field stays off the wire so ITX preserves the stored value", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
@@ -393,7 +409,7 @@ func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("update forwards owner to ITX", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
@@ -404,7 +420,7 @@ func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 	})
 
 	t.Run("omitted owner stays off the wire so ITX preserves the stored owner", func(t *testing.T) {
-		client := &fakeMeetingClient{}
+		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
@@ -445,5 +461,84 @@ func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client.lastUpdateOccurrence)
 		assert.Nil(t, client.lastUpdateOccurrence.UpdatedBy)
+	})
+}
+
+func TestMeetingService_UpdateMeeting_NoReparenting(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ID:         "meeting-1",
+			ProjectUID: "proj-1",
+			Title:      "Test Meeting",
+			StartTime:  "2026-01-01T00:00:00Z",
+			Duration:   30,
+			Visibility: itx.MeetingVisibilityPublic,
+			Committees: []models.Committee{
+				{UID: "00000000-0000-0000-0000-000000000001"},
+			},
+		}
+	}
+	currentMeeting := &itx.ZoomMeetingResponse{
+		Project: "proj-1",
+		Committees: []itx.Committee{
+			{ID: "00000000-0000-0000-0000-000000000001"},
+		},
+	}
+
+	t.Run("allows update when project and committees are unchanged", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+	})
+
+	t.Run("rejects update that changes project_uid", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.ProjectUID = "proj-other"
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq, "ITX must not be called when re-parenting is rejected")
+	})
+
+	t.Run("rejects update that adds a new committee", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq)
+	})
+
+	t.Run("rejects update that swaps a committee", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq)
+	})
+
+	t.Run("rejects update that removes a committee", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		req := baseReq()
+		req.Committees = nil
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq)
 	})
 }
