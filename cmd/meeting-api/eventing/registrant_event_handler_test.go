@@ -116,20 +116,6 @@ func (s *stubInviteSender) SendInvite(_ context.Context, req inviteapi.SendInvit
 	return s.result, nil
 }
 
-type stubAcceptanceClient struct {
-	called bool
-	email  string
-	user   string
-	err    error
-}
-
-func (s *stubAcceptanceClient) AcceptInvite(_ context.Context, email, username string) error {
-	s.called = true
-	s.email = email
-	s.user = username
-	return s.err
-}
-
 // TestConvertMapToInviteResponseData_MailerDaemon verifies that mailer-daemon bounce emails
 // are silently filtered (nil, nil) before required-field validation or any KV lookup occurs.
 // Addresses where "mailer-daemon" appears only in the domain or as a subaddress suffix are
@@ -300,46 +286,8 @@ func TestMaybeSendInvite(t *testing.T) {
 	}
 }
 
-func TestProcessInviteAcceptedEvent(t *testing.T) {
-	client := &stubAcceptanceClient{}
-	evt := inviteapi.InviteServiceAcceptedEvent{
-		Invite: inviteapi.Invite{
-			Recipient:  inviteapi.Recipient{Email: "guest@example.com"},
-			AcceptedBy: "auth0|guest",
-			Resource:   inviteapi.Resource{Type: meetingconstants.ResourceTypeMeeting},
-		},
-	}
-
-	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
-	require.NoError(t, err)
-	assert.True(t, client.called)
-	assert.Equal(t, "guest@example.com", client.email)
-	assert.Equal(t, "auth0|guest", client.user)
-}
-
-func TestProcessInviteAcceptedEvent_missingFields(t *testing.T) {
-	client := &stubAcceptanceClient{}
-	evt := inviteapi.InviteServiceAcceptedEvent{
-		Invite: inviteapi.Invite{AcceptedBy: "auth0|guest"},
-	}
-
-	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
-	require.NoError(t, err)
-	assert.False(t, client.called)
-}
-
-func TestProcessInviteAcceptedEvent_clientError(t *testing.T) {
-	client := &stubAcceptanceClient{err: errors.New("itx unavailable")}
-	evt := inviteapi.InviteServiceAcceptedEvent{
-		Invite: inviteapi.Invite{
-			Recipient:  inviteapi.Recipient{Email: "guest@example.com"},
-			AcceptedBy: "auth0|guest",
-		},
-	}
-
-	err := processInviteAcceptedEvent(context.Background(), evt, client, slog.Default())
-	require.Error(t, err)
-}
+// processInviteAcceptedEvent is exercised in invite_accepted_subscriber_test.go, next to
+// the subscriber that owns it.
 
 // TestHandleRegistrantUpdate_UsernameCleared verifies that a CDC update that results in an
 // empty username — whether the "username" key is absent (v1 removes the field on clear) or

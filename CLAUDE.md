@@ -141,7 +141,7 @@ The service follows a clean architecture pattern with:
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
-- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted
+- **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted (every acceptance is verified against the invite service before any ITX write)
 - **JWT Authentication**: Secure API access via Heimdall integration
 - **ID Mapping**: Optional v1/v2 ID translation via NATS (can be disabled)
 - **OpenAPI Documentation**: Auto-generated API specifications served at `/_meetings/openapi.*`
@@ -161,7 +161,7 @@ The service follows a clean architecture pattern with:
 
 - Core domain request/response models in `models/` (`CreateITXMeetingRequest`, `Committee`, `UpdatePastMeetingParticipant`)
 - ITX wire types (enums, meeting types, recurrence) in `pkg/models/itx/`
-- Domain interfaces: `ITXProxyClient`, `IDMapper`, `UserMetadataReader`, `UserServiceClient`, `InviteAcceptanceClient`, `InviteEmailSender`, `ProjectLookup`, `V1UserLookup`
+- Domain interfaces: `ITXProxyClient`, `IDMapper`, `UserMetadataReader`, `UserServiceClient`, `InviteAcceptanceClient`, `InviteEmailSender`, `InviteLookup`, `ProjectLookup`, `V1UserLookup`
 
 **Service Layer** (`internal/service/`)
 
@@ -177,7 +177,7 @@ The service follows a clean architecture pattern with:
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing
-- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, interfaces
+- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, invite lookup, interfaces
 - User service HTTP client (`userservice/`) — calls v1 API gateway AS the user for preferred-email reads/writes
 
 **Event Processing Layer** (`cmd/meeting-api/eventing/`)

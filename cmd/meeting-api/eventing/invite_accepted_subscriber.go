@@ -6,7 +6,10 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,9 +35,17 @@ const (
 // InviteAcceptedSubscriber subscribes to lfx.invite-service.invite_accepted events
 // and calls the ITX Zoom Service to enrich all DynamoDB records tied to the acceptor's
 // email with their new username and profile data.
+//
+// The subject lives on the shared platform NATS bus, so a message arriving here is an
+// unauthenticated notification, not proof that an acceptance happened: any workload
+// with reach to the bus can publish one. Because the enrichment call binds an LFID to
+// every Zoom record for an email address using the service's own privileged ITX
+// credential, every event is re-verified against the invite service (the owner of
+// invite state) before any ITX call is made — see processInviteAcceptedEvent.
 type InviteAcceptedSubscriber struct {
 	nc               *natsgo.Conn
 	acceptanceClient domain.InviteAcceptanceClient
+	inviteLookup     domain.InviteLookup
 	logger           *slog.Logger
 	sub              *natsgo.Subscription
 
@@ -44,14 +55,18 @@ type InviteAcceptedSubscriber struct {
 }
 
 // NewInviteAcceptedSubscriber creates a new subscriber but does not start it.
+// inviteLookup is required: without it no event can be verified, and the subscriber
+// discards everything it receives rather than acting on unverified input.
 func NewInviteAcceptedSubscriber(
 	nc *natsgo.Conn,
 	acceptanceClient domain.InviteAcceptanceClient,
+	inviteLookup domain.InviteLookup,
 	logger *slog.Logger,
 ) *InviteAcceptedSubscriber {
 	return &InviteAcceptedSubscriber{
 		nc:               nc,
 		acceptanceClient: acceptanceClient,
+		inviteLookup:     inviteLookup,
 		logger:           logger,
 	}
 }
@@ -116,7 +131,7 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 		return
 	}
 
-	if err := processInviteAcceptedEvent(ctx, evt, s.acceptanceClient, s.logger); err != nil {
+	if err := processInviteAcceptedEvent(ctx, evt, s.inviteLookup, s.acceptanceClient, s.logger); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		s.logger.With(logging.ErrKey, err).WarnContext(ctx, "invite_accepted enrichment failed; best-effort, not retrying",
@@ -126,8 +141,26 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 	}
 }
 
-// processInviteAcceptedEvent validates an invite acceptance event and calls ITX to enrich
-// all Zoom records for the acceptor's email.
+// processInviteAcceptedEvent verifies an invite acceptance event against the invite
+// service and, only if it checks out, calls ITX to enrich all Zoom records for the
+// acceptor's email.
+//
+// The event body is untrusted. `AcceptInvite` binds the supplied LFID to every
+// registrant, past-meeting invitee and past-meeting attendee row carrying the supplied
+// email — and those rows flow back through the v1 KV bucket into FGA host/participant
+// tuples — so acting on the message as sent would let any publisher on the bus attach
+// an LFID of its choosing to another person's meeting records. The event is therefore
+// treated purely as a hint to go and re-read the authoritative record:
+//
+//  1. The event must name an invite UID.
+//  2. That invite is re-fetched from the invite service, which owns invite state and is
+//     the only component that records who completed the acceptance flow.
+//  3. The stored record must say the invite is accepted, and its accepted_by and
+//     recipient email must match what the event claimed.
+//  4. The ITX call is made with the values from the stored record, never from the event.
+//
+// Anything else — unknown invite, still pending, mismatch, or a lookup that could not be
+// completed — results in no ITX call.
 //
 // Enrichment intentionally runs for every resource_type (meeting, project, committee, etc.)
 // because the ITX endpoint is keyed by email, mirroring project/committee reconciliation:
@@ -138,37 +171,80 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 func processInviteAcceptedEvent(
 	ctx context.Context,
 	evt inviteapi.InviteServiceAcceptedEvent,
+	lookup domain.InviteLookup,
 	client domain.InviteAcceptanceClient,
 	logger *slog.Logger,
 ) error {
-	email := evt.Recipient.Email
-	username := evt.AcceptedBy
+	inviteUID := strings.TrimSpace(evt.UID)
+	claimedEmail := strings.TrimSpace(evt.Recipient.Email)
+	claimedUsername := strings.TrimSpace(evt.AcceptedBy)
 
-	if email == "" || username == "" {
+	if inviteUID == "" || claimedEmail == "" || claimedUsername == "" {
 		logger.WarnContext(ctx, "invite_accepted event missing required fields; discarding")
 		return nil
 	}
 
-	if evt.Resource.Type != "" && evt.Resource.Type != meetingconstants.ResourceTypeMeeting {
+	if lookup == nil {
+		// Fail closed: an acceptance that cannot be verified is not acted on.
+		logger.WarnContext(ctx, "invite lookup unavailable; discarding unverified invite_accepted event",
+			"invite_uid", inviteUID,
+		)
+		return nil
+	}
+
+	invite, err := lookup.GetInvite(ctx, inviteUID)
+	if err != nil {
+		if errors.Is(err, domain.ErrInviteNotFound) {
+			logger.WarnContext(ctx, "invite_accepted event references an unknown invite; discarding",
+				"invite_uid", inviteUID,
+			)
+			return nil
+		}
+		return fmt.Errorf("failed to verify invite %q: %w", inviteUID, err)
+	}
+
+	// Use the invite service's record, not the event body, for everything that follows.
+	verifiedEmail := strings.TrimSpace(invite.Recipient.Email)
+	verifiedUsername := strings.TrimSpace(invite.AcceptedBy)
+
+	if invite.Status != inviteapi.InviteStatusAccepted || verifiedEmail == "" || verifiedUsername == "" {
+		logger.WarnContext(ctx, "invite_accepted event for an invite the invite service does not report as accepted; discarding",
+			"invite_uid", inviteUID,
+			"status", string(invite.Status),
+		)
+		return nil
+	}
+
+	if !strings.EqualFold(verifiedEmail, claimedEmail) || !strings.EqualFold(verifiedUsername, claimedUsername) {
+		logger.WarnContext(ctx, "invite_accepted event does not match the stored invite record; discarding",
+			"invite_uid", inviteUID,
+			"claimed_email", redaction.RedactEmail(claimedEmail),
+			"claimed_username", redaction.Redact(claimedUsername),
+		)
+		return nil
+	}
+
+	if invite.Resource.Type != "" && invite.Resource.Type != meetingconstants.ResourceTypeMeeting {
 		logger.DebugContext(ctx, "received invite_accepted event for non-meeting resource; enriching Zoom records by email",
-			"email", redaction.RedactEmail(email),
-			"resource_type", evt.Resource.Type,
+			"email", redaction.RedactEmail(verifiedEmail),
+			"resource_type", invite.Resource.Type,
 		)
 	} else {
 		logger.DebugContext(ctx, "received invite_accepted event",
-			"email", redaction.RedactEmail(email),
-			"username", redaction.Redact(username),
-			"resource_type", evt.Resource.Type,
+			"email", redaction.RedactEmail(verifiedEmail),
+			"username", redaction.Redact(verifiedUsername),
+			"resource_type", invite.Resource.Type,
 		)
 	}
 
-	if err := client.AcceptInvite(ctx, email, username); err != nil {
+	if err := client.AcceptInvite(ctx, verifiedEmail, verifiedUsername); err != nil {
 		return err
 	}
 
 	logger.InfoContext(ctx, "invite_accepted enrichment complete",
-		"email", redaction.RedactEmail(email),
-		"username", redaction.Redact(username),
+		"invite_uid", inviteUID,
+		"email", redaction.RedactEmail(verifiedEmail),
+		"username", redaction.Redact(verifiedUsername),
 	)
 	return nil
 }

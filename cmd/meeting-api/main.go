@@ -168,7 +168,11 @@ func run() int {
 				slog.With(logging.ErrKey, err).WarnContext(ctx,
 					"failed to connect to NATS for invite_accepted subscriber; continuing without enrichment")
 			} else {
-				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxClient, slog.Default())
+				// The invite lookup is what makes an acceptance event trustworthy: the
+				// subscriber re-reads every invite from the invite service before it
+				// asks ITX to bind an LFID to an email's Zoom records.
+				inviteLookup := natsinfra.NewInviteLookup(nc, slog.Default())
+				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxClient, inviteLookup, slog.Default())
 				if err := sub.Start(ctx); err != nil {
 					nc.Close()
 					slog.With(logging.ErrKey, err).WarnContext(ctx,
