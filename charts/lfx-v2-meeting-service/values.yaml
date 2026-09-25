@@ -243,6 +243,14 @@ service:
   # port is the service port
   port: 8080
 
+# networkPolicy restricts access to the service pods. Keep disabled by default
+# for local development clusters that do not enforce Kubernetes NetworkPolicy.
+networkPolicy:
+  enabled: false
+  # ingress peers are configured in deployed environment values.
+  ingress:
+    from: []
+
 # serviceAccount is the configuration for the Kubernetes service account
 serviceAccount:
   # create specifies whether a service account should be created
