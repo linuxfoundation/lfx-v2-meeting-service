@@ -200,6 +200,7 @@ func TestStrictCreateBodyMiddleware_BodyExceedsLimitRejected(t *testing.T) {
 	assert.Equal(t, http.StatusRequestEntityTooLarge, rr.Code)
 	assert.Contains(t, rr.Body.String(), "too large")
 	assert.Contains(t, rr.Body.String(), "413")
+	assert.Equal(t, "close", rr.Header().Get("Connection"), "413 response must set Connection: close")
 }
 
 func TestStrictCreateBodyMiddleware_BodyClearlyUnderLimitPassesThrough(t *testing.T) {

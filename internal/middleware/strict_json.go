@@ -63,6 +63,13 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			var maxErr *http.MaxBytesError
 			if errors.As(err, &maxErr) {
+				// Set Connection: close so the server closes the TCP connection
+				// after sending the 413 response, without waiting for the client
+				// to finish sending the oversized body. This is necessary because
+				// the ResponseWriter may be wrapped (e.g. by RequestLoggerMiddleware)
+				// and http.MaxBytesReader cannot unwrap it to call the internal
+				// requestTooLarge() notification.
+				w.Header().Set("Connection", "close")
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusRequestEntityTooLarge)
 				_ = json.NewEncoder(w).Encode(strictErrorBody("413", "request body too large"))
