@@ -541,4 +541,27 @@ func TestMeetingService_UpdateMeeting_NoReparenting(t *testing.T) {
 		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
 		assert.Nil(t, client.lastUpdateReq)
 	})
+
+	t.Run("rejects update with duplicate committee IDs that would detach a current committee", func(t *testing.T) {
+		stored := &itx.ZoomMeetingResponse{
+			Project: "proj-1",
+			Committees: []itx.Committee{
+				{ID: "00000000-0000-0000-0000-000000000001"},
+				{ID: "00000000-0000-0000-0000-000000000002"},
+			},
+		}
+		client := &fakeMeetingClient{getResp: stored}
+		svc := NewMeetingService(client, noOpIDMapper{}, nil)
+
+		// [A, A] has length 2 matching stored [A, B], but would drop B.
+		req := baseReq()
+		req.Committees = []models.Committee{
+			{UID: "00000000-0000-0000-0000-000000000001"},
+			{UID: "00000000-0000-0000-0000-000000000001"},
+		}
+		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq)
+	})
 }

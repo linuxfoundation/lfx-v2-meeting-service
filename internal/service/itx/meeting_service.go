@@ -175,7 +175,12 @@ func validateNoReparenting(req *models.CreateITXMeetingRequest, current *itx.Zoo
 	for _, c := range current.Committees {
 		currentIDs[c.ID] = struct{}{}
 	}
+	requestedIDs := make(map[string]struct{}, len(req.Committees))
 	for _, c := range req.Committees {
+		if _, duplicate := requestedIDs[c.UID]; duplicate {
+			return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
+		}
+		requestedIDs[c.UID] = struct{}{}
 		if _, ok := currentIDs[c.UID]; !ok {
 			return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
 		}
