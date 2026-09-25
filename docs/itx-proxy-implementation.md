@@ -211,7 +211,7 @@ Restricted:           utils.BoolPtrOmitFalse(resp.Restricted),
 EarlyJoinTimeMinutes: utils.IntPtrOmitZero(resp.EarlyJoinTime),
 ```
 
-Choose an always-present pointer or an omit-zero one according to what the response contract promises the client; see `.claude/rules/itx-converters-and-chart.md` for the review guidance.
+Choose an always-present pointer or an omit-zero one according to what the response contract promises the client; see `.claude/rules/itx-converters.md` for the review guidance.
 
 ### 4. OAuth2 Client Credentials Flow
 
