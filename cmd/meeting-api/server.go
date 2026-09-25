@@ -85,6 +85,10 @@ func setupHTTPServer(flags flags, svc *MeetingsAPI, gracefulCloseWG *sync.WaitGr
 	var handler http.Handler = mux
 
 	// Middleware is executed in reverse order; RequestIDMiddleware runs first.
+	// StrictCreateBodyMiddleware runs just before the Goa mux so that it
+	// rejects bodies with case-fold-ambiguous JSON keys on the two create
+	// endpoints before encoding/json decodes them (CWE-436 mitigation).
+	handler = middleware.StrictCreateBodyMiddleware(handler)
 	handler = middleware.RequestLoggerMiddleware()(handler)
 	handler = middleware.RequestIDMiddleware()(handler)
 	handler = middleware.AuthorizationMiddleware()(handler)
