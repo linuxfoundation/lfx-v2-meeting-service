@@ -464,7 +464,7 @@ func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 	})
 }
 
-func TestMeetingService_UpdateMeeting_NoReparenting(t *testing.T) {
+func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 	baseReq := func() *models.CreateITXMeetingRequest {
 		return &models.CreateITXMeetingRequest{
 			ID:         "meeting-1",
@@ -485,7 +485,7 @@ func TestMeetingService_UpdateMeeting_NoReparenting(t *testing.T) {
 		},
 	}
 
-	t.Run("allows update when project and committees are unchanged", func(t *testing.T) {
+	t.Run("allows update when project is unchanged", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
@@ -506,62 +506,39 @@ func TestMeetingService_UpdateMeeting_NoReparenting(t *testing.T) {
 		assert.Nil(t, client.lastUpdateReq, "ITX must not be called when re-parenting is rejected")
 	})
 
-	t.Run("rejects update that adds a new committee", func(t *testing.T) {
+	// Committee changes are permitted at the service layer; Heimdall enforces
+	// that the caller has writer access on any newly added committee.
+
+	t.Run("allows update that adds a committee", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
-		require.Error(t, err)
-		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
-		assert.Nil(t, client.lastUpdateReq)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
 	})
 
-	t.Run("rejects update that swaps a committee", func(t *testing.T) {
+	t.Run("allows update that swaps a committee", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
 		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
-		require.Error(t, err)
-		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
-		assert.Nil(t, client.lastUpdateReq)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
 	})
 
-	t.Run("rejects update that removes a committee", func(t *testing.T) {
+	t.Run("allows update that removes all committees", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil)
 
 		req := baseReq()
 		req.Committees = nil
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
-		require.Error(t, err)
-		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
-		assert.Nil(t, client.lastUpdateReq)
-	})
-
-	t.Run("rejects update with duplicate committee IDs that would detach a current committee", func(t *testing.T) {
-		stored := &itx.ZoomMeetingResponse{
-			Project: "proj-1",
-			Committees: []itx.Committee{
-				{ID: "00000000-0000-0000-0000-000000000001"},
-				{ID: "00000000-0000-0000-0000-000000000002"},
-			},
-		}
-		client := &fakeMeetingClient{getResp: stored}
-		svc := NewMeetingService(client, noOpIDMapper{}, nil)
-
-		// [A, A] has length 2 matching stored [A, B], but would drop B.
-		req := baseReq()
-		req.Committees = []models.Committee{
-			{UID: "00000000-0000-0000-0000-000000000001"},
-			{UID: "00000000-0000-0000-0000-000000000001"},
-		}
-		err := svc.UpdateMeeting(context.Background(), "meeting-1", req)
-		require.Error(t, err)
-		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
-		assert.Nil(t, client.lastUpdateReq)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
 	})
 }

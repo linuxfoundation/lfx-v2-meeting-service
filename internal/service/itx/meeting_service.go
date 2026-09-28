@@ -82,13 +82,15 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 		return err
 	}
 
-	// Guard against re-parenting: verify project and committees have not changed.
+	// Guard against project re-parenting: the project_uid is immutable after creation.
 	// Both req and current are in v1 SFID space at this point.
+	// Committee permission checking (writer access on newly added committees) is
+	// enforced by Heimdall at the HTTP layer before this code is reached.
 	current, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return err
 	}
-	if err := validateNoReparenting(req, current); err != nil {
+	if err := validateProjectNotReparented(req, current); err != nil {
 		return err
 	}
 
@@ -159,33 +161,13 @@ func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOc
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
 }
 
-// validateNoReparenting rejects updates that attempt to move a meeting to a different
-// project or attach/detach committees. req must already be in v1 SFID space (post-mapping);
-// current is the live ITX record, also in v1 SFID space.
-func validateNoReparenting(req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
+// validateProjectNotReparented rejects updates that attempt to move a meeting to a
+// different project. req must already be in v1 SFID space (post-mapping); current is
+// the live ITX record, also in v1 SFID space.
+func validateProjectNotReparented(req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
 	if req.ProjectUID != current.Project {
 		return domain.NewForbiddenError("project_uid cannot be changed after a meeting is created")
 	}
-
-	if len(req.Committees) != len(current.Committees) {
-		return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
-	}
-
-	currentIDs := make(map[string]struct{}, len(current.Committees))
-	for _, c := range current.Committees {
-		currentIDs[c.ID] = struct{}{}
-	}
-	requestedIDs := make(map[string]struct{}, len(req.Committees))
-	for _, c := range req.Committees {
-		if _, duplicate := requestedIDs[c.UID]; duplicate {
-			return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
-		}
-		requestedIDs[c.UID] = struct{}{}
-		if _, ok := currentIDs[c.UID]; !ok {
-			return domain.NewForbiddenError("committees cannot be changed after a meeting is created")
-		}
-	}
-
 	return nil
 }
 
