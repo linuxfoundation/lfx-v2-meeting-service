@@ -368,20 +368,239 @@ func getOperation(msg jetstream.Msg) jetstream.KeyValueOp {
 	}
 }
 
-// decodeData attempts to decode message data as JSON or MessagePack
+// msgpackMaxNestingDepth is the maximum container-nesting depth we allow
+// before refusing to call msgpack.Unmarshal on untrusted KV data.
+//
+// Background: vmihailenco/msgpack v5 decodes into interface{} by recursing
+// once per nesting level (DecodeInterface → decodeSlice/decodeMap →
+// DecodeInterface).  There is no built-in depth cap.  A crafted ~1 MB
+// fixarray(1)-chain payload encodes ~1 M levels in 1 byte each; at a few
+// hundred bytes of stack frame per level the goroutine stack exceeds the
+// pod's 512 Mi memory limit before Go's 1 GB ceiling is reached.
+// runtime.recover() cannot intercept a fatal stack-overflow, so the whole
+// meeting-api process (HTTP proxy + NATS subscribers) is killed.
+//
+// Legitimate v1-objects records are flat; 64 is very generous.
+const msgpackMaxNestingDepth = 64
+
+// checkMsgpackNestingDepth iteratively scans raw msgpack bytes and returns a
+// non-nil error if any container (array or map) would push the nesting depth
+// past msgpackMaxNestingDepth.  It allocates only a small depth-tracking
+// slice and never recurses, so it is safe to call on untrusted input before
+// passing the same bytes to msgpack.Unmarshal.
+//
+// Returns an error also for structurally truncated type-header fields so
+// that Unmarshal is never called on malformed data.
+func checkMsgpackNestingDepth(data []byte) error {
+	// remaining[level] = number of msgpack values still to consume at that
+	// level.  We start with 1 root value.
+	remaining := make([]int, 1, msgpackMaxNestingDepth+1)
+	remaining[0] = 1
+
+	i := 0
+	for i < len(data) && len(remaining) > 0 {
+		b := data[i]
+		i++
+
+		var skip int     // raw bytes to skip for this type's inline payload
+		var children int // child-value count for containers (0 = leaf / empty container)
+
+		switch {
+		// single-byte atoms (no payload)
+		case b == 0xc0, b == 0xc2, b == 0xc3: // nil, false, true
+		case b <= 0x7f: // positive fixint
+		case b >= 0xe0: // negative fixint
+
+		// integers
+		case b == 0xcc:
+			skip = 1 // uint8
+		case b == 0xcd:
+			skip = 2 // uint16
+		case b == 0xce:
+			skip = 4 // uint32
+		case b == 0xcf:
+			skip = 8 // uint64
+		case b == 0xd0:
+			skip = 1 // int8
+		case b == 0xd1:
+			skip = 2 // int16
+		case b == 0xd2:
+			skip = 4 // int32
+		case b == 0xd3:
+			skip = 8 // int64
+
+		// floats
+		case b == 0xca:
+			skip = 4 // float32
+		case b == 0xcb:
+			skip = 8 // float64
+
+		// str
+		case b >= 0xa0 && b <= 0xbf: // fixstr
+			skip = int(b & 0x1f)
+		case b == 0xd9: // str8
+			if i >= len(data) {
+				return errors.New("truncated msgpack: str8 length byte missing")
+			}
+			skip = int(data[i])
+			i++
+		case b == 0xda: // str16
+			if i+2 > len(data) {
+				return errors.New("truncated msgpack: str16 length bytes missing")
+			}
+			skip = int(data[i])<<8 | int(data[i+1])
+			i += 2
+		case b == 0xdb: // str32
+			if i+4 > len(data) {
+				return errors.New("truncated msgpack: str32 length bytes missing")
+			}
+			skip = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
+			i += 4
+
+		// bin
+		case b == 0xc4: // bin8
+			if i >= len(data) {
+				return errors.New("truncated msgpack: bin8 length byte missing")
+			}
+			skip = int(data[i])
+			i++
+		case b == 0xc5: // bin16
+			if i+2 > len(data) {
+				return errors.New("truncated msgpack: bin16 length bytes missing")
+			}
+			skip = int(data[i])<<8 | int(data[i+1])
+			i += 2
+		case b == 0xc6: // bin32
+			if i+4 > len(data) {
+				return errors.New("truncated msgpack: bin32 length bytes missing")
+			}
+			skip = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
+			i += 4
+
+		// ext (type byte + data bytes; type byte already counted in skip)
+		case b == 0xd4:
+			skip = 2 // fixext1: 1 type + 1 data
+		case b == 0xd5:
+			skip = 3 // fixext2
+		case b == 0xd6:
+			skip = 5 // fixext4
+		case b == 0xd7:
+			skip = 9 // fixext8
+		case b == 0xd8:
+			skip = 17 // fixext16
+		case b == 0xc7: // ext8: length(1) + type(1) + data(length)
+			if i >= len(data) {
+				return errors.New("truncated msgpack: ext8 length byte missing")
+			}
+			skip = int(data[i]) + 1 // +1 for type byte
+			i++
+		case b == 0xc8: // ext16
+			if i+2 > len(data) {
+				return errors.New("truncated msgpack: ext16 length bytes missing")
+			}
+			skip = (int(data[i])<<8 | int(data[i+1])) + 1
+			i += 2
+		case b == 0xc9: // ext32
+			if i+4 > len(data) {
+				return errors.New("truncated msgpack: ext32 length bytes missing")
+			}
+			skip = (int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])) + 1
+			i += 4
+
+		// arrays
+		case b >= 0x90 && b <= 0x9f: // fixarray
+			children = int(b & 0x0f)
+		case b == 0xdc: // array16
+			if i+2 > len(data) {
+				return errors.New("truncated msgpack: array16 length bytes missing")
+			}
+			children = int(data[i])<<8 | int(data[i+1])
+			i += 2
+		case b == 0xdd: // array32
+			if i+4 > len(data) {
+				return errors.New("truncated msgpack: array32 length bytes missing")
+			}
+			children = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
+			i += 4
+
+		// maps: each entry is a key-value pair → 2 values per entry
+		case b >= 0x80 && b <= 0x8f: // fixmap
+			children = int(b&0x0f) * 2
+		case b == 0xde: // map16
+			if i+2 > len(data) {
+				return errors.New("truncated msgpack: map16 length bytes missing")
+			}
+			children = (int(data[i])<<8 | int(data[i+1])) * 2
+			i += 2
+		case b == 0xdf: // map32
+			if i+4 > len(data) {
+				return errors.New("truncated msgpack: map32 length bytes missing")
+			}
+			children = (int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])) * 2
+			i += 4
+
+		default:
+			return fmt.Errorf("unknown msgpack format byte 0x%02x at offset %d", b, i-1)
+		}
+
+		// Advance past inline scalar payload bytes.
+		if skip > 0 {
+			if i+skip > len(data) {
+				return fmt.Errorf("msgpack payload truncated at offset %d: need %d more bytes", i, skip)
+			}
+			i += skip
+		}
+
+		if children > 0 {
+			// Non-empty container: push a new depth level.
+			if len(remaining) >= msgpackMaxNestingDepth {
+				return fmt.Errorf("msgpack nesting depth exceeds limit of %d", msgpackMaxNestingDepth)
+			}
+			remaining = append(remaining, children)
+		} else {
+			// Leaf or empty container: one value consumed; close any finished levels.
+			for len(remaining) > 0 {
+				top := len(remaining) - 1
+				remaining[top]--
+				if remaining[top] > 0 {
+					break
+				}
+				remaining = remaining[:top] // pop finished level; loop to decrement parent
+			}
+		}
+	}
+
+	return nil
+}
+
+// decodeData attempts to decode message data as JSON or MessagePack.
 func decodeData(data []byte) (map[string]any, error) {
 	var result map[string]any
 
-	// Try JSON first
+	// Try JSON first.  encoding/json enforces an ~10000-level nesting cap
+	// internally, so this path is safe against deeply-nested payloads.
 	if err := json.Unmarshal(data, &result); err == nil {
 		return result, nil
 	}
 
-	// Try MessagePack
+	// Guard against deeply-nested msgpack payloads before calling Unmarshal.
+	// msgpack.Unmarshal recurses once per nesting level when decoding into
+	// interface{}, with no built-in depth cap.  A crafted ~1 MB payload can
+	// exhaust the goroutine stack and kill the process; recover() cannot
+	// intercept a fatal stack-overflow.  checkMsgpackNestingDepth scans the
+	// bytes iteratively (no recursion) and rejects inputs that exceed
+	// msgpackMaxNestingDepth.  A rejected message is treated as a permanent
+	// decode failure: the caller logs the error and ACKs the message so it is
+	// not redelivered.
+	if err := checkMsgpackNestingDepth(data); err != nil {
+		return nil, fmt.Errorf("msgpack depth check failed: %w", err)
+	}
+
+	// Try MessagePack.
 	if err := msgpack.Unmarshal(data, &result); err == nil {
 		return result, nil
 	}
 
-	// If both fail, return JSON error
+	// If both fail, return the JSON error for a consistent error type.
 	return nil, json.Unmarshal(data, &result)
 }
