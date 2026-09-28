@@ -10,8 +10,8 @@ require (
 	github.com/auth0/go-jwt-middleware/v2 v2.3.1
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/google/uuid v1.6.0
-	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.10
-	github.com/linuxfoundation/lfx-v2-indexer-service v0.4.28
+	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.11
+	github.com/linuxfoundation/lfx-v2-indexer-service v0.5.2
 	github.com/linuxfoundation/lfx-v2-invite-service v0.2.3
 	github.com/nats-io/nats.go v1.53.1
 	github.com/remychantenay/slog-otel v1.3.5
@@ -32,7 +32,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.22.0
 	go.opentelemetry.io/otel/sdk/metric v1.46.0
 	go.opentelemetry.io/otel/trace v1.46.0
-	goa.design/goa/v3 v3.30.0
+	goa.design/goa/v3 v3.31.1
 	golang.org/x/oauth2 v0.37.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
@@ -50,7 +50,7 @@ require (
 	github.com/gohugoio/hashstructure v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/klauspost/compress v1.18.7 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.3 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.6 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.1.6 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
-	github.com/nats-io/nkeys v0.4.15 // indirect
+	github.com/nats-io/nkeys v0.4.16 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
@@ -77,7 +77,7 @@ require (
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260911204522-f61a6ca850bd // indirect
 	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
