@@ -869,6 +869,42 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 		assert.True(t, meetingClient.submitResponseCalled)
 	})
 
+	t.Run("forwards response when email matches case-insensitively", func(t *testing.T) {
+		meetingClient := &fakeMeetingClient{}
+		registrantClient := &fakeGetRegistrantClient{
+			registrant: &itx.ZoomMeetingRegistrant{
+				ID:       registrantID,
+				Email:    "Alice@Example.COM",
+				Username: "other-user",
+			},
+		}
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+
+		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", "alice@example.com"), meetingID, compoundID, baseReq())
+		require.NoError(t, err)
+		assert.True(t, meetingClient.submitResponseCalled, "case-differing email must still match")
+	})
+
+	t.Run("forwards response when JWT email absent but profile email matches registrant", func(t *testing.T) {
+		meetingClient := &fakeMeetingClient{}
+		registrantClient := &fakeGetRegistrantClient{
+			registrant: &itx.ZoomMeetingRegistrant{
+				ID:       registrantID,
+				Email:    "alice@example.com",
+				Username: "other-user",
+			},
+		}
+		reader := &fakeUserMetadataReader{
+			profile: &domain.UserProfile{Username: "alice", Email: "alice@example.com"},
+		}
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, reader, nil)
+
+		// JWT email is empty — service must resolve the profile and use its email.
+		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", ""), meetingID, compoundID, baseReq())
+		require.NoError(t, err)
+		assert.True(t, meetingClient.submitResponseCalled, "profile email fallback must allow the registrant's owner")
+	})
+
 	t.Run("rejects when neither email nor username matches", func(t *testing.T) {
 		meetingClient := &fakeMeetingClient{}
 		registrantClient := &fakeGetRegistrantClient{

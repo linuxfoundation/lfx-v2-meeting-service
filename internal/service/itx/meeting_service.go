@@ -212,8 +212,19 @@ func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingID, m
 		return nil, err
 	}
 
+	// Prefer the resolved profile email over the JWT claim — JWT claims can be
+	// stale on long-lived tokens (same rationale as the audit stamper). Fall back
+	// to the JWT claim when NATS is disabled or the resolver fails; that failure
+	// must never block the caller's request (username match is still tried).
 	email, _ := ctx.Value(constants.EmailContextID).(string)
-	emailMatch := email != "" && registrant.Email == email
+	if email == "" && s.userMetadata != nil {
+		if profile, resolveErr := s.userMetadata.ResolveProfile(ctx, username); resolveErr == nil && profile != nil && profile.Email != "" {
+			email = profile.Email
+		}
+	}
+	// Email comparison is case-insensitive: addresses are case-insensitive by
+	// specification and providers differ in the casing they return.
+	emailMatch := email != "" && strings.EqualFold(registrant.Email, email)
 	usernameMatch := registrant.Username == username
 	if !emailMatch && !usernameMatch {
 		slog.WarnContext(ctx, "meeting response ownership check failed: registrant does not belong to principal",
