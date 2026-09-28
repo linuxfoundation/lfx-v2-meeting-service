@@ -640,9 +640,11 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
 		// When the authorizer is configured but returns an error, the service must fail
-		// closed — the ITX PUT must not be sent.
+		// closed — the ITX PUT must not be sent — and return Unavailable (503) so
+		// callers know the denial is transient and can retry.
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
 		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 		assert.Nil(t, client.lastUpdateReq)
 	})
 

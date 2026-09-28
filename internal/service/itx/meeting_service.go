@@ -26,9 +26,11 @@ type MeetingService struct {
 // userMetadata may be nil (e.g. when NATS is disabled), in which case
 // created_by / updated_by are limited to the JWT-derived username/email.
 //
-// committeeAuthz may be nil (e.g. when NATS is disabled), in which case the
-// per-committee FGA write-access check is skipped on UpdateMeeting. Heimdall's
-// existing organizer check still applies; the FGA check is defense-in-depth.
+// committeeAuthz may be nil (e.g. when NATS is not configured), in which case
+// the per-committee FGA write-access check is skipped on UpdateMeeting and
+// Heimdall's organizer check is the sole gate. When non-nil, this service-layer
+// check is the sole committee guard (no Heimdall committee rule); RPC errors
+// fail closed (503) to prevent bypass during fga-sync outages.
 func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
 	return &MeetingService{
 		auditStamper:   auditStamper{userMetadata: userMetadata},
