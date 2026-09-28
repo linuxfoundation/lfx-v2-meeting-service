@@ -647,7 +647,10 @@ func resolveProjectFields(
 	sfid, slug, _, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
 	if err != nil {
 		if errors.Is(err, errMsgpackStructural) {
-			return "", "", fmt.Errorf("permanent decode failure for parent past_meeting %s: %w", meetingAndOccurrenceID, err)
+			// Return the sentinel error as-is so that syncParticipantUpdate's
+			// isTransientError call cannot misclassify it even if
+			// meetingAndOccurrenceID contains words like "transient" or "timeout".
+			return "", "", err
 		}
 		return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
 	}

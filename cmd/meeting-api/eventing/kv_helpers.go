@@ -18,8 +18,11 @@ import (
 // meeting from the v1-objects KV bucket. Returns ("","",nil) when the meeting record is not found
 // in KV yet. When the meeting exists but has no proj_id, projSFID is empty but primaryCommitteeSFID
 // may still be non-empty if the committee field is set. Callers that need to distinguish a missing
-// meeting from a meeting with no project should perform a follow-up KV lookup. Returns a non-nil
-// error for transient KV/decode failures (caller should retry).
+// meeting from a meeting with no project should perform a follow-up KV lookup.
+//
+// Error semantics: returns a non-nil error for KV or decode failures. Callers MUST check
+// errors.Is(err, errMsgpackStructural) first: structural decode errors are permanent (ACK, skip)
+// and must not be retried. All other non-nil errors are transient (NAK for retry).
 func lookupProjectFromMeeting(
 	ctx context.Context,
 	meetingID string,
@@ -50,8 +53,11 @@ func lookupProjectFromMeeting(
 
 // lookupProjectFromPastMeeting fetches the proj_id, project_slug, and primary committee SFID of
 // the parent past meeting from the v1-objects KV bucket. Returns empty strings (no error) when the
-// record is not found — that is a permanent miss and the caller should not retry. Returns a non-nil
-// error for transient KV fetch or decode failures (caller should retry).
+// record is not found — that is a permanent miss and the caller should not retry.
+//
+// Error semantics: returns a non-nil error for KV or decode failures. Callers MUST check
+// errors.Is(err, errMsgpackStructural) first: structural decode errors are permanent (ACK, skip)
+// and must not be retried. All other non-nil errors are transient (NAK for retry).
 func lookupProjectFromPastMeeting(
 	ctx context.Context,
 	meetingAndOccurrenceID string,
