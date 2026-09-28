@@ -88,7 +88,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDRejected(t *testin
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.Contains(t, rr.Body.String(), "authorization bypass")
 	assert.Contains(t, rr.Body.String(), `"code"`)
 	assert.Contains(t, rr.Body.String(), `"message"`)
 	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
@@ -115,7 +115,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousCommitteeUIDRejected(t *test
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.Contains(t, rr.Body.String(), "authorization bypass")
 	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
 }
 
@@ -187,7 +187,7 @@ func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousProjectUIDRejected(t *te
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.Contains(t, rr.Body.String(), "authorization bypass")
 	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on past-meeting reject")
 }
 
@@ -200,6 +200,66 @@ func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousCommitteeUIDRejected(t *
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on past-meeting committee reject")
+}
+
+// ---- single non-canonical key bypass tests ----
+// These guard against the case where only ONE non-canonical key is present
+// (no lowercase counterpart). The collision guard cannot detect it, but
+// encoding/json still decodes it — while Heimdall authorizes via a different
+// branch (e.g. committee), opening a single-key CWE-436 bypass.
+
+func TestStrictCreateBodyMiddleware_SingleNonCanonicalProjectUIDRejected(t *testing.T) {
+	// "Project_UID" alone (no "project_uid") — Heimdall would authorize via the
+	// committee branch; encoding/json decodes Project_UID → victim project.
+	body := `{"Project_UID":"victim","committees":[{"uid":"owned"}],"title":"T","start_time":"2026-10-01T10:00:00Z","duration":60,"timezone":"UTC"}`
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "non-canonical")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on single non-canonical key")
+}
+
+func TestStrictCreateBodyMiddleware_SingleNonCanonicalCommitteeUIDRejected(t *testing.T) {
+	// "UID" alone inside a committee object (no lowercase "uid") — Heimdall
+	// authorizes via project:mine; encoding/json decodes UID → victim committee.
+	body := `{"project_uid":"mine","committees":[{"UID":"victim"}],"title":"T","start_time":"2026-10-01T10:00:00Z","duration":60,"timezone":"UTC"}`
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "non-canonical")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on single non-canonical committee uid")
+}
+
+func TestStrictCreateBodyMiddleware_SingleNonCanonicalCommitteesKeyRejected(t *testing.T) {
+	// "Committees" (capital C) alone — Heimdall sees no committees, encoding/json
+	// decodes Committees → victim committee array.
+	body := `{"project_uid":"mine","Committees":[{"uid":"victim"}],"title":"T","start_time":"2026-10-01T10:00:00Z","duration":60,"timezone":"UTC"}`
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "non-canonical")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on single non-canonical Committees key")
+}
+
+func TestStrictCreateBodyMiddleware_PastMeetingSingleNonCanonicalProjectUIDRejected(t *testing.T) {
+	body := `{"Project_UID":"victim","committees":[{"uid":"owned"}]}`
+	req := postJSON("/itx/past_meetings", body)
+	rr := httptest.NewRecorder()
+
+	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "non-canonical")
+	assert.NotContains(t, rr.Body.String(), okBody)
 }
 
 // ---- checkAmbiguousJSONKeys unit tests ----
@@ -254,7 +314,7 @@ func TestStrictCreateBodyMiddleware_UnicodeLongSFoldRejected(t *testing.T) {
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.Contains(t, rr.Body.String(), "authorization bypass")
 	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on Unicode long-s reject")
 }
 
@@ -305,12 +365,16 @@ func TestCheckAmbiguousJSONKeys_Ambiguous(t *testing.T) {
 		{"long s vs s", "{\"committee\u017f\":\"a\",\"committees\":\"b\"}"},
 		// Unicode simple case folding: K (U+212A Kelvin) folds to k.
 		{"kelvin vs k", "{\"\u212aey\":\"a\",\"key\":\"b\"}"},
+		// Single non-canonical spellings of sensitive keys.
+		{"single Project_UID", `{"Project_UID":"victim","committees":[{"uid":"owned"}]}`},
+		{"single UID in committee", `{"project_uid":"mine","committees":[{"UID":"victim"}]}`},
+		{"single Committees", `{"project_uid":"mine","Committees":[{"uid":"c1"}]}`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := checkAmbiguousJSONKeys([]byte(tc.json))
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "ambiguous")
+			assert.Contains(t, err.Error(), "authorization bypass")
 		})
 	}
 }

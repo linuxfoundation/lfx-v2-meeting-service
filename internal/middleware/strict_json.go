@@ -38,8 +38,36 @@ var strictCreatePaths = map[string]struct{}{
 // forever at full CPU (DoS via a single malformed request body).
 var errBadJSON = errors.New("bad json")
 
+// sensitiveCanonicalKeys maps foldKey(field) → canonical exact-case field name
+// for the JSON keys that Heimdall reads by exact-case lookup when building the
+// OpenFGA object for the create endpoints. Populated by init() using foldKey so
+// the mapping derives from the same Unicode simple case-fold semantics as the
+// rest of the walker (foldKey maps to the minimum rune in the SimpleFold orbit,
+// which is uppercase for ASCII letters — not lowercase — so the map cannot be
+// built from plain lowercase string literals).
+//
+// Any body that contains a non-canonical spelling of one of these keys is
+// rejected — even without a canonical counterpart in the same object.
+//
+// Example bypass: {"Project_UID":"victim","committees":[{"uid":"mine"}]}
+// has no "project_uid" key; Heimdall's project check produces "project:" and
+// falls through to the committee branch authorizing via committee:mine.
+// encoding/json then decodes "Project_UID" → ProjectUID = "victim", forwarding
+// the meeting to an unauthorized project. The collision check cannot catch this
+// because only one key folds to "project_uid". Exact-case enforcement closes
+// that gap.
+var sensitiveCanonicalKeys map[string]string // foldKey(field) → canonical field
+
+func init() {
+	sensitiveFields := []string{"project_uid", "committees", "uid"}
+	sensitiveCanonicalKeys = make(map[string]string, len(sensitiveFields))
+	for _, f := range sensitiveFields {
+		sensitiveCanonicalKeys[foldKey(f)] = f
+	}
+}
+
 // StrictCreateBodyMiddleware guards POST /itx/meetings and POST
-// /itx/past_meetings against two classes of malformed request:
+// /itx/past_meetings against three classes of malformed request:
 //
 //  1. Bodies larger than maxCreateBodyBytes (1 MiB) — rejected immediately
 //     with 413 Request Entity Too Large and Connection: close. This is a
@@ -52,6 +80,14 @@ var errBadJSON = errors.New("bad json")
 //     "committees" and "committeeſ") — rejected with 400 Bad Request whose
 //     body matches the BadRequestError shape declared in the Goa design
 //     ({code, message}).
+//
+//  3. Bodies that contain a single non-canonical spelling of an
+//     authorization-sensitive key (sensitiveCanonicalKeys: "project_uid",
+//     "committees", "uid") — also rejected with 400. A single "Project_UID"
+//     without a lowercase "project_uid" counterpart is enough: Heimdall sees
+//     no project_uid and falls through to the committee branch for
+//     authorization, while encoding/json decodes "Project_UID" → victim
+//     project (CWE-436 bypass via a single key rather than a collision pair).
 //
 // Background: Heimdall authorizes these create endpoints by looking up
 // .Request.Body.project_uid in its case-sensitive generic JSON parse of the
@@ -94,7 +130,13 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 				_ = json.NewEncoder(w).Encode(strictErrorBody("413", "request body too large"))
 				return
 			}
-			// Other read errors — pass through and let Goa surface the error.
+			// Other read errors — replay the bytes already consumed so Goa
+			// receives the partial body followed by the original error, rather
+			// than an empty body that causes MissingPayloadError.
+			r.Body = &replayBody{
+				Reader: io.MultiReader(bytes.NewReader(body), readErrorReader{err: err}),
+				Closer: r.Body,
+			}
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -122,6 +164,21 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 // generated clients.
 func strictErrorBody(code, message string) map[string]string {
 	return map[string]string{"code": code, "message": message}
+}
+
+// readErrorReader is an io.Reader that always returns a fixed error.
+// Used to replay the original read error through a reconstructed r.Body so
+// that Goa receives the correct error instead of an unexpected EOF.
+type readErrorReader struct{ err error }
+
+func (r readErrorReader) Read([]byte) (int, error) { return 0, r.err }
+
+// replayBody wraps an io.Reader with a Closer so it can be assigned to
+// http.Request.Body (which requires io.ReadCloser). The Closer is the
+// original r.Body so it is properly closed when the request is done.
+type replayBody struct {
+	io.Reader
+	io.Closer
 }
 
 // isStrictJSONTarget reports whether r is a POST to one of the guarded paths.
@@ -221,6 +278,23 @@ func walkJSONObject(dec *json.Decoder) error {
 		}
 
 		fold := foldKey(key)
+
+		// Reject non-canonical spellings of authorization-sensitive keys even
+		// when no canonical-case counterpart appears in the same object. A
+		// single "Project_UID" (no "project_uid") is enough for Heimdall to
+		// authorize via the committee branch while encoding/json forwards the
+		// victim value — the collision check below cannot catch it.
+		if canonical, isSensitive := sensitiveCanonicalKeys[fold]; isSensitive {
+			if key != canonical {
+				return fmt.Errorf(
+					"request body contains non-canonical spelling %q of authorization-sensitive field "+
+						"(expected exact-case form %q); "+
+						"request rejected to prevent authorization bypass",
+					key, canonical,
+				)
+			}
+		}
+
 		if orig, exists := seen[fold]; exists && orig != key {
 			// Two distinct strings that fold to the same field name — reject.
 			return fmt.Errorf(
