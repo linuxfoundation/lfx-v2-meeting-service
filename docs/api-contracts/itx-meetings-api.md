@@ -366,7 +366,11 @@ Same as Create Meeting field mapping.
 
 **Method**: `PUT /itx/meetings/{meeting_id}?v=1`
 
-**Authorization**: Requires `organizer` permission on the meeting
+**Authorization**: Requires `organizer` permission on the meeting. The following additional constraints apply:
+
+- **`project_uid` is immutable**: if the request body sets `project_uid` to a value that differs from the live meeting's project, the request is rejected with `403 Forbidden`. The project a meeting belongs to cannot be changed after creation.
+- **New committees require `writer` permission**: if the request body includes committees that are not already associated with the meeting, the caller must have `writer` permission on each newly added committee. Requests that fail this check return `403 Forbidden`.
+- **Incomplete permission checks return `503 Service Unavailable`**: if the committee write-access check cannot be completed (e.g. the fga-sync service is temporarily unreachable), the request is rejected with `503 Service Unavailable`. Clients should treat `503` on this endpoint as a transient error and retry.
 
 **Request Headers**:
 

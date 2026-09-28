@@ -5,28 +5,39 @@ package itx
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
 	auditStamper
-	meetingClient domain.ITXMeetingClient
-	idMapper      domain.IDMapper
+	meetingClient  domain.ITXMeetingClient
+	idMapper       domain.IDMapper
+	committeeAuthz domain.CommitteeAuthorizer // nil when NATS is unavailable
 }
 
-// NewMeetingService creates a new ITX meeting service. userMetadata may be nil (e.g. when
-// NATS is disabled), in which case created_by / updated_by are limited to the JWT-derived
-// username/email (profile enrichment such as name/avatar is skipped) rather than blocking
-// the request.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *MeetingService {
+// NewMeetingService creates a new ITX meeting service.
+//
+// userMetadata may be nil (e.g. when NATS is disabled), in which case
+// created_by / updated_by are limited to the JWT-derived username/email.
+//
+// committeeAuthz may be nil (e.g. when NATS is not configured), in which case
+// the per-committee FGA write-access check is skipped on UpdateMeeting and
+// Heimdall's organizer check is the sole gate. When non-nil, this service-layer
+// check is the sole committee guard (no Heimdall committee rule); RPC errors
+// fail closed (503) to prevent bypass during fga-sync outages.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
 	return &MeetingService{
-		auditStamper:  auditStamper{userMetadata: userMetadata},
-		meetingClient: meetingClient,
-		idMapper:      idMapper,
+		auditStamper:   auditStamper{userMetadata: userMetadata},
+		meetingClient:  meetingClient,
+		idMapper:       idMapper,
+		committeeAuthz: committeeAuthz,
 	}
 }
 
@@ -77,8 +88,37 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 		return err
 	}
 
+	// Capture v2 committee UIDs before mapping overwrites them with v1 SFIDs.
+	// FGA object IDs use v2 UIDs (docs/fga-contract.md), so we need to preserve
+	// the originals for the HasWriteAccess call below.
+	v2CommitteeUIDs := make([]string, len(req.Committees))
+	for i, c := range req.Committees {
+		v2CommitteeUIDs[i] = c.UID
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
+		return err
+	}
+
+	// Build v1SFID→v2UID lookup now that mapping is complete.
+	// req.Committees[i].UID is the v1 SFID; v2CommitteeUIDs[i] is the original v2 UID.
+	v1ToV2Committee := make(map[string]string, len(req.Committees))
+	for i, c := range req.Committees {
+		v1ToV2Committee[c.UID] = v2CommitteeUIDs[i]
+	}
+
+	// Fetch the live meeting so we can (a) block project re-parenting and (b)
+	// compute the committee delta for the FGA write-access check below.
+	// Both req and current are in v1 SFID space at this point.
+	current, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
+	if err != nil {
+		return err
+	}
+	if err := validateProjectNotReparented(req, current); err != nil {
+		return err
+	}
+	if err := s.authorizeNewCommittees(ctx, req, current, v1ToV2Committee); err != nil {
 		return err
 	}
 
@@ -87,12 +127,7 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	// updated_by / updated_by_list when this field is non-zero, so omitting it leaves a
 	// stale value on the record (typically the original creator or last PIS updater).
 	itxReq.UpdatedBy = s.buildRequestingUser(ctx)
-	err := s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 }
 
 // DeleteMeeting deletes a meeting via ITX proxy
@@ -152,6 +187,72 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 // SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
 func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+}
+
+// validateProjectNotReparented rejects updates that attempt to move a meeting to a
+// different project. req must already be in v1 SFID space (post-mapping); current is
+// the live ITX record, also in v1 SFID space.
+func validateProjectNotReparented(req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
+	if req.ProjectUID != current.Project {
+		return domain.NewForbiddenError("project_uid cannot be changed after a meeting is created")
+	}
+	return nil
+}
+
+// authorizeNewCommittees checks that the requesting principal has FGA "writer"
+// access on every committee that is present in req but absent from the live
+// ITX record (i.e. committees being newly added). Committees already on the
+// meeting are unchanged from the caller's perspective so no new permission is
+// required for them.
+//
+// v1ToV2Committee maps each committee's v1 SFID (as stored in req.Committees after
+// ID mapping) to its original v2 UID, which is the form FGA uses for object IDs.
+//
+// If committeeAuthz is nil (NATS not configured at all), the check is skipped.
+// When committeeAuthz is non-nil but HasWriteAccess returns an error (e.g. fga-sync
+// temporarily unavailable), the request is rejected so that outages cannot be used
+// to bypass the committee authorization check.
+func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse, v1ToV2Committee map[string]string) error {
+	if s.committeeAuthz == nil || len(req.Committees) == 0 {
+		return nil
+	}
+
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if principal == "" {
+		// No authenticated principal — Heimdall already blocked unauthenticated
+		// requests; nothing to check here.
+		return nil
+	}
+
+	// Build the set of committee IDs already on the meeting (v1 SFID space).
+	existing := make(map[string]struct{}, len(current.Committees))
+	for _, c := range current.Committees {
+		existing[c.ID] = struct{}{}
+	}
+
+	for _, c := range req.Committees {
+		if _, alreadyOn := existing[c.UID]; alreadyOn {
+			continue // no new permission needed for an existing committee
+		}
+		// Use the v2 UID for the FGA check; FGA object IDs are v2 UIDs.
+		v2UID := v1ToV2Committee[c.UID]
+		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
+		if err != nil {
+			// fga-sync is unreachable — fail closed to prevent the authorization
+			// bypass window that fail-open would create during outages. Use
+			// Unavailable (503) rather than Forbidden (403) so callers know the
+			// denial is transient and can retry.
+			slog.WarnContext(ctx, "committee FGA write-access check failed; rejecting update",
+				"committee_id", v2UID, "error", err)
+			return domain.NewUnavailableError("cannot verify committee write access; please retry")
+		}
+		if !ok {
+			slog.WarnContext(ctx, "committee FGA write-access denied; rejecting update",
+				"principal", redaction.Redact(principal), "committee_id", v2UID)
+			return domain.NewForbiddenError("not authorized to add committee to this meeting")
+		}
+	}
+	return nil
 }
 
 // validateMeetingRequest validates a meeting create/update request before sending to ITX
