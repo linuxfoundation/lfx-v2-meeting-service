@@ -45,11 +45,11 @@ func NewNATSCommitteeAuthorizer(nc Requester) *NATSCommitteeAuthorizer {
 func (a *NATSCommitteeAuthorizer) HasWriteAccess(ctx context.Context, principal, committeeID string) (bool, error) {
 	tuple := fmt.Sprintf("committee:%s#writer@user:%s", committeeID, principal)
 
-	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, committeeAuthorizerTimeout)
-		defer cancel()
-	}
+	// Always cap at committeeAuthorizerTimeout. context.WithTimeout takes the sooner
+	// of the parent deadline and the specified duration, so this never extends a
+	// caller's shorter deadline.
+	ctx, cancel := context.WithTimeout(ctx, committeeAuthorizerTimeout)
+	defer cancel()
 
 	msg, err := a.nc.RequestWithContext(ctx, fgaAccessCheckSubject, []byte(tuple))
 	if err != nil {

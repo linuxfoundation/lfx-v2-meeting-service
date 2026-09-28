@@ -366,7 +366,7 @@ Same as Create Meeting field mapping.
 
 **Method**: `PUT /itx/meetings/{meeting_id}?v=1`
 
-**Authorization**: Requires `organizer` permission on the meeting
+**Authorization**: Requires `organizer` permission on the meeting. When the request body includes committees that are not already associated with the meeting, the caller must also have `writer` permission on each newly added committee; requests that fail this check return `403 Forbidden`.
 
 **Request Headers**:
 

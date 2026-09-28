@@ -632,17 +632,18 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		assert.Empty(t, authz.calls)
 	})
 
-	t.Run("fails open when FGA is unavailable (NATS error)", func(t *testing.T) {
+	t.Run("rejects update when FGA is unavailable (fail closed)", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
 		authz := &fakeCommitteeAuthorizer{err: errors.New("nats: no servers available")}
 		svc := NewMeetingService(client, noOpIDMapper{}, nil, authz)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
-		// On FGA error the service must NOT block the update — it fails open.
+		// When the authorizer is configured but returns an error, the service must fail
+		// closed — the ITX PUT must not be sent.
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
-		require.NoError(t, err)
-		require.NotNil(t, client.lastUpdateReq)
+		require.Error(t, err)
+		assert.Nil(t, client.lastUpdateReq)
 	})
 
 	t.Run("skips FGA check when committeeAuthz is nil (NATS disabled)", func(t *testing.T) {

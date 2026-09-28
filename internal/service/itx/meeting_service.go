@@ -85,9 +85,24 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 		return err
 	}
 
+	// Capture v2 committee UIDs before mapping overwrites them with v1 SFIDs.
+	// FGA object IDs use v2 UIDs (docs/fga-contract.md), so we need to preserve
+	// the originals for the HasWriteAccess call below.
+	v2CommitteeUIDs := make([]string, len(req.Committees))
+	for i, c := range req.Committees {
+		v2CommitteeUIDs[i] = c.UID
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
 		return err
+	}
+
+	// Build v1SFID→v2UID lookup now that mapping is complete.
+	// req.Committees[i].UID is the v1 SFID; v2CommitteeUIDs[i] is the original v2 UID.
+	v1ToV2Committee := make(map[string]string, len(req.Committees))
+	for i, c := range req.Committees {
+		v1ToV2Committee[c.UID] = v2CommitteeUIDs[i]
 	}
 
 	// Fetch the live meeting so we can (a) block project re-parenting and (b)
@@ -100,7 +115,7 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	if err := validateProjectNotReparented(req, current); err != nil {
 		return err
 	}
-	if err := s.authorizeNewCommittees(ctx, req, current); err != nil {
+	if err := s.authorizeNewCommittees(ctx, req, current, v1ToV2Committee); err != nil {
 		return err
 	}
 
@@ -187,9 +202,14 @@ func validateProjectNotReparented(req *models.CreateITXMeetingRequest, current *
 // meeting are unchanged from the caller's perspective so no new permission is
 // required for them.
 //
-// If committeeAuthz is nil (NATS unavailable), the check is skipped and the
-// Heimdall organizer guard remains the sole enforcement layer.
-func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
+// v1ToV2Committee maps each committee's v1 SFID (as stored in req.Committees after
+// ID mapping) to its original v2 UID, which is the form FGA uses for object IDs.
+//
+// If committeeAuthz is nil (NATS not configured at all), the check is skipped.
+// When committeeAuthz is non-nil but HasWriteAccess returns an error (e.g. fga-sync
+// temporarily unavailable), the request is rejected so that outages cannot be used
+// to bypass the committee authorization check.
+func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse, v1ToV2Committee map[string]string) error {
 	if s.committeeAuthz == nil || len(req.Committees) == 0 {
 		return nil
 	}
@@ -201,7 +221,7 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 		return nil
 	}
 
-	// Build the set of committee IDs already on the meeting.
+	// Build the set of committee IDs already on the meeting (v1 SFID space).
 	existing := make(map[string]struct{}, len(current.Committees))
 	for _, c := range current.Committees {
 		existing[c.ID] = struct{}{}
@@ -211,14 +231,18 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 		if _, alreadyOn := existing[c.UID]; alreadyOn {
 			continue // no new permission needed for an existing committee
 		}
-		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, c.UID)
+		// Use the v2 UID for the FGA check; FGA object IDs are v2 UIDs.
+		v2UID := v1ToV2Committee[c.UID]
+		if v2UID == "" {
+			v2UID = c.UID // no mapping available; best-effort with the SFID
+		}
+		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
 		if err != nil {
-			// FGA is unavailable — fail open with a warning so the update still
-			// works in degraded environments. Heimdall's existing organizer check
-			// remains active.
-			slog.WarnContext(ctx, "committee FGA write-access check failed; proceeding without it",
-				"committee_id", c.UID, "error", err)
-			continue
+			// fga-sync is unreachable — fail closed to prevent the authorization
+			// bypass window that fail-open would create during outages.
+			slog.WarnContext(ctx, "committee FGA write-access check failed; rejecting update",
+				"committee_id", v2UID, "error", err)
+			return domain.NewForbiddenError("cannot verify committee write access; please retry")
 		}
 		if !ok {
 			return domain.NewForbiddenError("not authorized to add committee to this meeting")

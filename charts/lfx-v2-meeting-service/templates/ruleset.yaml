@@ -117,17 +117,6 @@ spec:
             values:
               relation: organizer
               object: "v1_meeting:{{ "{{- .Request.URL.Captures.meeting_id -}}" }}"
-        # If the request body includes committees, the caller must also have writer
-        # access on the first committee — the same check applied on create. This
-        # prevents an organizer from attaching a committee they have no relation to.
-        # When no committees are in the body the check falls back to the organizer
-        # relation already confirmed above, so it never blocks committee-free updates.
-        - authorizer: json_content_type
-        - authorizer: openfga_check
-          config:
-            values:
-              relation: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}writer{{- else -}}organizer{{- end -}}" }}"
-              object: "{{ "{{- if and .Request.Body.committees (gt (len .Request.Body.committees) 0) -}}committee:{{- (index .Request.Body.committees 0).uid -}}{{- else -}}v1_meeting:{{- .Request.URL.Captures.meeting_id -}}{{- end -}}" }}"
         {{- else }}
         {{/*
           When OpenFGA is disabled, allow all requests
