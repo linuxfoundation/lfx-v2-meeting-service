@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -209,6 +210,10 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// Resolve committees from the parent past meeting record.
 	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
 	if lookupErr != nil {
+		if errors.Is(lookupErr, errMsgpackStructural) {
+			funcLogger.With(logging.ErrKey, lookupErr).ErrorContext(ctx, "permanent decode failure looking up parent past meeting for committees, skipping recording")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting for committees, will retry")
 		return true
 	}

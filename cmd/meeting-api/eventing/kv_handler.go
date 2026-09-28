@@ -450,19 +450,19 @@ func checkMsgpackNestingDepth(data []byte) error {
 			skip = int(b & 0x1f)
 		case b == 0xd9: // str8
 			if i >= len(data) {
-				return errors.New("truncated msgpack: str8 length byte missing")
+				return fmt.Errorf("%w: str8 length byte missing", errMsgpackStructural)
 			}
 			skip = int(data[i])
 			i++
 		case b == 0xda: // str16
 			if i+2 > len(data) {
-				return errors.New("truncated msgpack: str16 length bytes missing")
+				return fmt.Errorf("%w: str16 length bytes missing", errMsgpackStructural)
 			}
 			skip = int(data[i])<<8 | int(data[i+1])
 			i += 2
 		case b == 0xdb: // str32
 			if i+4 > len(data) {
-				return errors.New("truncated msgpack: str32 length bytes missing")
+				return fmt.Errorf("%w: str32 length bytes missing", errMsgpackStructural)
 			}
 			skip = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
 			i += 4
@@ -470,19 +470,19 @@ func checkMsgpackNestingDepth(data []byte) error {
 		// bin
 		case b == 0xc4: // bin8
 			if i >= len(data) {
-				return errors.New("truncated msgpack: bin8 length byte missing")
+				return fmt.Errorf("%w: bin8 length byte missing", errMsgpackStructural)
 			}
 			skip = int(data[i])
 			i++
 		case b == 0xc5: // bin16
 			if i+2 > len(data) {
-				return errors.New("truncated msgpack: bin16 length bytes missing")
+				return fmt.Errorf("%w: bin16 length bytes missing", errMsgpackStructural)
 			}
 			skip = int(data[i])<<8 | int(data[i+1])
 			i += 2
 		case b == 0xc6: // bin32
 			if i+4 > len(data) {
-				return errors.New("truncated msgpack: bin32 length bytes missing")
+				return fmt.Errorf("%w: bin32 length bytes missing", errMsgpackStructural)
 			}
 			skip = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
 			i += 4
@@ -500,19 +500,19 @@ func checkMsgpackNestingDepth(data []byte) error {
 			skip = 17 // fixext16
 		case b == 0xc7: // ext8: length(1) + type(1) + data(length)
 			if i >= len(data) {
-				return errors.New("truncated msgpack: ext8 length byte missing")
+				return fmt.Errorf("%w: ext8 length byte missing", errMsgpackStructural)
 			}
 			skip = int(data[i]) + 1 // +1 for type byte
 			i++
 		case b == 0xc8: // ext16
 			if i+2 > len(data) {
-				return errors.New("truncated msgpack: ext16 length bytes missing")
+				return fmt.Errorf("%w: ext16 length bytes missing", errMsgpackStructural)
 			}
 			skip = (int(data[i])<<8 | int(data[i+1])) + 1
 			i += 2
 		case b == 0xc9: // ext32
 			if i+4 > len(data) {
-				return errors.New("truncated msgpack: ext32 length bytes missing")
+				return fmt.Errorf("%w: ext32 length bytes missing", errMsgpackStructural)
 			}
 			skip = (int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])) + 1
 			i += 4
@@ -522,13 +522,13 @@ func checkMsgpackNestingDepth(data []byte) error {
 			children = int(b & 0x0f)
 		case b == 0xdc: // array16
 			if i+2 > len(data) {
-				return errors.New("truncated msgpack: array16 length bytes missing")
+				return fmt.Errorf("%w: array16 length bytes missing", errMsgpackStructural)
 			}
 			children = int(data[i])<<8 | int(data[i+1])
 			i += 2
 		case b == 0xdd: // array32
 			if i+4 > len(data) {
-				return errors.New("truncated msgpack: array32 length bytes missing")
+				return fmt.Errorf("%w: array32 length bytes missing", errMsgpackStructural)
 			}
 			children = int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])
 			i += 4
@@ -538,25 +538,25 @@ func checkMsgpackNestingDepth(data []byte) error {
 			children = int(b&0x0f) * 2
 		case b == 0xde: // map16
 			if i+2 > len(data) {
-				return errors.New("truncated msgpack: map16 length bytes missing")
+				return fmt.Errorf("%w: map16 length bytes missing", errMsgpackStructural)
 			}
 			children = (int(data[i])<<8 | int(data[i+1])) * 2
 			i += 2
 		case b == 0xdf: // map32
 			if i+4 > len(data) {
-				return errors.New("truncated msgpack: map32 length bytes missing")
+				return fmt.Errorf("%w: map32 length bytes missing", errMsgpackStructural)
 			}
 			children = (int(data[i])<<24 | int(data[i+1])<<16 | int(data[i+2])<<8 | int(data[i+3])) * 2
 			i += 4
 
 		default:
-			return fmt.Errorf("unknown msgpack format byte 0x%02x at offset %d", b, i-1)
+			return fmt.Errorf("%w: unknown format byte 0x%02x at offset %d", errMsgpackStructural, b, i-1)
 		}
 
 		// Advance past inline scalar payload bytes.
 		if skip > 0 {
 			if i+skip > len(data) {
-				return fmt.Errorf("msgpack payload truncated at offset %d: need %d more bytes", i, skip)
+				return fmt.Errorf("%w: payload truncated at offset %d: need %d more bytes", errMsgpackStructural, i, skip)
 			}
 			i += skip
 		}
@@ -606,10 +606,13 @@ func decodeData(data []byte) (map[string]any, error) {
 	// interface{}, with no built-in depth cap.  A crafted ~1 MB payload can
 	// exhaust the goroutine stack and kill the process; recover() cannot
 	// intercept a fatal stack-overflow.  checkMsgpackNestingDepth scans the
-	// bytes iteratively (no recursion) and rejects inputs that exceed
-	// msgpackMaxNestingDepth.  A rejected message is treated as a permanent
-	// decode failure: the caller logs the error and ACKs the message so it is
-	// not redelivered.
+	// bytes iteratively (no recursion) and rejects inputs that are structurally
+	// malformed or exceed msgpackMaxNestingDepth.
+	//
+	// When called from kvHandler a rejected message is treated as permanent:
+	// kvHandler returns false → msgHandler ACKs → not redelivered.
+	// Parent-record lookup callers (kv_helpers.go, summary_event_handler.go)
+	// check errors.Is(err, errMsgpackStructural) and skip rather than retry.
 	if err := checkMsgpackNestingDepth(data); err != nil {
 		return nil, fmt.Errorf("msgpack depth check failed: %w", err)
 	}

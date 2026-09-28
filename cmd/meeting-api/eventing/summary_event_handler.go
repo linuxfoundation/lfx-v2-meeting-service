@@ -195,6 +195,10 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	}
 	pastMeetingData, decErr := decodeData(entry.Value())
 	if decErr != nil {
+		if errors.Is(decErr, errMsgpackStructural) {
+			funcLogger.With(logging.ErrKey, decErr).ErrorContext(ctx, "permanent decode failure for parent past meeting, skipping summary")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "transient error decoding parent past meeting, will retry")
 		return true
 	}

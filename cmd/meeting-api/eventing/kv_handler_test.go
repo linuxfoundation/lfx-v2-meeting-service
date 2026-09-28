@@ -146,6 +146,16 @@ func TestCheckMsgpackNestingDepth(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, errors.Is(err, errMsgpackStructural))
 	})
+
+	t.Run("rejects truncated type-header field and tags as structural", func(t *testing.T) {
+		// A str8 header (0xd9) with no following length byte — a truncated
+		// type-header field.  Confirms every scanner error path wraps the
+		// errMsgpackStructural sentinel (not just depth-limit and open-container).
+		payload := []byte{0xd9} // str8 with no length byte
+		err := checkMsgpackNestingDepth(payload)
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, errMsgpackStructural), "scanner must wrap errMsgpackStructural for all error paths")
+	})
 }
 
 // TestDecodeData covers the public decodeData helper used by kvHandler and

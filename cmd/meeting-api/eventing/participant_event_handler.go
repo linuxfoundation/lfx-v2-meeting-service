@@ -646,6 +646,9 @@ func resolveProjectFields(
 
 	sfid, slug, _, err := lookupProjectFromPastMeeting(ctx, meetingAndOccurrenceID, v1ObjectsKV, logger)
 	if err != nil {
+		if errors.Is(err, errMsgpackStructural) {
+			return "", "", fmt.Errorf("permanent decode failure for parent past_meeting %s: %w", meetingAndOccurrenceID, err)
+		}
 		return "", "", fmt.Errorf("failed to lookup project from parent past_meeting (transient): %w", err)
 	}
 
