@@ -146,7 +146,26 @@ func run() int {
 		Timeout:     30 * time.Second,
 	}
 	itxClient := itxclient.NewClient(itxProxyConfig)
-	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper, userMetadataReader)
+	// Committee authorizer: checks FGA write access on newly added committees
+	// during UpdateMeeting. Uses its own NATS connection; nil when NATS is unavailable
+	// so that updates still work in degraded environments (fails open, logs warning).
+	var committeeAuthz domain.CommitteeAuthorizer
+	var committeeAuthzNatsConn *natsgo.Conn
+	if natsURL != "" {
+		nc, err := natsgo.Connect(natsURL)
+		if err != nil {
+			slog.With(logging.ErrKey, err).WarnContext(ctx,
+				"failed to connect to NATS for committee authorizer; committee FGA write-access checks will be skipped on meeting updates")
+		} else {
+			committeeAuthzNatsConn = nc
+			committeeAuthz = natsinfra.NewNATSCommitteeAuthorizer(nc)
+		}
+	}
+	if committeeAuthzNatsConn != nil {
+		defer committeeAuthzNatsConn.Close()
+	}
+
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)

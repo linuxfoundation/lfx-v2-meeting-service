@@ -5,28 +5,36 @@ package itx
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
 	auditStamper
-	meetingClient domain.ITXMeetingClient
-	idMapper      domain.IDMapper
+	meetingClient  domain.ITXMeetingClient
+	idMapper       domain.IDMapper
+	committeeAuthz domain.CommitteeAuthorizer // nil when NATS is unavailable
 }
 
-// NewMeetingService creates a new ITX meeting service. userMetadata may be nil (e.g. when
-// NATS is disabled), in which case created_by / updated_by are limited to the JWT-derived
-// username/email (profile enrichment such as name/avatar is skipped) rather than blocking
-// the request.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *MeetingService {
+// NewMeetingService creates a new ITX meeting service.
+//
+// userMetadata may be nil (e.g. when NATS is disabled), in which case
+// created_by / updated_by are limited to the JWT-derived username/email.
+//
+// committeeAuthz may be nil (e.g. when NATS is disabled), in which case the
+// per-committee FGA write-access check is skipped on UpdateMeeting. Heimdall's
+// existing organizer check still applies; the FGA check is defense-in-depth.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
 	return &MeetingService{
-		auditStamper:  auditStamper{userMetadata: userMetadata},
-		meetingClient: meetingClient,
-		idMapper:      idMapper,
+		auditStamper:   auditStamper{userMetadata: userMetadata},
+		meetingClient:  meetingClient,
+		idMapper:       idMapper,
+		committeeAuthz: committeeAuthz,
 	}
 }
 
@@ -82,15 +90,17 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 		return err
 	}
 
-	// Guard against project re-parenting: the project_uid is immutable after creation.
+	// Fetch the live meeting so we can (a) block project re-parenting and (b)
+	// compute the committee delta for the FGA write-access check below.
 	// Both req and current are in v1 SFID space at this point.
-	// Committee permission checking (writer access on newly added committees) is
-	// enforced by Heimdall at the HTTP layer before this code is reached.
 	current, err := s.meetingClient.GetZoomMeeting(ctx, meetingID)
 	if err != nil {
 		return err
 	}
 	if err := validateProjectNotReparented(req, current); err != nil {
+		return err
+	}
+	if err := s.authorizeNewCommittees(ctx, req, current); err != nil {
 		return err
 	}
 
@@ -167,6 +177,52 @@ func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOc
 func validateProjectNotReparented(req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
 	if req.ProjectUID != current.Project {
 		return domain.NewForbiddenError("project_uid cannot be changed after a meeting is created")
+	}
+	return nil
+}
+
+// authorizeNewCommittees checks that the requesting principal has FGA "writer"
+// access on every committee that is present in req but absent from the live
+// ITX record (i.e. committees being newly added). Committees already on the
+// meeting are unchanged from the caller's perspective so no new permission is
+// required for them.
+//
+// If committeeAuthz is nil (NATS unavailable), the check is skipped and the
+// Heimdall organizer guard remains the sole enforcement layer.
+func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models.CreateITXMeetingRequest, current *itx.ZoomMeetingResponse) error {
+	if s.committeeAuthz == nil || len(req.Committees) == 0 {
+		return nil
+	}
+
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if principal == "" {
+		// No authenticated principal — Heimdall already blocked unauthenticated
+		// requests; nothing to check here.
+		return nil
+	}
+
+	// Build the set of committee IDs already on the meeting.
+	existing := make(map[string]struct{}, len(current.Committees))
+	for _, c := range current.Committees {
+		existing[c.ID] = struct{}{}
+	}
+
+	for _, c := range req.Committees {
+		if _, alreadyOn := existing[c.UID]; alreadyOn {
+			continue // no new permission needed for an existing committee
+		}
+		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, c.UID)
+		if err != nil {
+			// FGA is unavailable — fail open with a warning so the update still
+			// works in degraded environments. Heimdall's existing organizer check
+			// remains active.
+			slog.WarnContext(ctx, "committee FGA write-access check failed; proceeding without it",
+				"committee_id", c.UID, "error", err)
+			continue
+		}
+		if !ok {
+			return domain.NewForbiddenError("not authorized to add committee to this meeting")
+		}
 	}
 	return nil
 }
