@@ -10,11 +10,10 @@ import (
 	"strings"
 	"time"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
+
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 )
-
-// fgaAccessCheckSubject is the NATS request/reply subject exposed by fga-sync.
-const fgaAccessCheckSubject = "lfx.access_check.request"
 
 // committeeAuthorizerTimeout is the maximum time to wait for fga-sync to reply.
 // Committee writes are infrequent; 10 s is generous but bounded.
@@ -51,7 +50,7 @@ func (a *NATSCommitteeAuthorizer) HasWriteAccess(ctx context.Context, principal,
 	ctx, cancel := context.WithTimeout(ctx, committeeAuthorizerTimeout)
 	defer cancel()
 
-	msg, err := a.nc.RequestWithContext(ctx, fgaAccessCheckSubject, []byte(tuple))
+	msg, err := a.nc.RequestWithContext(ctx, fgaconstants.AccessCheckSubject, []byte(tuple))
 	if err != nil {
 		return false, fmt.Errorf("fga access check NATS request failed: %w", err)
 	}
@@ -70,7 +69,7 @@ func parseAccessCheckResponse(data []byte, expectedTuple string) (bool, error) {
 		topRange = len(data)
 	}
 	if bytes.Contains(data[:topRange], []byte(" ")) {
-		return false, fmt.Errorf("fga-sync returned error: %q", string(data[:topRange]))
+		return false, fmt.Errorf("fga-sync returned an error response")
 	}
 
 	for _, rawLine := range bytes.Split(data, []byte("\n")) {
@@ -88,5 +87,5 @@ func parseAccessCheckResponse(data []byte, expectedTuple string) (bool, error) {
 		}
 	}
 
-	return false, fmt.Errorf("fga-sync response did not contain result for %q", expectedTuple)
+	return false, fmt.Errorf("fga-sync response did not contain the expected result")
 }

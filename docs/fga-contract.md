@@ -19,7 +19,7 @@ The full OpenFGA type definitions (relations, schema) for all object types are d
 
 ## Message Format
 
-This service uses four FGA operation types:
+This service uses four FGA operation types for publishing tuple changes and one request/reply subject for synchronous access checks:
 
 | Subject | Operation | Used for |
 |---|---|---|
@@ -27,6 +27,35 @@ This service uses four FGA operation types:
 | `lfx.fga-sync.member_put` | `member_put` | Adds a user to one or more relations on an object |
 | `lfx.fga-sync.member_remove` | `member_remove` | Removes a user from an object; sent on registrant delete and on full participant deletes. An empty `relations` array removes all relations for that user on the object |
 | `lfx.fga-sync.delete_access` | `delete_access` | Delete — removes all FGA tuples for the object |
+| `lfx.access_check.request` | request/reply | Synchronous committee write-access check during `UpdateMeeting` |
+
+---
+
+## Access Check RPC
+
+The service uses `lfx.access_check.request` as a **synchronous NATS request/reply** to ask fga-sync whether the authenticated principal holds the `writer` relation on a `committee` object before forwarding a `PUT /itx/meetings/{id}` to ITX.
+
+**When:** `UpdateMeeting` detects one or more committees that are present in the request but absent from the live ITX record (newly added committees). One request is sent per newly added committee.
+
+**Request payload:**
+
+```
+committee:{v2 uid}#writer@user:{jwt username}
+```
+
+`v2 uid` is the committee's v2 UID (FGA object IDs are always v2 UIDs, even though the downstream ITX request carries v1 SFIDs after ID mapping).
+
+**Reply payload** — newline-delimited lines, each tab-separated:
+
+```
+committee:{v2 uid}#writer@user:{jwt username}\t{true|false}
+```
+
+A plain-text message starting with a space in the first 20 bytes indicates an error response from fga-sync rather than a result line.
+
+**Timeout:** 10 seconds (unconditional cap; caller's deadline takes over if shorter).
+
+**Fail-closed:** any transport error or unexpected reply format causes the `UpdateMeeting` call to return `503 Service Unavailable`. The service refuses to start when `NATS_URL` is configured but unreachable, so a nil authorizer means NATS is intentionally absent (not transiently unavailable).
 
 ---
 
@@ -203,3 +232,4 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Delete summary | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Create/update meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
+| Update meeting — newly added committees | `committee` | `lfx.access_check.request` | Request/reply per new committee; failure returns 503 (fail-closed) |

@@ -11,6 +11,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 // MeetingService handles ITX Zoom meeting operations
@@ -235,9 +236,6 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 		}
 		// Use the v2 UID for the FGA check; FGA object IDs are v2 UIDs.
 		v2UID := v1ToV2Committee[c.UID]
-		if v2UID == "" {
-			v2UID = c.UID // no mapping available; best-effort with the SFID
-		}
 		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
 		if err != nil {
 			// fga-sync is unreachable — fail closed to prevent the authorization
@@ -249,6 +247,8 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 			return domain.NewUnavailableError("cannot verify committee write access; please retry")
 		}
 		if !ok {
+			slog.WarnContext(ctx, "committee FGA write-access denied; rejecting update",
+				"principal", redaction.Redact(principal), "committee_id", v2UID)
 			return domain.NewForbiddenError("not authorized to add committee to this meeting")
 		}
 	}

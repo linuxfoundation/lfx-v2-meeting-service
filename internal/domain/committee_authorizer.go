@@ -10,9 +10,11 @@ import "context"
 // added committees — ones present in the request but absent from the live ITX
 // record — before forwarding the update to ITX.
 //
-// Implementations may be nil (e.g. when NATS is unavailable); callers must
-// treat nil as "skip the check" so that committee updates still work in
-// degraded NATS environments.
+// A nil CommitteeAuthorizer means NATS was not configured at startup; callers
+// skip the check entirely in that case. When non-nil, any HasWriteAccess error
+// fails the request closed (503) — the service refuses to start with NATS
+// configured but unreachable, so a nil authorizer only ever means NATS is
+// intentionally absent, not transiently unavailable.
 type CommitteeAuthorizer interface {
 	// HasWriteAccess reports whether principal (the JWT username) has the
 	// "writer" relation on committee:{committeeID} in OpenFGA.

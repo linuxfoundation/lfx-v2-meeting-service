@@ -552,13 +552,29 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 
 	t.Run("allows update that swaps a committee when FGA grants access", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
-		svc := NewMeetingService(client, noOpIDMapper{}, nil, allowAllCommittees())
+		authz := allowAllCommittees()
+		svc := NewMeetingService(client, noOpIDMapper{}, nil, authz)
 
 		req := baseReq()
 		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
 		require.NoError(t, err)
 		require.NotNil(t, client.lastUpdateReq)
+		require.Len(t, authz.calls, 1, "swapped-in committee must trigger a FGA check")
+		assert.Equal(t, "00000000-0000-0000-0000-000000000099", authz.calls[0][1])
+	})
+
+	t.Run("rejects update that swaps to a committee the principal cannot write", func(t *testing.T) {
+		client := &fakeMeetingClient{getResp: currentMeeting}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{}} // denies everything
+		svc := NewMeetingService(client, noOpIDMapper{}, nil, authz)
+
+		req := baseReq()
+		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
+		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq, "ITX must not be called when swapped committee access is denied")
 	})
 
 	t.Run("allows update that removes all committees (no FGA check needed)", func(t *testing.T) {
@@ -664,7 +680,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		const v2UID = "00000000-0000-0000-0000-000000000002"
 		const v1SFID = "a0B000000SFID0001EAC"
 
-		mapper := committeeV2ToV1Mapper{v2UID: v1SFID}
+		mapper := committeeV2ToV1Mapper{v2UID: v2UID, v1SFID: v1SFID}
 		authz := allowAllCommittees()
 		client := &fakeMeetingClient{getResp: existing}
 		svc := NewMeetingService(client, mapper, nil, authz)
@@ -675,6 +691,61 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, authz.calls, 1, "expected exactly one FGA call for the new committee")
 		assert.Equal(t, v2UID, authz.calls[0][1], "HasWriteAccess must receive the v2 UID, not the mapped v1 SFID")
+	})
+
+	t.Run("existing committee skipped and new committee checked with v2 UID under non-identity project+committee mapper", func(t *testing.T) {
+		// Verify that project-immutability and existing-committee comparisons both
+		// happen in v1 SFID space when a non-identity mapper is active.
+		const projV2 = "proj-v2-uid-1"
+		const projV1 = "a0P000000PROJSFID1EAC"
+		const existCommV2 = "00000000-0000-0000-0000-000000000001"
+		const existCommV1 = "a0C000000EXISTSFID1EAC"
+		const newCommV2 = "00000000-0000-0000-0000-000000000003"
+		const newCommV1 = "a0C000000NEWSFID00003AC"
+
+		liveRecord := &itx.ZoomMeetingResponse{
+			Project:    projV1,
+			Committees: []itx.Committee{{ID: existCommV1}},
+		}
+		mapper := fullIDMapper{
+			projectV2: projV2, projectV1: projV1,
+			committeeV2ToV1: map[string]string{
+				existCommV2: existCommV1,
+				newCommV2:   newCommV1,
+			},
+		}
+		authz := allowAllCommittees()
+		client := &fakeMeetingClient{getResp: liveRecord}
+		svc := NewMeetingService(client, mapper, nil, authz)
+
+		req := baseReq()
+		req.ProjectUID = projV2
+		req.Committees = []models.Committee{{UID: existCommV2}, {UID: newCommV2}}
+		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
+		require.NoError(t, err)
+		require.Len(t, authz.calls, 1, "only the new committee should trigger an FGA check")
+		assert.Equal(t, newCommV2, authz.calls[0][1], "FGA check must use v2 UID")
+	})
+
+	t.Run("rejects re-parenting when project differs after v2→v1 mapping", func(t *testing.T) {
+		const projV2 = "proj-v2-uid-1"
+		const projV1 = "a0P000000PROJSFID1EAC"
+		const diffProjV1 = "a0P000000DIFFERENT1EAC"
+
+		liveRecord := &itx.ZoomMeetingResponse{
+			Project:    diffProjV1,
+			Committees: []itx.Committee{{ID: "00000000-0000-0000-0000-000000000001"}},
+		}
+		mapper := fullIDMapper{projectV2: projV2, projectV1: projV1}
+		client := &fakeMeetingClient{getResp: liveRecord}
+		svc := NewMeetingService(client, mapper, nil, allowAllCommittees())
+
+		req := baseReq()
+		req.ProjectUID = projV2
+		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq)
 	})
 }
 
@@ -690,6 +761,29 @@ type committeeV2ToV1Mapper struct {
 func (m committeeV2ToV1Mapper) MapCommitteeV2ToV1(_ context.Context, v2UID string) (string, error) {
 	if v2UID == m.v2UID {
 		return m.v1SFID, nil
+	}
+	return v2UID, nil
+}
+
+// fullIDMapper maps both project and committee UIDs for tests that require a
+// non-identity mapper on multiple ID types simultaneously.
+type fullIDMapper struct {
+	noOpIDMapper
+	projectV2       string
+	projectV1       string
+	committeeV2ToV1 map[string]string
+}
+
+func (m fullIDMapper) MapProjectV2ToV1(_ context.Context, v2UID string) (string, error) {
+	if v2UID == m.projectV2 {
+		return m.projectV1, nil
+	}
+	return v2UID, nil
+}
+
+func (m fullIDMapper) MapCommitteeV2ToV1(_ context.Context, v2UID string) (string, error) {
+	if sfid, ok := m.committeeV2ToV1[v2UID]; ok {
+		return sfid, nil
 	}
 	return v2UID, nil
 }
