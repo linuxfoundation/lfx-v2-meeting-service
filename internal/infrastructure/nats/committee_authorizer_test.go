@@ -96,6 +96,20 @@ func TestNATSCommitteeAuthorizer_HasWriteAccess(t *testing.T) {
 		assert.False(t, ok)
 	})
 
+	t.Run("returns error when result value is neither true nor false", func(t *testing.T) {
+		// A malformed value such as "TRUE" or "garbage" must fail closed (503),
+		// not be silently treated as a denial (403).
+		body := []byte(fmt.Sprintf("%s\tgarbage", expectedTuple))
+		nc := &MockRequester{}
+		nc.On("RequestWithContext", mock.Anything, fgaconstants.AccessCheckSubject, mock.Anything).
+			Return(&natsgo.Msg{Data: body}, nil)
+
+		authz := NewNATSCommitteeAuthorizer(nc)
+		ok, err := authz.HasWriteAccess(context.Background(), principal, committeeID)
+		require.Error(t, err)
+		assert.False(t, ok)
+	})
+
 	t.Run("handles multi-line response and matches correct tuple", func(t *testing.T) {
 		otherLine := "committee:other-id#writer@user:alice\tfalse\n"
 		body := []byte(otherLine + expectedTuple + "\ttrue\n")

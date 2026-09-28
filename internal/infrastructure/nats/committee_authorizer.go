@@ -83,7 +83,14 @@ func parseAccessCheckResponse(data []byte, expectedTuple string) (bool, error) {
 			continue
 		}
 		if parts[0] == expectedTuple {
-			return parts[1] == "true", nil
+			switch parts[1] {
+			case "true":
+				return true, nil
+			case "false":
+				return false, nil
+			default:
+				return false, fmt.Errorf("fga-sync returned unexpected result value")
+			}
 		}
 	}
 
