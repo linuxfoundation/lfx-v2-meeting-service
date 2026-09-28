@@ -14,6 +14,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/msgpackutil"
 )
 
 // NATSUserLookup implements the V1UserLookup interface using NATS KV bucket
@@ -42,6 +43,15 @@ func (l *NATSUserLookup) LookupUser(ctx context.Context, platformID string) (*do
 
 	var userData map[string]interface{}
 	if jsonErr := json.Unmarshal(entry.Value(), &userData); jsonErr != nil {
+		// Guard against deeply-nested msgpack payloads before calling Unmarshal.
+		// msgpack.Unmarshal recurses once per nesting level with no built-in depth
+		// cap; a crafted payload can exhaust the goroutine stack and kill the
+		// process.  msgpackutil.CheckNestingDepth scans iteratively and rejects
+		// structurally malformed or excessively-nested payloads.
+		if depthErr := msgpackutil.CheckNestingDepth(entry.Value()); depthErr != nil {
+			l.logger.With(logging.ErrKey, depthErr).ErrorContext(ctx, "msgpack depth guard rejected v1 user record", "platform_id", platformID)
+			return nil, fmt.Errorf("structural decode failure for v1 user record: %w", depthErr)
+		}
 		if err := msgpack.Unmarshal(entry.Value(), &userData); err != nil {
 			l.logger.With(logging.ErrKey, jsonErr).ErrorContext(ctx, "failed to decode v1 user data", "platform_id", platformID)
 			return nil, domain.NewInternalError("failed to decode v1 user data", jsonErr)
