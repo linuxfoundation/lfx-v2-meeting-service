@@ -40,6 +40,9 @@ func lookupProjectFromMeeting(
 	}
 	meetingData, decErr := decodeData(entry.Value())
 	if decErr != nil {
+		if errors.Is(decErr, errMsgpackStructural) {
+			return "", "", fmt.Errorf("permanent decode failure for parent meeting %s: %w", meetingID, decErr)
+		}
 		return "", "", domain.NewUnavailableError("transient error decoding parent meeting", decErr)
 	}
 	return utils.GetString(meetingData["proj_id"]), utils.GetString(meetingData["committee"]), nil
@@ -69,6 +72,9 @@ func lookupProjectFromPastMeeting(
 	}
 	pastMeetingData, decErr := decodeData(entry.Value())
 	if decErr != nil {
+		if errors.Is(decErr, errMsgpackStructural) {
+			return "", "", "", fmt.Errorf("permanent decode failure for parent past_meeting %s: %w", meetingAndOccurrenceID, decErr)
+		}
 		return "", "", "", domain.NewUnavailableError("transient error decoding parent past_meeting", decErr)
 	}
 	return utils.GetString(pastMeetingData["proj_id"]),

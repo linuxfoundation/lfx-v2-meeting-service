@@ -5,6 +5,7 @@ package eventing
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -63,30 +64,31 @@ func TestCheckMsgpackNestingDepth(t *testing.T) {
 		assert.NoError(t, checkMsgpackNestingDepth(data))
 	})
 
-	t.Run("rejects payload at first rejected depth (msgpackMaxNestingDepth containers)", func(t *testing.T) {
-		// The scanner rejects when len(remaining) >= msgpackMaxNestingDepth at
+	t.Run("rejects payload at first rejected depth (msgpackMaxNestingDepth+1 containers)", func(t *testing.T) {
+		// The scanner rejects when len(remaining) > msgpackMaxNestingDepth at
 		// push time.  len(remaining) starts at 1 (root sentinel) and grows by 1
-		// per nested container, so the msgpackMaxNestingDepth-th container is the
-		// first one that triggers the rejection.
-		payload := buildNestedFixarrays(msgpackMaxNestingDepth)
-		err := checkMsgpackNestingDepth(payload)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "nesting depth")
-	})
-
-	t.Run("rejects payload one beyond rejection threshold", func(t *testing.T) {
-		// Also rejected — one past the first rejected depth.
+		// per nested container, so the (msgpackMaxNestingDepth+1)-th container
+		// is the first one that triggers the rejection.
 		payload := buildNestedFixarrays(msgpackMaxNestingDepth + 1)
 		err := checkMsgpackNestingDepth(payload)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "nesting depth")
 	})
 
-	t.Run("accepts max accepted depth (msgpackMaxNestingDepth-1 containers)", func(t *testing.T) {
-		// The deepest accepted payload: msgpackMaxNestingDepth-1 nested
-		// fixarray(1) containers.  len(remaining) grows to msgpackMaxNestingDepth
-		// after the last push (63 < 64), so the check is not triggered.
-		payload := buildNestedFixarrays(msgpackMaxNestingDepth - 1)
+	t.Run("rejects payload one beyond rejection threshold", func(t *testing.T) {
+		// Also rejected — two past the max accepted depth.
+		payload := buildNestedFixarrays(msgpackMaxNestingDepth + 2)
+		err := checkMsgpackNestingDepth(payload)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "nesting depth")
+	})
+
+	t.Run("accepts max accepted depth (msgpackMaxNestingDepth containers)", func(t *testing.T) {
+		// The deepest accepted payload: exactly msgpackMaxNestingDepth nested
+		// fixarray(1) containers.  len(remaining) grows to msgpackMaxNestingDepth+1
+		// after the last push (64+1=65 > 64 would reject, but the push guard is
+		// checked before appending, so the 64th push: len=64, 64 > 64 is false).
+		payload := buildNestedFixarrays(msgpackMaxNestingDepth)
 		assert.NoError(t, checkMsgpackNestingDepth(payload))
 	})
 
@@ -136,13 +138,13 @@ func TestCheckMsgpackNestingDepth(t *testing.T) {
 		// actual child data.  Without the truncation check the scanner returns
 		// nil and msgpack.Unmarshal tries to make(map[string]interface{}, 2B)
 		// exhausting process memory.  With the check, len(remaining) != 0 after
-		// the loop and the payload is rejected.
+		// the loop and the payload is rejected with errMsgpackStructural.
 		//
 		// Bytes: 0xdf (map32) + 4-byte big-endian count 0x7fffffff (~2B entries)
 		payload := []byte{0xdf, 0x7f, 0xff, 0xff, 0xff}
 		err := checkMsgpackNestingDepth(payload)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "truncated")
+		assert.True(t, errors.Is(err, errMsgpackStructural))
 	})
 }
 

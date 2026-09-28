@@ -368,6 +368,12 @@ func getOperation(msg jetstream.Msg) jetstream.KeyValueOp {
 	}
 }
 
+// errMsgpackStructural is the sentinel wrapped into every error returned by
+// checkMsgpackNestingDepth so that callers can distinguish a permanent
+// structural failure (malformed or hostile payload) from a transient decode
+// error.  Use errors.Is(err, errMsgpackStructural) to detect it.
+var errMsgpackStructural = errors.New("msgpack structural check failed")
+
 // msgpackMaxNestingDepth is the maximum container-nesting depth we allow
 // before refusing to call msgpack.Unmarshal on untrusted KV data.
 //
@@ -381,6 +387,8 @@ func getOperation(msg jetstream.Msg) jetstream.KeyValueOp {
 // meeting-api process (HTTP proxy + NATS subscribers) is killed.
 //
 // Legitimate v1-objects records are flat; 64 is very generous.
+// The scanner accepts payloads nested up to and including this depth;
+// the first rejected depth is msgpackMaxNestingDepth+1.
 const msgpackMaxNestingDepth = 64
 
 // checkMsgpackNestingDepth iteratively scans raw msgpack bytes and returns a
@@ -555,8 +563,8 @@ func checkMsgpackNestingDepth(data []byte) error {
 
 		if children > 0 {
 			// Non-empty container: push a new depth level.
-			if len(remaining) >= msgpackMaxNestingDepth {
-				return fmt.Errorf("msgpack nesting depth exceeds limit of %d", msgpackMaxNestingDepth)
+			if len(remaining) > msgpackMaxNestingDepth {
+				return fmt.Errorf("%w: nesting depth exceeds limit of %d", errMsgpackStructural, msgpackMaxNestingDepth)
 			}
 			remaining = append(remaining, children)
 		} else {
@@ -577,7 +585,7 @@ func checkMsgpackNestingDepth(data []byte) error {
 	// truncated buffer to msgpack.Unmarshal, which would try to allocate a
 	// collection sized by the declared (attacker-controlled) count.
 	if len(remaining) != 0 {
-		return fmt.Errorf("msgpack value truncated: %d container level(s) left open", len(remaining))
+		return fmt.Errorf("%w: %d container level(s) left open (truncated payload)", errMsgpackStructural, len(remaining))
 	}
 
 	return nil
