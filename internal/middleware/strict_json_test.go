@@ -10,14 +10,20 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// okHandler is a simple sentinel that records whether it was called.
+// okBody is the body written by okHandler. Pass-through tests assert the
+// response body equals okBody (proving next was called). Reject tests assert
+// the response body does NOT equal okBody (proving next was not called and the
+// middleware short-circuited with its own error response).
 var okBody = `{"status":"ok"}`
 
+// okHandler writes okBody with 200 OK so tests can distinguish "middleware
+// called next" from "middleware returned early with its own response".
 func okHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -40,6 +46,7 @@ func TestStrictCreateBodyMiddleware_NonTargetMethodPassesThrough(t *testing.T) {
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for non-POST requests")
 }
 
 func TestStrictCreateBodyMiddleware_NonTargetPathPassesThrough(t *testing.T) {
@@ -50,6 +57,7 @@ func TestStrictCreateBodyMiddleware_NonTargetPathPassesThrough(t *testing.T) {
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for non-guarded paths")
 }
 
 // ---- POST /itx/meetings ----
@@ -83,6 +91,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDRejected(t *testin
 	assert.Contains(t, rr.Body.String(), "ambiguous")
 	assert.Contains(t, rr.Body.String(), `"code"`)
 	assert.Contains(t, rr.Body.String(), `"message"`)
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDReversedOrderRejected(t *testing.T) {
@@ -94,6 +103,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousProjectUIDReversedOrderRejec
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingAmbiguousCommitteeUIDRejected(t *testing.T) {
@@ -106,6 +116,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousCommitteeUIDRejected(t *test
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingAmbiguousCommitteesArrayKeyRejected(t *testing.T) {
@@ -117,6 +128,7 @@ func TestStrictCreateBodyMiddleware_MeetingAmbiguousCommitteesArrayKeyRejected(t
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on reject")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingDuplicateExactKeyPassesThrough(t *testing.T) {
@@ -129,6 +141,7 @@ func TestStrictCreateBodyMiddleware_MeetingDuplicateExactKeyPassesThrough(t *tes
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for exact-duplicate keys")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingEmptyBodyPassesThrough(t *testing.T) {
@@ -139,16 +152,18 @@ func TestStrictCreateBodyMiddleware_MeetingEmptyBodyPassesThrough(t *testing.T) 
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for empty body")
 }
 
 func TestStrictCreateBodyMiddleware_MeetingInvalidJSONPassesThrough(t *testing.T) {
-	// Malformed JSON is not our concern — let Goa return its own 400.
+	// Malformed JSON (non-array context) — not our concern; let Goa return its own 400.
 	req := postJSON("/itx/meetings", `{"project_uid": NOTJSON}`)
 	rr := httptest.NewRecorder()
 
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for invalid JSON (Goa owns the error)")
 }
 
 // ---- POST /itx/past_meetings ----
@@ -161,6 +176,7 @@ func TestStrictCreateBodyMiddleware_PastMeetingCleanBodyPassesThrough(t *testing
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for clean past-meeting body")
 }
 
 func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousProjectUIDRejected(t *testing.T) {
@@ -172,6 +188,7 @@ func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousProjectUIDRejected(t *te
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on past-meeting reject")
 }
 
 func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousCommitteeUIDRejected(t *testing.T) {
@@ -182,6 +199,7 @@ func TestStrictCreateBodyMiddleware_PastMeetingAmbiguousCommitteeUIDRejected(t *
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on past-meeting committee reject")
 }
 
 // ---- checkAmbiguousJSONKeys unit tests ----
@@ -201,6 +219,7 @@ func TestStrictCreateBodyMiddleware_BodyExceedsLimitRejected(t *testing.T) {
 	assert.Contains(t, rr.Body.String(), "too large")
 	assert.Contains(t, rr.Body.String(), "413")
 	assert.Equal(t, "close", rr.Header().Get("Connection"), "413 response must set Connection: close")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on 413")
 }
 
 func TestStrictCreateBodyMiddleware_BodyClearlyUnderLimitPassesThrough(t *testing.T) {
@@ -219,6 +238,7 @@ func TestStrictCreateBodyMiddleware_BodyClearlyUnderLimitPassesThrough(t *testin
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, okBody, rr.Body.String(), "next must be called for body under the size cap")
 }
 
 // ---- Unicode fold tests ----
@@ -235,6 +255,7 @@ func TestStrictCreateBodyMiddleware_UnicodeLongSFoldRejected(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 	assert.Contains(t, rr.Body.String(), "ambiguous")
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on Unicode long-s reject")
 }
 
 func TestStrictCreateBodyMiddleware_UnicodeKelvinSignFoldRejected(t *testing.T) {
@@ -247,6 +268,7 @@ func TestStrictCreateBodyMiddleware_UnicodeKelvinSignFoldRejected(t *testing.T) 
 	StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.NotContains(t, rr.Body.String(), okBody, "next must NOT be called on Unicode Kelvin-sign reject")
 }
 
 func TestCheckAmbiguousJSONKeys_Clean(t *testing.T) {
@@ -297,4 +319,71 @@ func TestCheckAmbiguousJSONKeys_InvalidJSONReturnsNil(t *testing.T) {
 	// Invalid JSON must not return an error from this function — Goa owns that.
 	err := checkAmbiguousJSONKeys([]byte(`{"key": }`))
 	require.NoError(t, err)
+}
+
+// ---- Infinite-loop regression tests ----
+// These guard against the DoS where walkJSONValue returned nil on Token()
+// failure, leaving dec.More() stuck at true and spinning the loop forever.
+
+func TestCheckAmbiguousJSONKeys_MalformedArrayNoHang(t *testing.T) {
+	// Missing comma between array elements — Token() fails mid-array.
+	// Previously caused an infinite loop; must return within 1 second.
+	done := make(chan error, 1)
+	go func() {
+		done <- checkAmbiguousJSONKeys([]byte(`{"project_uid":"p","committees":[{"uid":"a"} {"uid":"b"}]}`))
+	}()
+	select {
+	case err := <-done:
+		require.NoError(t, err, "malformed array body must pass through (nil), not hang")
+	case <-time.After(time.Second):
+		t.Fatal("checkAmbiguousJSONKeys hung on malformed array body (missing comma)")
+	}
+}
+
+func TestCheckAmbiguousJSONKeys_TrailingCommaNoHang(t *testing.T) {
+	done := make(chan error, 1)
+	go func() {
+		done <- checkAmbiguousJSONKeys([]byte(`{"project_uid":"p","committees":[{"uid":"a"},]}`))
+	}()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("checkAmbiguousJSONKeys hung on trailing-comma body")
+	}
+}
+
+func TestCheckAmbiguousJSONKeys_TruncatedArrayNoHang(t *testing.T) {
+	done := make(chan error, 1)
+	go func() {
+		done <- checkAmbiguousJSONKeys([]byte(`{"committees":[`))
+	}()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("checkAmbiguousJSONKeys hung on truncated array body")
+	}
+}
+
+func TestStrictCreateBodyMiddleware_MalformedArrayBodyPassesThrough(t *testing.T) {
+	// Malformed JSON inside a committees array — middleware must pass through
+	// within 1 second so Goa can return its own parse error (not hang).
+	body := `{"project_uid":"p","committees":[{"uid":"a"} {"uid":"b"}]}`
+	req := postJSON("/itx/meetings", body)
+	rr := httptest.NewRecorder()
+
+	done := make(chan struct{}, 1)
+	go func() {
+		StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, req)
+		done <- struct{}{}
+	}()
+	select {
+	case <-done:
+		// Malformed JSON is not our concern — middleware must have called next.
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, okBody, rr.Body.String(), "next must be called for malformed array body")
+	case <-time.After(time.Second):
+		t.Fatal("middleware hung on malformed array body (missing comma between objects)")
+	}
 }

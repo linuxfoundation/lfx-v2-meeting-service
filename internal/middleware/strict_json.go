@@ -28,11 +28,30 @@ var strictCreatePaths = map[string]struct{}{
 	"/itx/past_meetings": {},
 }
 
-// StrictCreateBodyMiddleware rejects POST /itx/meetings and POST
-// /itx/past_meetings requests whose JSON body contains two keys within the
-// same JSON object that are distinct strings but compare equal under
-// encoding/json's Unicode simple case-folding semantics (e.g. "project_uid"
-// and "Project_UID", or "committees" and "committeeſ").
+// errBadJSON is a sentinel returned by the walker functions when the JSON
+// tokenizer encounters a parse error. It is mapped back to nil by
+// checkAmbiguousJSONKeys so that malformed bodies are passed through to Goa
+// (which owns parse-error responses) rather than silently suppressed inside
+// a loop. Using a distinct sentinel — rather than returning nil — is critical:
+// returning nil from walkJSONValue on a Token() failure leaves the decoder
+// stuck at the same position, causing walkJSONArray's dec.More() loop to spin
+// forever at full CPU (DoS via a single malformed request body).
+var errBadJSON = errors.New("bad json")
+
+// StrictCreateBodyMiddleware guards POST /itx/meetings and POST
+// /itx/past_meetings against two classes of malformed request:
+//
+//  1. Bodies larger than maxCreateBodyBytes (1 MiB) — rejected immediately
+//     with 413 Request Entity Too Large and Connection: close. This is a
+//     transport-level guard; 413 is not declared in the Goa design so
+//     generated clients receive it as an untyped transport error.
+//
+//  2. Bodies that contain two keys in the same JSON object that are distinct
+//     strings but compare equal under encoding/json's Unicode simple
+//     case-folding semantics (e.g. "project_uid" and "Project_UID", or
+//     "committees" and "committeeſ") — rejected with 400 Bad Request whose
+//     body matches the BadRequestError shape declared in the Goa design
+//     ({code, message}).
 //
 // Background: Heimdall authorizes these create endpoints by looking up
 // .Request.Body.project_uid in its case-sensitive generic JSON parse of the
@@ -47,9 +66,9 @@ var strictCreatePaths = map[string]struct{}{
 // Goa's decoder, ensuring the value Heimdall authorized is provably the
 // value the decoder will use.
 //
-// Non-targeted routes, bodies that are not JSON, and bodies with parse
-// errors are passed through unchanged so that Goa can produce its own
-// validation error.
+// Non-targeted routes, bodies within the size cap that are not JSON, and
+// bodies within the size cap that have parse errors are passed through
+// unchanged so that Goa can produce its own validation error.
 func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isStrictJSONTarget(r) {
@@ -95,10 +114,12 @@ func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// strictErrorBody returns a JSON-encodable error object whose shape matches
-// the BadRequestError type declared in the Goa design ({code, message}),
-// so that middleware-level rejections on these endpoints are parseable by
-// generated clients using the same schema as handler-level errors.
+// strictErrorBody returns a JSON-encodable error object with {code, message}
+// keys. For 400 responses this matches the BadRequestError shape declared in
+// the Goa design, so generated clients can decode the body against that schema.
+// For 413 responses the status is undeclared in the design; the body is
+// emitted in the same shape for consistency but will not be schema-decoded by
+// generated clients.
 func strictErrorBody(code, message string) map[string]string {
 	return map[string]string{"code": code, "message": message}
 }
@@ -119,12 +140,18 @@ func isStrictJSONTarget(r *http.Request) bool {
 // Heimdall (case-sensitive parse) and encoding/json (case-insensitive struct
 // decode) to bind the field to different values.
 //
-// Non-JSON input and JSON parse errors are silently ignored (return nil) so
-// that Goa's decoder can produce the authoritative validation error.
+// Non-JSON input and JSON parse errors return nil so that Goa's decoder can
+// produce the authoritative validation error. Internally, the walkers return
+// errBadJSON on tokenizer failures (rather than nil) to break out of
+// dec.More() loops that would otherwise spin forever on malformed input.
 func checkAmbiguousJSONKeys(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber() // preserve numbers exactly; we only care about structure
-	return walkJSONValue(dec)
+	err := walkJSONValue(dec)
+	if errors.Is(err, errBadJSON) {
+		return nil // malformed JSON — not our problem; let Goa produce the error
+	}
+	return err
 }
 
 // foldKey returns a canonical string for key such that two keys produce the
@@ -150,10 +177,13 @@ func foldKey(s string) string {
 }
 
 // walkJSONValue consumes exactly one JSON value from dec.
+// It returns errBadJSON on any tokenizer failure so that callers can break
+// out of dec.More() loops — returning nil instead would leave the decoder
+// stuck at the same position and cause the loop to spin forever.
 func walkJSONValue(dec *json.Decoder) error {
 	tok, err := dec.Token()
 	if err != nil {
-		return nil // unparseable — not our problem
+		return errBadJSON // signal to break loops; filtered to nil by checkAmbiguousJSONKeys
 	}
 	delim, ok := tok.(json.Delim)
 	if !ok {
@@ -183,11 +213,11 @@ func walkJSONObject(dec *json.Decoder) error {
 	for dec.More() {
 		keyTok, err := dec.Token()
 		if err != nil {
-			return nil
+			return errBadJSON
 		}
 		key, ok := keyTok.(string)
 		if !ok {
-			return nil
+			return errBadJSON
 		}
 
 		fold := foldKey(key)

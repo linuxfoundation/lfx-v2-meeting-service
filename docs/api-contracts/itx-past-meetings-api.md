@@ -265,3 +265,36 @@ All other fields use identical naming between the proxy and ITX APIs.
 5. **Invitees vs Attendees**:
    - **Invitees**: Users who were registered/invited to the meeting
    - **Attendees**: Users who actually joined and attended the meeting
+
+---
+
+## Error Responses
+
+**HTTP Status Codes**:
+
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Missing or invalid authentication
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - Resource not found
+- `409 Conflict` - Resource conflict
+- `413 Request Entity Too Large` - Request body exceeds the 1 MiB middleware limit on `POST /itx/past_meetings`. This is a transport-level guard enforced before the Goa handler runs; it is not declared in the Goa design and generated clients receive it as an untyped transport error.
+- `500 Internal Server Error` - Server error
+- `503 Service Unavailable` - Service temporarily unavailable
+
+**Error Response Body** (handler-level errors):
+
+```json
+{
+  "code": "400",
+  "message": "Error message describing what went wrong"
+}
+```
+
+**413 Body** (middleware-level, same shape for consistency):
+
+```json
+{
+  "code": "413",
+  "message": "request body too large"
+}
+```
