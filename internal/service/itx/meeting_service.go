@@ -239,10 +239,12 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
 		if err != nil {
 			// fga-sync is unreachable — fail closed to prevent the authorization
-			// bypass window that fail-open would create during outages.
+			// bypass window that fail-open would create during outages. Use
+			// Unavailable (503) rather than Forbidden (403) so callers know the
+			// denial is transient and can retry.
 			slog.WarnContext(ctx, "committee FGA write-access check failed; rejecting update",
 				"committee_id", v2UID, "error", err)
-			return domain.NewForbiddenError("cannot verify committee write access; please retry")
+			return domain.NewUnavailableError("cannot verify committee write access; please retry")
 		}
 		if !ok {
 			return domain.NewForbiddenError("not authorized to add committee to this meeting")

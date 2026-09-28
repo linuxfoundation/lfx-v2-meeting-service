@@ -655,4 +655,39 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
 		require.NoError(t, err)
 	})
+
+	t.Run("passes v2 UID (not mapped v1 SFID) to HasWriteAccess", func(t *testing.T) {
+		// Use a mapper that returns a distinct v1 SFID for the new committee so
+		// any regression that passes the SFID instead of the v2 UID is caught.
+		const v2UID = "00000000-0000-0000-0000-000000000002"
+		const v1SFID = "a0B000000SFID0001EAC"
+
+		mapper := committeeV2ToV1Mapper{v2UID: v1SFID}
+		authz := allowAllCommittees()
+		client := &fakeMeetingClient{getResp: existing}
+		svc := NewMeetingService(client, mapper, nil, authz)
+
+		req := baseReq()
+		req.Committees = append(req.Committees, models.Committee{UID: v2UID})
+		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req)
+		require.NoError(t, err)
+		require.Len(t, authz.calls, 1, "expected exactly one FGA call for the new committee")
+		assert.Equal(t, v2UID, authz.calls[0][1], "HasWriteAccess must receive the v2 UID, not the mapped v1 SFID")
+	})
+}
+
+// committeeV2ToV1Mapper translates one specific v2 UID to a v1 SFID; all other
+// IDs pass through unchanged. Used to verify that HasWriteAccess receives the
+// original v2 UID regardless of ID mapping.
+type committeeV2ToV1Mapper struct {
+	noOpIDMapper
+	v2UID  string
+	v1SFID string
+}
+
+func (m committeeV2ToV1Mapper) MapCommitteeV2ToV1(_ context.Context, v2UID string) (string, error) {
+	if v2UID == m.v2UID {
+		return m.v1SFID, nil
+	}
+	return v2UID, nil
 }
