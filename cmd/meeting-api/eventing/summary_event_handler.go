@@ -226,7 +226,7 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	}
 	summaryData.Committees = committees
 
-	// Publish to indexer and FGA-sync
+	// Publish to the indexer (summaries send no FGA message)
 	if err := h.publisher.PublishPastMeetingSummaryEvent(ctx, string(indexerAction), summaryData, aiSummaryAccess); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish summary event")
 		return isTransientError(err)
