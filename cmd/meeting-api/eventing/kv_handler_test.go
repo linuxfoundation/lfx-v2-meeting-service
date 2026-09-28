@@ -24,6 +24,20 @@ func buildNestedFixarrays(depth int) []byte {
 	return payload
 }
 
+// buildMapWrappedNestedFixarrays wraps `depth` nested fixarray(1) containers
+// as the value of a single-entry fixmap keyed by "k":
+//
+//	fixmap(1){ fixstr("k"): fixarray(1){ fixarray(1){ … nil } } }
+//
+// This exercises the vulnerable decode path: msgpack.Unmarshal accepts the
+// root map format without a type error (result is map[string]any), then
+// recurses into the nested arrays.  A root-only array payload would be
+// rejected immediately by DecodeMap before any recursion.
+func buildMapWrappedNestedFixarrays(depth int) []byte {
+	header := []byte{0x81, 0xa1, 0x6b} // fixmap(1), fixstr("k")
+	return append(header, buildNestedFixarrays(depth)...)
+}
+
 // TestCheckMsgpackNestingDepth exercises the iterative depth scanner.
 func TestCheckMsgpackNestingDepth(t *testing.T) {
 	t.Run("accepts flat map", func(t *testing.T) {
@@ -49,19 +63,29 @@ func TestCheckMsgpackNestingDepth(t *testing.T) {
 		assert.NoError(t, checkMsgpackNestingDepth(data))
 	})
 
-	t.Run("rejects payload at exact limit+1 fixarray depth", func(t *testing.T) {
-		// One level beyond the limit must be rejected.
+	t.Run("rejects payload at first rejected depth (msgpackMaxNestingDepth containers)", func(t *testing.T) {
+		// The scanner rejects when len(remaining) >= msgpackMaxNestingDepth at
+		// push time.  len(remaining) starts at 1 (root sentinel) and grows by 1
+		// per nested container, so the msgpackMaxNestingDepth-th container is the
+		// first one that triggers the rejection.
+		payload := buildNestedFixarrays(msgpackMaxNestingDepth)
+		err := checkMsgpackNestingDepth(payload)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "nesting depth")
+	})
+
+	t.Run("rejects payload one beyond rejection threshold", func(t *testing.T) {
+		// Also rejected — one past the first rejected depth.
 		payload := buildNestedFixarrays(msgpackMaxNestingDepth + 1)
 		err := checkMsgpackNestingDepth(payload)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "nesting depth")
 	})
 
-	t.Run("accepts payload at exact limit depth", func(t *testing.T) {
-		// Exactly at the limit must be accepted.
-		// msgpackMaxNestingDepth-1 nested fixarrays push the depth to
-		// msgpackMaxNestingDepth (root level + N containers = N+1 checks,
-		// but the root sentinel counts as 1, so N containers = depth N).
+	t.Run("accepts max accepted depth (msgpackMaxNestingDepth-1 containers)", func(t *testing.T) {
+		// The deepest accepted payload: msgpackMaxNestingDepth-1 nested
+		// fixarray(1) containers.  len(remaining) grows to msgpackMaxNestingDepth
+		// after the last push (63 < 64), so the check is not triggered.
 		payload := buildNestedFixarrays(msgpackMaxNestingDepth - 1)
 		assert.NoError(t, checkMsgpackNestingDepth(payload))
 	})
@@ -106,6 +130,20 @@ func TestCheckMsgpackNestingDepth(t *testing.T) {
 			assert.NoError(t, checkMsgpackNestingDepth(data))
 		}
 	})
+
+	t.Run("rejects truncated container with huge declared entry count", func(t *testing.T) {
+		// A 5-byte map32 header claiming ~2 billion entries followed by no
+		// actual child data.  Without the truncation check the scanner returns
+		// nil and msgpack.Unmarshal tries to make(map[string]interface{}, 2B)
+		// exhausting process memory.  With the check, len(remaining) != 0 after
+		// the loop and the payload is rejected.
+		//
+		// Bytes: 0xdf (map32) + 4-byte big-endian count 0x7fffffff (~2B entries)
+		payload := []byte{0xdf, 0x7f, 0xff, 0xff, 0xff}
+		err := checkMsgpackNestingDepth(payload)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "truncated")
+	})
 }
 
 // TestDecodeData covers the public decodeData helper used by kvHandler and
@@ -137,11 +175,17 @@ func TestDecodeData(t *testing.T) {
 	})
 
 	t.Run("rejects deeply nested msgpack without crashing", func(t *testing.T) {
-		// This is the core security regression test.  A payload of
-		// msgpackMaxNestingDepth+100 nested fixarray(1) containers followed by
-		// nil exceeds the depth limit and must be rejected with an error.
-		// Crucially, the process must NOT crash (no stack overflow).
-		payload := buildNestedFixarrays(msgpackMaxNestingDepth + 100)
+		// Security regression test.  The payload is a fixmap(1) keyed by "k"
+		// whose value is a deeply nested fixarray(1) chain:
+		//
+		//   fixmap(1){ "k": fixarray(1){ fixarray(1){ … nil } } }
+		//
+		// A root-only array is rejected by msgpack.Unmarshal immediately (wrong
+		// type for map[string]any) before any recursion — it would not exercise
+		// the depth guard.  The map wrapper causes Unmarshal to begin decoding a
+		// map (no type error), then recurse into the nested arrays.  Without the
+		// depth guard this exhausts the goroutine stack and kills the process.
+		payload := buildMapWrappedNestedFixarrays(msgpackMaxNestingDepth + 100)
 
 		_, err := decodeData(payload)
 		require.Error(t, err, "decodeData must return an error for a deeply-nested msgpack payload; the process must not crash")

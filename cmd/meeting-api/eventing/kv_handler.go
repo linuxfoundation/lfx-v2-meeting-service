@@ -389,8 +389,10 @@ const msgpackMaxNestingDepth = 64
 // slice and never recurses, so it is safe to call on untrusted input before
 // passing the same bytes to msgpack.Unmarshal.
 //
-// Returns an error also for structurally truncated type-header fields so
-// that Unmarshal is never called on malformed data.
+// Returns an error for structurally truncated type-header fields (e.g. a
+// str16 missing its length bytes) and for containers whose declared element
+// count exceeds what the payload actually contains.  Other decode errors are
+// left to msgpack.Unmarshal.
 func checkMsgpackNestingDepth(data []byte) error {
 	// remaining[level] = number of msgpack values still to consume at that
 	// level.  We start with 1 root value.
@@ -568,6 +570,14 @@ func checkMsgpackNestingDepth(data []byte) error {
 				remaining = remaining[:top] // pop finished level; loop to decrement parent
 			}
 		}
+	}
+
+	// If any container still has declared children remaining the payload was
+	// truncated before those children were present.  Reject to avoid passing a
+	// truncated buffer to msgpack.Unmarshal, which would try to allocate a
+	// collection sized by the declared (attacker-controlled) count.
+	if len(remaining) != 0 {
+		return fmt.Errorf("msgpack value truncated: %d container level(s) left open", len(remaining))
 	}
 
 	return nil
