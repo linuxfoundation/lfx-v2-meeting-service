@@ -172,7 +172,7 @@ func run() int {
 		defer committeeAuthzNatsConn.Close()
 	}
 
-	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), idMapper, userMetadataReader, committeeAuthz)
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)

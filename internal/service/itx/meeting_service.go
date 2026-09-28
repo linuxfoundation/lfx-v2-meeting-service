@@ -6,6 +6,7 @@ package itx
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
@@ -17,9 +18,10 @@ import (
 // MeetingService handles ITX Zoom meeting operations
 type MeetingService struct {
 	auditStamper
-	meetingClient  domain.ITXMeetingClient
-	idMapper       domain.IDMapper
-	committeeAuthz domain.CommitteeAuthorizer // nil when NATS is unavailable
+	meetingClient    domain.ITXMeetingClient
+	registrantClient domain.ITXRegistrantClient
+	idMapper         domain.IDMapper
+	committeeAuthz   domain.CommitteeAuthorizer // nil when NATS is unavailable
 }
 
 // NewMeetingService creates a new ITX meeting service.
@@ -32,12 +34,13 @@ type MeetingService struct {
 // Heimdall's organizer check is the sole gate. When non-nil, this service-layer
 // check is the sole committee guard (no Heimdall committee rule); RPC errors
 // fail closed (503) to prevent bypass during fga-sync outages.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
+func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
 	return &MeetingService{
-		auditStamper:   auditStamper{userMetadata: userMetadata},
-		meetingClient:  meetingClient,
-		idMapper:       idMapper,
-		committeeAuthz: committeeAuthz,
+		auditStamper:     auditStamper{userMetadata: userMetadata},
+		meetingClient:    meetingClient,
+		registrantClient: registrantClient,
+		idMapper:         idMapper,
+		committeeAuthz:   committeeAuthz,
 	}
 }
 
@@ -184,8 +187,52 @@ func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurr
 	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
 }
 
-// SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy
-func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
+// SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy.
+//
+// meetingID is the plain meeting ID (used for the registrant ownership lookup).
+// meetingAndOccurrenceID is the compound "meetingID[-occurrenceID]" string forwarded to ITX.
+//
+// Before forwarding, the service verifies that the supplied registrant_id belongs to the
+// authenticated principal by fetching the registrant from ITX and comparing its email /
+// username against the JWT claims. Unauthenticated callers, M2M tokens, and callers whose
+// identity does not match the registrant all receive 403 Forbidden.
+func (s *MeetingService) SubmitMeetingResponse(ctx context.Context, meetingID, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error) {
+	username, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if username == "" {
+		return nil, domain.NewForbiddenError("must be authenticated to submit a meeting response")
+	}
+	// M2M client principals carry an @clients suffix (e.g. "<id>@clients") and have no
+	// personal identity to bind to a registrant record.
+	if strings.HasSuffix(username, "@clients") {
+		return nil, domain.NewForbiddenError("meeting response requires a user token, not an M2M client token")
+	}
+
+	registrant, err := s.registrantClient.GetRegistrant(ctx, meetingID, req.RegistrantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefer the resolved profile email over the JWT claim — JWT claims can be
+	// stale on long-lived tokens (same rationale as the audit stamper). Fall back
+	// to the JWT claim when NATS is disabled or the resolver fails; that failure
+	// must never block the caller's request (username match is still tried).
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if email == "" && s.userMetadata != nil {
+		if profile, resolveErr := s.userMetadata.ResolveProfile(ctx, username); resolveErr == nil && profile != nil && profile.Email != "" {
+			email = profile.Email
+		}
+	}
+	// Email comparison is case-insensitive: addresses are case-insensitive by
+	// specification and providers differ in the casing they return.
+	emailMatch := email != "" && strings.EqualFold(registrant.Email, email)
+	usernameMatch := registrant.Username == username
+	if !emailMatch && !usernameMatch {
+		slog.WarnContext(ctx, "meeting response ownership check failed: registrant does not belong to principal",
+			"principal", redaction.Redact(username),
+			"registrant_id", req.RegistrantID)
+		return nil, domain.NewForbiddenError("registrant does not belong to the authenticated user")
+	}
+
 	return s.meetingClient.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
 }
 
