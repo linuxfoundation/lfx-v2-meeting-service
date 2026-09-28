@@ -979,14 +979,24 @@ Both APIs return similar error structures:
 - `403 Forbidden` - Insufficient permissions
 - `404 Not Found` - Resource not found
 - `409 Conflict` - Resource conflict
+- `413 Request Entity Too Large` - Request body exceeds the 1 MiB middleware limit on `POST /itx/meetings` and `POST /itx/past_meetings`. This is a transport-level guard enforced before the Goa handler runs; it is not declared in the Goa design and generated clients receive it as an untyped transport error.
 - `500 Internal Server Error` - Server error
 - `503 Service Unavailable` - Service temporarily unavailable
 
-**Error Response Body**:
+**Error Response Body** (handler-level errors):
 
 ```json
 {
-  "error": "Error message describing what went wrong",
-  "message": "Detailed error message"
+  "code": "400",
+  "message": "Error message describing what went wrong"
+}
+```
+
+**413 Body** (middleware-level, same shape for consistency):
+
+```json
+{
+  "code": "413",
+  "message": "request body too large"
 }
 ```
