@@ -561,6 +561,28 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 	calc := NewOccurrenceCalculator(slog.Default())
 	startTime := time.Now().Add(24 * time.Hour).Truncate(time.Second) // future meeting
 
+	t.Run("ancient DTSTART with date-terminal stays O(maxOccurrenceCount) via iterator", func(t *testing.T) {
+		// When DTSTART is in year 0001 and UNTIL=now+10y (the max clamped horizon), rrule-go's
+		// set.All() would materialise ~740k time.Time values; the iterator must stop after
+		// maxOccurrenceCount calls instead. Assert on len AND wall-clock time so a regression
+		// back to set.All() is detected (set.All() for 740k entries takes >100ms; 500 iterator
+		// calls take <1ms).
+		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndDateTime:    time.Now().Add(maxOccurrenceHorizon).Format(time.RFC3339), // max horizon
+		}
+		start := time.Now()
+		occurrences, err := calc.getRRuleOccurrences(ancient, "UTC", rec, nil, nil)
+		elapsed := time.Since(start)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"ancient DTSTART with date terminal must not exceed maxOccurrenceCount")
+		assert.Less(t, elapsed, 200*time.Millisecond,
+			"ancient DTSTART must complete in O(maxOccurrenceCount) time via iterator, not O(series length)")
+	})
+
 	t.Run("huge end_times is clamped to maxOccurrenceCount before set.All()", func(t *testing.T) {
 		rec := &models.ZoomMeetingRecurrence{
 			Type:           1, // Daily

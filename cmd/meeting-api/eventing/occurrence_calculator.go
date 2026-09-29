@@ -20,8 +20,13 @@ import (
 const (
 	meetingEndBuffer = 40 * time.Minute
 
-	// maxOccurrenceCount caps the RRULE COUNT terminal to prevent unbounded expansion from
-	// a KV-supplied end_times value. Zoom caps recurrences at ~60; 500 is generous.
+	// maxOccurrenceCount is the hard cap applied in two places:
+	// (1) the RRULE COUNT terminal: KV-supplied end_times values above this are clamped so
+	//     set.All() / the iterator cannot materialise billions of time.Time values.
+	// (2) the lazy iterator in getRRuleOccurrences: the iterator stops after this many calls,
+	//     bounding CPU and allocation to O(maxOccurrenceCount) per segment.
+	// Previously the no-terminal safety cap was COUNT=1000; this is now 500 to align with
+	// the iterator cap. A daily series with no terminal will show at most 500 upcoming entries.
 	maxOccurrenceCount = 500
 	// maxOccurrenceHorizon caps the RRULE UNTIL terminal to a fixed window forward from now,
 	// preventing a far-future KV-supplied end_date_time from generating millions of occurrences.
