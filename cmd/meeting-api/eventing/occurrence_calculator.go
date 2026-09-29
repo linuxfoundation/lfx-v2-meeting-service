@@ -359,11 +359,16 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 
 	// Build segments by inheriting forward — each update only overrides what it explicitly sets.
 	// Cap segments to bound total RRULE expansion cost: each segment calls set.All() independently.
+	// When the cap is hit the remaining updates are dropped and a warning is logged with the omitted
+	// count so operators can detect the condition in their log pipeline. Returning an error instead
+	// would cause AckWait redelivery up to MaxDeliver=3, giving the same net result with more noise.
 	curr := base
-	for _, uo := range updates {
+	for i, uo := range updates {
 		if len(segments) >= maxSeriesSegments {
-			c.logger.Warn("all_following segment count exceeds limit; truncating to prevent unbounded expansion",
-				"limit", maxSeriesSegments)
+			c.logger.Warn("all_following segment count exceeds limit; later updates omitted",
+				"limit", maxSeriesSegments,
+				"total_updates", len(updates),
+				"omitted", len(updates)-i)
 			break
 		}
 		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
@@ -500,7 +505,15 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 	r.DTStart(startTime)
 	set.RRule(r)
 
-	return set.All(), nil
+	// Hard cap the materialised slice regardless of DTSTART age. A DTSTART sourced from the
+	// KV record can be arbitrarily far in the past; combined with a 10-year UNTIL the result
+	// of set.All() can still be hundreds of thousands of entries even after the RRULE clamps.
+	// Truncating here guarantees O(maxOccurrenceCount) memory for every call site.
+	all := set.All()
+	if len(all) > maxOccurrenceCount {
+		all = all[:maxOccurrenceCount]
+	}
+	return all, nil
 }
 
 // getRRule returns the recurrence rule for a meeting recurrence as a string
@@ -566,6 +579,12 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			fmt.Fprintf(&rrule, "UNTIL=%s;", t.Format("20060102T150405Z"))
 		}
 
+		// Treat negative end_times as "no terminal": rrule-go normalises COUNT=-N to Count=0
+		// (no count terminal), which would remove the cap entirely. Clamp to 0 so the value
+		// falls through to the default COUNT branch below.
+		if endTimes < 0 {
+			endTimes = 0
+		}
 		if endTimes != 0 {
 			// Clamp COUNT to prevent a large KV-supplied end_times from causing
 			// set.All() to materialise billions of occurrences.

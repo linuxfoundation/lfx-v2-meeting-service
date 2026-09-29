@@ -653,6 +653,55 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			"a segment with no terminal must be bounded by the default COUNT cap, not by an unclamped KV bound")
 	})
 
+	t.Run("negative end_times is treated as no-terminal and bounded by default COUNT", func(t *testing.T) {
+		// rrule-go normalises COUNT=-1 to Count=0 (no terminal), which would remove the cap.
+		// We treat negative end_times as 0 so it falls through to the default COUNT branch.
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       -1, // crafted negative value
+		}
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"negative end_times must be treated as no-terminal and bounded by the default COUNT cap")
+	})
+
+	t.Run("all_following with far-future OldOccurrenceID completes without OOM via CalculateOccurrences", func(t *testing.T) {
+		// OldOccurrenceID in year 9999 used to become an unclamped UNTIL via the boundUnix passthrough,
+		// causing set.All() to materialise ~2.9M time.Time values (FREQ=DAILY from now to year 9999).
+		// Now boundUnix is only a post-filter; each segment's RRULE is capped at maxOccurrenceCount.
+		// With two segments (base + year-9999 new segment), each capped at 500, the total is at most
+		// 2 * maxOccurrenceCount = 1000 — not millions. The test timeout (60s) enforces the no-hang contract.
+		year9999Unix := int64(253402300800) // 9999-12-31T00:00:00Z
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-far-future-bound",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 1,
+				// No terminal — falls through to default COUNT=maxOccurrenceCount per segment
+			},
+			UpdatedOccurrences: []models.UpdatedOccurrence{
+				{
+					OldOccurrenceID: strconv.FormatInt(year9999Unix, 10),
+					NewOccurrenceID: strconv.FormatInt(year9999Unix+86400, 10),
+					AllFollowing:    true,
+				},
+			},
+		}
+		// Must complete without hanging. numOccurrencesToReturn=1000 is higher than maxOccurrenceCount
+		// so the truncation there doesn't mask an unbounded per-segment expansion.
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 1000)
+		require.NoError(t, err)
+		// Two segments × maxOccurrenceCount each = at most 2 * 500 = 1000.
+		// The old vulnerable path would have returned millions or hung; this must be small.
+		assert.LessOrEqual(t, len(occurrences), 2*maxOccurrenceCount,
+			"a meeting with a year-9999 OldOccurrenceID must expand at most 2×maxOccurrenceCount entries total")
+	})
+
 	t.Run("excessive all_following segments are capped at maxSeriesSegments", func(t *testing.T) {
 		// Build 200 all_following updates — each would trigger a full RRULE expansion
 		// without the segment cap.
