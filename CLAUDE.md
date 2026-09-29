@@ -550,7 +550,7 @@ Converters in `cmd/meeting-api/service/`:
 - `itx_past_meeting_summary_converters.go`: Converts between Goa payloads and ITX summary requests/responses
 - `itx_attachment_converters.go`: Converts between Goa payloads and ITX attachment requests/responses (both meeting and past-meeting)
 
-**Important**: Always use the canonical pointer conversion helpers from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`). Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
+**Important**: Pick the pointer conversion per field from the proxy response contract in `docs/api-contracts/itx-*.md`: an always-present pointer (`utils.BoolPtr`, or `&resp.Field` for a string or int) when the contract promises the field, an omit-zero helper from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`) when zero/empty/false must be omitted — see `.claude/rules/itx-converters.md`. Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
 
 ### Adding New Endpoints
 
@@ -558,7 +558,7 @@ Converters in `cmd/meeting-api/service/`:
 2. **Run `make apigen`** to regenerate `gen/`. Commit the generated files alongside the design change.
 3. **Implement the Goa adapter** in the appropriate `cmd/meeting-api/api_itx_*.go` file — translation only; no business logic here.
 4. **Add or extend the service** in `internal/service/itx/` — embed `auditStamper` if the endpoint is a write that needs `created_by`/`updated_by`.
-5. **Add converters** in `cmd/meeting-api/service/itx_*_converters.go` — use `StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse` for optional fields.
+5. **Add converters** in `cmd/meeting-api/service/itx_*_converters.go` — choose always-present vs omit-zero pointer conversion per field from the contract (`.claude/rules/itx-converters.md`).
 6. **Update the Heimdall ruleset** in `charts/lfx-v2-meeting-service/templates/ruleset.yaml` if the endpoint needs a new auth rule.
 7. **Write tests** for the new converter and service method.
 8. **Update CLAUDE.md API Endpoints section** and `README.md` endpoint tables.
@@ -586,10 +586,10 @@ Converters in `cmd/meeting-api/service/`:
 **Problem**: A `slog.DebugContext` call logs a request body that contains `created_by.name` or `created_by.email` in plaintext.  
 **Solution**: Always pass request bodies through `requestJSONForLog(req)` and response bodies through `responseJSONForLog(respBody)` from `internal/infrastructure/proxy/logredact.go`. For other sensitive strings, use `pkg/redaction.Redact(s)` or `pkg/redaction.RedactEmail(email)`.
 
-### 5. Using raw pointer conversion instead of helpers
+### 5. Choosing the wrong pointer conversion for a field
 
-**Problem**: Code does `&someString` or `&someInt` for optional ITX fields, which passes zero-value pointers that ITX interprets as explicit empty/zero values.  
-**Solution**: Always use `utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`, `utils.BoolPtrOmitFalse` from `pkg/utils/ptr.go`. These return `nil` for zero/empty inputs, which causes ITX to treat the field as absent.
+**Problem**: A response field the contract wants omitted at zero/empty/false is built with `&someString` / `&someInt` / `utils.BoolPtr`, so the client receives an explicit empty value; or a field the contract promises always-present is built with an omit-zero helper, so it disappears at zero. Outbound to ITX, a deliberate `false`/zero is lost because an ITX or domain model field is a non-pointer with `omitempty`.  
+**Solution**: Judge each field against `docs/api-contracts/itx-*.md`: omit-zero helpers (`utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`, `utils.BoolPtrOmitFalse`) return `nil` at the zero value; always-present pointers (`utils.BoolPtr`, `&resp.Field`) never do. For Goa → ITX no helper applies — make the ITX (and any intermediate domain) field a pointer and carry the payload pointer through unchanged. Full rule: `.claude/rules/itx-converters.md`.
 
 ### 6. Wrong audit type on attachment endpoints
 

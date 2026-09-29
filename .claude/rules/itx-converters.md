@@ -1,6 +1,8 @@
 ---
 paths:
+  - "cmd/meeting-api/api_itx_*.go"
   - "cmd/meeting-api/service/itx_*_converters.go"
+  - "internal/domain/models/**"
   - "pkg/models/itx/**"
   - "internal/service/itx/**"
 ---
@@ -31,9 +33,15 @@ is the **ITX model field type and JSON tag**: a non-pointer field with
 silently drops a deliberate `false`. When an explicit zero, empty string or
 `false` must reach ITX, the root cause is the ITX model field type, so the
 fix starts there: make the field a pointer (as `Approved *bool` in
-`pkg/models/itx/past_meeting_summaries.go`) and then update the converter or
-service assignment to carry the payload's pointer through unchanged (as
-`itx_past_meeting_summary_converters.go` does for `Approved`) instead of
-dereferencing it with `utils.BoolValue` and the like. A helper-only or
-converter-only fix cannot do it: the field type discards the value before it
-is serialized.
+`pkg/models/itx/past_meeting_summaries.go`, and `AutoEmailReminderEnabled` /
+`ShowMeetingAttendees` in `internal/domain/models/itx_meeting.go`) and then
+carry the payload's pointer **unchanged through every hop** — the handler copy
+in `cmd/meeting-api/api_itx_*.go`, the converter, any intermediate domain
+field (make it a pointer too, as those two are), and the service assignment in
+`internal/service/itx/` (as `itx_past_meeting_summary_converters.go` does for
+`Approved`) — instead of dereferencing it with `utils.BoolValue` /
+`utils.StringValue` at any hop. Re-pointering at a later hop
+(`utils.BoolPtr(req.X)`, `&req.X`) turns an omitted field into an explicit
+zero and is the same defect. A helper-only, converter-only or handler-only
+fix cannot do it: the first non-pointer field discards the value before it is
+serialized.

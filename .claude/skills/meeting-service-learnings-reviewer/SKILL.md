@@ -66,10 +66,12 @@ fetch, never resolve a remote ref, and never derive a base of your own.
 
 **Git evidence stays pinned, and so does check evidence.** Run a working-tree
 check only while the checkout still represents the pinned target closely enough
-for that check to mean anything — check, do not assume, because the pre-PR
-review runs in the background while the developer may keep working. If HEAD or
-tracked content has moved, **skip the check or say plainly that it was not
-run**. Never present a result from a later commit or a dirty
+for that check to mean anything — check, do not assume. The pre-PR review
+runs you in the background and freezes the tree: the main session must not
+edit, stage, commit or check out anything until every report is in, so the
+working tree stays at the pinned target. That is the invariant; if it is
+broken — HEAD or tracked content has moved — **skip the check or say plainly
+that it was not run**. Never present a result from a later commit or a dirty
 tree as evidence about the pinned target.
 
 - Match **only the changes under review**. A live pre-existing instance of a

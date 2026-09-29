@@ -16,7 +16,8 @@ It is deliberately *not* a general review checklist. Correctness, security and
 test quality in the abstract, together with this repo's written conventions and
 contracts, belong to the central `general` reviewer
 (`/lfx-skills:lfx-general-code-review`), which reads those rules from
-`CLAUDE.md` and `docs/`. What lives here is only what this repo's own review
+`CLAUDE.md`, `.claude/rules/`, and the docs `CLAUDE.md` points to. What lives
+here is only what this repo's own review
 history proves, mechanically, about itself.
 
 ## Evidence window
