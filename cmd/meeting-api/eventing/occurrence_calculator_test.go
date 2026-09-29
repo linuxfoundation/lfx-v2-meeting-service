@@ -549,3 +549,113 @@ func parseOccurrenceID(t *testing.T, occurrenceID string) int64 {
 	require.NoError(t, err)
 	return ts
 }
+
+// TestOccurrenceCalculator_BoundedExpansion verifies that crafted KV values cannot cause
+// unbounded memory/CPU consumption via the occurrence calculator (CWE-770).
+func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
+	calc := NewOccurrenceCalculator(slog.Default())
+	startTime := time.Now().Add(24 * time.Hour).Truncate(time.Second) // future meeting
+
+	t.Run("huge end_times is clamped to maxOccurrenceCount", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-huge-count",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 1,
+				EndTimes:       2_000_000_000, // crafted: 2 billion
+			},
+		}
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err)
+		// The expansion must complete quickly and return at most 100 (numOccurrencesToReturn).
+		assert.LessOrEqual(t, len(occurrences), 100,
+			"huge end_times must not generate more than numOccurrencesToReturn occurrences")
+	})
+
+	t.Run("far-future end_date_time is clamped to maxOccurrenceHorizon", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-far-future",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 1,
+				EndDateTime:    "9999-12-31T00:00:00Z", // crafted: year 9999
+			},
+		}
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), 100,
+			"far-future end_date_time must not generate more than numOccurrencesToReturn occurrences")
+	})
+
+	t.Run("negative repeat_interval is rejected", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-neg-interval",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: -1,
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "negative repeat_interval must return an error")
+	})
+
+	t.Run("out-of-range monthly_week_day is rejected", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-bad-weekday",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           3, // Monthly
+				RepeatInterval: 1,
+				MonthlyWeek:    1,
+				MonthlyWeekDay: 99, // invalid: would panic without the bounds check
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "out-of-range monthly_week_day must return an error")
+	})
+
+	t.Run("excessive all_following segments are capped at maxSeriesSegments", func(t *testing.T) {
+		// Build 200 all_following updates — each would trigger a full RRULE expansion
+		// without the segment cap.
+		updates := make([]models.UpdatedOccurrence, 200)
+		baseUnix := startTime.Unix()
+		for i := range updates {
+			oldUnix := baseUnix + int64(i)*7*24*3600   // weekly offsets
+			newUnix := baseUnix + int64(i+1)*7*24*3600 // shifted by one week
+			updates[i] = models.UpdatedOccurrence{
+				OldOccurrenceID: strconv.FormatInt(oldUnix, 10),
+				NewOccurrenceID: strconv.FormatInt(newUnix, 10),
+				AllFollowing:    true,
+			}
+		}
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-many-segments",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           2, // Weekly
+				RepeatInterval: 1,
+				EndTimes:       10,
+			},
+			UpdatedOccurrences: updates,
+		}
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err)
+		// Must complete (not hang) and honour the caller's limit.
+		assert.LessOrEqual(t, len(occurrences), 100)
+	})
+}

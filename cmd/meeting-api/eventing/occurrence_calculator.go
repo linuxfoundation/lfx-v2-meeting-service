@@ -19,6 +19,16 @@ import (
 
 const (
 	meetingEndBuffer = 40 * time.Minute
+
+	// maxOccurrenceCount caps the RRULE COUNT terminal to prevent unbounded expansion from
+	// a KV-supplied end_times value. Zoom caps recurrences at ~60; 500 is generous.
+	maxOccurrenceCount = 500
+	// maxOccurrenceHorizon caps the RRULE UNTIL terminal to a fixed window forward from now,
+	// preventing a far-future KV-supplied end_date_time from generating millions of occurrences.
+	maxOccurrenceHorizon = 10 * 365 * 24 * time.Hour
+	// maxSeriesSegments caps the number of series segments derived from updated_occurrences
+	// to prevent a crafted long all_following array from multiplying RRULE expansions.
+	maxSeriesSegments = 100
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
@@ -132,7 +142,15 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 			segTimezone = "UTC"
 		}
 		segStart := time.Unix(seg.startUnix, 0)
-		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
+		// Pass the segment bound as the RRULE UNTIL so set.All() does not materialise
+		// occurrences beyond the point where the next segment takes over. Without this,
+		// a bounded segment still expands its full COUNT/UNTIL before the loop break fires.
+		var segEndTime *time.Time
+		if boundUnix > 0 {
+			t := time.Unix(boundUnix, 0)
+			segEndTime = &t
+		}
+		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, segEndTime)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
 		}
@@ -343,8 +361,14 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 	})
 
 	// Build segments by inheriting forward — each update only overrides what it explicitly sets.
+	// Cap segments to bound total RRULE expansion cost: each segment calls set.All() independently.
 	curr := base
 	for _, uo := range updates {
+		if len(segments) >= maxSeriesSegments {
+			c.logger.Warn("all_following segment count exceeds limit; truncating to prevent unbounded expansion",
+				"limit", maxSeriesSegments)
+			break
+		}
 		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
 		if err != nil {
 			c.logger.Warn("failed to parse NewOccurrenceID for all_following update, skipping",
@@ -493,6 +517,9 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 	fmt.Fprintf(&rrule, "FREQ=%s;", strings.ToUpper(typeName[reccurrence.Type-1]))
 	rrule.WriteString("WKST=SU;")
 
+	if reccurrence.RepeatInterval < 0 {
+		return "", fmt.Errorf("invalid repeat_interval %d: must be non-negative", reccurrence.RepeatInterval)
+	}
 	if reccurrence.RepeatInterval != 0 {
 		fmt.Fprintf(&rrule, "INTERVAL=%d;", reccurrence.RepeatInterval)
 	}
@@ -504,6 +531,9 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		}
 		fmt.Fprintf(&rrule, "BYDAY=%s;", s)
 	} else if reccurrence.MonthlyWeek != 0 && reccurrence.MonthlyWeekDay != 0 {
+		if reccurrence.MonthlyWeekDay < 1 || reccurrence.MonthlyWeekDay > 7 {
+			return "", fmt.Errorf("invalid monthly_week_day %d: must be 1–7", reccurrence.MonthlyWeekDay)
+		}
 		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
 
@@ -531,15 +561,25 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			if err != nil {
 				return "", fmt.Errorf("failed to parse recurrence end_date_time %s: %w", reccurrence.EndDateTime, err)
 			}
+			// Clamp UNTIL to prevent a far-future KV-supplied end_date_time from
+			// causing set.All() to materialise millions of occurrences.
+			if horizon := time.Now().Add(maxOccurrenceHorizon); t.After(horizon) {
+				t = horizon
+			}
 			fmt.Fprintf(&rrule, "UNTIL=%s;", t.Format("20060102T150405Z"))
 		}
 
 		if endTimes != 0 {
+			// Clamp COUNT to prevent a large KV-supplied end_times from causing
+			// set.All() to materialise billions of occurrences.
+			if endTimes > maxOccurrenceCount {
+				endTimes = maxOccurrenceCount
+			}
 			fmt.Fprintf(&rrule, "COUNT=%d;", endTimes)
 		} else if reccurrence.EndDateTime == "" {
 			// No terminal condition — add a safety cap to prevent set.All() from
 			// generating an unbounded sequence and exhausting memory.
-			rrule.WriteString("COUNT=1000;")
+			fmt.Fprintf(&rrule, "COUNT=%d;", maxOccurrenceCount)
 		}
 	}
 
