@@ -728,9 +728,16 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			},
 			UpdatedOccurrences: updates,
 		}
-		// Must complete without hanging (segment cap prevents 200 × full expansions).
-		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		// Assert the segment cap directly — CalculateOccurrences always truncates to
+		// numOccurrencesToReturn, so asserting on its output cannot detect a missing cap.
+		// buildSeriesSegments is the function that enforces maxSeriesSegments.
+		segs, err := calc.buildSeriesSegments(meeting)
 		require.NoError(t, err)
-		assert.LessOrEqual(t, len(occurrences), 100)
+		assert.Len(t, segs, maxSeriesSegments,
+			"200 all_following updates must be capped to maxSeriesSegments by buildSeriesSegments")
+
+		// Also verify CalculateOccurrences completes without hanging (timing enforces the no-hang contract).
+		_, err = calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err)
 	})
 }

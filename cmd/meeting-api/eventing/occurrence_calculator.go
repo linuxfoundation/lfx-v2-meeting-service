@@ -505,15 +505,21 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 	r.DTStart(startTime)
 	set.RRule(r)
 
-	// Hard cap the materialised slice regardless of DTSTART age. A DTSTART sourced from the
-	// KV record can be arbitrarily far in the past; combined with a 10-year UNTIL the result
-	// of set.All() can still be hundreds of thousands of entries even after the RRULE clamps.
-	// Truncating here guarantees O(maxOccurrenceCount) memory for every call site.
-	all := set.All()
-	if len(all) > maxOccurrenceCount {
-		all = all[:maxOccurrenceCount]
+	// Use the lazy iterator to bound both the CPU work and the allocation. set.All() materialises
+	// the entire series into a slice before returning — a KV-supplied DTSTART in year 0001 with
+	// UNTIL=now+10y still produces ~740k time.Time values from set.All() even after the RRULE
+	// clamps. The iterator stops after maxOccurrenceCount calls, so work is O(maxOccurrenceCount)
+	// regardless of DTSTART age or the RRULE terminal.
+	next := set.Iterator()
+	out := make([]time.Time, 0, maxOccurrenceCount)
+	for len(out) < maxOccurrenceCount {
+		t, ok := next()
+		if !ok {
+			break
+		}
+		out = append(out, t)
 	}
-	return all, nil
+	return out, nil
 }
 
 // getRRule returns the recurrence rule for a meeting recurrence as a string
