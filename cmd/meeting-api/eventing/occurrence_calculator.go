@@ -142,15 +142,12 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 			segTimezone = "UTC"
 		}
 		segStart := time.Unix(seg.startUnix, 0)
-		// Pass the segment bound as the RRULE UNTIL so set.All() does not materialise
-		// occurrences beyond the point where the next segment takes over. Without this,
-		// a bounded segment still expands its full COUNT/UNTIL before the loop break fires.
-		var segEndTime *time.Time
-		if boundUnix > 0 {
-			t := time.Unix(boundUnix, 0)
-			segEndTime = &t
-		}
-		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, segEndTime)
+		// Pass nil so getRRule uses the clamped COUNT/UNTIL logic from the recurrence fields.
+		// The boundUnix filter is applied per-occurrence in the loop below (line "Stop when we reach
+		// the boundary"). Forwarding boundUnix as UNTIL would bypass the COUNT/horizon clamps because
+		// getRRule skips them when endTime != nil, and boundUnix itself is a KV-supplied unix timestamp
+		// (old_occurrence_id) with no range check — a year-9999 value would become an unclamped UNTIL.
+		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
 		}
