@@ -549,3 +549,236 @@ func parseOccurrenceID(t *testing.T, occurrenceID string) int64 {
 	require.NoError(t, err)
 	return ts
 }
+
+// TestOccurrenceCalculator_BoundedExpansion verifies that crafted KV values cannot cause
+// unbounded memory/CPU consumption via the occurrence calculator (CWE-770).
+//
+// Tests that check RRULE expansion bounds call getRRuleOccurrences directly so they assert
+// on the raw slice returned by set.All() — before CalculateOccurrences truncates to
+// numOccurrencesToReturn. A test that only checks len(CalculateOccurrences(...)) <= 100 cannot
+// detect unbounded materialisation because the truncation masks it.
+func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
+	calc := NewOccurrenceCalculator(slog.Default())
+	startTime := time.Now().Add(24 * time.Hour).Truncate(time.Second) // future meeting
+
+	t.Run("ancient DTSTART with date-terminal stays O(maxOccurrenceCount) via iterator", func(t *testing.T) {
+		// When DTSTART is in year 0001 and UNTIL=now+10y (the max clamped horizon), rrule-go's
+		// set.All() would materialise ~740k time.Time values; the iterator must stop after
+		// maxOccurrenceCount calls instead. Assert on len AND wall-clock time so a regression
+		// back to set.All() is detected (set.All() for 740k entries takes >100ms; 1000 iterator
+		// calls take <1ms).
+		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndDateTime:    time.Now().Add(maxOccurrenceHorizon).Format(time.RFC3339), // max horizon
+		}
+		start := time.Now()
+		occurrences, err := calc.getRRuleOccurrences(ancient, "UTC", rec, nil)
+		elapsed := time.Since(start)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"ancient DTSTART with date terminal must not exceed maxOccurrenceCount")
+		assert.Less(t, elapsed, 200*time.Millisecond,
+			"ancient DTSTART must complete in O(maxOccurrenceCount) time via iterator, not O(series length)")
+	})
+
+	t.Run("huge end_times is clamped to maxOccurrenceCount before set.All()", func(t *testing.T) {
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       2_000_000_000, // crafted: 2 billion
+		}
+		// Call getRRuleOccurrences directly: this is what set.All() materialises.
+		// Without the clamp this would OOM; with it the slice must be <= maxOccurrenceCount.
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"huge end_times must be clamped to maxOccurrenceCount before set.All() runs")
+	})
+
+	t.Run("far-future end_date_time is clamped to maxOccurrenceHorizon before set.All()", func(t *testing.T) {
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndDateTime:    "9999-12-31T00:00:00Z", // crafted: year 9999
+		}
+		// With FREQ=DAILY and UNTIL=9999 this would be ~2.9M occurrences without the clamp.
+		// The horizon clamp limits UNTIL to now+10y → at most ~3650 daily occurrences.
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		horizonDays := int(maxOccurrenceHorizon.Hours()/24) + 2 // a little slack for DST etc.
+		assert.LessOrEqual(t, len(occurrences), horizonDays,
+			"far-future end_date_time must be clamped to maxOccurrenceHorizon before set.All() runs")
+	})
+
+	t.Run("normal end_times is preserved and not over-clamped", func(t *testing.T) {
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       3, // legitimate small count
+		}
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		assert.Equal(t, 3, len(occurrences),
+			"a legitimate end_times:3 must produce exactly 3 occurrences, not be over-clamped")
+	})
+
+	t.Run("negative repeat_interval is rejected", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-neg-interval",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: -1,
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "negative repeat_interval must return an error")
+	})
+
+	t.Run("huge repeat_interval is rejected", func(t *testing.T) {
+		// A near-MaxInt repeat_interval can trigger O(N) month normalization in rrule-go
+		// before yielding the second occurrence. Reject anything above 99.
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-huge-interval",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 100,
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "repeat_interval > 99 must return an error")
+	})
+
+	t.Run("out-of-range monthly_week_day is rejected", func(t *testing.T) {
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-bad-weekday",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           3, // Monthly
+				RepeatInterval: 1,
+				MonthlyWeek:    1,
+				MonthlyWeekDay: 99, // invalid: would panic without the bounds check
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "out-of-range monthly_week_day must return an error")
+	})
+
+	t.Run("segment with KV-supplied far-future old_occurrence_id is bounded before set.All()", func(t *testing.T) {
+		// old_occurrence_id in year 9999 becomes boundUnix; formerly this was forwarded as an
+		// unclamped UNTIL, bypassing the horizon clamp. Now boundUnix is only used as a
+		// post-filter in the loop; the RRULE itself uses the clamped terminal from the recurrence.
+		// We verify this by checking that the per-segment expansion (getRRuleOccurrences with nil
+		// endTime) produces <= maxOccurrenceCount entries regardless of boundUnix.
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			// No end_times, no end_date_time → default COUNT=maxOccurrenceCount
+		}
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"a segment with no terminal must be bounded by the default COUNT cap, not by an unclamped KV bound")
+	})
+
+	t.Run("negative end_times is treated as no-terminal and bounded by default COUNT", func(t *testing.T) {
+		// rrule-go normalises COUNT=-1 to Count=0 (no terminal), which would remove the cap.
+		// We treat negative end_times as 0 so it falls through to the default COUNT branch.
+		rec := &models.ZoomMeetingRecurrence{
+			Type:           1, // Daily
+			RepeatInterval: 1,
+			EndTimes:       -1, // crafted negative value
+		}
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
+			"negative end_times must be treated as no-terminal and bounded by the default COUNT cap")
+	})
+
+	t.Run("all_following with far-future OldOccurrenceID completes without OOM via CalculateOccurrences", func(t *testing.T) {
+		// OldOccurrenceID in year 9999 used to become an unclamped UNTIL via the boundUnix passthrough,
+		// causing set.All() to materialise ~2.9M time.Time values (FREQ=DAILY from now to year 9999).
+		// Now boundUnix is only a post-filter; each segment's RRULE is capped at maxOccurrenceCount.
+		// With two segments (base + year-9999 new segment), each capped at 1000, the total is at most
+		// 2 * maxOccurrenceCount = 1000 — not millions. The test timeout (60s) enforces the no-hang contract.
+		year9999Unix := int64(253402300800) // 9999-12-31T00:00:00Z
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-far-future-bound",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 1,
+				// No terminal — falls through to default COUNT=maxOccurrenceCount per segment
+			},
+			UpdatedOccurrences: []models.UpdatedOccurrence{
+				{
+					OldOccurrenceID: strconv.FormatInt(year9999Unix, 10),
+					NewOccurrenceID: strconv.FormatInt(year9999Unix+86400, 10),
+					AllFollowing:    true,
+				},
+			},
+		}
+		// Must complete without hanging. numOccurrencesToReturn=2001 is higher than 2×maxOccurrenceCount
+		// so the truncation there doesn't mask an unbounded per-segment expansion.
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 2001)
+		require.NoError(t, err)
+		// Two segments × maxOccurrenceCount each = at most 2 * 1000 = 2000.
+		// The old vulnerable path would have returned millions or hung; this must be small.
+		assert.LessOrEqual(t, len(occurrences), 2*maxOccurrenceCount,
+			"a meeting with a year-9999 OldOccurrenceID must expand at most 2×maxOccurrenceCount entries total")
+	})
+
+	t.Run("excessive all_following segments are capped at maxSeriesSegments", func(t *testing.T) {
+		// Build 200 all_following updates — each would trigger a full RRULE expansion
+		// without the segment cap. The cap keeps the most recent maxSeriesSegments-1 updates
+		// (plus the base) so the current active cadence is always included.
+		updates := make([]models.UpdatedOccurrence, 200)
+		baseUnix := startTime.Unix()
+		for i := range updates {
+			oldUnix := baseUnix + int64(i)*7*24*3600   // weekly offsets
+			newUnix := baseUnix + int64(i+1)*7*24*3600 // shifted by one week
+			updates[i] = models.UpdatedOccurrence{
+				OldOccurrenceID: strconv.FormatInt(oldUnix, 10),
+				NewOccurrenceID: strconv.FormatInt(newUnix, 10),
+				AllFollowing:    true,
+			}
+		}
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-many-segments",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           2, // Weekly
+				RepeatInterval: 1,
+				EndTimes:       10,
+			},
+			UpdatedOccurrences: updates,
+		}
+		// Assert the segment cap directly — CalculateOccurrences always truncates to
+		// numOccurrencesToReturn, so asserting on its output cannot detect a missing cap.
+		// buildSeriesSegments is the function that enforces maxSeriesSegments.
+		segs, err := calc.buildSeriesSegments(meeting)
+		require.NoError(t, err)
+		assert.Len(t, segs, maxSeriesSegments,
+			"200 all_following updates must be capped to maxSeriesSegments by buildSeriesSegments")
+
+		// Also verify CalculateOccurrences completes without hanging (timing enforces the no-hang contract).
+		_, err = calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err)
+	})
+}

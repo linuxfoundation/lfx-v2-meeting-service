@@ -19,6 +19,20 @@ import (
 
 const (
 	meetingEndBuffer = 40 * time.Minute
+
+	// maxOccurrenceCount is the hard cap applied in two places:
+	// (1) the RRULE COUNT terminal: KV-supplied end_times values above this are clamped,
+	//     preventing a crafted large value from materialising billions of time.Time values.
+	// (2) the lazy iterator in getRRuleOccurrences: the iterator stops after this many calls,
+	//     bounding CPU and allocation to O(maxOccurrenceCount) per segment regardless of
+	//     DTSTART age or the RRULE terminal.
+	maxOccurrenceCount = 1000
+	// maxOccurrenceHorizon caps the RRULE UNTIL terminal to a fixed window forward from now,
+	// preventing a far-future KV-supplied end_date_time from generating millions of occurrences.
+	maxOccurrenceHorizon = 10 * 365 * 24 * time.Hour
+	// maxSeriesSegments caps the number of series segments derived from updated_occurrences
+	// to prevent a crafted long all_following array from multiplying RRULE expansions.
+	maxSeriesSegments = 100
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
@@ -132,6 +146,11 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 			segTimezone = "UTC"
 		}
 		segStart := time.Unix(seg.startUnix, 0)
+		// Pass nil so getRRule uses the clamped COUNT/UNTIL logic from the recurrence fields.
+		// The boundUnix filter is applied per-occurrence in the loop below (line "Stop when we reach
+		// the boundary"). Forwarding boundUnix as UNTIL would bypass the COUNT/horizon clamps because
+		// getRRule skips them when endTime != nil, and boundUnix itself is a KV-supplied unix timestamp
+		// (old_occurrence_id) with no range check — a year-9999 value would become an unclamped UNTIL.
 		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
@@ -343,6 +362,20 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 	})
 
 	// Build segments by inheriting forward — each update only overrides what it explicitly sets.
+	// Cap segments to bound total RRULE expansion cost: each segment calls getRRuleOccurrences independently.
+	// When updates exceed the cap, keep the most recent (maxSeriesSegments-1) updates and drop the oldest.
+	// Dropping the oldest is correct: for upcoming occurrences only the current active cadence matters,
+	// and the most recent updates define it. Dropping the newest (breaking early on an ascending-sorted
+	// slice) would silently omit the current cadence — the opposite of what we want.
+	// Log a warning with counts so operators can detect the condition in their log pipeline.
+	if len(updates) > maxSeriesSegments-1 {
+		omitted := len(updates) - (maxSeriesSegments - 1)
+		c.logger.Warn("all_following segment count exceeds limit; oldest updates omitted",
+			"limit", maxSeriesSegments,
+			"total_updates", len(updates),
+			"omitted", omitted)
+		updates = updates[omitted:]
+	}
 	curr := base
 	for _, uo := range updates {
 		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
@@ -457,7 +490,7 @@ func timeInLocation(t time.Time, name string) (time.Time, error) {
 }
 
 // getRRuleOccurrences given a start time, optional timezone, and recurrence pattern, calculates and returns
-// the list of occurrence times
+// the list of occurrence times.
 func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone string, recurrence *models.ZoomMeetingRecurrence, endTime *time.Time) ([]time.Time, error) {
 	rruleString, err := c.getRRule(recurrence, endTime)
 	if err != nil {
@@ -479,7 +512,21 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 	r.DTStart(startTime)
 	set.RRule(r)
 
-	return set.All(), nil
+	// Use the lazy iterator to bound both the CPU work and the allocation. set.All() materialises
+	// the entire series into a slice before returning — a KV-supplied DTSTART in year 0001 with
+	// UNTIL=now+10y still produces ~740k time.Time values from set.All() even after the RRULE
+	// clamps. The iterator stops after maxOccurrenceCount calls, so work is O(maxOccurrenceCount)
+	// regardless of DTSTART age or the RRULE terminal.
+	next := set.Iterator()
+	out := make([]time.Time, 0, maxOccurrenceCount)
+	for len(out) < maxOccurrenceCount {
+		t, ok := next()
+		if !ok {
+			break
+		}
+		out = append(out, t)
+	}
+	return out, nil
 }
 
 // getRRule returns the recurrence rule for a meeting recurrence as a string
@@ -493,6 +540,12 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 	fmt.Fprintf(&rrule, "FREQ=%s;", strings.ToUpper(typeName[reccurrence.Type-1]))
 	rrule.WriteString("WKST=SU;")
 
+	if reccurrence.RepeatInterval < 0 {
+		return "", fmt.Errorf("invalid repeat_interval %d: must be non-negative", reccurrence.RepeatInterval)
+	}
+	if reccurrence.RepeatInterval > 99 {
+		return "", fmt.Errorf("invalid repeat_interval %d: must be 99 or less", reccurrence.RepeatInterval)
+	}
 	if reccurrence.RepeatInterval != 0 {
 		fmt.Fprintf(&rrule, "INTERVAL=%d;", reccurrence.RepeatInterval)
 	}
@@ -504,6 +557,9 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		}
 		fmt.Fprintf(&rrule, "BYDAY=%s;", s)
 	} else if reccurrence.MonthlyWeek != 0 && reccurrence.MonthlyWeekDay != 0 {
+		if reccurrence.MonthlyWeekDay < 1 || reccurrence.MonthlyWeekDay > 7 {
+			return "", fmt.Errorf("invalid monthly_week_day %d: must be 1–7", reccurrence.MonthlyWeekDay)
+		}
 		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
 
@@ -531,15 +587,31 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			if err != nil {
 				return "", fmt.Errorf("failed to parse recurrence end_date_time %s: %w", reccurrence.EndDateTime, err)
 			}
+			// Clamp UNTIL to prevent a far-future KV-supplied end_date_time from
+			// causing set.All() to materialise millions of occurrences.
+			if horizon := time.Now().Add(maxOccurrenceHorizon); t.After(horizon) {
+				t = horizon
+			}
 			fmt.Fprintf(&rrule, "UNTIL=%s;", t.Format("20060102T150405Z"))
 		}
 
+		// Treat negative end_times as "no terminal": rrule-go normalises COUNT=-N to Count=0
+		// (no count terminal), which would remove the cap entirely. Clamp to 0 so the value
+		// falls through to the default COUNT branch below.
+		if endTimes < 0 {
+			endTimes = 0
+		}
 		if endTimes != 0 {
+			// Clamp COUNT to prevent a large KV-supplied end_times from causing
+			// set.All() to materialise billions of occurrences.
+			if endTimes > maxOccurrenceCount {
+				endTimes = maxOccurrenceCount
+			}
 			fmt.Fprintf(&rrule, "COUNT=%d;", endTimes)
 		} else if reccurrence.EndDateTime == "" {
 			// No terminal condition — add a safety cap to prevent set.All() from
 			// generating an unbounded sequence and exhausting memory.
-			rrule.WriteString("COUNT=1000;")
+			fmt.Fprintf(&rrule, "COUNT=%d;", maxOccurrenceCount)
 		}
 	}
 
