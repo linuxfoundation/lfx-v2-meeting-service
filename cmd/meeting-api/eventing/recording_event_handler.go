@@ -234,11 +234,16 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	if recordingData.RecordingAccess == "" {
 		recordingData.RecordingAccess = defaultArtifactAccess
 	}
-	// The recording document itself embeds transcript_access as metadata; set it from the
-	// parent too so the recording payload is consistent with the transcript document.
-	recordingData.TranscriptAccess = parent.TranscriptAccess
-	if recordingData.TranscriptAccess == "" {
-		recordingData.TranscriptAccess = defaultArtifactAccess
+	// Only copy transcript_access from the parent when transcript files exist; the field must
+	// be omitted (omitempty) when the recording has no transcript. The raw KV snapshot may
+	// carry a stale non-empty value, so clear it explicitly when TranscriptEnabled is false.
+	if recordingData.TranscriptEnabled {
+		recordingData.TranscriptAccess = parent.TranscriptAccess
+		if recordingData.TranscriptAccess == "" {
+			recordingData.TranscriptAccess = defaultArtifactAccess
+		}
+	} else {
+		recordingData.TranscriptAccess = ""
 	}
 
 	if transcriptData != nil {

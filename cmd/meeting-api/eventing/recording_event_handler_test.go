@@ -228,7 +228,10 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 		assert.Equal(t, defaultArtifactAccess, pub.recordingData.RecordingAccess, "parent not found must fail closed to meeting_hosts")
 	})
 
-	t.Run("parent empty access falls back to meeting_hosts for both recording and transcript", func(t *testing.T) {
+	t.Run("parent empty access falls back to meeting_hosts for recording", func(t *testing.T) {
+		// When the parent carries no access values, recording_access defaults to "meeting_hosts"
+		// (fail-closed). transcript_access is NOT defaulted here because baseRecordingData has
+		// no transcript files (TranscriptEnabled == false), so the field stays empty (omitempty).
 		pub := &recordingTestPublisher{}
 		recordingMap := baseRecordingData("public", "public")
 		v1Objects, v1Mappings := setupKVs(t, recordingMap, baseParentData("", ""))
@@ -238,23 +241,28 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 		require.False(t, retry)
 		require.NotNil(t, pub.recordingData)
 		assert.Equal(t, defaultArtifactAccess, pub.recordingData.RecordingAccess, "empty parent recording_access must fall back to meeting_hosts")
-		assert.Equal(t, defaultArtifactAccess, pub.recordingData.TranscriptAccess, "empty parent transcript_access must fall back to meeting_hosts on recording doc")
+		assert.Empty(t, pub.recordingData.TranscriptAccess, "no transcript files: transcript_access must stay empty (omitempty), not defaulted to meeting_hosts")
 	})
 
-	t.Run("recordingData.TranscriptAccess is set from parent (not only transcriptData)", func(t *testing.T) {
-		// The recording document itself embeds transcript_access. Verify it comes from
-		// the parent, not the stale snapshot, even when no separate transcript document is published.
+	t.Run("recordingData.TranscriptAccess is set from parent when transcript files exist", func(t *testing.T) {
+		// When a TRANSCRIPT file is present (TranscriptEnabled == true), the recording document's
+		// embedded transcript_access must come from the parent, not the stale snapshot.
 		pub := &recordingTestPublisher{}
-		recordingMap := baseRecordingData("meeting_hosts", "public") // snapshot: transcript public
-		v1Objects, v1Mappings := setupKVs(t, recordingMap, baseParentData("meeting_hosts", "meeting_hosts"))
+		recordingMapWithTranscript := baseRecordingData("meeting_hosts", "public") // snapshot: transcript public
+		recordingMapWithTranscript["recording_files"] = []any{
+			map[string]any{"file_type": "TRANSCRIPT"},
+		}
+		v1Objects, v1Mappings := setupKVs(t, recordingMapWithTranscript, baseParentData("meeting_hosts", "meeting_hosts"))
 		h := buildRecordingHandler(pub, v1Objects, v1Mappings)
 
-		retry := h.handlePastMeetingRecordingUpdate(context.Background(), recordingKey, recordingMap)
+		retry := h.handlePastMeetingRecordingUpdate(context.Background(), recordingKey, recordingMapWithTranscript)
 		require.False(t, retry)
 		require.NotNil(t, pub.recordingData)
 		assert.Equal(t, "meeting_hosts", pub.recordingData.TranscriptAccess,
 			"recording doc TranscriptAccess must use parent value, not stale snapshot")
-		// No transcript files → no separate transcript document.
-		assert.Nil(t, pub.transcriptData, "no transcript files means no transcript document published")
+		// With a transcript file, a separate transcript document is published.
+		require.NotNil(t, pub.transcriptData, "transcript file present means transcript document is published")
+		assert.Equal(t, "meeting_hosts", pub.transcriptData.TranscriptAccess,
+			"transcript doc TranscriptAccess must also use parent value")
 	})
 }
