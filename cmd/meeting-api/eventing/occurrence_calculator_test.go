@@ -565,7 +565,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		// When DTSTART is in year 0001 and UNTIL=now+10y (the max clamped horizon), rrule-go's
 		// set.All() would materialise ~740k time.Time values; the iterator must stop after
 		// maxOccurrenceCount calls instead. Assert on len AND wall-clock time so a regression
-		// back to set.All() is detected (set.All() for 740k entries takes >100ms; 500 iterator
+		// back to set.All() is detected (set.All() for 740k entries takes >100ms; 1000 iterator
 		// calls take <1ms).
 		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 		rec := &models.ZoomMeetingRecurrence{
@@ -640,6 +640,24 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		require.Error(t, err, "negative repeat_interval must return an error")
 	})
 
+	t.Run("huge repeat_interval is rejected", func(t *testing.T) {
+		// A near-MaxInt repeat_interval can trigger O(N) month normalization in rrule-go
+		// before yielding the second occurrence. Reject anything above 99.
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-huge-interval",
+			StartTime: startTime.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 100,
+				EndTimes:       5,
+			},
+		}
+		_, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.Error(t, err, "repeat_interval > 99 must return an error")
+	})
+
 	t.Run("out-of-range monthly_week_day is rejected", func(t *testing.T) {
 		meeting := models.MeetingEventData{
 			ID:        "test-meeting-bad-weekday",
@@ -693,7 +711,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		// OldOccurrenceID in year 9999 used to become an unclamped UNTIL via the boundUnix passthrough,
 		// causing set.All() to materialise ~2.9M time.Time values (FREQ=DAILY from now to year 9999).
 		// Now boundUnix is only a post-filter; each segment's RRULE is capped at maxOccurrenceCount.
-		// With two segments (base + year-9999 new segment), each capped at 500, the total is at most
+		// With two segments (base + year-9999 new segment), each capped at 1000, the total is at most
 		// 2 * maxOccurrenceCount = 1000 — not millions. The test timeout (60s) enforces the no-hang contract.
 		year9999Unix := int64(253402300800) // 9999-12-31T00:00:00Z
 		meeting := models.MeetingEventData{
@@ -714,11 +732,11 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 				},
 			},
 		}
-		// Must complete without hanging. numOccurrencesToReturn=1000 is higher than maxOccurrenceCount
+		// Must complete without hanging. numOccurrencesToReturn=2001 is higher than 2×maxOccurrenceCount
 		// so the truncation there doesn't mask an unbounded per-segment expansion.
-		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 1000)
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 2001)
 		require.NoError(t, err)
-		// Two segments × maxOccurrenceCount each = at most 2 * 500 = 1000.
+		// Two segments × maxOccurrenceCount each = at most 2 * 1000 = 2000.
 		// The old vulnerable path would have returned millions or hung; this must be small.
 		assert.LessOrEqual(t, len(occurrences), 2*maxOccurrenceCount,
 			"a meeting with a year-9999 OldOccurrenceID must expand at most 2×maxOccurrenceCount entries total")
@@ -726,7 +744,8 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 
 	t.Run("excessive all_following segments are capped at maxSeriesSegments", func(t *testing.T) {
 		// Build 200 all_following updates — each would trigger a full RRULE expansion
-		// without the segment cap.
+		// without the segment cap. The cap keeps the most recent maxSeriesSegments-1 updates
+		// (plus the base) so the current active cadence is always included.
 		updates := make([]models.UpdatedOccurrence, 200)
 		baseUnix := startTime.Unix()
 		for i := range updates {

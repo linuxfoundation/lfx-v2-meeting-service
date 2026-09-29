@@ -362,19 +362,22 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 	})
 
 	// Build segments by inheriting forward — each update only overrides what it explicitly sets.
-	// Cap segments to bound total RRULE expansion cost: each segment calls set.All() independently.
-	// When the cap is hit the remaining updates are dropped and a warning is logged with the omitted
-	// count so operators can detect the condition in their log pipeline. Returning an error instead
-	// would cause AckWait redelivery up to MaxDeliver=3, giving the same net result with more noise.
+	// Cap segments to bound total RRULE expansion cost: each segment calls getRRuleOccurrences independently.
+	// When updates exceed the cap, keep the most recent (maxSeriesSegments-1) updates and drop the oldest.
+	// Dropping the oldest is correct: for upcoming occurrences only the current active cadence matters,
+	// and the most recent updates define it. Dropping the newest (breaking early on an ascending-sorted
+	// slice) would silently omit the current cadence — the opposite of what we want.
+	// Log a warning with counts so operators can detect the condition in their log pipeline.
+	if len(updates) > maxSeriesSegments-1 {
+		omitted := len(updates) - (maxSeriesSegments - 1)
+		c.logger.Warn("all_following segment count exceeds limit; oldest updates omitted",
+			"limit", maxSeriesSegments,
+			"total_updates", len(updates),
+			"omitted", omitted)
+		updates = updates[omitted:]
+	}
 	curr := base
-	for i, uo := range updates {
-		if len(segments) >= maxSeriesSegments {
-			c.logger.Warn("all_following segment count exceeds limit; later updates omitted",
-				"limit", maxSeriesSegments,
-				"total_updates", len(updates),
-				"omitted", len(updates)-i)
-			break
-		}
+	for _, uo := range updates {
 		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
 		if err != nil {
 			c.logger.Warn("failed to parse NewOccurrenceID for all_following update, skipping",
@@ -539,6 +542,9 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 
 	if reccurrence.RepeatInterval < 0 {
 		return "", fmt.Errorf("invalid repeat_interval %d: must be non-negative", reccurrence.RepeatInterval)
+	}
+	if reccurrence.RepeatInterval > 99 {
+		return "", fmt.Errorf("invalid repeat_interval %d: must be 99 or less", reccurrence.RepeatInterval)
 	}
 	if reccurrence.RepeatInterval != 0 {
 		fmt.Fprintf(&rrule, "INTERVAL=%d;", reccurrence.RepeatInterval)
