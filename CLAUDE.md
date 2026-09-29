@@ -340,6 +340,13 @@ Every non-generated Go source file (outside `gen/` and `vendor/`) must carry the
 - Unit tests for service logic and converters
 - Mock interfaces provided for external dependencies (ITX client, ID mapper)
 - Test files follow `*_test.go` naming convention
+- Review bar for test findings (2026-09-29): a generic "add tests for this" is
+  not a review finding in this repo. A test finding is legitimate only when it
+  is narrowly tied to a named contract or security consequence — a converter
+  mapping an unset value, an occurrence calculation, a KV routing decision, a
+  retry classification — and names that consequence. Background:
+  `docs/reviews/knowledge-base/known-false-positives.md` § Generic *add tests
+  for this*.
 
 ### Testing Patterns
 
