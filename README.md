@@ -150,14 +150,14 @@ lfx-v2-meeting-service/
 
 ## 📡 Event Processing
 
-The service includes a comprehensive event processing system for v1→v2 data synchronization. It watches NATS JetStream KV buckets for meeting-related data changes and publishes events to both indexer and FGA-sync services.
+The service includes a comprehensive event processing system for v1→v2 data synchronization. It watches NATS JetStream KV buckets for meeting-related data changes and publishes events to the indexer service and, for meetings, past meetings, registrants and past meeting participants, to the FGA-sync service.
 
 **Features:**
 
 - 12 event families: meetings, meeting-committee mappings, registrants, RSVPs, past meetings, past-meeting mappings, past meeting invitees, past meeting attendees, recordings and transcripts (shared handler), AI summaries, meeting attachments, past meeting attachments
 - RRULE occurrence calculation for recurring meetings
 - v1 user enrichment and Auth0 mapping
-- Dual publishing architecture (indexer + FGA-sync)
+- Indexer publishing for every event type, FGA-sync publishing for meetings, past meetings, registrants and past meeting participants
 - Parent-child dependency handling with retry logic
 - Separate `invite_accepted` NATS queue subscriber (not KV-based)
 

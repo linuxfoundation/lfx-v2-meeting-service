@@ -156,7 +156,7 @@ func (s *MeetingsAPI) SubmitItxMeetingResponse(ctx context.Context, p *meetingsv
 
 	req := service.ConvertSubmitITXMeetingResponsePayloadToITX(p)
 
-	result, err := s.itxMeetingService.SubmitMeetingResponse(ctx, meetingAndOccurrenceID, req)
+	result, err := s.itxMeetingService.SubmitMeetingResponse(ctx, p.MeetingID, meetingAndOccurrenceID, req)
 	if err != nil {
 		return nil, handleError(ctx, err)
 	}

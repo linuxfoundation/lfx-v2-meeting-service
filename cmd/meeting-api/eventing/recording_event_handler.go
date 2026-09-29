@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -209,6 +210,10 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// Resolve committees from the parent past meeting record.
 	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
 	if lookupErr != nil {
+		if errors.Is(lookupErr, errMsgpackStructural) {
+			funcLogger.With(logging.ErrKey, lookupErr).ErrorContext(ctx, "permanent decode failure looking up parent past meeting for committees, skipping recording")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting for committees, will retry")
 		return true
 	}
@@ -229,13 +234,13 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Publish recording event to indexer and FGA-sync
+	// Publish recording event to the indexer (recordings send no FGA message)
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording event")
 		return isTransientError(err)
 	}
 
-	// If transcript is enabled, publish separate transcript event
+	// If the record has TRANSCRIPT or TIMELINE files, publish a separate transcript event
 	if transcriptData != nil {
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")

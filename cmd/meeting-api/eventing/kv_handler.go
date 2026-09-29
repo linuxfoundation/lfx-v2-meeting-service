@@ -22,6 +22,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/msgpackutil"
 )
 
 // EventHandlers contains all the specific event type handlers
@@ -368,20 +369,52 @@ func getOperation(msg jetstream.Msg) jetstream.KeyValueOp {
 	}
 }
 
-// decodeData attempts to decode message data as JSON or MessagePack
+// errMsgpackStructural is a package-local alias for msgpackutil.ErrStructural so that
+// existing callers in this package can use errors.Is(err, errMsgpackStructural) unchanged.
+var errMsgpackStructural = msgpackutil.ErrStructural
+
+// msgpackMaxNestingDepth mirrors msgpackutil.MaxNestingDepth for use in this package's
+// tests and comments without requiring them to import msgpackutil directly.
+const msgpackMaxNestingDepth = msgpackutil.MaxNestingDepth
+
+// checkMsgpackNestingDepth is a package-local wrapper around msgpackutil.CheckNestingDepth.
+// The implementation lives in pkg/msgpackutil so that other packages (e.g.
+// internal/infrastructure/eventing) can apply the same guard without importing from cmd/.
+func checkMsgpackNestingDepth(data []byte) error {
+	return msgpackutil.CheckNestingDepth(data)
+}
+
+// decodeData attempts to decode message data as JSON or MessagePack.
 func decodeData(data []byte) (map[string]any, error) {
 	var result map[string]any
 
-	// Try JSON first
+	// Try JSON first.  encoding/json enforces an ~10000-level nesting cap
+	// internally, so this path is safe against deeply-nested payloads.
 	if err := json.Unmarshal(data, &result); err == nil {
 		return result, nil
 	}
 
-	// Try MessagePack
+	// Guard against deeply-nested msgpack payloads before calling Unmarshal.
+	// msgpack.Unmarshal recurses once per nesting level when decoding into
+	// interface{}, with no built-in depth cap.  A crafted ~1 MB payload can
+	// exhaust the goroutine stack and kill the process; recover() cannot
+	// intercept a fatal stack-overflow.  checkMsgpackNestingDepth scans the
+	// bytes iteratively (no recursion) and rejects inputs that are structurally
+	// malformed or exceed msgpackMaxNestingDepth.
+	//
+	// When called from kvHandler a rejected message is treated as permanent:
+	// kvHandler returns false → msgHandler ACKs → not redelivered.
+	// Parent-record lookup callers (kv_helpers.go, summary_event_handler.go)
+	// check errors.Is(err, errMsgpackStructural) and skip rather than retry.
+	if err := checkMsgpackNestingDepth(data); err != nil {
+		return nil, fmt.Errorf("msgpack depth check failed: %w", err)
+	}
+
+	// Try MessagePack.
 	if err := msgpack.Unmarshal(data, &result); err == nil {
 		return result, nil
 	}
 
-	// If both fail, return JSON error
+	// If both fail, return the JSON error for a consistent error type.
 	return nil, json.Unmarshal(data, &result)
 }
