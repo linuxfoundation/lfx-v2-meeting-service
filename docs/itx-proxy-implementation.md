@@ -195,31 +195,23 @@ goaResp := ConvertITXMeetingResponseToGoa(itxResp)
 
 ### 3. Pointer Conversion Helpers
 
-ITX responses use non-pointer types, while Goa uses pointer types for optional fields:
+ITX responses use non-pointer types, while Goa uses pointer types for optional fields. The converters use the canonical helpers from `pkg/utils/ptr.go` — there are no converter-local `ptrIf*` helpers in this repo:
+
+| Helper | Semantics |
+|---|---|
+| `utils.StringPtrOmitEmpty(s string) *string` | pointer unless the string is empty |
+| `utils.IntPtrOmitZero(i int) *int`, `utils.Int64PtrOmitZero(i int64) *int64` | pointer unless the value is zero |
+| `utils.BoolPtr(b bool) *bool` | **always** a pointer, so a deliberate `false` survives |
+| `utils.BoolPtrOmitFalse(b bool) *bool` | pointer only when the value is true |
 
 ```go
-// Helper functions in converters
-func ptrIfNotEmpty(s string) *string {
-    if s == "" {
-        return nil
-    }
-    return &s
-}
-
-func ptrIfNotZero(i int) *int {
-    if i == 0 {
-        return nil
-    }
-    return &i
-}
-
-func ptrIfTrue(b bool) *bool {
-    if !b {
-        return nil
-    }
-    return &b
-}
+// In a ConvertITX…ToGoa converter
+Description:          utils.StringPtrOmitEmpty(resp.Agenda),
+Restricted:           utils.BoolPtrOmitFalse(resp.Restricted),
+EarlyJoinTimeMinutes: utils.IntPtrOmitZero(resp.EarlyJoinTime),
 ```
+
+Choose an always-present pointer or an omit-zero one according to what the response contract promises the client; see `.claude/rules/itx-converters.md` for the review guidance.
 
 ### 4. OAuth2 Client Credentials Flow
 

@@ -65,9 +65,10 @@ update cases.
 reverted outcome means the finding class costs more than this team will pay;
 promoting it manufactures a reviewer that gets skimmed and ignored.
 
-This does **not** mean tests never matter. A narrowly scoped test finding tied to
-a named contract or security consequence is still legitimate — but it belongs to
-the sibling `repo_code` reviewer under `CLAUDE.md`'s testing guidance, not here.
+This does **not** mean tests never matter. The bar for a legitimate test finding
+— narrowly tied to a named contract or security consequence — is stated where the
+`general` reviewer reads it, in `CLAUDE.md` § Testing Strategy ("Review bar for
+test findings"); that reviewer owns it, not this file.
 
 ### Unrelated dependency bundling in a scoped PR — never a finding
 

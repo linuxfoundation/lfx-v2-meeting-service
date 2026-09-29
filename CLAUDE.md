@@ -294,17 +294,27 @@ test -n "$result" || { echo "lookup failed" >&2; exit 1; }
 echo "$result"
 ```
 
-## Review lifecycle configuration
+## Pre-PR review
 
-Load and follow `/lfx-skills:lfx-local-review` as the sole owner of the review
-lifecycle. The values below configure that skill and do not replace or override
-its instructions.
+> **IMPORTANT — follow this exactly.** When the implementation is complete
+> and committed and you are about to open a PR:
+>
+> 1. **Review once.** Load `/lfx-skills:lfx-pre-pr-review` with the Skill
+>    tool and follow it: it tells you how to launch the reviewers. You run
+>    **one** review round of the whole branch and land **all accepted
+>    findings in exactly one fix commit** (none if there is nothing to fix).
+>    Do not work from memory: **load the skill before launching the
+>    reviewers**.
+> 2. **Preflight.** Run the `Preflight` value below and make it pass. It is
+>    deterministic checks, not a review: fix what it reports in its own
+>    commit(s), as many as it takes, and rerun it — never the reviewers.
+> 3. **Open the PR.** From then on there are **no local reviews of any
+>    kind** — iterate only on the PR's bot and human feedback, still running
+>    tests and checks. Where a `PR driver` is named below, load that skill and
+>    follow it for that iteration instead of `/lfx-skills:lfx-pr-resolve`.
 
-- repo code reviewer: `/meeting-service-code-reviewer`
-- repo learnings reviewer: `/meeting-service-learnings-reviewer`
-- readiness action: `make check`
-- preflight action: `make test`
-- post-PR extension: `none`
+- KB review skill: `/meeting-service-learnings-reviewer`
+- Preflight: `make check && make test`
 
 ## Development Guidelines
 
@@ -330,6 +340,13 @@ Every non-generated Go source file (outside `gen/` and `vendor/`) must carry the
 - Unit tests for service logic and converters
 - Mock interfaces provided for external dependencies (ITX client, ID mapper)
 - Test files follow `*_test.go` naming convention
+- Review bar for test findings (2026-09-29): a generic "add tests for this" is
+  not a review finding in this repo. A test finding is legitimate only when it
+  is narrowly tied to a named contract or security consequence — a converter
+  mapping an unset value, an occurrence calculation, a KV routing decision, a
+  retry classification — and names that consequence. Background:
+  `docs/reviews/knowledge-base/known-false-positives.md` § Generic *add tests
+  for this*.
 
 ### Testing Patterns
 
@@ -540,7 +557,7 @@ Converters in `cmd/meeting-api/service/`:
 - `itx_past_meeting_summary_converters.go`: Converts between Goa payloads and ITX summary requests/responses
 - `itx_attachment_converters.go`: Converts between Goa payloads and ITX attachment requests/responses (both meeting and past-meeting)
 
-**Important**: Always use the canonical pointer conversion helpers from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`). Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
+**Important**: Pick the pointer conversion per field from the proxy response contract in `docs/api-contracts/itx-*.md`: an always-present pointer (`utils.BoolPtr`, or `&resp.Field` for a string or int) when the contract promises the field, an omit-zero helper from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`) when zero/empty/false must be omitted — see `.claude/rules/itx-converters.md`. Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
 
 ### Adding New Endpoints
 
@@ -548,7 +565,7 @@ Converters in `cmd/meeting-api/service/`:
 2. **Run `make apigen`** to regenerate `gen/`. Commit the generated files alongside the design change.
 3. **Implement the Goa adapter** in the appropriate `cmd/meeting-api/api_itx_*.go` file — translation only; no business logic here.
 4. **Add or extend the service** in `internal/service/itx/` — embed `auditStamper` if the endpoint is a write that needs `created_by`/`updated_by`.
-5. **Add converters** in `cmd/meeting-api/service/itx_*_converters.go` — use `StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse` for optional fields.
+5. **Add converters** in `cmd/meeting-api/service/itx_*_converters.go` — choose always-present vs omit-zero pointer conversion per field from the contract (`.claude/rules/itx-converters.md`).
 6. **Update the Heimdall ruleset** in `charts/lfx-v2-meeting-service/templates/ruleset.yaml` if the endpoint needs a new auth rule.
 7. **Write tests** for the new converter and service method.
 8. **Update CLAUDE.md API Endpoints section** and `README.md` endpoint tables.
@@ -576,10 +593,10 @@ Converters in `cmd/meeting-api/service/`:
 **Problem**: A `slog.DebugContext` call logs a request body that contains `created_by.name` or `created_by.email` in plaintext.  
 **Solution**: Always pass request bodies through `requestJSONForLog(req)` and response bodies through `responseJSONForLog(respBody)` from `internal/infrastructure/proxy/logredact.go`. For other sensitive strings, use `pkg/redaction.Redact(s)` or `pkg/redaction.RedactEmail(email)`.
 
-### 5. Using raw pointer conversion instead of helpers
+### 5. Choosing the wrong pointer conversion for a field
 
-**Problem**: Code does `&someString` or `&someInt` for optional ITX fields, which passes zero-value pointers that ITX interprets as explicit empty/zero values.  
-**Solution**: Always use `utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`, `utils.BoolPtrOmitFalse` from `pkg/utils/ptr.go`. These return `nil` for zero/empty inputs, which causes ITX to treat the field as absent.
+**Problem**: A response field the contract wants omitted at zero/empty/false is built with `&someString` / `&someInt` / `utils.BoolPtr`, so the client receives an explicit empty value; or a field the contract promises always-present is built with an omit-zero helper, so it disappears at zero. Outbound to ITX, a deliberate `false`/zero is lost because an ITX or domain model field is a non-pointer with `omitempty`.  
+**Solution**: Judge each field against `docs/api-contracts/itx-*.md`: omit-zero helpers (`utils.StringPtrOmitEmpty`, `utils.IntPtrOmitZero`, `utils.BoolPtrOmitFalse`) return `nil` at the zero value; always-present pointers (`utils.BoolPtr`, `&resp.Field`) never do. For Goa → ITX no helper applies — make the ITX (and any intermediate domain) field a pointer and carry the payload pointer through unchanged. Full rule: `.claude/rules/itx-converters.md`.
 
 ### 6. Wrong audit type on attachment endpoints
 
