@@ -26,7 +26,7 @@ const (
 	// (2) the lazy iterator in getRRuleOccurrences: the iterator stops after this many calls,
 	//     bounding CPU and allocation to O(maxOccurrenceCount) per segment regardless of
 	//     DTSTART age or the RRULE terminal.
-	maxOccurrenceCount = 500
+	maxOccurrenceCount = 1000
 	// maxOccurrenceHorizon caps the RRULE UNTIL terminal to a fixed window forward from now,
 	// preventing a far-future KV-supplied end_date_time from generating millions of occurrences.
 	maxOccurrenceHorizon = 10 * 365 * 24 * time.Hour
