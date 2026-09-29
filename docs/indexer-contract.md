@@ -618,9 +618,9 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | `occurrence_id` | string | Occurrence ID |
 | `platform` | string | Meeting platform (always `"Zoom"`) |
 | `platform_meeting_id` | string | Present in the schema but not populated by the handler: always `""` |
-| `recording_access` | string | The record's `recording_access` (`"public"`, `"meeting_hosts"`, `"meeting_participants"`); defaults to `"meeting_hosts"` when empty |
+| `recording_access` | string | Sourced from the **parent past meeting record** (authoritative); falls back to `"meeting_hosts"` when empty. The recording record's own snapshot is overridden at index time |
 | `title` | string | Meeting topic (from the record's `topic`) |
-| `transcript_access` | string (optional) | The record's `transcript_access`; defaults to `"meeting_hosts"` when empty and the record has transcript files. Omitted when empty |
+| `transcript_access` | string (optional) | Sourced from the **parent past meeting record** (authoritative); falls back to `"meeting_hosts"` when empty and the record has transcript files. Omitted when empty. The recording record's own snapshot is overridden at index time |
 | `transcript_enabled` | bool | `true` when the record has at least one `TRANSCRIPT` or `TIMELINE` file. Derived from the files, not copied from the record's `transcript_enabled` |
 | `visibility` | string | The record's `visibility`, copied as is. It does not drive the `public` flag |
 | `recording_count` | int | The record's `recording_count`, copied as is. It counts the source files before the split, so it can be larger than the length of `recording_files` |
@@ -687,7 +687,7 @@ Used by `sessions` on both the recording and the transcript document. The sessio
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `recording_access` is `"public"`, `false` otherwise |
 
-The `public` flag is read from the recording record's own `recording_access`. The `recording_viewer` tuples that the access check resolves are written from the parent past meeting record's `recording_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
+The `public` flag is derived from `recording_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `recording_viewer` tuples that the access check resolves are also written from the parent past meeting record's `recording_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
 
 ### Search Behavior
 
@@ -732,7 +732,7 @@ The `public` flag is read from the recording record's own `recording_access`. Th
 | `meeting_id` | string | ID of the originating active meeting |
 | `occurrence_id` | string | Occurrence ID |
 | `platform` | string | Meeting platform (always `"Zoom"`) |
-| `transcript_access` | string | The record's `transcript_access` (`"public"`, `"meeting_hosts"`, `"meeting_participants"`); defaults to `"meeting_hosts"` when empty |
+| `transcript_access` | string | Sourced from the **parent past meeting record** (authoritative); falls back to `"meeting_hosts"` when empty. The recording record's own snapshot is overridden at index time |
 | `title` | string | Meeting topic (from the record's `topic`) |
 | `visibility` | string | The record's `visibility`, copied as is. It does not drive the `public` flag |
 | `recording_files` | []object | The record's `TRANSCRIPT` and `TIMELINE` files only (see [Recording File schema](#recording-file-schema)); never empty |
@@ -768,7 +768,7 @@ The `public` flag is read from the recording record's own `recording_access`. Th
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `transcript_access` is `"public"`, `false` otherwise |
 
-The `public` flag is read from the recording record's own `transcript_access`. The `transcript_viewer` tuples that the access check resolves are written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
+The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
 
 ### Search Behavior
 

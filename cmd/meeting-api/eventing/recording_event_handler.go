@@ -232,15 +232,18 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// Use parent access values (authoritative) for both the indexer public flag and body fields.
 	recordingData.RecordingAccess = parent.RecordingAccess
 	if recordingData.RecordingAccess == "" {
-		recordingData.RecordingAccess = "meeting_hosts"
+		recordingData.RecordingAccess = defaultArtifactAccess
+	}
+	// The recording document itself embeds transcript_access as metadata; set it from the
+	// parent too so the recording payload is consistent with the transcript document.
+	recordingData.TranscriptAccess = parent.TranscriptAccess
+	if recordingData.TranscriptAccess == "" {
+		recordingData.TranscriptAccess = defaultArtifactAccess
 	}
 
 	if transcriptData != nil {
 		transcriptData.Committees = committees
-		transcriptData.TranscriptAccess = parent.TranscriptAccess
-		if transcriptData.TranscriptAccess == "" {
-			transcriptData.TranscriptAccess = "meeting_hosts"
-		}
+		transcriptData.TranscriptAccess = recordingData.TranscriptAccess
 	}
 
 	// Determine action (created vs updated)
@@ -333,10 +336,10 @@ func convertMapToRecordingData(
 		return nil, nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
-	// Default recording access to meeting_hosts (most restrictive)
+	// Default recording access to most restrictive; overridden by parent lookup in the handler.
 	recordingAccess := rawRecording.RecordingAccess
 	if recordingAccess == "" {
-		recordingAccess = "meeting_hosts"
+		recordingAccess = defaultArtifactAccess
 	}
 
 	// Split recording files into recording-only and transcript-only lists.
@@ -391,7 +394,7 @@ func convertMapToRecordingData(
 	transcriptEnabled := hasTranscript
 	transcriptAccess := rawRecording.TranscriptAccess
 	if hasTranscript && transcriptAccess == "" {
-		transcriptAccess = "meeting_hosts" // Default to most restrictive
+		transcriptAccess = defaultArtifactAccess
 	}
 
 	recordingData := &models.RecordingEventData{

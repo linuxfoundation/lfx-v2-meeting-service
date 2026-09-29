@@ -14,6 +14,11 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
+// defaultArtifactAccess is the fail-closed default for recording_access and transcript_access
+// when the parent past meeting record does not carry a value. "meeting_hosts" is the most
+// restrictive option and prevents inadvertent public exposure.
+const defaultArtifactAccess = "meeting_hosts"
+
 // lookupProjectFromMeeting fetches the proj_id and primary committee SFID of the parent active
 // meeting from the v1-objects KV bucket. Returns ("","",nil) when the meeting record is not found
 // in KV yet. When the meeting exists but has no proj_id, projSFID is empty but primaryCommitteeSFID
