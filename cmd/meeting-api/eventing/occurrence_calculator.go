@@ -21,12 +21,11 @@ const (
 	meetingEndBuffer = 40 * time.Minute
 
 	// maxOccurrenceCount is the hard cap applied in two places:
-	// (1) the RRULE COUNT terminal: KV-supplied end_times values above this are clamped so
-	//     set.All() / the iterator cannot materialise billions of time.Time values.
+	// (1) the RRULE COUNT terminal: KV-supplied end_times values above this are clamped,
+	//     preventing a crafted large value from materialising billions of time.Time values.
 	// (2) the lazy iterator in getRRuleOccurrences: the iterator stops after this many calls,
-	//     bounding CPU and allocation to O(maxOccurrenceCount) per segment.
-	// Previously the no-terminal safety cap was COUNT=1000; this is now 500 to align with
-	// the iterator cap. A daily series with no terminal will show at most 500 upcoming entries.
+	//     bounding CPU and allocation to O(maxOccurrenceCount) per segment regardless of
+	//     DTSTART age or the RRULE terminal.
 	maxOccurrenceCount = 500
 	// maxOccurrenceHorizon caps the RRULE UNTIL terminal to a fixed window forward from now,
 	// preventing a far-future KV-supplied end_date_time from generating millions of occurrences.
@@ -34,11 +33,6 @@ const (
 	// maxSeriesSegments caps the number of series segments derived from updated_occurrences
 	// to prevent a crafted long all_following array from multiplying RRULE expansions.
 	maxSeriesSegments = 100
-	// iteratorLookback is how far before now to start collecting occurrences when the caller
-	// wants only upcoming entries. It must cover the longest possible still-active meeting so
-	// isOccurrencePast doesn't discard an occurrence we've just started collecting from.
-	// Zoom's upper limit is 30 hours; we add meetingEndBuffer for the end-of-meeting grace period.
-	iteratorLookback = 30*time.Hour + meetingEndBuffer
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
@@ -157,21 +151,7 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 		// the boundary"). Forwarding boundUnix as UNTIL would bypass the COUNT/horizon clamps because
 		// getRRule skips them when endTime != nil, and boundUnix itself is a KV-supplied unix timestamp
 		// (old_occurrence_id) with no range check — a year-9999 value would become an unclamped UNTIL.
-		//
-		// When the caller does not want past occurrences, compute an iterate-from window so that
-		// historical entries don't consume the maxOccurrenceCount budget. For a series that started
-		// 2 years ago (e.g. a daily weekday meeting), the first ~500 slots would otherwise be exhausted
-		// by past entries before any upcoming occurrence is reached.
-		var iterFrom *time.Time
-		if !pastOccurrences {
-			t := time.Now().Add(-iteratorLookback)
-			// Only fast-forward if the window is actually after DTSTART; for new series starting
-			// in the future the window is irrelevant and would break the collector contract.
-			if t.After(segStart) {
-				iterFrom = &t
-			}
-		}
-		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil, iterFrom)
+		rruleOccurrences, err := c.getRRuleOccurrences(segStart, segTimezone, seg.recurrence, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get rrule occurrences for segment starting at %d: %w", seg.startUnix, err)
 		}
@@ -508,13 +488,7 @@ func timeInLocation(t time.Time, name string) (time.Time, error) {
 
 // getRRuleOccurrences given a start time, optional timezone, and recurrence pattern, calculates and returns
 // the list of occurrence times.
-//
-// iterateFrom, when non-nil, causes the iterator to skip occurrences before that time without
-// counting them against maxOccurrenceCount. This lets long-running series (e.g. a daily meeting
-// that started two years ago) still produce upcoming occurrences: without the window the first 500
-// slots would be consumed by historical entries the caller intends to discard anyway.
-// Pass nil when past occurrences are needed (e.g. when pastOccurrences=true).
-func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone string, recurrence *models.ZoomMeetingRecurrence, endTime *time.Time, iterateFrom *time.Time) ([]time.Time, error) {
+func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone string, recurrence *models.ZoomMeetingRecurrence, endTime *time.Time) ([]time.Time, error) {
 	rruleString, err := c.getRRule(recurrence, endTime)
 	if err != nil {
 		return nil, err
@@ -540,20 +514,12 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 	// UNTIL=now+10y still produces ~740k time.Time values from set.All() even after the RRULE
 	// clamps. The iterator stops after maxOccurrenceCount calls, so work is O(maxOccurrenceCount)
 	// regardless of DTSTART age or the RRULE terminal.
-	//
-	// When iterateFrom is set, entries before that time are skipped without counting against the
-	// cap. This prevents long-running series from exhausting the 500-slot budget on historical
-	// entries that the caller will discard anyway. Skipped entries are cheap: rrule-go advances
-	// its internal state with simple integer arithmetic and no heap allocation.
 	next := set.Iterator()
 	out := make([]time.Time, 0, maxOccurrenceCount)
 	for len(out) < maxOccurrenceCount {
 		t, ok := next()
 		if !ok {
 			break
-		}
-		if iterateFrom != nil && t.Before(*iterateFrom) {
-			continue
 		}
 		out = append(out, t)
 	}
