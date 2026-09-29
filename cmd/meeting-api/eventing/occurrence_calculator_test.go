@@ -569,7 +569,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		}
 		// Call getRRuleOccurrences directly: this is what set.All() materialises.
 		// Without the clamp this would OOM; with it the slice must be <= maxOccurrenceCount.
-		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil, nil)
 		require.NoError(t, err)
 		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
 			"huge end_times must be clamped to maxOccurrenceCount before set.All() runs")
@@ -583,7 +583,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		}
 		// With FREQ=DAILY and UNTIL=9999 this would be ~2.9M occurrences without the clamp.
 		// The horizon clamp limits UNTIL to now+10y → at most ~3650 daily occurrences.
-		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil, nil)
 		require.NoError(t, err)
 		horizonDays := int(maxOccurrenceHorizon.Hours()/24) + 2 // a little slack for DST etc.
 		assert.LessOrEqual(t, len(occurrences), horizonDays,
@@ -596,7 +596,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			RepeatInterval: 1,
 			EndTimes:       3, // legitimate small count
 		}
-		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil, nil)
 		require.NoError(t, err)
 		assert.Equal(t, 3, len(occurrences),
 			"a legitimate end_times:3 must produce exactly 3 occurrences, not be over-clamped")
@@ -647,7 +647,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			RepeatInterval: 1,
 			// No end_times, no end_date_time → default COUNT=maxOccurrenceCount
 		}
-		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil, nil)
 		require.NoError(t, err)
 		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
 			"a segment with no terminal must be bounded by the default COUNT cap, not by an unclamped KV bound")
@@ -661,7 +661,7 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			RepeatInterval: 1,
 			EndTimes:       -1, // crafted negative value
 		}
-		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+		occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil, nil)
 		require.NoError(t, err)
 		assert.LessOrEqual(t, len(occurrences), maxOccurrenceCount,
 			"negative end_times must be treated as no-terminal and bounded by the default COUNT cap")
@@ -700,6 +700,34 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		// The old vulnerable path would have returned millions or hung; this must be small.
 		assert.LessOrEqual(t, len(occurrences), 2*maxOccurrenceCount,
 			"a meeting with a year-9999 OldOccurrenceID must expand at most 2×maxOccurrenceCount entries total")
+	})
+
+	t.Run("long-running series returns upcoming occurrences, not only historical ones", func(t *testing.T) {
+		// David's scenario: a daily meeting started 2 years ago with end_date_time next year
+		// produces ~1095 entries total. Without the iterateFrom window the 500-slot iterator
+		// budget is exhausted on entries from 2 years ago to ~16 months ago, and every upcoming
+		// occurrence (16 months ago → end date) is silently dropped.
+		twoYearsAgo := time.Now().Add(-2 * 365 * 24 * time.Hour).Truncate(time.Second)
+		nextYear := time.Now().Add(365 * 24 * time.Hour)
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-long-running",
+			StartTime: twoYearsAgo.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 1,
+				EndDateTime:    nextYear.Format(time.RFC3339), // ends next year (~3 years total = ~1095 entries)
+			},
+		}
+		occurrences, err := calc.CalculateOccurrences(context.Background(), meeting, false, false, 10)
+		require.NoError(t, err)
+		require.NotEmpty(t, occurrences, "a long-running daily series with end_date_time must return upcoming occurrences")
+		// All returned occurrences must be in or near the future (within the iterator lookback window).
+		for _, occ := range occurrences {
+			assert.True(t, occ.StartTime.After(time.Now().Add(-iteratorLookback)),
+				"occurrence %s should be within the iterate-from window", occ.OccurrenceID)
+		}
 	})
 
 	t.Run("excessive all_following segments are capped at maxSeriesSegments", func(t *testing.T) {
