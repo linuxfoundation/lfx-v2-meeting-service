@@ -385,7 +385,7 @@ The system distinguishes between transient and permanent errors:
 - NATS connection timeouts
 - ID mapper service unavailable
 - Network failures
-- Parent resource lookup returns a non-`ErrKeyNotFound` error (e.g., NATS transient failure)
+- Parent resource lookup returns a non-`ErrKeyNotFound` error (e.g., NATS transient failure) — **except** structural msgpack decode failures (`errMsgpackStructural`), which are treated as permanent
 - Temporary v1 user lookup failures
 
 **Retry behavior:**
@@ -639,7 +639,7 @@ if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
 publisher.PublishPastMeetingSummaryEvent(ctx, action, summaryData, aiSummaryAccess)
 ```
 
-If the parent past meeting record does not exist, the summary is skipped without retry; any other KV or decode error is retried. A missing `ai_summary_access` field defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
+If the parent past meeting record does not exist, the summary is skipped without retry; any other KV or decode error is retried, **except** structural msgpack decode failures (`errMsgpackStructural`) which are treated as permanent (ACK to skip). A missing `ai_summary_access` field defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
 
 `ai_summary_access` only applies once the summary is approved or does not require approval. While a summary awaits approval (`requires_approval && !approved`), the publisher indexes it as non-public with `v1_past_meeting#organizer` for both the access and the history check, matching LFX Self Serve's organizer-only rule. Approving the summary changes the v1 summary record, the KV watcher republishes it as `updated`, and the document is re-indexed with `ai_summary_viewer`. See the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 

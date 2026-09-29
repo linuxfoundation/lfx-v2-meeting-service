@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -101,6 +102,10 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	// may still be populated — we distinguish the two proj_id cases to decide whether to retry.
 	projSFID, primaryCommitteeSFID, err := lookupProjectFromMeeting(ctx, attachmentData.MeetingID, h.v1ObjectsKV, funcLogger)
 	if err != nil {
+		if errors.Is(err, errMsgpackStructural) {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure looking up parent meeting, skipping attachment")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting, will retry")
 		return true
 	}
@@ -312,6 +317,10 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	// and a non-nil error for transient KV/decode failures.
 	projSFID, projectSlug, primaryCommitteeSFID, err := lookupProjectFromPastMeeting(ctx, attachmentData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
 	if err != nil {
+		if errors.Is(err, errMsgpackStructural) {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure looking up parent past meeting, skipping attachment")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent past meeting, will retry")
 		return true
 	}
