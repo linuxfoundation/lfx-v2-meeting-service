@@ -14,16 +14,18 @@ import (
 type PastMeetingService struct {
 	auditStamper
 	pastMeetingClient domain.ITXPastMeetingClient
+	meetingClient     domain.ITXMeetingClient
 	idMapper          domain.IDMapper
 }
 
 // NewPastMeetingService creates a new ITX past meeting service. userMetadata may be nil
 // (e.g. when NATS is disabled), in which case created_by / updated_by are limited to the
 // JWT-derived username/email rather than blocking the request.
-func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *PastMeetingService {
+func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *PastMeetingService {
 	return &PastMeetingService{
 		auditStamper:      auditStamper{userMetadata: userMetadata},
 		pastMeetingClient: pastMeetingClient,
+		meetingClient:     meetingClient,
 		idMapper:          idMapper,
 	}
 }
@@ -35,6 +37,18 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 	}
 	if err := mapITXCommitteesV2ToV1(ctx, s.idMapper, req.Committees); err != nil {
 		return nil, err
+	}
+
+	// Verify the caller's authorized project actually owns this meeting. Both req.ProjectID
+	// and meetingResp.Project are in v1 format at this point (after the mapping above).
+	// Without this check a caller authorized on project A could supply any meeting_id and
+	// create a past-meeting record that derives FGA access from a foreign meeting.
+	meeting, err := s.meetingClient.GetZoomMeeting(ctx, req.MeetingID)
+	if err != nil {
+		return nil, err
+	}
+	if meeting.Project != req.ProjectID {
+		return nil, domain.NewForbiddenError("meeting does not belong to the authorized project")
 	}
 
 	// Stamp created_by from the authenticated principal so the past-meeting record's
