@@ -311,6 +311,21 @@ func TestPastMeetingService_UpdatePastMeeting_RejectsProjectUIDChange(t *testing
 		require.NotNil(t, client.lastUpdateReq)
 	})
 
+	t.Run("allows update when project_uid is explicit empty string", func(t *testing.T) {
+		// An explicit "" is indistinguishable from absent after conversion; it must not
+		// be forwarded to ITX as an empty project_id (CreatePastMeetingRequest.ProjectID
+		// carries omitempty, so "" is omitted from the JSON body sent to ITX).
+		client := &fakePastMeetingClient{storedProjectID: "proj-1"}
+		svc := newPastMeetingSvc(client, "proj-1", nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			ProjectID: "", // explicit empty — treated same as absent
+		})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		assert.Equal(t, "", client.lastUpdateReq.ProjectID, "empty project_uid must not be forwarded to ITX")
+	})
+
 	t.Run("allows update when v2 project_uid maps to the stored v1 SFID", func(t *testing.T) {
 		// Verifies that the v2→v1 mapping happens before the immutability comparison:
 		// a v2 UID that resolves to the same stored SFID must not be rejected.
