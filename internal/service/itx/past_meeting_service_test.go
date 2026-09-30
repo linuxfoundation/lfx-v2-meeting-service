@@ -310,6 +310,21 @@ func TestPastMeetingService_UpdatePastMeeting_RejectsProjectUIDChange(t *testing
 		require.NoError(t, err)
 		require.NotNil(t, client.lastUpdateReq)
 	})
+
+	t.Run("allows update when v2 project_uid maps to the stored v1 SFID", func(t *testing.T) {
+		// Verifies that the v2→v1 mapping happens before the immutability comparison:
+		// a v2 UID that resolves to the same stored SFID must not be rejected.
+		client := &fakePastMeetingClient{storedProjectID: "v1-sfid"}
+		mapper := &mappingIDMapper{v2ID: "v2-proj", v1ID: "v1-sfid"}
+		svc := NewPastMeetingService(client, &fakePastMeetingMeetingClient{project: "v1-sfid"}, mapper, nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			ProjectID: "v2-proj", // mapped to "v1-sfid" before the immutability check
+		})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+		assert.Equal(t, "v1-sfid", client.lastUpdateReq.ProjectID, "outbound request must carry the mapped v1 SFID")
+	})
 }
 
 func TestPastMeetingService_UpdatePastMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) {
