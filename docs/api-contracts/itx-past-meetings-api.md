@@ -70,6 +70,8 @@ Updates a past meeting record, including the invitees lists.
 
 **Authorization**: Requires `organizer` permission on the meeting
 
+**Immutable field**: `meeting_id` cannot be changed after a past meeting is created. If `meeting_id` is supplied in the request body, it must match the stored value; a mismatched value returns `403 Forbidden`. Callers that send the full object unchanged (echoing the stored `meeting_id`) are not blocked.
+
 ---
 
 ### Delete Past Meeting

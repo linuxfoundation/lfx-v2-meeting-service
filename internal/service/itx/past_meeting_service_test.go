@@ -12,25 +12,31 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
-	pkgitx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
 
 // fakePastMeetingClient captures the past-meeting requests sent to ITX so tests can
-// assert on the outbound created_by / updated_by stamping.
+// assert on the outbound created_by / updated_by stamping. storedMeetingID is returned
+// by GetPastMeeting for the reparenting guard tests.
 type fakePastMeetingClient struct {
 	domain.ITXPastMeetingClient
-	lastCreateReq *pkgitx.CreatePastMeetingRequest
-	lastUpdateReq *pkgitx.CreatePastMeetingRequest
+	lastCreateReq   *itx.CreatePastMeetingRequest
+	lastUpdateReq   *itx.CreatePastMeetingRequest
+	storedMeetingID string
 }
 
-func (f *fakePastMeetingClient) CreatePastMeeting(_ context.Context, req *pkgitx.CreatePastMeetingRequest) (*pkgitx.PastMeetingResponse, error) {
+func (f *fakePastMeetingClient) CreatePastMeeting(_ context.Context, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
 	f.lastCreateReq = req
-	return &pkgitx.PastMeetingResponse{}, nil
+	return &itx.PastMeetingResponse{}, nil
 }
 
-func (f *fakePastMeetingClient) UpdatePastMeeting(_ context.Context, _ string, req *pkgitx.CreatePastMeetingRequest) (*pkgitx.PastMeetingResponse, error) {
+func (f *fakePastMeetingClient) UpdatePastMeeting(_ context.Context, _ string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
 	f.lastUpdateReq = req
-	return &pkgitx.PastMeetingResponse{}, nil
+	return &itx.PastMeetingResponse{}, nil
+}
+
+func (f *fakePastMeetingClient) GetPastMeeting(_ context.Context, _ string) (*itx.PastMeetingResponse, error) {
+	return &itx.PastMeetingResponse{MeetingID: f.storedMeetingID}, nil
 }
 
 // fakePastMeetingMeetingClient returns a canned meeting response for ownership checks
@@ -38,15 +44,15 @@ func (f *fakePastMeetingClient) UpdatePastMeeting(_ context.Context, _ string, r
 type fakePastMeetingMeetingClient struct {
 	domain.ITXMeetingClient
 	project    string
-	committees []pkgitx.Committee
+	committees []itx.Committee
 	getErr     error
 }
 
-func (f *fakePastMeetingMeetingClient) GetZoomMeeting(_ context.Context, _ string) (*pkgitx.ZoomMeetingResponse, error) {
+func (f *fakePastMeetingMeetingClient) GetZoomMeeting(_ context.Context, _ string) (*itx.ZoomMeetingResponse, error) {
 	if f.getErr != nil {
 		return nil, f.getErr
 	}
-	return &pkgitx.ZoomMeetingResponse{Project: f.project, Committees: f.committees}, nil
+	return &itx.ZoomMeetingResponse{Project: f.project, Committees: f.committees}, nil
 }
 
 // newPastMeetingSvc builds a PastMeetingService whose fake meeting client reports the
@@ -63,7 +69,7 @@ func TestPastMeetingService_CreatePastMeeting_StampsCreatedBy(t *testing.T) {
 		}}
 		svc := newPastMeetingSvc(client, "proj-1", reader)
 
-		_, err := svc.CreatePastMeeting(ctxWithPrincipal("alice", ""), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(ctxWithPrincipal("alice", ""), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-1",
@@ -78,7 +84,7 @@ func TestPastMeetingService_CreatePastMeeting_StampsCreatedBy(t *testing.T) {
 	t.Run("omits stamp without principal", func(t *testing.T) {
 		client := &fakePastMeetingClient{}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-1",
@@ -93,7 +99,7 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheck(t *testing.T) {
 		client := &fakePastMeetingClient{}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-1",
@@ -107,7 +113,7 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheck(t *testing.T) {
 		// meeting client reports project B owns the meeting; request claims project A
 		svc := newPastMeetingSvc(client, "proj-victim", nil)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "foreign-mtg",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-attacker",
@@ -127,7 +133,7 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheck(t *testing.T) {
 			nil,
 		)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-1",
@@ -138,40 +144,61 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheck(t *testing.T) {
 }
 
 func TestPastMeetingService_CreatePastMeeting_CommitteeOwnershipCheck(t *testing.T) {
-	t.Run("allows create when committee is associated with the meeting", func(t *testing.T) {
+	t.Run("allows create when all committees are associated with the meeting", func(t *testing.T) {
 		client := &fakePastMeetingClient{}
 		meetingClient := &fakePastMeetingMeetingClient{
 			project:    "proj-1",
-			committees: []pkgitx.Committee{{ID: "committee-1"}},
+			committees: []itx.Committee{{ID: "committee-1"}, {ID: "committee-2"}},
 		}
 		svc := NewPastMeetingService(client, meetingClient, noOpIDMapper{}, nil)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-1",
-			Committees:   []pkgitx.Committee{{ID: "committee-1"}},
+			Committees:   []itx.Committee{{ID: "committee-1"}, {ID: "committee-2"}},
 		})
 		require.NoError(t, err)
 		require.NotNil(t, client.lastCreateReq)
 	})
 
-	t.Run("rejects create when committee is not associated with the meeting", func(t *testing.T) {
+	t.Run("rejects create when any committee is not associated with the meeting", func(t *testing.T) {
+		// The meeting has committee-1; the request includes committee-1 plus a foreign
+		// committee-attacker. Even though index 0 matches, the extra entry must be rejected.
+		client := &fakePastMeetingClient{}
+		meetingClient := &fakePastMeetingMeetingClient{
+			project:    "proj-1",
+			committees: []itx.Committee{{ID: "committee-1"}},
+		}
+		svc := NewPastMeetingService(client, meetingClient, noOpIDMapper{}, nil)
+
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
+			MeetingID:    "mtg-1",
+			OccurrenceID: "1234567890",
+			ProjectID:    "proj-1",
+			Committees:   []itx.Committee{{ID: "committee-1"}, {ID: "committee-attacker"}},
+		})
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("rejects create when committee is not associated with the meeting (bypass attempt)", func(t *testing.T) {
 		// Simulates the committee-path bypass: attacker is writer on committee-A (project A)
 		// but sends project_uid = B and meeting_id = a meeting on B that has committee-B.
 		// Heimdall passed via committee-A, but the meeting doesn't have committee-A.
 		client := &fakePastMeetingClient{}
 		meetingClient := &fakePastMeetingMeetingClient{
 			project:    "proj-victim",
-			committees: []pkgitx.Committee{{ID: "committee-victim"}},
+			committees: []itx.Committee{{ID: "committee-victim"}},
 		}
 		svc := NewPastMeetingService(client, meetingClient, noOpIDMapper{}, nil)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "foreign-mtg",
 			OccurrenceID: "1234567890",
 			ProjectID:    "proj-victim",
-			Committees:   []pkgitx.Committee{{ID: "committee-attacker"}},
+			Committees:   []itx.Committee{{ID: "committee-attacker"}},
 		})
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
@@ -202,7 +229,7 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheckAfterMapping(t *test
 		mapper := &mappingIDMapper{v2ID: "v2-proj", v1ID: "v1-sfid"}
 		svc := NewPastMeetingService(client, meetingClient, mapper, nil)
 
-		_, err := svc.CreatePastMeeting(context.Background(), &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.CreatePastMeeting(context.Background(), &itx.CreatePastMeetingRequest{
 			MeetingID:    "mtg-1",
 			OccurrenceID: "1234567890",
 			ProjectID:    "v2-proj", // mapped to "v1-sfid" before the ownership check
@@ -213,24 +240,36 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheckAfterMapping(t *test
 }
 
 func TestPastMeetingService_UpdatePastMeeting_RejectsMeetingIDChange(t *testing.T) {
-	t.Run("returns forbidden when meeting_id is provided on update", func(t *testing.T) {
-		client := &fakePastMeetingClient{}
+	t.Run("returns forbidden when meeting_id differs from stored value", func(t *testing.T) {
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
-		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &pkgitx.CreatePastMeetingRequest{
-			MeetingID: "new-mtg-id",
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			MeetingID: "different-mtg",
 			ProjectID: "proj-1",
 		})
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
-		assert.Nil(t, client.lastUpdateReq, "ITX update must not be called when meeting_id is provided")
+		assert.Nil(t, client.lastUpdateReq, "ITX update must not be called when meeting_id changes")
+	})
+
+	t.Run("allows update when meeting_id echoes the stored value", func(t *testing.T) {
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
+		svc := newPastMeetingSvc(client, "proj-1", nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			MeetingID: "original-mtg", // same as stored — full-object echo is safe
+			ProjectID: "proj-1",
+		})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
 	})
 
 	t.Run("allows update when meeting_id is absent", func(t *testing.T) {
-		client := &fakePastMeetingClient{}
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
-		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
 			ProjectID: "proj-1",
 		})
 		require.NoError(t, err)
@@ -244,7 +283,7 @@ func TestPastMeetingService_UpdatePastMeeting_StampsUpdatedByNotCreatedBy(t *tes
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "bob"}}
 		svc := newPastMeetingSvc(client, "proj-1", reader)
 
-		_, err := svc.UpdatePastMeeting(ctxWithPrincipal("bob", "bob@example.com"), "pm-1", &pkgitx.CreatePastMeetingRequest{
+		_, err := svc.UpdatePastMeeting(ctxWithPrincipal("bob", "bob@example.com"), "pm-1", &itx.CreatePastMeetingRequest{
 			ProjectID: "proj-1",
 		})
 		require.NoError(t, err)
