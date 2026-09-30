@@ -207,24 +207,48 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	funcLogger = funcLogger.With("recording_id", recordingData.ID)
 	funcLogger.InfoContext(ctx, "processing past meeting recording update")
 
-	// Resolve committees from the parent past meeting record.
-	_, _, primaryCommitteeSFID, lookupErr := lookupProjectFromPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	// Fetch authoritative fields from the parent past meeting record: committees and access settings.
+	// recording_access / transcript_access on the recording KV record are a snapshot set at
+	// recording-creation time and are never updated when the host changes access via PUT
+	// /itx/past_meetings. The parent record is the authoritative source for both the indexer
+	// public flag and the body access fields, matching the FGA tuples written by
+	// PublishPastMeetingEvent.
+	parent, lookupErr := lookupParentPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
 	if lookupErr != nil {
 		if errors.Is(lookupErr, errMsgpackStructural) {
-			funcLogger.With(logging.ErrKey, lookupErr).ErrorContext(ctx, "permanent decode failure looking up parent past meeting for committees, skipping recording")
+			funcLogger.With(logging.ErrKey, lookupErr).ErrorContext(ctx, "permanent decode failure looking up parent past meeting, skipping recording")
 			return false
 		}
-		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting for committees, will retry")
+		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting, will retry")
 		return true
 	}
-	committees, commErr := resolveParentPastMeetingCommittees(ctx, recordingData.MeetingAndOccurrenceID, primaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
+	committees, commErr := resolveParentPastMeetingCommittees(ctx, recordingData.MeetingAndOccurrenceID, parent.PrimaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
 	if commErr != nil {
 		funcLogger.With(logging.ErrKey, commErr).WarnContext(ctx, "transient error resolving parent committees for recording, will retry")
 		return true
 	}
 	recordingData.Committees = committees
+
+	// Use parent access values (authoritative) for both the indexer public flag and body fields.
+	recordingData.RecordingAccess = parent.RecordingAccess
+	if recordingData.RecordingAccess == "" {
+		recordingData.RecordingAccess = defaultArtifactAccess
+	}
+	// Only copy transcript_access from the parent when transcript files exist; the field must
+	// be omitted (omitempty) when the recording has no transcript. The raw KV snapshot may
+	// carry a stale non-empty value, so clear it explicitly when TranscriptEnabled is false.
+	if recordingData.TranscriptEnabled {
+		recordingData.TranscriptAccess = parent.TranscriptAccess
+		if recordingData.TranscriptAccess == "" {
+			recordingData.TranscriptAccess = defaultArtifactAccess
+		}
+	} else {
+		recordingData.TranscriptAccess = ""
+	}
+
 	if transcriptData != nil {
 		transcriptData.Committees = committees
+		transcriptData.TranscriptAccess = recordingData.TranscriptAccess
 	}
 
 	// Determine action (created vs updated)
@@ -317,10 +341,10 @@ func convertMapToRecordingData(
 		return nil, nil, fmt.Errorf("failed to map project ID (transient): %w", err)
 	}
 
-	// Default recording access to meeting_hosts (most restrictive)
+	// Default recording access to most restrictive; overridden by parent lookup in the handler.
 	recordingAccess := rawRecording.RecordingAccess
 	if recordingAccess == "" {
-		recordingAccess = "meeting_hosts"
+		recordingAccess = defaultArtifactAccess
 	}
 
 	// Split recording files into recording-only and transcript-only lists.
@@ -375,7 +399,7 @@ func convertMapToRecordingData(
 	transcriptEnabled := hasTranscript
 	transcriptAccess := rawRecording.TranscriptAccess
 	if hasTranscript && transcriptAccess == "" {
-		transcriptAccess = "meeting_hosts" // Default to most restrictive
+		transcriptAccess = defaultArtifactAccess
 	}
 
 	recordingData := &models.RecordingEventData{
