@@ -16,13 +16,14 @@ import (
 )
 
 // fakePastMeetingClient captures the past-meeting requests sent to ITX so tests can
-// assert on the outbound created_by / updated_by stamping. storedMeetingID is returned
-// by GetPastMeeting for the reparenting guard tests.
+// assert on the outbound created_by / updated_by stamping. storedMeetingID and
+// storedProjectID are returned by GetPastMeeting for the reparenting guard tests.
 type fakePastMeetingClient struct {
 	domain.ITXPastMeetingClient
 	lastCreateReq   *itx.CreatePastMeetingRequest
 	lastUpdateReq   *itx.CreatePastMeetingRequest
 	storedMeetingID string
+	storedProjectID string
 }
 
 func (f *fakePastMeetingClient) CreatePastMeeting(_ context.Context, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
@@ -36,7 +37,7 @@ func (f *fakePastMeetingClient) UpdatePastMeeting(_ context.Context, _ string, r
 }
 
 func (f *fakePastMeetingClient) GetPastMeeting(_ context.Context, _ string) (*itx.PastMeetingResponse, error) {
-	return &itx.PastMeetingResponse{MeetingID: f.storedMeetingID}, nil
+	return &itx.PastMeetingResponse{MeetingID: f.storedMeetingID, ProjectID: f.storedProjectID}, nil
 }
 
 // fakePastMeetingMeetingClient returns a canned meeting response for ownership checks
@@ -241,7 +242,7 @@ func TestPastMeetingService_CreatePastMeeting_OwnershipCheckAfterMapping(t *test
 
 func TestPastMeetingService_UpdatePastMeeting_RejectsMeetingIDChange(t *testing.T) {
 	t.Run("returns forbidden when meeting_id differs from stored value", func(t *testing.T) {
-		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg", storedProjectID: "proj-1"}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
 		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
@@ -254,7 +255,7 @@ func TestPastMeetingService_UpdatePastMeeting_RejectsMeetingIDChange(t *testing.
 	})
 
 	t.Run("allows update when meeting_id echoes the stored value", func(t *testing.T) {
-		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg", storedProjectID: "proj-1"}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
 		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
@@ -266,7 +267,7 @@ func TestPastMeetingService_UpdatePastMeeting_RejectsMeetingIDChange(t *testing.
 	})
 
 	t.Run("allows update when meeting_id is absent", func(t *testing.T) {
-		client := &fakePastMeetingClient{storedMeetingID: "original-mtg"}
+		client := &fakePastMeetingClient{storedMeetingID: "original-mtg", storedProjectID: "proj-1"}
 		svc := newPastMeetingSvc(client, "proj-1", nil)
 
 		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
@@ -277,9 +278,43 @@ func TestPastMeetingService_UpdatePastMeeting_RejectsMeetingIDChange(t *testing.
 	})
 }
 
+func TestPastMeetingService_UpdatePastMeeting_RejectsProjectUIDChange(t *testing.T) {
+	t.Run("returns forbidden when project_uid differs from stored value", func(t *testing.T) {
+		client := &fakePastMeetingClient{storedProjectID: "proj-original"}
+		svc := newPastMeetingSvc(client, "proj-original", nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			ProjectID: "proj-attacker",
+		})
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastUpdateReq, "ITX update must not be called when project_uid changes")
+	})
+
+	t.Run("allows update when project_uid echoes the stored value", func(t *testing.T) {
+		client := &fakePastMeetingClient{storedProjectID: "proj-1"}
+		svc := newPastMeetingSvc(client, "proj-1", nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{
+			ProjectID: "proj-1", // same as stored — full-object echo is safe
+		})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+	})
+
+	t.Run("allows update when project_uid is absent", func(t *testing.T) {
+		client := &fakePastMeetingClient{storedProjectID: "proj-1"}
+		svc := newPastMeetingSvc(client, "proj-1", nil)
+
+		_, err := svc.UpdatePastMeeting(context.Background(), "pm-1", &itx.CreatePastMeetingRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastUpdateReq)
+	})
+}
+
 func TestPastMeetingService_UpdatePastMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) {
 	t.Run("stamps only updated_by on update", func(t *testing.T) {
-		client := &fakePastMeetingClient{}
+		client := &fakePastMeetingClient{storedProjectID: "proj-1"}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "bob"}}
 		svc := newPastMeetingSvc(client, "proj-1", reader)
 

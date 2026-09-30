@@ -94,23 +94,28 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 
 // UpdatePastMeeting updates a past meeting via ITX proxy
 func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
-	// Reject attempts to re-parent the past meeting to a different meeting. meeting_id is
-	// immutable after creation (same class of constraint as validateProjectNotReparented for
-	// active meetings). We fetch the current record and compare so that callers echoing the
-	// unchanged meeting_id on a full PUT are not blocked.
-	if req.MeetingID != "" {
+	// Map project_uid v2→v1 before the immutability check so the comparison happens in v1
+	// space, matching the stored record's ProjectID as returned by ITX.
+	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
+		return nil, err
+	}
+
+	// Reject re-parenting: meeting_id and project_uid are immutable after creation. Fetch
+	// the current record once when either field is supplied, then compare both. Callers
+	// echoing an unchanged value on a full PUT are not blocked.
+	if req.MeetingID != "" || req.ProjectID != "" {
 		current, err := s.pastMeetingClient.GetPastMeeting(ctx, pastMeetingID)
 		if err != nil {
 			return nil, err
 		}
-		if req.MeetingID != current.MeetingID {
+		if req.MeetingID != "" && req.MeetingID != current.MeetingID {
 			return nil, domain.NewForbiddenError("meeting_id cannot be changed after a past meeting is created")
+		}
+		if req.ProjectID != "" && req.ProjectID != current.ProjectID {
+			return nil, domain.NewForbiddenError("project_uid cannot be changed after a past meeting is created")
 		}
 	}
 
-	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
-		return nil, err
-	}
 	if err := mapITXCommitteesV2ToV1(ctx, s.idMapper, req.Committees); err != nil {
 		return nil, err
 	}
