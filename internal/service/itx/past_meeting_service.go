@@ -54,8 +54,10 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 	if meeting.Project != req.ProjectID {
 		return nil, domain.NewForbiddenError("meeting does not belong to the authorized project")
 	}
-	if len(req.Committees) > 0 && !meetingHasCommittee(meeting, req.Committees[0].ID) {
-		return nil, domain.NewForbiddenError("committee is not associated with the meeting")
+	for _, c := range req.Committees {
+		if !meetingHasCommittee(meeting, c.ID) {
+			return nil, domain.NewForbiddenError("committee is not associated with the meeting")
+		}
 	}
 
 	// Stamp created_by from the authenticated principal so the past-meeting record's
@@ -92,11 +94,18 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 
 // UpdatePastMeeting updates a past meeting via ITX proxy
 func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
-	// Reject attempts to re-parent the past meeting to a different meeting. The parent
-	// meeting_id is immutable after creation (same class of constraint as
-	// validateProjectNotReparented for active meetings).
+	// Reject attempts to re-parent the past meeting to a different meeting. meeting_id is
+	// immutable after creation (same class of constraint as validateProjectNotReparented for
+	// active meetings). We fetch the current record and compare so that callers echoing the
+	// unchanged meeting_id on a full PUT are not blocked.
 	if req.MeetingID != "" {
-		return nil, domain.NewForbiddenError("meeting_id cannot be changed after a past meeting is created")
+		current, err := s.pastMeetingClient.GetPastMeeting(ctx, pastMeetingID)
+		if err != nil {
+			return nil, err
+		}
+		if req.MeetingID != current.MeetingID {
+			return nil, domain.NewForbiddenError("meeting_id cannot be changed after a past meeting is created")
+		}
 	}
 
 	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
