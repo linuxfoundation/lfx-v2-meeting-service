@@ -54,6 +54,11 @@ Manually adds a past meeting record.
 
 **Authorization**: Requires `organizer` permission on the specified project
 
+**Ownership checks**: In addition to the Heimdall authorization check, the proxy verifies:
+
+- The meeting referenced by `meeting_id` must belong to the authorized project (`project_uid`). A mismatch returns `403 Forbidden`.
+- Every committee in the `committees` array must be associated with that meeting. Any committee not found on the meeting returns `403 Forbidden`. This prevents committee-path callers from attaching a past meeting to a meeting they do not own.
+
 ---
 
 ### Update Past Meeting
@@ -69,6 +74,8 @@ Updates a past meeting record, including the invitees lists.
 - `past_meeting_id` (string, required): The hyphenated meeting and occurrence ID
 
 **Authorization**: Requires `organizer` permission on the meeting
+
+**Immutable field**: `meeting_id` cannot be changed after a past meeting is created. If `meeting_id` is supplied in the request body, it must match the stored value; a mismatched value returns `403 Forbidden`. Callers that send the full object unchanged (echoing the stored `meeting_id`) are not blocked.
 
 ---
 

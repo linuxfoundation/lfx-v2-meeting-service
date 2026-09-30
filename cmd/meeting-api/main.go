@@ -174,7 +174,7 @@ func run() int {
 
 	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader)
-	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), idMapper, userMetadataReader)
+	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)
 	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments(), userMetadataReader)

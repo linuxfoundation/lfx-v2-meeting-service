@@ -14,16 +14,18 @@ import (
 type PastMeetingService struct {
 	auditStamper
 	pastMeetingClient domain.ITXPastMeetingClient
+	meetingClient     domain.ITXMeetingClient
 	idMapper          domain.IDMapper
 }
 
 // NewPastMeetingService creates a new ITX past meeting service. userMetadata may be nil
 // (e.g. when NATS is disabled), in which case created_by / updated_by are limited to the
 // JWT-derived username/email rather than blocking the request.
-func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *PastMeetingService {
+func NewPastMeetingService(pastMeetingClient domain.ITXPastMeetingClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *PastMeetingService {
 	return &PastMeetingService{
 		auditStamper:      auditStamper{userMetadata: userMetadata},
 		pastMeetingClient: pastMeetingClient,
+		meetingClient:     meetingClient,
 		idMapper:          idMapper,
 	}
 }
@@ -35,6 +37,27 @@ func (s *PastMeetingService) CreatePastMeeting(ctx context.Context, req *itx.Cre
 	}
 	if err := mapITXCommitteesV2ToV1(ctx, s.idMapper, req.Committees); err != nil {
 		return nil, err
+	}
+
+	// Verify the caller's authorized object (project or committee) actually owns this
+	// meeting. Both req.ProjectID/req.Committees and meeting.Project/meeting.Committees are
+	// in v1 format at this point (after the mapping above).
+	//
+	// The Heimdall rule uses openfga_or_check: meetings_creator@project OR writer@committee.
+	// On the committee path the body's project_uid is not authorized by Heimdall, so we must
+	// also bind the supplied committee to the fetched meeting — otherwise a committee writer
+	// on project A can name any meeting_id with project_uid=B and bypass the project check.
+	meeting, err := s.meetingClient.GetZoomMeeting(ctx, req.MeetingID)
+	if err != nil {
+		return nil, err
+	}
+	if meeting.Project != req.ProjectID {
+		return nil, domain.NewForbiddenError("meeting does not belong to the authorized project")
+	}
+	for _, c := range req.Committees {
+		if !meetingHasCommittee(meeting, c.ID) {
+			return nil, domain.NewForbiddenError("committee is not associated with the meeting")
+		}
 	}
 
 	// Stamp created_by from the authenticated principal so the past-meeting record's
@@ -71,6 +94,20 @@ func (s *PastMeetingService) GetPastMeeting(ctx context.Context, pastMeetingID s
 
 // UpdatePastMeeting updates a past meeting via ITX proxy
 func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingID string, req *itx.CreatePastMeetingRequest) (*itx.PastMeetingResponse, error) {
+	// Reject attempts to re-parent the past meeting to a different meeting. meeting_id is
+	// immutable after creation (same class of constraint as validateProjectNotReparented for
+	// active meetings). We fetch the current record and compare so that callers echoing the
+	// unchanged meeting_id on a full PUT are not blocked.
+	if req.MeetingID != "" {
+		current, err := s.pastMeetingClient.GetPastMeeting(ctx, pastMeetingID)
+		if err != nil {
+			return nil, err
+		}
+		if req.MeetingID != current.MeetingID {
+			return nil, domain.NewForbiddenError("meeting_id cannot be changed after a past meeting is created")
+		}
+	}
+
 	if err := mapProjectFieldV2ToV1(ctx, s.idMapper, &req.ProjectID); err != nil {
 		return nil, err
 	}
@@ -93,4 +130,15 @@ func (s *PastMeetingService) UpdatePastMeeting(ctx context.Context, pastMeetingI
 // DeletePastMeeting deletes a past meeting via ITX proxy
 func (s *PastMeetingService) DeletePastMeeting(ctx context.Context, pastMeetingID string) error {
 	return s.pastMeetingClient.DeletePastMeeting(ctx, pastMeetingID)
+}
+
+// meetingHasCommittee reports whether the meeting's committee list contains committeeID
+// (v1 SFID space). Used to bind the committee-auth path to the actual meeting.
+func meetingHasCommittee(meeting *itx.ZoomMeetingResponse, committeeID string) bool {
+	for _, c := range meeting.Committees {
+		if c.ID == committeeID {
+			return true
+		}
+	}
+	return false
 }
