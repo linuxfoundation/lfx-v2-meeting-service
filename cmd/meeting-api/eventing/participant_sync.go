@@ -101,6 +101,13 @@ func (h *EventHandlers) syncParticipantUpdate(
 		funcLogger.InfoContext(ctx, "skipping participant sync - parent project not found in mappings")
 		return false
 	}
+	// Guard against child events that arrive after the parent past meeting was soft-deleted.
+	// handlePastMeetingDelete tombstones "v1_past_meetings.<id>" with "!del"; publishing
+	// member_put on a deleted object re-creates FGA relations that delete_access removed.
+	if h.isTombstoned(ctx, fmt.Sprintf("v1_past_meetings.%s", participantData.MeetingAndOccurrenceID)) {
+		funcLogger.InfoContext(ctx, "parent past meeting is deleted, skipping participant")
+		return false
+	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
 	funcLogger.InfoContext(ctx, "processing past meeting participant update")
 

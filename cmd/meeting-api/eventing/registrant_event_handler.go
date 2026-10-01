@@ -176,11 +176,11 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	funcLogger = funcLogger.With("registrant_uid", registrantData.UID, "meeting_id", registrantData.MeetingID)
 	funcLogger.InfoContext(ctx, "processing registrant update")
 
-	// Parent validation - meeting must exist
+	// Parent validation - meeting must exist and must not be soft-deleted.
 	// This pre-requisite ensures that the meeting is not a meeting that is filtered out and won't be added
 	// to the v1-mappings KV bucket after this event is processed.
 	meetingMappingKey := fmt.Sprintf("v1_meetings.%s", registrantData.MeetingID)
-	_, err = h.v1MappingsKV.Get(ctx, meetingMappingKey)
+	meetingEntry, err := h.v1MappingsKV.Get(ctx, meetingMappingKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			funcLogger.InfoContext(ctx, "parent meeting not in mappings (filtered/not indexed), skipping registrant")
@@ -188,6 +188,10 @@ func (h *EventHandlers) handleRegistrantUpdate(
 		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error looking up parent meeting mapping, will retry")
 		return true
+	}
+	if entryIsTombstoned(meetingEntry) {
+		funcLogger.InfoContext(ctx, "parent meeting is deleted, skipping registrant")
+		return false
 	}
 
 	// Determine action (created vs updated) and retrieve the previously-stored username
