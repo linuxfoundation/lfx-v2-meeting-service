@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -144,7 +145,16 @@ func mustMarshalJSON(t *testing.T, v interface{}) []byte {
 
 // newParticipantHandlers wires an EventHandlers with the participantTestIDMapper and
 // the supplied mocks, ready for participant handler tests.
+//
+// A catch-all mock is registered so that syncParticipantUpdate's parent tombstone
+// check (isTombstoned on "v1_past_meetings.<id>") succeeds without requiring every
+// test to set it up explicitly. Tests that need to exercise the tombstone path add
+// their specific mock BEFORE calling newParticipantHandlers so testify matches it
+// first (expectations are tried in registration order).
 func newParticipantHandlers(publisher *mockParticipantPublisher, mappingsKV, objectsKV *mockKeyValue) *EventHandlers {
+	mappingsKV.On("Get", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, "v1_past_meetings.")
+	})).Return(mockKeyValueEntry{value: []byte("1")}, nil).Maybe()
 	return &EventHandlers{
 		publisher:    publisher,
 		userLookup:   stubV1UserLookup{},
@@ -510,6 +520,67 @@ func TestHandleInviteeUpdate_ProjectNotFound(t *testing.T) {
 	assert.False(t, retry)
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
 	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+}
+
+// TestHandleInviteeUpdate_ParentPastMeetingTombstoned verifies that a participant update is
+// dropped without publishing when the parent past meeting mapping holds the tombstone marker,
+// i.e. the past meeting was soft-deleted after the delete handler ran.
+func TestHandleInviteeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
+	const (
+		inviteeUID    = "inv-tomb"
+		meetingAndOcc = "meeting-tomb_occ-1"
+		username      = "alice"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Register the tombstone mock BEFORE newParticipantHandlers so testify matches it
+	// first (expectations are tried in registration order).
+	mappingsKV.On("Get", mock.Anything, "v1_past_meetings."+meetingAndOcc).
+		Return(mockKeyValueEntry{key: "v1_past_meetings." + meetingAndOcc, value: []byte(tombstoneMarker)}, nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
+		"itx-zoom-past-meetings-invitees."+inviteeUID,
+		minimalInviteeV1Data(inviteeUID, meetingAndOcc, username))
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
+}
+
+// TestHandleAttendeeUpdate_ParentPastMeetingTombstoned verifies the same tombstone guard
+// via the attendee path through syncParticipantUpdate.
+func TestHandleAttendeeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
+	const (
+		attendeeUID   = "att-tomb"
+		meetingAndOcc = "meeting-tomb_occ-2"
+		username      = "bob"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	objectsKV := &mockKeyValue{}
+	publisher := &mockParticipantPublisher{}
+
+	// Register the tombstone mock BEFORE newParticipantHandlers so testify matches it
+	// first (expectations are tried in registration order).
+	mappingsKV.On("Get", mock.Anything, "v1_past_meetings."+meetingAndOcc).
+		Return(mockKeyValueEntry{key: "v1_past_meetings." + meetingAndOcc, value: []byte(tombstoneMarker)}, nil)
+
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	retry := h.handlePastMeetingAttendeeUpdate(context.Background(),
+		"itx-zoom-past-meetings-attendees."+attendeeUID,
+		minimalAttendeeV1Data(attendeeUID, meetingAndOcc, username))
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
 }
 
 // =============================================================================
