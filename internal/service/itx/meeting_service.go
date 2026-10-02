@@ -183,8 +183,13 @@ func (s *MeetingService) UpdateOccurrence(ctx context.Context, meetingID, occurr
 }
 
 // DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
-func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
-	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID)
+func (s *MeetingService) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.DeleteOccurrenceRequest) error {
+	if req == nil {
+		req = &itx.DeleteOccurrenceRequest{}
+	}
+	// ITX records updated_by on the meeting when present, the same as on an occurrence update.
+	req.UpdatedBy = s.buildRequestingUser(ctx)
+	return s.meetingClient.DeleteOccurrence(ctx, meetingID, occurrenceID, req)
 }
 
 // SubmitMeetingResponse submits a meeting response for a meeting or occurrence via ITX proxy.

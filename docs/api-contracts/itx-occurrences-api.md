@@ -190,13 +190,27 @@ Authorization: Bearer <jwt_token>
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `occurrence_id` (string, required) - The occurrence ID (Unix timestamp)
 
+**Request Body** (optional):
+
+```json
+{
+  "note": "Moved to next week for the holiday"
+}
+```
+
+- `note` (string, optional) - Note ITX includes in the cancellation emails sent to registrants. Trimmed; at most 4000 characters.
+
+The body may be omitted entirely; a request without one behaves as before. The service reads it by hand
+(`SkipRequestBodyEncodeDecode`) because Goa would otherwise treat a declared body as required, so the
+generated OpenAPI spec does not show this schema.
+
 **Response**: `204 No Content`
 
 No response body on success.
 
 **Error Responses**:
 
-- `400 Bad Request` - Invalid request parameters
+- `400 Bad Request` - Invalid request parameters, a body that isn't a JSON object, a non-string `note`, or a `note` over 4000 characters
 - `401 Unauthorized` - Missing or invalid authentication
 - `403 Forbidden` - Insufficient permissions
 - `404 Not Found` - Meeting or occurrence not found
@@ -218,6 +232,18 @@ x-scope: manage:zoom
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `occurrence_id` (string, required) - The occurrence ID (Unix timestamp)
+
+**Request Body**:
+
+```json
+{
+  "note": "Moved to next week for the holiday",
+  "updated_by": { "username": "...", "name": "...", "email": "..." }
+}
+```
+
+`note` is sent only when present. `updated_by` is stamped from the authenticated principal, as on an
+occurrence update.
 
 **Response**: `204 No Content`
 

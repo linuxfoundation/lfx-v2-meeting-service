@@ -4,12 +4,14 @@
 package service
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
@@ -947,4 +949,47 @@ func TestFilterVotingStatuses(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Empty(t, result)
 	})
+}
+
+func TestParseDeleteITXOccurrenceBody(t *testing.T) {
+	t.Run("a nil body is valid and carries no note", func(t *testing.T) {
+		req, err := ParseDeleteITXOccurrenceBody(nil)
+		require.NoError(t, err)
+		assert.Equal(t, &itx.DeleteOccurrenceRequest{}, req)
+	})
+
+	// Existing callers send no body at all; they must keep working unchanged.
+	for name, body := range map[string]string{"empty": "", "whitespace": "  \n", "empty object": "{}", "null": "null", "null note": `{"note":null}`} {
+		t.Run(name+" body yields no note", func(t *testing.T) {
+			req, err := ParseDeleteITXOccurrenceBody(strings.NewReader(body))
+			require.NoError(t, err)
+			assert.Empty(t, req.Note)
+		})
+	}
+
+	t.Run("trims the note and ignores unknown fields", func(t *testing.T) {
+		req, err := ParseDeleteITXOccurrenceBody(strings.NewReader(`{"note":"  Holiday week  ","extra":true}`))
+		require.NoError(t, err)
+		assert.Equal(t, "Holiday week", req.Note)
+	})
+
+	t.Run("counts the limit in characters, not bytes", func(t *testing.T) {
+		req, err := ParseDeleteITXOccurrenceBody(strings.NewReader(`{"note":"` + strings.Repeat("é", MaxOccurrenceCancelNoteLength) + `"}`))
+		require.NoError(t, err)
+		assert.Len(t, []rune(req.Note), MaxOccurrenceCancelNoteLength)
+	})
+
+	for name, body := range map[string]string{
+		"a note over the limit": `{"note":"` + strings.Repeat("a", MaxOccurrenceCancelNoteLength+1) + `"}`,
+		"a non-string note":     `{"note":42}`,
+		"a non-object body":     `["note"]`,
+		"malformed JSON":        `{"note":`,
+		"an oversized body":     `{"note":"a","pad":"` + strings.Repeat("a", maxDeleteOccurrenceBodyBytes) + `"}`,
+	} {
+		t.Run("rejects "+name+" as a validation error", func(t *testing.T) {
+			_, err := ParseDeleteITXOccurrenceBody(strings.NewReader(body))
+			require.Error(t, err)
+			assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
+		})
+	}
 }

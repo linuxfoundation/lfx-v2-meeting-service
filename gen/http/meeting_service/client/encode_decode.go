@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -3220,17 +3221,20 @@ func (c *Client) BuildDeleteItxOccurrenceRequest(ctx context.Context, v any) (*h
 	var (
 		meetingID    string
 		occurrenceID string
+		body         io.Reader
 	)
 	{
-		p, ok := v.(*meetingservice.DeleteItxOccurrencePayload)
+		rd, ok := v.(*meetingservice.DeleteItxOccurrenceRequestData)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "*meetingservice.DeleteItxOccurrencePayload", v)
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "meetingservice.DeleteItxOccurrenceRequestData", v)
 		}
+		p := rd.Payload
+		body = rd.Body
 		meetingID = p.MeetingID
 		occurrenceID = p.OccurrenceID
 	}
 	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxOccurrenceMeetingServicePath(meetingID, occurrenceID)}
-	req, err := http.NewRequest("DELETE", u.String(), nil)
+	req, err := http.NewRequest("DELETE", u.String(), body)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-occurrence", u.String(), err)
 	}
@@ -3245,10 +3249,11 @@ func (c *Client) BuildDeleteItxOccurrenceRequest(ctx context.Context, v any) (*h
 // Meeting Service delete-itx-occurrence server.
 func EncodeDeleteItxOccurrenceRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*meetingservice.DeleteItxOccurrencePayload)
+		data, ok := v.(*meetingservice.DeleteItxOccurrenceRequestData)
 		if !ok {
-			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "*meetingservice.DeleteItxOccurrencePayload", v)
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-occurrence", "*meetingservice.DeleteItxOccurrenceRequestData", v)
 		}
+		p := data.Payload
 		if p.BearerToken != nil {
 			head := *p.BearerToken
 			if !strings.Contains(head, " ") {
@@ -3392,6 +3397,19 @@ func DecodeDeleteItxOccurrenceResponse(decoder func(*http.Response) goahttp.Deco
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-occurrence", resp.StatusCode, string(body))
 		}
 	}
+}
+
+// // BuildDeleteItxOccurrenceStreamPayload creates a streaming endpoint request
+// payload from the method payload and the path to the file to be streamed
+func BuildDeleteItxOccurrenceStreamPayload(payload any, fpath string) (*meetingservice.DeleteItxOccurrenceRequestData, error) {
+	f, err := os.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	return &meetingservice.DeleteItxOccurrenceRequestData{
+		Payload: payload.(*meetingservice.DeleteItxOccurrencePayload),
+		Body:    f,
+	}, nil
 }
 
 // BuildSubmitItxMeetingResponseRequest instantiates a HTTP request object with

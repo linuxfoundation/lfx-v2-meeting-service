@@ -9,6 +9,7 @@ package meetingservice
 
 import (
 	"context"
+	"io"
 
 	goa "goa.design/goa/v3/pkg"
 	"goa.design/goa/v3/security"
@@ -57,6 +58,15 @@ type Endpoints struct {
 	DeleteItxPastMeetingAttachment        goa.Endpoint
 	CreateItxPastMeetingAttachmentPresign goa.Endpoint
 	GetItxPastMeetingAttachmentDownload   goa.Endpoint
+}
+
+// DeleteItxOccurrenceRequestData holds both the payload and the HTTP request
+// body reader of the "delete-itx-occurrence" method.
+type DeleteItxOccurrenceRequestData struct {
+	// Payload is the method payload.
+	Payload *DeleteItxOccurrencePayload
+	// Body streams the HTTP request body.
+	Body io.ReadCloser
 }
 
 // NewEndpoints wraps the methods of the "Meeting Service" service with
@@ -546,7 +556,7 @@ func NewUpdateItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 // method "delete-itx-occurrence" of service "Meeting Service".
 func NewDeleteItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*DeleteItxOccurrencePayload)
+		ep := req.(*DeleteItxOccurrenceRequestData)
 		var err error
 		sc := security.JWTScheme{
 			Name:           "jwt",
@@ -554,14 +564,14 @@ func NewDeleteItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 			RequiredScopes: []string{},
 		}
 		var token string
-		if p.BearerToken != nil {
-			token = string(*p.BearerToken)
+		if ep.Payload.BearerToken != nil {
+			token = string(*ep.Payload.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
 			return nil, err
 		}
-		return nil, s.DeleteItxOccurrence(ctx, p)
+		return nil, s.DeleteItxOccurrence(ctx, ep.Payload, ep.Body)
 	}
 }
 

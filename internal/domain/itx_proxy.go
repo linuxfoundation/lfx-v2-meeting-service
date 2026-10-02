@@ -20,7 +20,7 @@ type ITXMeetingClient interface {
 	ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error
 	RegisterCommitteeMembers(ctx context.Context, meetingID string) error
 	UpdateOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.UpdateOccurrenceRequest) error
-	DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error
+	DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.DeleteOccurrenceRequest) error
 	SubmitMeetingResponse(ctx context.Context, meetingAndOccurrenceID string, req *itx.MeetingResponseRequest) (*itx.MeetingResponseResult, error)
 }
 

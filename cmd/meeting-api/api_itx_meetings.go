@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
@@ -138,12 +139,16 @@ func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.Upd
 }
 
 // DeleteItxOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
-func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.DeleteItxOccurrencePayload) error {
-	err := s.itxMeetingService.DeleteOccurrence(ctx, p.MeetingID, p.OccurrenceID)
+func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.DeleteItxOccurrencePayload, body io.ReadCloser) error {
+	req, err := service.ParseDeleteITXOccurrenceBody(body)
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	slog.InfoContext(ctx, "meeting occurrence deleted", "meeting_id", p.MeetingID, "occurrence_id", p.OccurrenceID)
+	err = s.itxMeetingService.DeleteOccurrence(ctx, p.MeetingID, p.OccurrenceID, req)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	slog.InfoContext(ctx, "meeting occurrence deleted", "meeting_id", p.MeetingID, "occurrence_id", p.OccurrenceID, "has_note", req.Note != "")
 	return nil
 }
 

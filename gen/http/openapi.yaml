@@ -1070,7 +1070,7 @@ paths:
             tags:
                 - Meeting Service
             summary: delete-itx-occurrence Meeting Service
-            description: Delete a specific occurrence of a recurring meeting through ITX API proxy
+            description: 'Delete a specific occurrence of a recurring meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that ITX includes in the cancellation emails sent to registrants. The body is read by hand so a request without one stays valid.'
             operationId: Meeting Service#delete-itx-occurrence
             parameters:
                 - name: v

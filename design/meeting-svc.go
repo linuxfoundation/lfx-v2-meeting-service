@@ -747,7 +747,9 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	Method("delete-itx-occurrence", func() {
-		Description("Delete a specific occurrence of a recurring meeting through ITX API proxy")
+		Description("Delete a specific occurrence of a recurring meeting through ITX API proxy. " +
+			"Accepts an optional JSON body {\"note\": \"...\"} (at most 4000 characters) that ITX includes in the " +
+			"cancellation emails sent to registrants. The body is read by hand so a request without one stays valid.")
 
 		Security(JWTAuth)
 
@@ -774,6 +776,8 @@ var _ = Service("Meeting Service", func() {
 			DELETE("/itx/meetings/{meeting_id}/occurrences/{occurrence_id}")
 			Param("version:v")
 			Header("bearer_token:Authorization")
+			// Goa treats a declared body as required, which would reject the existing body-less callers.
+			SkipRequestBodyEncodeDecode()
 			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("Unauthorized", StatusUnauthorized)

@@ -1306,7 +1306,8 @@ func NewDeleteItxOccurrenceHandler(
 			}
 			return
 		}
-		res, err := endpoint(ctx, payload)
+		data := &meetingservice.DeleteItxOccurrenceRequestData{Payload: payload, Body: r.Body}
+		res, err := endpoint(ctx, data)
 		if err != nil {
 			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
 				errhandler(ctx, w, err)

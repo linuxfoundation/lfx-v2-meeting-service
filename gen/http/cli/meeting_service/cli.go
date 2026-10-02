@@ -172,6 +172,7 @@ func ParseEndpoint(
 		meetingServiceDeleteItxOccurrenceOccurrenceIDFlag = new(cliStringFlag)
 		meetingServiceDeleteItxOccurrenceVersionFlag      = new(cliStringFlag)
 		meetingServiceDeleteItxOccurrenceBearerTokenFlag  = new(cliStringFlag)
+		meetingServiceDeleteItxOccurrenceStreamFlag       = new(cliStringFlag)
 
 		meetingServiceSubmitItxMeetingResponseFlags           = flag.NewFlagSet("submit-itx-meeting-response", flag.ExitOnError)
 		meetingServiceSubmitItxMeetingResponseBodyFlag        = new(cliStringFlag)
@@ -377,6 +378,7 @@ func ParseEndpoint(
 	meetingServiceDeleteItxOccurrenceFlags.Var(meetingServiceDeleteItxOccurrenceOccurrenceIDFlag, "occurrence-id", "The ID of the occurrence (Unix timestamp)")
 	meetingServiceDeleteItxOccurrenceFlags.Var(meetingServiceDeleteItxOccurrenceVersionFlag, "version", "")
 	meetingServiceDeleteItxOccurrenceFlags.Var(meetingServiceDeleteItxOccurrenceBearerTokenFlag, "bearer-token", "")
+	meetingServiceDeleteItxOccurrenceFlags.Var(meetingServiceDeleteItxOccurrenceStreamFlag, "stream", "path to file containing the streamed request body")
 	meetingServiceSubmitItxMeetingResponseFlags.Var(meetingServiceSubmitItxMeetingResponseBodyFlag, "body", "")
 	meetingServiceSubmitItxMeetingResponseFlags.Var(meetingServiceSubmitItxMeetingResponseMeetingIDFlag, "meeting-id", "The Zoom meeting ID")
 	meetingServiceSubmitItxMeetingResponseFlags.Var(meetingServiceSubmitItxMeetingResponseVersionFlag, "version", "")
@@ -747,6 +749,13 @@ func ParseEndpoint(
 			case "delete-itx-occurrence":
 				endpoint = c.DeleteItxOccurrence()
 				data, err = meetingservicec.BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingIDFlag.value, meetingServiceDeleteItxOccurrenceOccurrenceIDFlag.value, meetingServiceDeleteItxOccurrenceVersionFlag.value, meetingServiceDeleteItxOccurrenceBearerTokenFlag.value)
+				if err == nil {
+					if meetingServiceDeleteItxOccurrenceStreamFlag.value == nil {
+						err = fmt.Errorf("missing required flag --stream")
+					} else {
+						data, err = meetingservicec.BuildDeleteItxOccurrenceStreamPayload(data, *meetingServiceDeleteItxOccurrenceStreamFlag.value)
+					}
+				}
 			case "submit-itx-meeting-response":
 				endpoint = c.SubmitItxMeetingResponse()
 				data, err = meetingservicec.BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponseBodyFlag.value, meetingServiceSubmitItxMeetingResponseMeetingIDFlag.value, meetingServiceSubmitItxMeetingResponseVersionFlag.value, meetingServiceSubmitItxMeetingResponseBearerTokenFlag.value)
@@ -847,7 +856,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    resend-itx-meeting-invitations: Resend meeting invitations to all registrants through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    register-itx-committee-members: Register committee members to a meeting asynchronously through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-occurrence: Update a specific occurrence of a recurring meeting through ITX API proxy`)
-	fmt.Fprintln(os.Stderr, `    delete-itx-occurrence: Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-occurrence: Delete a specific occurrence of a recurring meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that ITX includes in the cancellation emails sent to registrants. The body is read by hand so a request without one stays valid.`)
 	fmt.Fprintln(os.Stderr, `    submit-itx-meeting-response: Submit a meeting response (invite response) for a meeting or occurrence through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting: Create a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting: Get a past meeting through ITX API proxy`)
@@ -1303,21 +1312,23 @@ func meetingServiceDeleteItxOccurrenceUsage() {
 	fmt.Fprint(os.Stderr, " -occurrence-id STRING")
 	fmt.Fprint(os.Stderr, " -version STRING")
 	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprint(os.Stderr, " -stream STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a specific occurrence of a recurring meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `Delete a specific occurrence of a recurring meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that ITX includes in the cancellation emails sent to registrants. The body is read by hand so a request without one stays valid.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
 	fmt.Fprintln(os.Stderr, `    -occurrence-id STRING: The ID of the occurrence (Unix timestamp)`)
 	fmt.Fprintln(os.Stderr, `    -version STRING: `)
 	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -stream STRING: path to file containing the streamed request body`)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-occurrence --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-occurrence --meeting-id \"1234567890\" --occurrence-id \"1640995200\" --version \"1\" --bearer-token \"eyJhbGci...\" --stream \"goa.png\"")
 }
 
 func meetingServiceSubmitItxMeetingResponseUsage() {
