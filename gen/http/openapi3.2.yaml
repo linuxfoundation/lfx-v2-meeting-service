@@ -219,16 +219,20 @@ paths:
                                 modified_at: "2021-01-01T00:00:00Z"
                                 next_occurrence_start_time: "2026-06-01T10:00:00Z"
                                 occurrences:
-                                    - duration: 2607262732633339212
+                                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                                      duration: 2607262732633339212
                                       occurrence_id: "1640995200"
                                       registrant_count: 6482720618991026082
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: available
-                                    - duration: 2607262732633339212
+                                      title: Eos sit reiciendis quo.
+                                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                                      duration: 2607262732633339212
                                       occurrence_id: "1640995200"
                                       registrant_count: 6482720618991026082
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: available
+                                      title: Eos sit reiciendis quo.
                                 owner:
                                     email: john.doe@example.com
                                     name: John Doe
@@ -475,16 +479,20 @@ paths:
                                 modified_at: "2021-01-01T00:00:00Z"
                                 next_occurrence_start_time: "2026-06-01T10:00:00Z"
                                 occurrences:
-                                    - duration: 2607262732633339212
+                                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                                      duration: 2607262732633339212
                                       occurrence_id: "1640995200"
                                       registrant_count: 6482720618991026082
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: available
-                                    - duration: 2607262732633339212
+                                      title: Eos sit reiciendis quo.
+                                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                                      duration: 2607262732633339212
                                       occurrence_id: "1640995200"
                                       registrant_count: 6482720618991026082
                                       start_time: "2021-01-01T10:00:00Z"
                                       status: available
+                                      title: Eos sit reiciendis quo.
                                 owner:
                                     email: john.doe@example.com
                                     name: John Doe
@@ -5964,6 +5972,10 @@ components:
         ITXOccurrence:
             type: object
             properties:
+                description:
+                    type: string
+                    description: Agenda of this occurrence (ITX agenda); may differ from the series description
+                    example: Eos voluptatem cupiditate dignissimos quia consequatur.
                 duration:
                     type: integer
                     description: Duration in minutes
@@ -5990,13 +6002,19 @@ components:
                     enum:
                         - available
                         - cancel
+                title:
+                    type: string
+                    description: Title of this occurrence (ITX topic); may differ from the series title
+                    example: Eos sit reiciendis quo.
             description: Meeting occurrence from ITX
             example:
+                description: Eos voluptatem cupiditate dignissimos quia consequatur.
                 duration: 2607262732633339212
                 occurrence_id: "1640995200"
                 registrant_count: 6482720618991026082
                 start_time: "2021-01-01T10:00:00Z"
                 status: available
+                title: Eos sit reiciendis quo.
         ITXPastMeetingAttachment:
             type: object
             properties:
@@ -6895,16 +6913,20 @@ components:
                         $ref: '#/components/schemas/ITXOccurrence'
                     description: Meeting occurrences (for recurring)
                     example:
-                        - duration: 2607262732633339212
+                        - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                          duration: 2607262732633339212
                           occurrence_id: "1640995200"
                           registrant_count: 6482720618991026082
                           start_time: "2021-01-01T10:00:00Z"
                           status: available
-                        - duration: 2607262732633339212
+                          title: Eos sit reiciendis quo.
+                        - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                          duration: 2607262732633339212
                           occurrence_id: "1640995200"
                           registrant_count: 6482720618991026082
                           start_time: "2021-01-01T10:00:00Z"
                           status: available
+                          title: Eos sit reiciendis quo.
                 owner:
                     $ref: '#/components/schemas/ITXUser'
                 passcode:
@@ -7024,16 +7046,20 @@ components:
                 modified_at: "2021-01-01T00:00:00Z"
                 next_occurrence_start_time: "2026-06-01T10:00:00Z"
                 occurrences:
-                    - duration: 2607262732633339212
+                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                      duration: 2607262732633339212
                       occurrence_id: "1640995200"
                       registrant_count: 6482720618991026082
                       start_time: "2021-01-01T10:00:00Z"
                       status: available
-                    - duration: 2607262732633339212
+                      title: Eos sit reiciendis quo.
+                    - description: Eos voluptatem cupiditate dignissimos quia consequatur.
+                      duration: 2607262732633339212
                       occurrence_id: "1640995200"
                       registrant_count: 6482720618991026082
                       start_time: "2021-01-01T10:00:00Z"
                       status: available
+                      title: Eos sit reiciendis quo.
                 owner:
                     email: john.doe@example.com
                     name: John Doe

@@ -443,14 +443,22 @@ func TestConvertITXMeetingResponseToGoa_Occurrences(t *testing.T) {
 					Duration:        60,
 					Status:          itx.OccurrenceStatusAvailable,
 					RegistrantCount: 5,
+					Topic:           "Planning session",
+					Agenda:          "Q3 roadmap",
 				},
+				{OccurrenceID: "occ-2", StartTime: "2026-06-08T10:00:00Z", Duration: 60, Status: itx.OccurrenceStatusAvailable},
 			},
 		}
 
 		g := ConvertITXMeetingResponseToGoa(resp)
 
-		require.Len(t, g.Occurrences, 1)
+		require.Len(t, g.Occurrences, 2)
+		// An occurrence without its own topic/agenda leaves both off the wire, so clients fall back to the series.
+		assert.Nil(t, g.Occurrences[1].Title)
+		assert.Nil(t, g.Occurrences[1].Description)
 		occ := g.Occurrences[0]
+		assert.Equal(t, "Planning session", utils.StringValue(occ.Title))
+		assert.Equal(t, "Q3 roadmap", utils.StringValue(occ.Description))
 		assert.Equal(t, "occ-1", utils.StringValue(occ.OccurrenceID))
 		assert.Equal(t, "2026-06-01T10:00:00Z", utils.StringValue(occ.StartTime))
 		require.NotNil(t, occ.Duration)

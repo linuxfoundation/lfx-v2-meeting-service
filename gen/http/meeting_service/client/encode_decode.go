@@ -7798,6 +7798,8 @@ func unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence(v *ITXOccur
 		Duration:        v.Duration,
 		Status:          v.Status,
 		RegistrantCount: v.RegistrantCount,
+		Title:           v.Title,
+		Description:     v.Description,
 	}
 
 	return res

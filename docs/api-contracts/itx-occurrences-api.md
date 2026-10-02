@@ -331,11 +331,16 @@ This corresponds to `2022-01-01T00:00:00Z` in Unix time (UTC).
       "start_time": "2022-01-08T00:00:00Z",
       "duration": 60,
       "status": "available",
-      "registrant_count": 0
+      "registrant_count": 0,
+      "title": "Planning session",
+      "description": "Q3 roadmap"
     }
   ]
 }
 ```
+
+`title` and `description` carry the occurrence's own ITX `topic` and `agenda` (for example after an
+occurrence update) and are omitted when ITX returns them empty; clients fall back to the series values.
 
 ---
 

@@ -161,6 +161,8 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 				Duration:        &duration,
 				Status:          &status,
 				RegistrantCount: utils.IntPtrOmitZero(resp.Occurrences[i].RegistrantCount),
+				Title:           utils.StringPtrOmitEmpty(resp.Occurrences[i].Topic),
+				Description:     utils.StringPtrOmitEmpty(resp.Occurrences[i].Agenda),
 			}
 		}
 	}

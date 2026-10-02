@@ -3918,6 +3918,11 @@ type ITXOccurrenceResponseBody struct {
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// Number of registrants for this occurrence
 	RegistrantCount *int `form:"registrant_count,omitempty" json:"registrant_count,omitempty" xml:"registrant_count,omitempty"`
+	// Title of this occurrence (ITX topic); may differ from the series title
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// Agenda of this occurrence (ITX agenda); may differ from the series
+	// description
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
 }
 
 // PastMeetingSummaryZoomConfigResponseBody is used to define fields on

@@ -140,6 +140,9 @@ func (s *MeetingsAPI) UpdateItxOccurrence(ctx context.Context, p *meetingsvc.Upd
 
 // DeleteItxOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy
 func (s *MeetingsAPI) DeleteItxOccurrence(ctx context.Context, p *meetingsvc.DeleteItxOccurrencePayload, body io.ReadCloser) error {
+	if body != nil {
+		defer func() { _ = body.Close() }()
+	}
 	req, err := service.ParseDeleteITXOccurrenceBody(body)
 	if err != nil {
 		return handleError(ctx, err)

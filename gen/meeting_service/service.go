@@ -824,6 +824,11 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+	// Title of this occurrence (ITX topic); may differ from the series title
+	Title *string
+	// Agenda of this occurrence (ITX agenda); may differ from the series
+	// description
+	Description *string
 }
 
 // ITXPastMeetingAttachment is the result type of the Meeting Service service
