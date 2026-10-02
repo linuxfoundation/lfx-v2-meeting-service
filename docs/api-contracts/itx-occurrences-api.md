@@ -190,13 +190,29 @@ Authorization: Bearer <jwt_token>
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `occurrence_id` (string, required) - The occurrence ID (Unix timestamp)
 
+**Request Body** (optional):
+
+```json
+{
+  "note": "Moved to next week for the holiday"
+}
+```
+
+- `note` (string, optional) - Note ITX includes in the cancellation emails sent to registrants. Trimmed; at most 4000 characters.
+
+The body may be omitted entirely; a request without one behaves as before. An empty or whitespace-only
+body, JSON `null`, `{}`, `{"note": null}`, and a note that is blank after trimming are all treated as no
+note. The service reads the body by hand
+(`SkipRequestBodyEncodeDecode`) because Goa would otherwise treat a declared body as required, so the
+generated OpenAPI spec does not show this schema.
+
 **Response**: `204 No Content`
 
 No response body on success.
 
 **Error Responses**:
 
-- `400 Bad Request` - Invalid request parameters
+- `400 Bad Request` - Invalid request parameters, a non-empty body that isn't a JSON object or `null`, malformed JSON, a `note` that is neither a string nor `null`, a `note` over 4000 characters, or a body over 64 KiB
 - `401 Unauthorized` - Missing or invalid authentication
 - `403 Forbidden` - Insufficient permissions
 - `404 Not Found` - Meeting or occurrence not found
@@ -218,6 +234,18 @@ x-scope: manage:zoom
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 - `occurrence_id` (string, required) - The occurrence ID (Unix timestamp)
+
+**Request Body**:
+
+```json
+{
+  "note": "Moved to next week for the holiday",
+  "updated_by": { "username": "...", "name": "...", "email": "..." }
+}
+```
+
+`note` is sent only when present. `updated_by` is stamped from the authenticated principal, as on an
+occurrence update.
 
 **Response**: `204 No Content`
 
@@ -305,11 +333,16 @@ This corresponds to `2022-01-01T00:00:00Z` in Unix time (UTC).
       "start_time": "2022-01-08T00:00:00Z",
       "duration": 60,
       "status": "available",
-      "registrant_count": 0
+      "registrant_count": 0,
+      "title": "Planning session",
+      "description": "Q3 roadmap"
     }
   ]
 }
 ```
+
+`title` and `description` carry the occurrence's own ITX `topic` and `agenda` (for example after an
+occurrence update) and are omitted when ITX returns them empty; clients fall back to the series values.
 
 ---
 

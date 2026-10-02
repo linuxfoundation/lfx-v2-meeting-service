@@ -147,13 +147,16 @@ func (c *Client) UpdateOccurrence(ctx context.Context, meetingID, occurrenceID s
 }
 
 // DeleteOccurrence deletes a specific occurrence of a recurring meeting via ITX proxy.
-func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string) error {
+// The note is free text written by the organizer, so the body is kept out of the logs.
+func (c *Client) DeleteOccurrence(ctx context.Context, meetingID, occurrenceID string, req *itx.DeleteOccurrenceRequest) error {
 	return c.doNoContent(ctx, apiRequest{
 		method:      http.MethodDelete,
 		path:        "/v2/zoom/meetings/%s/occurrences/%s",
 		pathArgs:    []any{meetingID, occurrenceID},
+		body:        req,
 		debugOp:     "DeleteOccurrence",
 		debugFields: []any{"meetingID", meetingID, "occurrenceID", occurrenceID},
+		skipBodyLog: true,
 	})
 }
 

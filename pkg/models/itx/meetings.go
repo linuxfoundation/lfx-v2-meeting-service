@@ -263,6 +263,12 @@ type UpdateOccurrenceRequest struct {
 	UpdatedBy  *User       `json:"updated_by,omitempty"` // User updating the occurrence (read-only, set by API)
 }
 
+// DeleteOccurrenceRequest represents the optional body sent when cancelling a single occurrence
+type DeleteOccurrenceRequest struct {
+	Note      string `json:"note,omitempty"`       // Note ITX includes in the cancellation emails sent to registrants
+	UpdatedBy *User  `json:"updated_by,omitempty"` // User cancelling the occurrence (read-only, set by API)
+}
+
 // ResendMeetingInvitationsRequest represents the request to resend invitations to all registrants
 type ResendMeetingInvitationsRequest struct {
 	ExcludeRegistrantIDs []string `json:"exclude_registrant_ids,omitempty"` // Registrant IDs to exclude

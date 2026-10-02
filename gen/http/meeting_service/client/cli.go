@@ -19,13 +19,16 @@ import (
 
 // BuildCreateItxMeetingPayload builds the payload for the Meeting Service
 // create-itx-meeting endpoint from CLI flags.
-func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, meetingServiceCreateItxMeetingVersion string, meetingServiceCreateItxMeetingBearerToken string, meetingServiceCreateItxMeetingXSync string) (*meetingservice.CreateItxMeetingPayload, error) {
+func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody *string, meetingServiceCreateItxMeetingVersion *string, meetingServiceCreateItxMeetingBearerToken *string, meetingServiceCreateItxMeetingXSync *string) (*meetingservice.CreateItxMeetingPayload, error) {
 	var err error
 	var body CreateItxMeetingRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxMeetingBody), &body)
+		if meetingServiceCreateItxMeetingBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": false,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"auto_email_reminder_enabled\": false,\n      \"auto_email_reminder_time\": 300,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"m27\",\n      \"duration\": 400,\n      \"early_join_time_minutes\": 27,\n      \"meeting_type\": \"Marketing\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1980-07-31T05:58:46Z\",\n         \"end_times\": 3067367318907720017,\n         \"monthly_day\": 1348775898617692811,\n         \"monthly_week\": 6846866430213547457,\n         \"monthly_week_day\": 6031764195151343697,\n         \"repeat_interval\": 4333485686106045182,\n         \"type\": 2,\n         \"weekly_days\": \"Qui provident rem earum eum.\"\n      },\n      \"require_ai_summary_approval\": false,\n      \"restricted\": true,\n      \"show_meeting_attendees\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Consequuntur qui placeat reprehenderit.\",\n      \"title\": \"Quo ipsum esse libero quae velit nobis.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": false,\n      \"artifact_visibility\": \"public\",\n      \"auto_email_reminder_enabled\": true,\n      \"auto_email_reminder_time\": 1093,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"t39\",\n      \"duration\": 120,\n      \"early_join_time_minutes\": 15,\n      \"meeting_type\": \"Legal\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2003-04-18T10:16:31Z\",\n         \"end_times\": 822770662980892917,\n         \"monthly_day\": 4767059819435764011,\n         \"monthly_week\": 8232228581568966464,\n         \"monthly_week_day\": 2375152045664599240,\n         \"repeat_interval\": 2824683752061790690,\n         \"type\": 2,\n         \"weekly_days\": \"Molestiae laborum voluptatem in.\"\n      },\n      \"require_ai_summary_approval\": false,\n      \"restricted\": false,\n      \"show_meeting_attendees\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Facere doloremque.\",\n      \"title\": \"Non aperiam.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": false\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
 		if body.Duration < 0 {
@@ -44,7 +47,7 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 		}
 		for _, e := range body.Committees {
 			if e != nil {
-				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 					err = goa.MergeErrors(err, err2)
 				}
 			}
@@ -58,8 +61,6 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 			if *body.EarlyJoinTimeMinutes < 10 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
 			if *body.EarlyJoinTimeMinutes > 60 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 			}
@@ -70,7 +71,7 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 			}
 		}
 		if body.Recurrence != nil {
-			if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+			if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -78,14 +79,12 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 			if *body.AutoEmailReminderTime < 120 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 			}
-		}
-		if body.AutoEmailReminderTime != nil {
 			if *body.AutoEmailReminderTime > 1440 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 			}
 		}
 		if body.Owner != nil {
-			if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.Owner, "body.owner"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -95,10 +94,10 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxMeetingVersion != "" {
-			version = &meetingServiceCreateItxMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxMeetingVersion != nil {
+			version = meetingServiceCreateItxMeetingVersion
+			if !(*meetingServiceCreateItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -107,15 +106,15 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxMeetingBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxMeetingBearerToken
+		if meetingServiceCreateItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceCreateItxMeetingBearerToken
 		}
 	}
 	var xSync *bool
 	{
-		if meetingServiceCreateItxMeetingXSync != "" {
+		if meetingServiceCreateItxMeetingXSync != nil {
 			var val bool
-			val, err = strconv.ParseBool(meetingServiceCreateItxMeetingXSync)
+			val, err = strconv.ParseBool(*meetingServiceCreateItxMeetingXSync)
 			xSync = &val
 			if err != nil {
 				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
@@ -168,18 +167,21 @@ func BuildCreateItxMeetingPayload(meetingServiceCreateItxMeetingBody string, mee
 
 // BuildGetItxMeetingPayload builds the payload for the Meeting Service
 // get-itx-meeting endpoint from CLI flags.
-func BuildGetItxMeetingPayload(meetingServiceGetItxMeetingMeetingID string, meetingServiceGetItxMeetingVersion string, meetingServiceGetItxMeetingBearerToken string) (*meetingservice.GetItxMeetingPayload, error) {
+func BuildGetItxMeetingPayload(meetingServiceGetItxMeetingMeetingID *string, meetingServiceGetItxMeetingVersion *string, meetingServiceGetItxMeetingBearerToken *string) (*meetingservice.GetItxMeetingPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxMeetingMeetingID
+		if meetingServiceGetItxMeetingMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxMeetingMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceGetItxMeetingVersion != "" {
-			version = &meetingServiceGetItxMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxMeetingVersion != nil {
+			version = meetingServiceGetItxMeetingVersion
+			if !(*meetingServiceGetItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -188,8 +190,8 @@ func BuildGetItxMeetingPayload(meetingServiceGetItxMeetingMeetingID string, meet
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxMeetingBearerToken != "" {
-			bearerToken = &meetingServiceGetItxMeetingBearerToken
+		if meetingServiceGetItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceGetItxMeetingBearerToken
 		}
 	}
 	v := &meetingservice.GetItxMeetingPayload{}
@@ -202,18 +204,21 @@ func BuildGetItxMeetingPayload(meetingServiceGetItxMeetingMeetingID string, meet
 
 // BuildDeleteItxMeetingPayload builds the payload for the Meeting Service
 // delete-itx-meeting endpoint from CLI flags.
-func BuildDeleteItxMeetingPayload(meetingServiceDeleteItxMeetingMeetingID string, meetingServiceDeleteItxMeetingVersion string, meetingServiceDeleteItxMeetingBearerToken string) (*meetingservice.DeleteItxMeetingPayload, error) {
+func BuildDeleteItxMeetingPayload(meetingServiceDeleteItxMeetingMeetingID *string, meetingServiceDeleteItxMeetingVersion *string, meetingServiceDeleteItxMeetingBearerToken *string) (*meetingservice.DeleteItxMeetingPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceDeleteItxMeetingMeetingID
+		if meetingServiceDeleteItxMeetingMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceDeleteItxMeetingMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxMeetingVersion != "" {
-			version = &meetingServiceDeleteItxMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxMeetingVersion != nil {
+			version = meetingServiceDeleteItxMeetingVersion
+			if !(*meetingServiceDeleteItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -222,8 +227,8 @@ func BuildDeleteItxMeetingPayload(meetingServiceDeleteItxMeetingMeetingID string
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxMeetingBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxMeetingBearerToken
+		if meetingServiceDeleteItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxMeetingBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxMeetingPayload{}
@@ -236,13 +241,16 @@ func BuildDeleteItxMeetingPayload(meetingServiceDeleteItxMeetingMeetingID string
 
 // BuildUpdateItxMeetingPayload builds the payload for the Meeting Service
 // update-itx-meeting endpoint from CLI flags.
-func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, meetingServiceUpdateItxMeetingMeetingID string, meetingServiceUpdateItxMeetingVersion string, meetingServiceUpdateItxMeetingBearerToken string, meetingServiceUpdateItxMeetingXSync string) (*meetingservice.UpdateItxMeetingPayload, error) {
+func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody *string, meetingServiceUpdateItxMeetingMeetingID *string, meetingServiceUpdateItxMeetingVersion *string, meetingServiceUpdateItxMeetingBearerToken *string, meetingServiceUpdateItxMeetingXSync *string) (*meetingservice.UpdateItxMeetingPayload, error) {
 	var err error
 	var body UpdateItxMeetingRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxMeetingBody), &body)
+		if meetingServiceUpdateItxMeetingBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": false,\n      \"artifact_visibility\": \"public\",\n      \"auto_email_reminder_enabled\": false,\n      \"auto_email_reminder_time\": 1313,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"c81\",\n      \"duration\": 234,\n      \"early_join_time_minutes\": 12,\n      \"meeting_type\": \"Board\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"1980-07-31T05:58:46Z\",\n         \"end_times\": 3067367318907720017,\n         \"monthly_day\": 1348775898617692811,\n         \"monthly_week\": 6846866430213547457,\n         \"monthly_week_day\": 6031764195151343697,\n         \"repeat_interval\": 4333485686106045182,\n         \"type\": 2,\n         \"weekly_days\": \"Qui provident rem earum eum.\"\n      },\n      \"require_ai_summary_approval\": false,\n      \"restricted\": false,\n      \"show_meeting_attendees\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Consectetur qui repudiandae nostrum.\",\n      \"title\": \"Quaerat tenetur qui consequuntur recusandae ut quaerat.\",\n      \"transcript_enabled\": true,\n      \"update_note\": \"ign\",\n      \"visibility\": \"private\",\n      \"youtube_upload_enabled\": true\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"ai_summary_enabled\": false,\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"auto_email_reminder_enabled\": true,\n      \"auto_email_reminder_time\": 1066,\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"xl2\",\n      \"duration\": 222,\n      \"early_join_time_minutes\": 34,\n      \"meeting_type\": \"Other\",\n      \"owner\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": true,\n      \"recurrence\": {\n         \"end_date_time\": \"2003-04-18T10:16:31Z\",\n         \"end_times\": 822770662980892917,\n         \"monthly_day\": 4767059819435764011,\n         \"monthly_week\": 8232228581568966464,\n         \"monthly_week_day\": 2375152045664599240,\n         \"repeat_interval\": 2824683752061790690,\n         \"type\": 2,\n         \"weekly_days\": \"Molestiae laborum voluptatem in.\"\n      },\n      \"require_ai_summary_approval\": true,\n      \"restricted\": true,\n      \"show_meeting_attendees\": true,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Voluptatem accusantium pariatur.\",\n      \"title\": \"Reprehenderit est.\",\n      \"transcript_enabled\": true,\n      \"update_note\": \"gii\",\n      \"visibility\": \"public\",\n      \"youtube_upload_enabled\": true\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
 		if body.Duration < 0 {
@@ -261,7 +269,7 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 		}
 		for _, e := range body.Committees {
 			if e != nil {
-				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 					err = goa.MergeErrors(err, err2)
 				}
 			}
@@ -275,8 +283,6 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 			if *body.EarlyJoinTimeMinutes < 10 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 			}
-		}
-		if body.EarlyJoinTimeMinutes != nil {
 			if *body.EarlyJoinTimeMinutes > 60 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 			}
@@ -287,7 +293,7 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 			}
 		}
 		if body.Recurrence != nil {
-			if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+			if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -295,8 +301,6 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 			if *body.AutoEmailReminderTime < 120 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 			}
-		}
-		if body.AutoEmailReminderTime != nil {
 			if *body.AutoEmailReminderTime > 1440 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 			}
@@ -307,7 +311,7 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 			}
 		}
 		if body.Owner != nil {
-			if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.Owner, "body.owner"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -317,14 +321,17 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceUpdateItxMeetingMeetingID
+		if meetingServiceUpdateItxMeetingMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceUpdateItxMeetingMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxMeetingVersion != "" {
-			version = &meetingServiceUpdateItxMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxMeetingVersion != nil {
+			version = meetingServiceUpdateItxMeetingVersion
+			if !(*meetingServiceUpdateItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -333,15 +340,15 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxMeetingBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxMeetingBearerToken
+		if meetingServiceUpdateItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxMeetingBearerToken
 		}
 	}
 	var xSync *bool
 	{
-		if meetingServiceUpdateItxMeetingXSync != "" {
+		if meetingServiceUpdateItxMeetingXSync != nil {
 			var val bool
-			val, err = strconv.ParseBool(meetingServiceUpdateItxMeetingXSync)
+			val, err = strconv.ParseBool(*meetingServiceUpdateItxMeetingXSync)
 			xSync = &val
 			if err != nil {
 				return nil, fmt.Errorf("invalid value for xSync, must be BOOL")
@@ -396,14 +403,14 @@ func BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBody string, mee
 
 // BuildGetItxMeetingCountPayload builds the payload for the Meeting Service
 // get-itx-meeting-count endpoint from CLI flags.
-func BuildGetItxMeetingCountPayload(meetingServiceGetItxMeetingCountVersion string, meetingServiceGetItxMeetingCountProjectUID string, meetingServiceGetItxMeetingCountBearerToken string) (*meetingservice.GetItxMeetingCountPayload, error) {
+func BuildGetItxMeetingCountPayload(meetingServiceGetItxMeetingCountVersion *string, meetingServiceGetItxMeetingCountProjectUID *string, meetingServiceGetItxMeetingCountBearerToken *string) (*meetingservice.GetItxMeetingCountPayload, error) {
 	var err error
 	var version *string
 	{
-		if meetingServiceGetItxMeetingCountVersion != "" {
-			version = &meetingServiceGetItxMeetingCountVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxMeetingCountVersion != nil {
+			version = meetingServiceGetItxMeetingCountVersion
+			if !(*meetingServiceGetItxMeetingCountVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxMeetingCountVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -412,12 +419,15 @@ func BuildGetItxMeetingCountPayload(meetingServiceGetItxMeetingCountVersion stri
 	}
 	var projectUID string
 	{
-		projectUID = meetingServiceGetItxMeetingCountProjectUID
+		if meetingServiceGetItxMeetingCountProjectUID == nil {
+			return nil, fmt.Errorf("missing required flag --project-uid")
+		}
+		projectUID = *meetingServiceGetItxMeetingCountProjectUID
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxMeetingCountBearerToken != "" {
-			bearerToken = &meetingServiceGetItxMeetingCountBearerToken
+		if meetingServiceGetItxMeetingCountBearerToken != nil {
+			bearerToken = meetingServiceGetItxMeetingCountBearerToken
 		}
 	}
 	v := &meetingservice.GetItxMeetingCountPayload{}
@@ -430,13 +440,16 @@ func BuildGetItxMeetingCountPayload(meetingServiceGetItxMeetingCountVersion stri
 
 // BuildCreateItxRegistrantPayload builds the payload for the Meeting Service
 // create-itx-registrant endpoint from CLI flags.
-func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody string, meetingServiceCreateItxRegistrantMeetingID string, meetingServiceCreateItxRegistrantVersion string, meetingServiceCreateItxRegistrantBearerToken string) (*meetingservice.CreateItxRegistrantPayload, error) {
+func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody *string, meetingServiceCreateItxRegistrantMeetingID *string, meetingServiceCreateItxRegistrantVersion *string, meetingServiceCreateItxRegistrantBearerToken *string) (*meetingservice.CreateItxRegistrantPayload, error) {
 	var err error
 	var body CreateItxRegistrantRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxRegistrantBody), &body)
+		if meetingServiceCreateItxRegistrantBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attended_occurrence_count\": 6877797102079382041,\n      \"committee_uid\": \"Voluptatem quia magni.\",\n      \"created_at\": \"Id cupiditate est.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Et culpa impedit hic voluptatibus.\",\n      \"last_invite_delivery_status\": \"Distinctio quia dolorum aliquam ut numquam soluta.\",\n      \"last_invite_received_message_id\": \"Nemo rerum eos quos qui.\",\n      \"last_invite_received_time\": \"Nisi ipsa.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Odit et.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Est ea dolore natus vel doloribus repellendus.\",\n      \"total_occurrence_count\": 4690067183228939990,\n      \"type\": \"committee\",\n      \"uid\": \"Aut natus provident dolorem eveniet.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attended_occurrence_count\": 8354250993135135777,\n      \"committee_uid\": \"Soluta pariatur itaque ut et vel.\",\n      \"created_at\": \"Mollitia autem quia.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Repellat doloribus est eum ea velit ipsam.\",\n      \"last_invite_delivery_status\": \"Dicta nemo labore debitis et corporis perferendis.\",\n      \"last_invite_received_message_id\": \"Dolorem dolores in sit quae ut.\",\n      \"last_invite_received_time\": \"Autem esse deserunt recusandae iusto et rerum.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Dolorem qui quibusdam officiis ipsam.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Laboriosam impedit architecto modi ex dicta.\",\n      \"total_occurrence_count\": 1208809245952080159,\n      \"type\": \"committee\",\n      \"uid\": \"Molestias sit voluptatibus et et aperiam doloremque.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }'")
 		}
 		if body.Type != nil {
 			if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -447,12 +460,12 @@ func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody strin
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 		}
 		if body.CreatedBy != nil {
-			if err2 := ValidateITXUserRequestBody(body.CreatedBy); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.CreatedBy, "body.created_by"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if body.UpdatedBy != nil {
-			if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -462,14 +475,17 @@ func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody strin
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceCreateItxRegistrantMeetingID
+		if meetingServiceCreateItxRegistrantMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceCreateItxRegistrantMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxRegistrantVersion != "" {
-			version = &meetingServiceCreateItxRegistrantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxRegistrantVersion != nil {
+			version = meetingServiceCreateItxRegistrantVersion
+			if !(*meetingServiceCreateItxRegistrantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxRegistrantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -478,8 +494,8 @@ func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody strin
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxRegistrantBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxRegistrantBearerToken
+		if meetingServiceCreateItxRegistrantBearerToken != nil {
+			bearerToken = meetingServiceCreateItxRegistrantBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxRegistrantPayload{
@@ -519,25 +535,31 @@ func BuildCreateItxRegistrantPayload(meetingServiceCreateItxRegistrantBody strin
 
 // BuildSelfRegisterItxMeetingPayload builds the payload for the Meeting
 // Service self-register-itx-meeting endpoint from CLI flags.
-func BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBody string, meetingServiceSelfRegisterItxMeetingMeetingID string, meetingServiceSelfRegisterItxMeetingVersion string, meetingServiceSelfRegisterItxMeetingBearerToken string) (*meetingservice.SelfRegisterItxMeetingPayload, error) {
+func BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBody *string, meetingServiceSelfRegisterItxMeetingMeetingID *string, meetingServiceSelfRegisterItxMeetingVersion *string, meetingServiceSelfRegisterItxMeetingBearerToken *string) (*meetingservice.SelfRegisterItxMeetingPayload, error) {
 	var err error
 	var body SelfRegisterItxMeetingRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceSelfRegisterItxMeetingBody), &body)
+		if meetingServiceSelfRegisterItxMeetingBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceSelfRegisterItxMeetingBody), &body)
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"first_name\": \"Bob\",\n      \"job_title\": \"developer\",\n      \"last_name\": \"Smith\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\"\n   }'")
 		}
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceSelfRegisterItxMeetingMeetingID
+		if meetingServiceSelfRegisterItxMeetingMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceSelfRegisterItxMeetingMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceSelfRegisterItxMeetingVersion != "" {
-			version = &meetingServiceSelfRegisterItxMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceSelfRegisterItxMeetingVersion != nil {
+			version = meetingServiceSelfRegisterItxMeetingVersion
+			if !(*meetingServiceSelfRegisterItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceSelfRegisterItxMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -546,8 +568,8 @@ func BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBody
 	}
 	var bearerToken *string
 	{
-		if meetingServiceSelfRegisterItxMeetingBearerToken != "" {
-			bearerToken = &meetingServiceSelfRegisterItxMeetingBearerToken
+		if meetingServiceSelfRegisterItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceSelfRegisterItxMeetingBearerToken
 		}
 	}
 	v := &meetingservice.SelfRegisterItxMeetingPayload{
@@ -566,22 +588,28 @@ func BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBody
 
 // BuildGetItxRegistrantPayload builds the payload for the Meeting Service
 // get-itx-registrant endpoint from CLI flags.
-func BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingID string, meetingServiceGetItxRegistrantRegistrantID string, meetingServiceGetItxRegistrantVersion string, meetingServiceGetItxRegistrantBearerToken string) (*meetingservice.GetItxRegistrantPayload, error) {
+func BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingID *string, meetingServiceGetItxRegistrantRegistrantID *string, meetingServiceGetItxRegistrantVersion *string, meetingServiceGetItxRegistrantBearerToken *string) (*meetingservice.GetItxRegistrantPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxRegistrantMeetingID
+		if meetingServiceGetItxRegistrantMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxRegistrantMeetingID
 	}
 	var registrantID string
 	{
-		registrantID = meetingServiceGetItxRegistrantRegistrantID
+		if meetingServiceGetItxRegistrantRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceGetItxRegistrantRegistrantID
 	}
 	var version *string
 	{
-		if meetingServiceGetItxRegistrantVersion != "" {
-			version = &meetingServiceGetItxRegistrantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxRegistrantVersion != nil {
+			version = meetingServiceGetItxRegistrantVersion
+			if !(*meetingServiceGetItxRegistrantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxRegistrantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -590,8 +618,8 @@ func BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingID string
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxRegistrantBearerToken != "" {
-			bearerToken = &meetingServiceGetItxRegistrantBearerToken
+		if meetingServiceGetItxRegistrantBearerToken != nil {
+			bearerToken = meetingServiceGetItxRegistrantBearerToken
 		}
 	}
 	v := &meetingservice.GetItxRegistrantPayload{}
@@ -605,13 +633,16 @@ func BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingID string
 
 // BuildUpdateItxRegistrantPayload builds the payload for the Meeting Service
 // update-itx-registrant endpoint from CLI flags.
-func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody string, meetingServiceUpdateItxRegistrantMeetingID string, meetingServiceUpdateItxRegistrantRegistrantID string, meetingServiceUpdateItxRegistrantVersion string, meetingServiceUpdateItxRegistrantBearerToken string) (*meetingservice.UpdateItxRegistrantPayload, error) {
+func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody *string, meetingServiceUpdateItxRegistrantMeetingID *string, meetingServiceUpdateItxRegistrantRegistrantID *string, meetingServiceUpdateItxRegistrantVersion *string, meetingServiceUpdateItxRegistrantBearerToken *string) (*meetingservice.UpdateItxRegistrantPayload, error) {
 	var err error
 	var body UpdateItxRegistrantRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxRegistrantBody), &body)
+		if meetingServiceUpdateItxRegistrantBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxRegistrantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attended_occurrence_count\": 6056683323182005791,\n      \"committee_uid\": \"Veritatis dolore quia qui quae.\",\n      \"created_at\": \"Veniam dolores ut commodi quia.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": false,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Voluptatem sed consequatur voluptates pariatur.\",\n      \"last_invite_delivery_status\": \"Ut ut aliquid.\",\n      \"last_invite_received_message_id\": \"Atque omnis consequatur illum id et.\",\n      \"last_invite_received_time\": \"Ipsa quo.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Est iste et cum.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Quibusdam in neque dolor fuga.\",\n      \"total_occurrence_count\": 7850315995995917415,\n      \"type\": \"committee\",\n      \"uid\": \"Harum mollitia sapiente vel ullam.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attended_occurrence_count\": 7544426401615408388,\n      \"committee_uid\": \"Similique aliquid nemo velit est repudiandae in.\",\n      \"created_at\": \"Sed a nemo.\",\n      \"created_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"email\": \"bobsmith@gmail.com\",\n      \"first_name\": \"Bob\",\n      \"host\": true,\n      \"job_title\": \"developer\",\n      \"last_invite_delivery_description\": \"Vero temporibus rerum eum ut alias.\",\n      \"last_invite_delivery_status\": \"Quibusdam dolorum atque architecto exercitationem ipsa voluptatem.\",\n      \"last_invite_received_message_id\": \"Quasi cupiditate.\",\n      \"last_invite_received_time\": \"Dignissimos voluptatem et aut repellendus.\",\n      \"last_name\": \"Smith\",\n      \"modified_at\": \"Rerum commodi inventore laboriosam ducimus numquam.\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\",\n      \"profile_picture\": \"Suscipit illo rerum.\",\n      \"total_occurrence_count\": 8499807622257133506,\n      \"type\": \"committee\",\n      \"uid\": \"Magni ut id eum aut nemo.\",\n      \"updated_by\": {\n         \"email\": \"john.doe@example.com\",\n         \"name\": \"John Doe\",\n         \"profile_picture\": \"https://example.com/avatar.jpg\",\n         \"username\": \"jdoe\"\n      },\n      \"username\": \"testuser\"\n   }'")
 		}
 		if body.Type != nil {
 			if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -622,12 +653,12 @@ func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody strin
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 		}
 		if body.CreatedBy != nil {
-			if err2 := ValidateITXUserRequestBody(body.CreatedBy); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.CreatedBy, "body.created_by"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
 		if body.UpdatedBy != nil {
-			if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
+			if err2 := validateITXUserRequestBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -637,18 +668,24 @@ func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody strin
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceUpdateItxRegistrantMeetingID
+		if meetingServiceUpdateItxRegistrantMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceUpdateItxRegistrantMeetingID
 	}
 	var registrantID string
 	{
-		registrantID = meetingServiceUpdateItxRegistrantRegistrantID
+		if meetingServiceUpdateItxRegistrantRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceUpdateItxRegistrantRegistrantID
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxRegistrantVersion != "" {
-			version = &meetingServiceUpdateItxRegistrantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxRegistrantVersion != nil {
+			version = meetingServiceUpdateItxRegistrantVersion
+			if !(*meetingServiceUpdateItxRegistrantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxRegistrantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -657,8 +694,8 @@ func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody strin
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxRegistrantBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxRegistrantBearerToken
+		if meetingServiceUpdateItxRegistrantBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxRegistrantBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxRegistrantPayload{
@@ -699,22 +736,28 @@ func BuildUpdateItxRegistrantPayload(meetingServiceUpdateItxRegistrantBody strin
 
 // BuildDeleteItxRegistrantPayload builds the payload for the Meeting Service
 // delete-itx-registrant endpoint from CLI flags.
-func BuildDeleteItxRegistrantPayload(meetingServiceDeleteItxRegistrantMeetingID string, meetingServiceDeleteItxRegistrantRegistrantID string, meetingServiceDeleteItxRegistrantVersion string, meetingServiceDeleteItxRegistrantBearerToken string) (*meetingservice.DeleteItxRegistrantPayload, error) {
+func BuildDeleteItxRegistrantPayload(meetingServiceDeleteItxRegistrantMeetingID *string, meetingServiceDeleteItxRegistrantRegistrantID *string, meetingServiceDeleteItxRegistrantVersion *string, meetingServiceDeleteItxRegistrantBearerToken *string) (*meetingservice.DeleteItxRegistrantPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceDeleteItxRegistrantMeetingID
+		if meetingServiceDeleteItxRegistrantMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceDeleteItxRegistrantMeetingID
 	}
 	var registrantID string
 	{
-		registrantID = meetingServiceDeleteItxRegistrantRegistrantID
+		if meetingServiceDeleteItxRegistrantRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceDeleteItxRegistrantRegistrantID
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxRegistrantVersion != "" {
-			version = &meetingServiceDeleteItxRegistrantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxRegistrantVersion != nil {
+			version = meetingServiceDeleteItxRegistrantVersion
+			if !(*meetingServiceDeleteItxRegistrantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxRegistrantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -723,8 +766,8 @@ func BuildDeleteItxRegistrantPayload(meetingServiceDeleteItxRegistrantMeetingID 
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxRegistrantBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxRegistrantBearerToken
+		if meetingServiceDeleteItxRegistrantBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxRegistrantBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxRegistrantPayload{}
@@ -738,18 +781,21 @@ func BuildDeleteItxRegistrantPayload(meetingServiceDeleteItxRegistrantMeetingID 
 
 // BuildGetItxJoinLinkPayload builds the payload for the Meeting Service
 // get-itx-join-link endpoint from CLI flags.
-func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, meetingServiceGetItxJoinLinkVersion string, meetingServiceGetItxJoinLinkUseEmail string, meetingServiceGetItxJoinLinkUserID string, meetingServiceGetItxJoinLinkName string, meetingServiceGetItxJoinLinkEmail string, meetingServiceGetItxJoinLinkRegister string, meetingServiceGetItxJoinLinkBearerToken string) (*meetingservice.GetItxJoinLinkPayload, error) {
+func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID *string, meetingServiceGetItxJoinLinkVersion *string, meetingServiceGetItxJoinLinkUseEmail *string, meetingServiceGetItxJoinLinkUserID *string, meetingServiceGetItxJoinLinkName *string, meetingServiceGetItxJoinLinkEmail *string, meetingServiceGetItxJoinLinkRegister *string, meetingServiceGetItxJoinLinkBearerToken *string) (*meetingservice.GetItxJoinLinkPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxJoinLinkMeetingID
+		if meetingServiceGetItxJoinLinkMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxJoinLinkMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceGetItxJoinLinkVersion != "" {
-			version = &meetingServiceGetItxJoinLinkVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxJoinLinkVersion != nil {
+			version = meetingServiceGetItxJoinLinkVersion
+			if !(*meetingServiceGetItxJoinLinkVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxJoinLinkVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -758,9 +804,9 @@ func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, me
 	}
 	var useEmail *bool
 	{
-		if meetingServiceGetItxJoinLinkUseEmail != "" {
+		if meetingServiceGetItxJoinLinkUseEmail != nil {
 			var val bool
-			val, err = strconv.ParseBool(meetingServiceGetItxJoinLinkUseEmail)
+			val, err = strconv.ParseBool(*meetingServiceGetItxJoinLinkUseEmail)
 			useEmail = &val
 			if err != nil {
 				return nil, fmt.Errorf("invalid value for useEmail, must be BOOL")
@@ -769,21 +815,21 @@ func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, me
 	}
 	var userID *string
 	{
-		if meetingServiceGetItxJoinLinkUserID != "" {
-			userID = &meetingServiceGetItxJoinLinkUserID
+		if meetingServiceGetItxJoinLinkUserID != nil {
+			userID = meetingServiceGetItxJoinLinkUserID
 		}
 	}
 	var name *string
 	{
-		if meetingServiceGetItxJoinLinkName != "" {
-			name = &meetingServiceGetItxJoinLinkName
+		if meetingServiceGetItxJoinLinkName != nil {
+			name = meetingServiceGetItxJoinLinkName
 		}
 	}
 	var email *string
 	{
-		if meetingServiceGetItxJoinLinkEmail != "" {
-			email = &meetingServiceGetItxJoinLinkEmail
-			err = goa.MergeErrors(err, goa.ValidateFormat("email", *email, goa.FormatEmail))
+		if meetingServiceGetItxJoinLinkEmail != nil {
+			email = meetingServiceGetItxJoinLinkEmail
+			err = goa.MergeErrors(err, goa.ValidateFormat("email", *meetingServiceGetItxJoinLinkEmail, goa.FormatEmail))
 			if err != nil {
 				return nil, err
 			}
@@ -791,9 +837,9 @@ func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, me
 	}
 	var register *bool
 	{
-		if meetingServiceGetItxJoinLinkRegister != "" {
+		if meetingServiceGetItxJoinLinkRegister != nil {
 			var val bool
-			val, err = strconv.ParseBool(meetingServiceGetItxJoinLinkRegister)
+			val, err = strconv.ParseBool(*meetingServiceGetItxJoinLinkRegister)
 			register = &val
 			if err != nil {
 				return nil, fmt.Errorf("invalid value for register, must be BOOL")
@@ -802,8 +848,8 @@ func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, me
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxJoinLinkBearerToken != "" {
-			bearerToken = &meetingServiceGetItxJoinLinkBearerToken
+		if meetingServiceGetItxJoinLinkBearerToken != nil {
+			bearerToken = meetingServiceGetItxJoinLinkBearerToken
 		}
 	}
 	v := &meetingservice.GetItxJoinLinkPayload{}
@@ -821,22 +867,28 @@ func BuildGetItxJoinLinkPayload(meetingServiceGetItxJoinLinkMeetingID string, me
 
 // BuildGetItxRegistrantIcsPayload builds the payload for the Meeting Service
 // get-itx-registrant-ics endpoint from CLI flags.
-func BuildGetItxRegistrantIcsPayload(meetingServiceGetItxRegistrantIcsMeetingID string, meetingServiceGetItxRegistrantIcsRegistrantID string, meetingServiceGetItxRegistrantIcsVersion string, meetingServiceGetItxRegistrantIcsBearerToken string) (*meetingservice.GetItxRegistrantIcsPayload, error) {
+func BuildGetItxRegistrantIcsPayload(meetingServiceGetItxRegistrantIcsMeetingID *string, meetingServiceGetItxRegistrantIcsRegistrantID *string, meetingServiceGetItxRegistrantIcsVersion *string, meetingServiceGetItxRegistrantIcsBearerToken *string) (*meetingservice.GetItxRegistrantIcsPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxRegistrantIcsMeetingID
+		if meetingServiceGetItxRegistrantIcsMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxRegistrantIcsMeetingID
 	}
 	var registrantID string
 	{
-		registrantID = meetingServiceGetItxRegistrantIcsRegistrantID
+		if meetingServiceGetItxRegistrantIcsRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceGetItxRegistrantIcsRegistrantID
 	}
 	var version *string
 	{
-		if meetingServiceGetItxRegistrantIcsVersion != "" {
-			version = &meetingServiceGetItxRegistrantIcsVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxRegistrantIcsVersion != nil {
+			version = meetingServiceGetItxRegistrantIcsVersion
+			if !(*meetingServiceGetItxRegistrantIcsVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxRegistrantIcsVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -845,8 +897,8 @@ func BuildGetItxRegistrantIcsPayload(meetingServiceGetItxRegistrantIcsMeetingID 
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxRegistrantIcsBearerToken != "" {
-			bearerToken = &meetingServiceGetItxRegistrantIcsBearerToken
+		if meetingServiceGetItxRegistrantIcsBearerToken != nil {
+			bearerToken = meetingServiceGetItxRegistrantIcsBearerToken
 		}
 	}
 	v := &meetingservice.GetItxRegistrantIcsPayload{}
@@ -860,22 +912,28 @@ func BuildGetItxRegistrantIcsPayload(meetingServiceGetItxRegistrantIcsMeetingID 
 
 // BuildResendItxRegistrantInvitationPayload builds the payload for the Meeting
 // Service resend-itx-registrant-invitation endpoint from CLI flags.
-func BuildResendItxRegistrantInvitationPayload(meetingServiceResendItxRegistrantInvitationMeetingID string, meetingServiceResendItxRegistrantInvitationRegistrantID string, meetingServiceResendItxRegistrantInvitationVersion string, meetingServiceResendItxRegistrantInvitationBearerToken string) (*meetingservice.ResendItxRegistrantInvitationPayload, error) {
+func BuildResendItxRegistrantInvitationPayload(meetingServiceResendItxRegistrantInvitationMeetingID *string, meetingServiceResendItxRegistrantInvitationRegistrantID *string, meetingServiceResendItxRegistrantInvitationVersion *string, meetingServiceResendItxRegistrantInvitationBearerToken *string) (*meetingservice.ResendItxRegistrantInvitationPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceResendItxRegistrantInvitationMeetingID
+		if meetingServiceResendItxRegistrantInvitationMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceResendItxRegistrantInvitationMeetingID
 	}
 	var registrantID string
 	{
-		registrantID = meetingServiceResendItxRegistrantInvitationRegistrantID
+		if meetingServiceResendItxRegistrantInvitationRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceResendItxRegistrantInvitationRegistrantID
 	}
 	var version *string
 	{
-		if meetingServiceResendItxRegistrantInvitationVersion != "" {
-			version = &meetingServiceResendItxRegistrantInvitationVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceResendItxRegistrantInvitationVersion != nil {
+			version = meetingServiceResendItxRegistrantInvitationVersion
+			if !(*meetingServiceResendItxRegistrantInvitationVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceResendItxRegistrantInvitationVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -884,8 +942,8 @@ func BuildResendItxRegistrantInvitationPayload(meetingServiceResendItxRegistrant
 	}
 	var bearerToken *string
 	{
-		if meetingServiceResendItxRegistrantInvitationBearerToken != "" {
-			bearerToken = &meetingServiceResendItxRegistrantInvitationBearerToken
+		if meetingServiceResendItxRegistrantInvitationBearerToken != nil {
+			bearerToken = meetingServiceResendItxRegistrantInvitationBearerToken
 		}
 	}
 	v := &meetingservice.ResendItxRegistrantInvitationPayload{}
@@ -899,25 +957,31 @@ func BuildResendItxRegistrantInvitationPayload(meetingServiceResendItxRegistrant
 
 // BuildResendItxMeetingInvitationsPayload builds the payload for the Meeting
 // Service resend-itx-meeting-invitations endpoint from CLI flags.
-func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvitationsBody string, meetingServiceResendItxMeetingInvitationsMeetingID string, meetingServiceResendItxMeetingInvitationsVersion string, meetingServiceResendItxMeetingInvitationsBearerToken string) (*meetingservice.ResendItxMeetingInvitationsPayload, error) {
+func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvitationsBody *string, meetingServiceResendItxMeetingInvitationsMeetingID *string, meetingServiceResendItxMeetingInvitationsVersion *string, meetingServiceResendItxMeetingInvitationsBearerToken *string) (*meetingservice.ResendItxMeetingInvitationsPayload, error) {
 	var err error
 	var body ResendItxMeetingInvitationsRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceResendItxMeetingInvitationsBody), &body)
+		if meetingServiceResendItxMeetingInvitationsBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceResendItxMeetingInvitationsBody), &body)
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"exclude_registrant_ids\": [\n         \"reg123\",\n         \"reg456\"\n      ]\n   }'")
 		}
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceResendItxMeetingInvitationsMeetingID
+		if meetingServiceResendItxMeetingInvitationsMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceResendItxMeetingInvitationsMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceResendItxMeetingInvitationsVersion != "" {
-			version = &meetingServiceResendItxMeetingInvitationsVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceResendItxMeetingInvitationsVersion != nil {
+			version = meetingServiceResendItxMeetingInvitationsVersion
+			if !(*meetingServiceResendItxMeetingInvitationsVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceResendItxMeetingInvitationsVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -926,8 +990,8 @@ func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvit
 	}
 	var bearerToken *string
 	{
-		if meetingServiceResendItxMeetingInvitationsBearerToken != "" {
-			bearerToken = &meetingServiceResendItxMeetingInvitationsBearerToken
+		if meetingServiceResendItxMeetingInvitationsBearerToken != nil {
+			bearerToken = meetingServiceResendItxMeetingInvitationsBearerToken
 		}
 	}
 	v := &meetingservice.ResendItxMeetingInvitationsPayload{}
@@ -946,18 +1010,21 @@ func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvit
 
 // BuildRegisterItxCommitteeMembersPayload builds the payload for the Meeting
 // Service register-itx-committee-members endpoint from CLI flags.
-func BuildRegisterItxCommitteeMembersPayload(meetingServiceRegisterItxCommitteeMembersMeetingID string, meetingServiceRegisterItxCommitteeMembersVersion string, meetingServiceRegisterItxCommitteeMembersBearerToken string) (*meetingservice.RegisterItxCommitteeMembersPayload, error) {
+func BuildRegisterItxCommitteeMembersPayload(meetingServiceRegisterItxCommitteeMembersMeetingID *string, meetingServiceRegisterItxCommitteeMembersVersion *string, meetingServiceRegisterItxCommitteeMembersBearerToken *string) (*meetingservice.RegisterItxCommitteeMembersPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceRegisterItxCommitteeMembersMeetingID
+		if meetingServiceRegisterItxCommitteeMembersMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceRegisterItxCommitteeMembersMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceRegisterItxCommitteeMembersVersion != "" {
-			version = &meetingServiceRegisterItxCommitteeMembersVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceRegisterItxCommitteeMembersVersion != nil {
+			version = meetingServiceRegisterItxCommitteeMembersVersion
+			if !(*meetingServiceRegisterItxCommitteeMembersVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceRegisterItxCommitteeMembersVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -966,8 +1033,8 @@ func BuildRegisterItxCommitteeMembersPayload(meetingServiceRegisterItxCommitteeM
 	}
 	var bearerToken *string
 	{
-		if meetingServiceRegisterItxCommitteeMembersBearerToken != "" {
-			bearerToken = &meetingServiceRegisterItxCommitteeMembersBearerToken
+		if meetingServiceRegisterItxCommitteeMembersBearerToken != nil {
+			bearerToken = meetingServiceRegisterItxCommitteeMembersBearerToken
 		}
 	}
 	v := &meetingservice.RegisterItxCommitteeMembersPayload{}
@@ -980,13 +1047,16 @@ func BuildRegisterItxCommitteeMembersPayload(meetingServiceRegisterItxCommitteeM
 
 // BuildUpdateItxOccurrencePayload builds the payload for the Meeting Service
 // update-itx-occurrence endpoint from CLI flags.
-func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody string, meetingServiceUpdateItxOccurrenceMeetingID string, meetingServiceUpdateItxOccurrenceOccurrenceID string, meetingServiceUpdateItxOccurrenceVersion string, meetingServiceUpdateItxOccurrenceBearerToken string) (*meetingservice.UpdateItxOccurrencePayload, error) {
+func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody *string, meetingServiceUpdateItxOccurrenceMeetingID *string, meetingServiceUpdateItxOccurrenceOccurrenceID *string, meetingServiceUpdateItxOccurrenceVersion *string, meetingServiceUpdateItxOccurrenceBearerToken *string) (*meetingservice.UpdateItxOccurrencePayload, error) {
 	var err error
 	var body UpdateItxOccurrenceRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxOccurrenceBody), &body)
+		if meetingServiceUpdateItxOccurrenceBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxOccurrenceBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"agenda\": \"Magnam magnam alias aliquam laborum.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"1980-07-31T05:58:46Z\",\n         \"end_times\": 3067367318907720017,\n         \"monthly_day\": 1348775898617692811,\n         \"monthly_week\": 6846866430213547457,\n         \"monthly_week_day\": 6031764195151343697,\n         \"repeat_interval\": 4333485686106045182,\n         \"type\": 2,\n         \"weekly_days\": \"Qui provident rem earum eum.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Delectus dignissimos dolorem aut.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"agenda\": \"Molestias pariatur.\",\n      \"duration\": 60,\n      \"recurrence\": {\n         \"end_date_time\": \"2003-04-18T10:16:31Z\",\n         \"end_times\": 822770662980892917,\n         \"monthly_day\": 4767059819435764011,\n         \"monthly_week\": 8232228581568966464,\n         \"monthly_week_day\": 2375152045664599240,\n         \"repeat_interval\": 2824683752061790690,\n         \"type\": 2,\n         \"weekly_days\": \"Molestiae laborum voluptatem in.\"\n      },\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"topic\": \"Aut id.\"\n   }'")
 		}
 		if body.StartTime != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -997,7 +1067,7 @@ func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody strin
 			}
 		}
 		if body.Recurrence != nil {
-			if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+			if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -1007,18 +1077,24 @@ func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody strin
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceUpdateItxOccurrenceMeetingID
+		if meetingServiceUpdateItxOccurrenceMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceUpdateItxOccurrenceMeetingID
 	}
 	var occurrenceID string
 	{
-		occurrenceID = meetingServiceUpdateItxOccurrenceOccurrenceID
+		if meetingServiceUpdateItxOccurrenceOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --occurrence-id")
+		}
+		occurrenceID = *meetingServiceUpdateItxOccurrenceOccurrenceID
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxOccurrenceVersion != "" {
-			version = &meetingServiceUpdateItxOccurrenceVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxOccurrenceVersion != nil {
+			version = meetingServiceUpdateItxOccurrenceVersion
+			if !(*meetingServiceUpdateItxOccurrenceVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxOccurrenceVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1027,8 +1103,8 @@ func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody strin
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxOccurrenceBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxOccurrenceBearerToken
+		if meetingServiceUpdateItxOccurrenceBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxOccurrenceBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxOccurrencePayload{
@@ -1050,22 +1126,28 @@ func BuildUpdateItxOccurrencePayload(meetingServiceUpdateItxOccurrenceBody strin
 
 // BuildDeleteItxOccurrencePayload builds the payload for the Meeting Service
 // delete-itx-occurrence endpoint from CLI flags.
-func BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingID string, meetingServiceDeleteItxOccurrenceOccurrenceID string, meetingServiceDeleteItxOccurrenceVersion string, meetingServiceDeleteItxOccurrenceBearerToken string) (*meetingservice.DeleteItxOccurrencePayload, error) {
+func BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingID *string, meetingServiceDeleteItxOccurrenceOccurrenceID *string, meetingServiceDeleteItxOccurrenceVersion *string, meetingServiceDeleteItxOccurrenceBearerToken *string) (*meetingservice.DeleteItxOccurrencePayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceDeleteItxOccurrenceMeetingID
+		if meetingServiceDeleteItxOccurrenceMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceDeleteItxOccurrenceMeetingID
 	}
 	var occurrenceID string
 	{
-		occurrenceID = meetingServiceDeleteItxOccurrenceOccurrenceID
+		if meetingServiceDeleteItxOccurrenceOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --occurrence-id")
+		}
+		occurrenceID = *meetingServiceDeleteItxOccurrenceOccurrenceID
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxOccurrenceVersion != "" {
-			version = &meetingServiceDeleteItxOccurrenceVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxOccurrenceVersion != nil {
+			version = meetingServiceDeleteItxOccurrenceVersion
+			if !(*meetingServiceDeleteItxOccurrenceVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxOccurrenceVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1074,8 +1156,8 @@ func BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingID 
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxOccurrenceBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxOccurrenceBearerToken
+		if meetingServiceDeleteItxOccurrenceBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxOccurrenceBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxOccurrencePayload{}
@@ -1089,11 +1171,14 @@ func BuildDeleteItxOccurrencePayload(meetingServiceDeleteItxOccurrenceMeetingID 
 
 // BuildSubmitItxMeetingResponsePayload builds the payload for the Meeting
 // Service submit-itx-meeting-response endpoint from CLI flags.
-func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponseBody string, meetingServiceSubmitItxMeetingResponseMeetingID string, meetingServiceSubmitItxMeetingResponseVersion string, meetingServiceSubmitItxMeetingResponseBearerToken string) (*meetingservice.SubmitItxMeetingResponsePayload, error) {
+func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponseBody *string, meetingServiceSubmitItxMeetingResponseMeetingID *string, meetingServiceSubmitItxMeetingResponseVersion *string, meetingServiceSubmitItxMeetingResponseBearerToken *string) (*meetingservice.SubmitItxMeetingResponsePayload, error) {
 	var err error
 	var body SubmitItxMeetingResponseRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceSubmitItxMeetingResponseBody), &body)
+		if meetingServiceSubmitItxMeetingResponseBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceSubmitItxMeetingResponseBody), &body)
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"occurrence_id\": \"1772906400000\",\n      \"registrant_id\": \"ea1e8536-a985-4cf5-b981-a170927a1d11\",\n      \"response\": \"accepted\",\n      \"scope\": \"single\"\n   }'")
 		}
@@ -1110,14 +1195,17 @@ func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponse
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceSubmitItxMeetingResponseMeetingID
+		if meetingServiceSubmitItxMeetingResponseMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceSubmitItxMeetingResponseMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceSubmitItxMeetingResponseVersion != "" {
-			version = &meetingServiceSubmitItxMeetingResponseVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceSubmitItxMeetingResponseVersion != nil {
+			version = meetingServiceSubmitItxMeetingResponseVersion
+			if !(*meetingServiceSubmitItxMeetingResponseVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceSubmitItxMeetingResponseVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1126,8 +1214,8 @@ func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponse
 	}
 	var bearerToken *string
 	{
-		if meetingServiceSubmitItxMeetingResponseBearerToken != "" {
-			bearerToken = &meetingServiceSubmitItxMeetingResponseBearerToken
+		if meetingServiceSubmitItxMeetingResponseBearerToken != nil {
+			bearerToken = meetingServiceSubmitItxMeetingResponseBearerToken
 		}
 	}
 	v := &meetingservice.SubmitItxMeetingResponsePayload{
@@ -1145,13 +1233,16 @@ func BuildSubmitItxMeetingResponsePayload(meetingServiceSubmitItxMeetingResponse
 
 // BuildCreateItxPastMeetingPayload builds the payload for the Meeting Service
 // create-itx-past-meeting endpoint from CLI flags.
-func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody string, meetingServiceCreateItxPastMeetingVersion string, meetingServiceCreateItxPastMeetingBearerToken string) (*meetingservice.CreateItxPastMeetingPayload, error) {
+func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody *string, meetingServiceCreateItxPastMeetingVersion *string, meetingServiceCreateItxPastMeetingBearerToken *string) (*meetingservice.CreateItxPastMeetingPayload, error) {
 	var err error
 	var body CreateItxPastMeetingRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxPastMeetingBody), &body)
+		if meetingServiceCreateItxPastMeetingBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxPastMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"7ul\",\n      \"duration\": 247,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Legal\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Quos blanditiis commodi officiis odit.\",\n      \"title\": \"Voluptatum aut nobis laudantium.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"meeting_hosts\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"s5d\",\n      \"duration\": 94,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"Technical\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\",\n      \"recording_enabled\": false,\n      \"restricted\": false,\n      \"start_time\": \"2021-01-01T00:00:00Z\",\n      \"timezone\": \"Et voluptas laborum.\",\n      \"title\": \"Aliquam mollitia cum eos quae.\",\n      \"transcript_enabled\": true,\n      \"visibility\": \"private\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", body.StartTime, goa.FormatDateTime))
 		if body.Duration < 0 {
@@ -1167,7 +1258,7 @@ func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody str
 		}
 		for _, e := range body.Committees {
 			if e != nil {
-				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 					err = goa.MergeErrors(err, err2)
 				}
 			}
@@ -1193,10 +1284,10 @@ func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody str
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxPastMeetingVersion != "" {
-			version = &meetingServiceCreateItxPastMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxPastMeetingVersion != nil {
+			version = meetingServiceCreateItxPastMeetingVersion
+			if !(*meetingServiceCreateItxPastMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxPastMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1205,8 +1296,8 @@ func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody str
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxPastMeetingBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxPastMeetingBearerToken
+		if meetingServiceCreateItxPastMeetingBearerToken != nil {
+			bearerToken = meetingServiceCreateItxPastMeetingBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxPastMeetingPayload{
@@ -1243,18 +1334,21 @@ func BuildCreateItxPastMeetingPayload(meetingServiceCreateItxPastMeetingBody str
 
 // BuildGetItxPastMeetingPayload builds the payload for the Meeting Service
 // get-itx-past-meeting endpoint from CLI flags.
-func BuildGetItxPastMeetingPayload(meetingServiceGetItxPastMeetingPastMeetingID string, meetingServiceGetItxPastMeetingVersion string, meetingServiceGetItxPastMeetingBearerToken string) (*meetingservice.GetItxPastMeetingPayload, error) {
+func BuildGetItxPastMeetingPayload(meetingServiceGetItxPastMeetingPastMeetingID *string, meetingServiceGetItxPastMeetingVersion *string, meetingServiceGetItxPastMeetingBearerToken *string) (*meetingservice.GetItxPastMeetingPayload, error) {
 	var err error
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceGetItxPastMeetingPastMeetingID
+		if meetingServiceGetItxPastMeetingPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceGetItxPastMeetingPastMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceGetItxPastMeetingVersion != "" {
-			version = &meetingServiceGetItxPastMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxPastMeetingVersion != nil {
+			version = meetingServiceGetItxPastMeetingVersion
+			if !(*meetingServiceGetItxPastMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxPastMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1263,8 +1357,8 @@ func BuildGetItxPastMeetingPayload(meetingServiceGetItxPastMeetingPastMeetingID 
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxPastMeetingBearerToken != "" {
-			bearerToken = &meetingServiceGetItxPastMeetingBearerToken
+		if meetingServiceGetItxPastMeetingBearerToken != nil {
+			bearerToken = meetingServiceGetItxPastMeetingBearerToken
 		}
 	}
 	v := &meetingservice.GetItxPastMeetingPayload{}
@@ -1277,18 +1371,21 @@ func BuildGetItxPastMeetingPayload(meetingServiceGetItxPastMeetingPastMeetingID 
 
 // BuildDeleteItxPastMeetingPayload builds the payload for the Meeting Service
 // delete-itx-past-meeting endpoint from CLI flags.
-func BuildDeleteItxPastMeetingPayload(meetingServiceDeleteItxPastMeetingPastMeetingID string, meetingServiceDeleteItxPastMeetingVersion string, meetingServiceDeleteItxPastMeetingBearerToken string) (*meetingservice.DeleteItxPastMeetingPayload, error) {
+func BuildDeleteItxPastMeetingPayload(meetingServiceDeleteItxPastMeetingPastMeetingID *string, meetingServiceDeleteItxPastMeetingVersion *string, meetingServiceDeleteItxPastMeetingBearerToken *string) (*meetingservice.DeleteItxPastMeetingPayload, error) {
 	var err error
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceDeleteItxPastMeetingPastMeetingID
+		if meetingServiceDeleteItxPastMeetingPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceDeleteItxPastMeetingPastMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxPastMeetingVersion != "" {
-			version = &meetingServiceDeleteItxPastMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxPastMeetingVersion != nil {
+			version = meetingServiceDeleteItxPastMeetingVersion
+			if !(*meetingServiceDeleteItxPastMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxPastMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1297,8 +1394,8 @@ func BuildDeleteItxPastMeetingPayload(meetingServiceDeleteItxPastMeetingPastMeet
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxPastMeetingBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxPastMeetingBearerToken
+		if meetingServiceDeleteItxPastMeetingBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxPastMeetingBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxPastMeetingPayload{}
@@ -1311,13 +1408,16 @@ func BuildDeleteItxPastMeetingPayload(meetingServiceDeleteItxPastMeetingPastMeet
 
 // BuildUpdateItxPastMeetingPayload builds the payload for the Meeting Service
 // update-itx-past-meeting endpoint from CLI flags.
-func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody string, meetingServiceUpdateItxPastMeetingPastMeetingID string, meetingServiceUpdateItxPastMeetingVersion string, meetingServiceUpdateItxPastMeetingBearerToken string) (*meetingservice.UpdateItxPastMeetingPayload, error) {
+func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody *string, meetingServiceUpdateItxPastMeetingPastMeetingID *string, meetingServiceUpdateItxPastMeetingVersion *string, meetingServiceUpdateItxPastMeetingBearerToken *string) (*meetingservice.UpdateItxPastMeetingPayload, error) {
 	var err error
 	var body UpdateItxPastMeetingRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxPastMeetingBody), &body)
+		if meetingServiceUpdateItxPastMeetingBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxPastMeetingBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"observer\",\n               \"observer\",\n               \"alt_voting_rep\",\n               \"voting_rep\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Rem provident et.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"regular\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": false,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Quos eaque tenetur.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artifact_visibility\": \"public\",\n      \"committees\": [\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         },\n         {\n            \"allowed_voting_statuses\": [\n               \"none\",\n               \"none\",\n               \"none\"\n            ],\n            \"uid\": \"7cad5a8d-19d0-41a4-81a6-043453daf9ee\"\n         }\n      ],\n      \"description\": \"Aut ut aliquid dolorem voluptas.\",\n      \"duration\": 60,\n      \"meeting_id\": \"12343245463\",\n      \"meeting_type\": \"webinar\",\n      \"occurrence_id\": \"1630560600000\",\n      \"project_uid\": \"a09eaa48-231b-43e5-93ba-91c2e0a0e5f1\",\n      \"recording_enabled\": true,\n      \"restricted\": false,\n      \"start_time\": \"2024-01-15T10:00:00Z\",\n      \"timezone\": \"UTC\",\n      \"title\": \"Quos commodi minima sit.\",\n      \"transcript_enabled\": false,\n      \"visibility\": \"public\"\n   }'")
 		}
 		if body.StartTime != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -1344,7 +1444,7 @@ func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody str
 		}
 		for _, e := range body.Committees {
 			if e != nil {
-				if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+				if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 					err = goa.MergeErrors(err, err2)
 				}
 			}
@@ -1355,14 +1455,17 @@ func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody str
 	}
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceUpdateItxPastMeetingPastMeetingID
+		if meetingServiceUpdateItxPastMeetingPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceUpdateItxPastMeetingPastMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxPastMeetingVersion != "" {
-			version = &meetingServiceUpdateItxPastMeetingVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxPastMeetingVersion != nil {
+			version = meetingServiceUpdateItxPastMeetingVersion
+			if !(*meetingServiceUpdateItxPastMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxPastMeetingVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1371,8 +1474,8 @@ func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody str
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxPastMeetingBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxPastMeetingBearerToken
+		if meetingServiceUpdateItxPastMeetingBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxPastMeetingBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxPastMeetingPayload{
@@ -1410,15 +1513,21 @@ func BuildUpdateItxPastMeetingPayload(meetingServiceUpdateItxPastMeetingBody str
 
 // BuildGetItxPastMeetingSummaryPayload builds the payload for the Meeting
 // Service get-itx-past-meeting-summary endpoint from CLI flags.
-func BuildGetItxPastMeetingSummaryPayload(meetingServiceGetItxPastMeetingSummaryPastMeetingID string, meetingServiceGetItxPastMeetingSummarySummaryUID string, meetingServiceGetItxPastMeetingSummaryVersion string, meetingServiceGetItxPastMeetingSummaryBearerToken string) (*meetingservice.GetItxPastMeetingSummaryPayload, error) {
+func BuildGetItxPastMeetingSummaryPayload(meetingServiceGetItxPastMeetingSummaryPastMeetingID *string, meetingServiceGetItxPastMeetingSummarySummaryUID *string, meetingServiceGetItxPastMeetingSummaryVersion *string, meetingServiceGetItxPastMeetingSummaryBearerToken *string) (*meetingservice.GetItxPastMeetingSummaryPayload, error) {
 	var err error
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceGetItxPastMeetingSummaryPastMeetingID
+		if meetingServiceGetItxPastMeetingSummaryPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceGetItxPastMeetingSummaryPastMeetingID
 	}
 	var summaryUID string
 	{
-		summaryUID = meetingServiceGetItxPastMeetingSummarySummaryUID
+		if meetingServiceGetItxPastMeetingSummarySummaryUID == nil {
+			return nil, fmt.Errorf("missing required flag --summary-uid")
+		}
+		summaryUID = *meetingServiceGetItxPastMeetingSummarySummaryUID
 		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1426,10 +1535,10 @@ func BuildGetItxPastMeetingSummaryPayload(meetingServiceGetItxPastMeetingSummary
 	}
 	var version *string
 	{
-		if meetingServiceGetItxPastMeetingSummaryVersion != "" {
-			version = &meetingServiceGetItxPastMeetingSummaryVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxPastMeetingSummaryVersion != nil {
+			version = meetingServiceGetItxPastMeetingSummaryVersion
+			if !(*meetingServiceGetItxPastMeetingSummaryVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxPastMeetingSummaryVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1438,8 +1547,8 @@ func BuildGetItxPastMeetingSummaryPayload(meetingServiceGetItxPastMeetingSummary
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxPastMeetingSummaryBearerToken != "" {
-			bearerToken = &meetingServiceGetItxPastMeetingSummaryBearerToken
+		if meetingServiceGetItxPastMeetingSummaryBearerToken != nil {
+			bearerToken = meetingServiceGetItxPastMeetingSummaryBearerToken
 		}
 	}
 	v := &meetingservice.GetItxPastMeetingSummaryPayload{}
@@ -1453,22 +1562,31 @@ func BuildGetItxPastMeetingSummaryPayload(meetingServiceGetItxPastMeetingSummary
 
 // BuildUpdateItxPastMeetingSummaryPayload builds the payload for the Meeting
 // Service update-itx-past-meeting-summary endpoint from CLI flags.
-func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingSummaryBody string, meetingServiceUpdateItxPastMeetingSummaryPastMeetingID string, meetingServiceUpdateItxPastMeetingSummarySummaryUID string, meetingServiceUpdateItxPastMeetingSummaryVersion string, meetingServiceUpdateItxPastMeetingSummaryBearerToken string) (*meetingservice.UpdateItxPastMeetingSummaryPayload, error) {
+func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingSummaryBody *string, meetingServiceUpdateItxPastMeetingSummaryPastMeetingID *string, meetingServiceUpdateItxPastMeetingSummarySummaryUID *string, meetingServiceUpdateItxPastMeetingSummaryVersion *string, meetingServiceUpdateItxPastMeetingSummaryBearerToken *string) (*meetingservice.UpdateItxPastMeetingSummaryPayload, error) {
 	var err error
 	var body UpdateItxPastMeetingSummaryRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxPastMeetingSummaryBody), &body)
+		if meetingServiceUpdateItxPastMeetingSummaryBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxPastMeetingSummaryBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_content\": \"Voluptatum ipsa corporis quibusdam debitis.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_content\": \"Dolores provident non qui repellendus rem id.\"\n   }'")
 		}
 	}
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceUpdateItxPastMeetingSummaryPastMeetingID
+		if meetingServiceUpdateItxPastMeetingSummaryPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceUpdateItxPastMeetingSummaryPastMeetingID
 	}
 	var summaryUID string
 	{
-		summaryUID = meetingServiceUpdateItxPastMeetingSummarySummaryUID
+		if meetingServiceUpdateItxPastMeetingSummarySummaryUID == nil {
+			return nil, fmt.Errorf("missing required flag --summary-uid")
+		}
+		summaryUID = *meetingServiceUpdateItxPastMeetingSummarySummaryUID
 		err = goa.MergeErrors(err, goa.ValidateFormat("summary_uid", summaryUID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1476,10 +1594,10 @@ func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingS
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxPastMeetingSummaryVersion != "" {
-			version = &meetingServiceUpdateItxPastMeetingSummaryVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxPastMeetingSummaryVersion != nil {
+			version = meetingServiceUpdateItxPastMeetingSummaryVersion
+			if !(*meetingServiceUpdateItxPastMeetingSummaryVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxPastMeetingSummaryVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1488,8 +1606,8 @@ func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingS
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxPastMeetingSummaryBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxPastMeetingSummaryBearerToken
+		if meetingServiceUpdateItxPastMeetingSummaryBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxPastMeetingSummaryBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxPastMeetingSummaryPayload{
@@ -1506,13 +1624,16 @@ func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingS
 
 // BuildCreateItxPastMeetingParticipantPayload builds the payload for the
 // Meeting Service create-itx-past-meeting-participant endpoint from CLI flags.
-func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeetingParticipantBody string, meetingServiceCreateItxPastMeetingParticipantPastMeetingID string, meetingServiceCreateItxPastMeetingParticipantVersion string, meetingServiceCreateItxPastMeetingParticipantBearerToken string) (*meetingservice.CreateItxPastMeetingParticipantPayload, error) {
+func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeetingParticipantBody *string, meetingServiceCreateItxPastMeetingParticipantPastMeetingID *string, meetingServiceCreateItxPastMeetingParticipantVersion *string, meetingServiceCreateItxPastMeetingParticipantBearerToken *string) (*meetingservice.CreateItxPastMeetingParticipantPayload, error) {
 	var err error
 	var body CreateItxPastMeetingParticipantRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxPastMeetingParticipantBody), &body)
+		if meetingServiceCreateItxPastMeetingParticipantBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxPastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"609d9a83-a650-499b-b1c1-648e44106f8c\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_ai_reconciled\": false,\n      \"is_attended\": true,\n      \"is_auto_matched\": true,\n      \"is_invited\": true,\n      \"is_unknown\": true,\n      \"is_verified\": true,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"mapped_invitee_name\": \"John Doe\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": false,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Rem cupiditate necessitatibus hic expedita.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis ut iste qui totam.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Rem cupiditate necessitatibus hic expedita.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis ut iste qui totam.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Rem cupiditate necessitatibus hic expedita.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis ut iste qui totam.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Rem cupiditate necessitatibus hic expedita.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Omnis ut iste qui totam.\"\n         }\n      ],\n      \"username\": \"jdoe\",\n      \"zoom_user_name\": \"John D. (Zoom)\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"avatar_url\": \"https://avatars.example.com/jdoe.jpg\",\n      \"committee_id\": \"0366786f-4769-4d7e-a09f-a614057e5b14\",\n      \"committee_role\": \"Developer Seat\",\n      \"committee_voting_status\": \"Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"is_ai_reconciled\": false,\n      \"is_attended\": true,\n      \"is_auto_matched\": false,\n      \"is_invited\": true,\n      \"is_unknown\": false,\n      \"is_verified\": false,\n      \"job_title\": \"Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"003P000001cRZVVI9A\",\n      \"mapped_invitee_name\": \"John Doe\",\n      \"org_is_member\": false,\n      \"org_is_project_member\": true,\n      \"org_name\": \"Google\",\n      \"sessions\": [\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Aut ipsa.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Possimus magnam vel.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Aut ipsa.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Possimus magnam vel.\"\n         },\n         {\n            \"join_time\": \"2021-06-27T05:30:37Z\",\n            \"leave_reason\": \"Aut ipsa.\",\n            \"leave_time\": \"2021-06-27T05:59:12Z\",\n            \"participant_uuid\": \"Possimus magnam vel.\"\n         }\n      ],\n      \"username\": \"jdoe\",\n      \"zoom_user_name\": \"John D. (Zoom)\"\n   }'")
 		}
 		if body.Email != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -1525,7 +1646,7 @@ func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeet
 		}
 		for _, e := range body.Sessions {
 			if e != nil {
-				if err2 := ValidateParticipantSessionRequestBody(e); err2 != nil {
+				if err2 := validateParticipantSessionRequestBody(e, "body.sessions[*]"); err2 != nil {
 					err = goa.MergeErrors(err, err2)
 				}
 			}
@@ -1536,14 +1657,17 @@ func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeet
 	}
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceCreateItxPastMeetingParticipantPastMeetingID
+		if meetingServiceCreateItxPastMeetingParticipantPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceCreateItxPastMeetingParticipantPastMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxPastMeetingParticipantVersion != "" {
-			version = &meetingServiceCreateItxPastMeetingParticipantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxPastMeetingParticipantVersion != nil {
+			version = meetingServiceCreateItxPastMeetingParticipantVersion
+			if !(*meetingServiceCreateItxPastMeetingParticipantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxPastMeetingParticipantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1552,8 +1676,8 @@ func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeet
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxPastMeetingParticipantBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxPastMeetingParticipantBearerToken
+		if meetingServiceCreateItxPastMeetingParticipantBearerToken != nil {
+			bearerToken = meetingServiceCreateItxPastMeetingParticipantBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxPastMeetingParticipantPayload{
@@ -1598,13 +1722,16 @@ func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeet
 
 // BuildUpdateItxPastMeetingParticipantPayload builds the payload for the
 // Meeting Service update-itx-past-meeting-participant endpoint from CLI flags.
-func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeetingParticipantBody string, meetingServiceUpdateItxPastMeetingParticipantPastMeetingID string, meetingServiceUpdateItxPastMeetingParticipantParticipantID string, meetingServiceUpdateItxPastMeetingParticipantVersion string, meetingServiceUpdateItxPastMeetingParticipantBearerToken string) (*meetingservice.UpdateItxPastMeetingParticipantPayload, error) {
+func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeetingParticipantBody *string, meetingServiceUpdateItxPastMeetingParticipantPastMeetingID *string, meetingServiceUpdateItxPastMeetingParticipantParticipantID *string, meetingServiceUpdateItxPastMeetingParticipantVersion *string, meetingServiceUpdateItxPastMeetingParticipantBearerToken *string) (*meetingservice.UpdateItxPastMeetingParticipantPayload, error) {
 	var err error
 	var body UpdateItxPastMeetingParticipantRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxPastMeetingParticipantBody), &body)
+		if meetingServiceUpdateItxPastMeetingParticipantBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxPastMeetingParticipantBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_ai_reconciled\": false,\n      \"is_attended\": false,\n      \"is_auto_matched\": false,\n      \"is_invited\": false,\n      \"is_unknown\": true,\n      \"is_verified\": true,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"mapped_invitee_name\": \"John Doe\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\",\n      \"zoom_user_name\": \"John D. (Zoom)\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"attendee_id\": \"att_xyz789\",\n      \"committee_role\": \"Lead Developer\",\n      \"committee_voting_status\": \"Alt Voting Rep\",\n      \"email\": \"john.doe@example.com\",\n      \"first_name\": \"John\",\n      \"invitee_id\": \"inv_abc123\",\n      \"is_ai_reconciled\": true,\n      \"is_attended\": true,\n      \"is_auto_matched\": false,\n      \"is_invited\": true,\n      \"is_unknown\": true,\n      \"is_verified\": false,\n      \"job_title\": \"Senior Software Engineer\",\n      \"last_name\": \"Doe\",\n      \"lf_user_id\": \"abc123\",\n      \"mapped_invitee_name\": \"John Doe\",\n      \"org_name\": \"Microsoft\",\n      \"username\": \"johndoe\",\n      \"zoom_user_name\": \"John D. (Zoom)\"\n   }'")
 		}
 		if body.Email != nil {
 			err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -1615,18 +1742,24 @@ func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeet
 	}
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceUpdateItxPastMeetingParticipantPastMeetingID
+		if meetingServiceUpdateItxPastMeetingParticipantPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceUpdateItxPastMeetingParticipantPastMeetingID
 	}
 	var participantID string
 	{
-		participantID = meetingServiceUpdateItxPastMeetingParticipantParticipantID
+		if meetingServiceUpdateItxPastMeetingParticipantParticipantID == nil {
+			return nil, fmt.Errorf("missing required flag --participant-id")
+		}
+		participantID = *meetingServiceUpdateItxPastMeetingParticipantParticipantID
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxPastMeetingParticipantVersion != "" {
-			version = &meetingServiceUpdateItxPastMeetingParticipantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxPastMeetingParticipantVersion != nil {
+			version = meetingServiceUpdateItxPastMeetingParticipantVersion
+			if !(*meetingServiceUpdateItxPastMeetingParticipantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxPastMeetingParticipantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1635,8 +1768,8 @@ func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeet
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxPastMeetingParticipantBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxPastMeetingParticipantBearerToken
+		if meetingServiceUpdateItxPastMeetingParticipantBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxPastMeetingParticipantBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxPastMeetingParticipantPayload{
@@ -1670,22 +1803,28 @@ func BuildUpdateItxPastMeetingParticipantPayload(meetingServiceUpdateItxPastMeet
 
 // BuildDeleteItxPastMeetingParticipantPayload builds the payload for the
 // Meeting Service delete-itx-past-meeting-participant endpoint from CLI flags.
-func BuildDeleteItxPastMeetingParticipantPayload(meetingServiceDeleteItxPastMeetingParticipantPastMeetingID string, meetingServiceDeleteItxPastMeetingParticipantParticipantID string, meetingServiceDeleteItxPastMeetingParticipantVersion string, meetingServiceDeleteItxPastMeetingParticipantBearerToken string) (*meetingservice.DeleteItxPastMeetingParticipantPayload, error) {
+func BuildDeleteItxPastMeetingParticipantPayload(meetingServiceDeleteItxPastMeetingParticipantPastMeetingID *string, meetingServiceDeleteItxPastMeetingParticipantParticipantID *string, meetingServiceDeleteItxPastMeetingParticipantVersion *string, meetingServiceDeleteItxPastMeetingParticipantBearerToken *string) (*meetingservice.DeleteItxPastMeetingParticipantPayload, error) {
 	var err error
 	var pastMeetingID string
 	{
-		pastMeetingID = meetingServiceDeleteItxPastMeetingParticipantPastMeetingID
+		if meetingServiceDeleteItxPastMeetingParticipantPastMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --past-meeting-id")
+		}
+		pastMeetingID = *meetingServiceDeleteItxPastMeetingParticipantPastMeetingID
 	}
 	var participantID string
 	{
-		participantID = meetingServiceDeleteItxPastMeetingParticipantParticipantID
+		if meetingServiceDeleteItxPastMeetingParticipantParticipantID == nil {
+			return nil, fmt.Errorf("missing required flag --participant-id")
+		}
+		participantID = *meetingServiceDeleteItxPastMeetingParticipantParticipantID
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxPastMeetingParticipantVersion != "" {
-			version = &meetingServiceDeleteItxPastMeetingParticipantVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxPastMeetingParticipantVersion != nil {
+			version = meetingServiceDeleteItxPastMeetingParticipantVersion
+			if !(*meetingServiceDeleteItxPastMeetingParticipantVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxPastMeetingParticipantVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1694,8 +1833,8 @@ func BuildDeleteItxPastMeetingParticipantPayload(meetingServiceDeleteItxPastMeet
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxPastMeetingParticipantBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxPastMeetingParticipantBearerToken
+		if meetingServiceDeleteItxPastMeetingParticipantBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxPastMeetingParticipantBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxPastMeetingParticipantPayload{}
@@ -1709,13 +1848,16 @@ func BuildDeleteItxPastMeetingParticipantPayload(meetingServiceDeleteItxPastMeet
 
 // BuildCreateItxMeetingAttachmentPayload builds the payload for the Meeting
 // Service create-itx-meeting-attachment endpoint from CLI flags.
-func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttachmentBody string, meetingServiceCreateItxMeetingAttachmentMeetingID string, meetingServiceCreateItxMeetingAttachmentVersion string, meetingServiceCreateItxMeetingAttachmentBearerToken string) (*meetingservice.CreateItxMeetingAttachmentPayload, error) {
+func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttachmentBody *string, meetingServiceCreateItxMeetingAttachmentMeetingID *string, meetingServiceCreateItxMeetingAttachmentVersion *string, meetingServiceCreateItxMeetingAttachmentBearerToken *string) (*meetingservice.CreateItxMeetingAttachmentPayload, error) {
 	var err error
 	var body CreateItxMeetingAttachmentRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxMeetingAttachmentBody), &body)
+		if meetingServiceCreateItxMeetingAttachmentBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Other\",\n      \"description\": \"Explicabo ipsa sit rerum ut qui.\",\n      \"link\": \"Cupiditate excepturi sed non.\",\n      \"name\": \"b2g\",\n      \"type\": \"link\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Et ducimus repudiandae velit.\",\n      \"link\": \"Quibusdam libero delectus deleniti aliquid quis.\",\n      \"name\": \"je\",\n      \"type\": \"link\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -1732,14 +1874,17 @@ func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttach
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceCreateItxMeetingAttachmentMeetingID
+		if meetingServiceCreateItxMeetingAttachmentMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceCreateItxMeetingAttachmentMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxMeetingAttachmentVersion != "" {
-			version = &meetingServiceCreateItxMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxMeetingAttachmentVersion != nil {
+			version = meetingServiceCreateItxMeetingAttachmentVersion
+			if !(*meetingServiceCreateItxMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1748,8 +1893,8 @@ func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttach
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxMeetingAttachmentBearerToken
+		if meetingServiceCreateItxMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceCreateItxMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxMeetingAttachmentPayload{
@@ -1768,15 +1913,21 @@ func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttach
 
 // BuildGetItxMeetingAttachmentPayload builds the payload for the Meeting
 // Service get-itx-meeting-attachment endpoint from CLI flags.
-func BuildGetItxMeetingAttachmentPayload(meetingServiceGetItxMeetingAttachmentMeetingID string, meetingServiceGetItxMeetingAttachmentAttachmentID string, meetingServiceGetItxMeetingAttachmentVersion string, meetingServiceGetItxMeetingAttachmentBearerToken string) (*meetingservice.GetItxMeetingAttachmentPayload, error) {
+func BuildGetItxMeetingAttachmentPayload(meetingServiceGetItxMeetingAttachmentMeetingID *string, meetingServiceGetItxMeetingAttachmentAttachmentID *string, meetingServiceGetItxMeetingAttachmentVersion *string, meetingServiceGetItxMeetingAttachmentBearerToken *string) (*meetingservice.GetItxMeetingAttachmentPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxMeetingAttachmentMeetingID
+		if meetingServiceGetItxMeetingAttachmentMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxMeetingAttachmentMeetingID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceGetItxMeetingAttachmentAttachmentID
+		if meetingServiceGetItxMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceGetItxMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1784,10 +1935,10 @@ func BuildGetItxMeetingAttachmentPayload(meetingServiceGetItxMeetingAttachmentMe
 	}
 	var version *string
 	{
-		if meetingServiceGetItxMeetingAttachmentVersion != "" {
-			version = &meetingServiceGetItxMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxMeetingAttachmentVersion != nil {
+			version = meetingServiceGetItxMeetingAttachmentVersion
+			if !(*meetingServiceGetItxMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1796,8 +1947,8 @@ func BuildGetItxMeetingAttachmentPayload(meetingServiceGetItxMeetingAttachmentMe
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceGetItxMeetingAttachmentBearerToken
+		if meetingServiceGetItxMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceGetItxMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.GetItxMeetingAttachmentPayload{}
@@ -1811,13 +1962,16 @@ func BuildGetItxMeetingAttachmentPayload(meetingServiceGetItxMeetingAttachmentMe
 
 // BuildUpdateItxMeetingAttachmentPayload builds the payload for the Meeting
 // Service update-itx-meeting-attachment endpoint from CLI flags.
-func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttachmentBody string, meetingServiceUpdateItxMeetingAttachmentMeetingID string, meetingServiceUpdateItxMeetingAttachmentAttachmentID string, meetingServiceUpdateItxMeetingAttachmentVersion string, meetingServiceUpdateItxMeetingAttachmentBearerToken string) (*meetingservice.UpdateItxMeetingAttachmentPayload, error) {
+func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttachmentBody *string, meetingServiceUpdateItxMeetingAttachmentMeetingID *string, meetingServiceUpdateItxMeetingAttachmentAttachmentID *string, meetingServiceUpdateItxMeetingAttachmentVersion *string, meetingServiceUpdateItxMeetingAttachmentBearerToken *string) (*meetingservice.UpdateItxMeetingAttachmentPayload, error) {
 	var err error
 	var body UpdateItxMeetingAttachmentRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxMeetingAttachmentBody), &body)
+		if meetingServiceUpdateItxMeetingAttachmentBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Other\",\n      \"description\": \"Quo modi omnis quo dolore.\",\n      \"link\": \"Dolorem voluptates dolorem.\",\n      \"name\": \"Vitae et aut amet dignissimos et incidunt.\",\n      \"type\": \"file\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Quisquam facere sit accusamus commodi.\",\n      \"link\": \"Voluptatem ipsam totam ut qui alias.\",\n      \"name\": \"Harum est officia maxime nesciunt perferendis harum.\",\n      \"type\": \"link\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -1831,11 +1985,17 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceUpdateItxMeetingAttachmentMeetingID
+		if meetingServiceUpdateItxMeetingAttachmentMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceUpdateItxMeetingAttachmentMeetingID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceUpdateItxMeetingAttachmentAttachmentID
+		if meetingServiceUpdateItxMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceUpdateItxMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1843,10 +2003,10 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxMeetingAttachmentVersion != "" {
-			version = &meetingServiceUpdateItxMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxMeetingAttachmentVersion != nil {
+			version = meetingServiceUpdateItxMeetingAttachmentVersion
+			if !(*meetingServiceUpdateItxMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1855,8 +2015,8 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxMeetingAttachmentBearerToken
+		if meetingServiceUpdateItxMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxMeetingAttachmentPayload{
@@ -1876,15 +2036,21 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 
 // BuildDeleteItxMeetingAttachmentPayload builds the payload for the Meeting
 // Service delete-itx-meeting-attachment endpoint from CLI flags.
-func BuildDeleteItxMeetingAttachmentPayload(meetingServiceDeleteItxMeetingAttachmentMeetingID string, meetingServiceDeleteItxMeetingAttachmentAttachmentID string, meetingServiceDeleteItxMeetingAttachmentVersion string, meetingServiceDeleteItxMeetingAttachmentBearerToken string) (*meetingservice.DeleteItxMeetingAttachmentPayload, error) {
+func BuildDeleteItxMeetingAttachmentPayload(meetingServiceDeleteItxMeetingAttachmentMeetingID *string, meetingServiceDeleteItxMeetingAttachmentAttachmentID *string, meetingServiceDeleteItxMeetingAttachmentVersion *string, meetingServiceDeleteItxMeetingAttachmentBearerToken *string) (*meetingservice.DeleteItxMeetingAttachmentPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceDeleteItxMeetingAttachmentMeetingID
+		if meetingServiceDeleteItxMeetingAttachmentMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceDeleteItxMeetingAttachmentMeetingID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceDeleteItxMeetingAttachmentAttachmentID
+		if meetingServiceDeleteItxMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceDeleteItxMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1892,10 +2058,10 @@ func BuildDeleteItxMeetingAttachmentPayload(meetingServiceDeleteItxMeetingAttach
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxMeetingAttachmentVersion != "" {
-			version = &meetingServiceDeleteItxMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxMeetingAttachmentVersion != nil {
+			version = meetingServiceDeleteItxMeetingAttachmentVersion
+			if !(*meetingServiceDeleteItxMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1904,8 +2070,8 @@ func BuildDeleteItxMeetingAttachmentPayload(meetingServiceDeleteItxMeetingAttach
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxMeetingAttachmentBearerToken
+		if meetingServiceDeleteItxMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxMeetingAttachmentPayload{}
@@ -1920,13 +2086,16 @@ func BuildDeleteItxMeetingAttachmentPayload(meetingServiceDeleteItxMeetingAttach
 // BuildCreateItxMeetingAttachmentPresignPayload builds the payload for the
 // Meeting Service create-itx-meeting-attachment-presign endpoint from CLI
 // flags.
-func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetingAttachmentPresignBody string, meetingServiceCreateItxMeetingAttachmentPresignMeetingID string, meetingServiceCreateItxMeetingAttachmentPresignVersion string, meetingServiceCreateItxMeetingAttachmentPresignBearerToken string) (*meetingservice.CreateItxMeetingAttachmentPresignPayload, error) {
+func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetingAttachmentPresignBody *string, meetingServiceCreateItxMeetingAttachmentPresignMeetingID *string, meetingServiceCreateItxMeetingAttachmentPresignVersion *string, meetingServiceCreateItxMeetingAttachmentPresignBearerToken *string) (*meetingservice.CreateItxMeetingAttachmentPresignPayload, error) {
 	var err error
 	var body CreateItxMeetingAttachmentPresignRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxMeetingAttachmentPresignBody), &body)
+		if meetingServiceCreateItxMeetingAttachmentPresignBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxMeetingAttachmentPresignBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Presentation\",\n      \"description\": \"Magni qui quia consequatur.\",\n      \"file_size\": 2576054585007059719,\n      \"file_type\": \"Delectus eligendi quas voluptas.\",\n      \"name\": \"Id qui.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Maxime quo occaecati soluta labore quas.\",\n      \"file_size\": 6380598486217411739,\n      \"file_type\": \"A similique.\",\n      \"name\": \"Laborum necessitatibus.\"\n   }'")
 		}
 		if body.Category != nil {
 			if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
@@ -1939,14 +2108,17 @@ func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetin
 	}
 	var meetingID string
 	{
-		meetingID = meetingServiceCreateItxMeetingAttachmentPresignMeetingID
+		if meetingServiceCreateItxMeetingAttachmentPresignMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceCreateItxMeetingAttachmentPresignMeetingID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxMeetingAttachmentPresignVersion != "" {
-			version = &meetingServiceCreateItxMeetingAttachmentPresignVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxMeetingAttachmentPresignVersion != nil {
+			version = meetingServiceCreateItxMeetingAttachmentPresignVersion
+			if !(*meetingServiceCreateItxMeetingAttachmentPresignVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxMeetingAttachmentPresignVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -1955,8 +2127,8 @@ func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetin
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxMeetingAttachmentPresignBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxMeetingAttachmentPresignBearerToken
+		if meetingServiceCreateItxMeetingAttachmentPresignBearerToken != nil {
+			bearerToken = meetingServiceCreateItxMeetingAttachmentPresignBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxMeetingAttachmentPresignPayload{
@@ -1975,15 +2147,21 @@ func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetin
 
 // BuildGetItxMeetingAttachmentDownloadPayload builds the payload for the
 // Meeting Service get-itx-meeting-attachment-download endpoint from CLI flags.
-func BuildGetItxMeetingAttachmentDownloadPayload(meetingServiceGetItxMeetingAttachmentDownloadMeetingID string, meetingServiceGetItxMeetingAttachmentDownloadAttachmentID string, meetingServiceGetItxMeetingAttachmentDownloadVersion string, meetingServiceGetItxMeetingAttachmentDownloadBearerToken string) (*meetingservice.GetItxMeetingAttachmentDownloadPayload, error) {
+func BuildGetItxMeetingAttachmentDownloadPayload(meetingServiceGetItxMeetingAttachmentDownloadMeetingID *string, meetingServiceGetItxMeetingAttachmentDownloadAttachmentID *string, meetingServiceGetItxMeetingAttachmentDownloadVersion *string, meetingServiceGetItxMeetingAttachmentDownloadBearerToken *string) (*meetingservice.GetItxMeetingAttachmentDownloadPayload, error) {
 	var err error
 	var meetingID string
 	{
-		meetingID = meetingServiceGetItxMeetingAttachmentDownloadMeetingID
+		if meetingServiceGetItxMeetingAttachmentDownloadMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxMeetingAttachmentDownloadMeetingID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceGetItxMeetingAttachmentDownloadAttachmentID
+		if meetingServiceGetItxMeetingAttachmentDownloadAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceGetItxMeetingAttachmentDownloadAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -1991,10 +2169,10 @@ func BuildGetItxMeetingAttachmentDownloadPayload(meetingServiceGetItxMeetingAtta
 	}
 	var version *string
 	{
-		if meetingServiceGetItxMeetingAttachmentDownloadVersion != "" {
-			version = &meetingServiceGetItxMeetingAttachmentDownloadVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxMeetingAttachmentDownloadVersion != nil {
+			version = meetingServiceGetItxMeetingAttachmentDownloadVersion
+			if !(*meetingServiceGetItxMeetingAttachmentDownloadVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxMeetingAttachmentDownloadVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2003,8 +2181,8 @@ func BuildGetItxMeetingAttachmentDownloadPayload(meetingServiceGetItxMeetingAtta
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxMeetingAttachmentDownloadBearerToken != "" {
-			bearerToken = &meetingServiceGetItxMeetingAttachmentDownloadBearerToken
+		if meetingServiceGetItxMeetingAttachmentDownloadBearerToken != nil {
+			bearerToken = meetingServiceGetItxMeetingAttachmentDownloadBearerToken
 		}
 	}
 	v := &meetingservice.GetItxMeetingAttachmentDownloadPayload{}
@@ -2018,13 +2196,16 @@ func BuildGetItxMeetingAttachmentDownloadPayload(meetingServiceGetItxMeetingAtta
 
 // BuildCreateItxPastMeetingAttachmentPayload builds the payload for the
 // Meeting Service create-itx-past-meeting-attachment endpoint from CLI flags.
-func BuildCreateItxPastMeetingAttachmentPayload(meetingServiceCreateItxPastMeetingAttachmentBody string, meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceID string, meetingServiceCreateItxPastMeetingAttachmentVersion string, meetingServiceCreateItxPastMeetingAttachmentBearerToken string) (*meetingservice.CreateItxPastMeetingAttachmentPayload, error) {
+func BuildCreateItxPastMeetingAttachmentPayload(meetingServiceCreateItxPastMeetingAttachmentBody *string, meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceID *string, meetingServiceCreateItxPastMeetingAttachmentVersion *string, meetingServiceCreateItxPastMeetingAttachmentBearerToken *string) (*meetingservice.CreateItxPastMeetingAttachmentPayload, error) {
 	var err error
 	var body CreateItxPastMeetingAttachmentRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxPastMeetingAttachmentBody), &body)
+		if meetingServiceCreateItxPastMeetingAttachmentBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxPastMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Other\",\n      \"description\": \"Aut optio aut laborum ut.\",\n      \"link\": \"Voluptas quae.\",\n      \"name\": \"91y\",\n      \"type\": \"link\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Presentation\",\n      \"description\": \"Ut earum dolores.\",\n      \"link\": \"Suscipit a.\",\n      \"name\": \"y5q\",\n      \"type\": \"link\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -2041,14 +2222,17 @@ func BuildCreateItxPastMeetingAttachmentPayload(meetingServiceCreateItxPastMeeti
 	}
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceID
+		if meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceCreateItxPastMeetingAttachmentMeetingAndOccurrenceID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxPastMeetingAttachmentVersion != "" {
-			version = &meetingServiceCreateItxPastMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxPastMeetingAttachmentVersion != nil {
+			version = meetingServiceCreateItxPastMeetingAttachmentVersion
+			if !(*meetingServiceCreateItxPastMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxPastMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2057,8 +2241,8 @@ func BuildCreateItxPastMeetingAttachmentPayload(meetingServiceCreateItxPastMeeti
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxPastMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxPastMeetingAttachmentBearerToken
+		if meetingServiceCreateItxPastMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceCreateItxPastMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxPastMeetingAttachmentPayload{
@@ -2077,15 +2261,21 @@ func BuildCreateItxPastMeetingAttachmentPayload(meetingServiceCreateItxPastMeeti
 
 // BuildGetItxPastMeetingAttachmentPayload builds the payload for the Meeting
 // Service get-itx-past-meeting-attachment endpoint from CLI flags.
-func BuildGetItxPastMeetingAttachmentPayload(meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceID string, meetingServiceGetItxPastMeetingAttachmentAttachmentID string, meetingServiceGetItxPastMeetingAttachmentVersion string, meetingServiceGetItxPastMeetingAttachmentBearerToken string) (*meetingservice.GetItxPastMeetingAttachmentPayload, error) {
+func BuildGetItxPastMeetingAttachmentPayload(meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceID *string, meetingServiceGetItxPastMeetingAttachmentAttachmentID *string, meetingServiceGetItxPastMeetingAttachmentVersion *string, meetingServiceGetItxPastMeetingAttachmentBearerToken *string) (*meetingservice.GetItxPastMeetingAttachmentPayload, error) {
 	var err error
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceID
+		if meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceGetItxPastMeetingAttachmentMeetingAndOccurrenceID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceGetItxPastMeetingAttachmentAttachmentID
+		if meetingServiceGetItxPastMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceGetItxPastMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -2093,10 +2283,10 @@ func BuildGetItxPastMeetingAttachmentPayload(meetingServiceGetItxPastMeetingAtta
 	}
 	var version *string
 	{
-		if meetingServiceGetItxPastMeetingAttachmentVersion != "" {
-			version = &meetingServiceGetItxPastMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxPastMeetingAttachmentVersion != nil {
+			version = meetingServiceGetItxPastMeetingAttachmentVersion
+			if !(*meetingServiceGetItxPastMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxPastMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2105,8 +2295,8 @@ func BuildGetItxPastMeetingAttachmentPayload(meetingServiceGetItxPastMeetingAtta
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxPastMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceGetItxPastMeetingAttachmentBearerToken
+		if meetingServiceGetItxPastMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceGetItxPastMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.GetItxPastMeetingAttachmentPayload{}
@@ -2120,13 +2310,16 @@ func BuildGetItxPastMeetingAttachmentPayload(meetingServiceGetItxPastMeetingAtta
 
 // BuildUpdateItxPastMeetingAttachmentPayload builds the payload for the
 // Meeting Service update-itx-past-meeting-attachment endpoint from CLI flags.
-func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeetingAttachmentBody string, meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceID string, meetingServiceUpdateItxPastMeetingAttachmentAttachmentID string, meetingServiceUpdateItxPastMeetingAttachmentVersion string, meetingServiceUpdateItxPastMeetingAttachmentBearerToken string) (*meetingservice.UpdateItxPastMeetingAttachmentPayload, error) {
+func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeetingAttachmentBody *string, meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceID *string, meetingServiceUpdateItxPastMeetingAttachmentAttachmentID *string, meetingServiceUpdateItxPastMeetingAttachmentVersion *string, meetingServiceUpdateItxPastMeetingAttachmentBearerToken *string) (*meetingservice.UpdateItxPastMeetingAttachmentPayload, error) {
 	var err error
 	var body UpdateItxPastMeetingAttachmentRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceUpdateItxPastMeetingAttachmentBody), &body)
+		if meetingServiceUpdateItxPastMeetingAttachmentBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceUpdateItxPastMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Sed quae odio ducimus tempore ut.\",\n      \"link\": \"Beatae aut ab.\",\n      \"name\": \"Rerum qui.\",\n      \"type\": \"file\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Soluta dolorem.\",\n      \"link\": \"Nihil voluptatibus quibusdam.\",\n      \"name\": \"Debitis debitis rerum voluptas.\",\n      \"type\": \"file\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -2140,11 +2333,17 @@ func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeeti
 	}
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceID
+		if meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceUpdateItxPastMeetingAttachmentMeetingAndOccurrenceID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceUpdateItxPastMeetingAttachmentAttachmentID
+		if meetingServiceUpdateItxPastMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceUpdateItxPastMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -2152,10 +2351,10 @@ func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeeti
 	}
 	var version *string
 	{
-		if meetingServiceUpdateItxPastMeetingAttachmentVersion != "" {
-			version = &meetingServiceUpdateItxPastMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceUpdateItxPastMeetingAttachmentVersion != nil {
+			version = meetingServiceUpdateItxPastMeetingAttachmentVersion
+			if !(*meetingServiceUpdateItxPastMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceUpdateItxPastMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2164,8 +2363,8 @@ func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeeti
 	}
 	var bearerToken *string
 	{
-		if meetingServiceUpdateItxPastMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceUpdateItxPastMeetingAttachmentBearerToken
+		if meetingServiceUpdateItxPastMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceUpdateItxPastMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.UpdateItxPastMeetingAttachmentPayload{
@@ -2185,15 +2384,21 @@ func BuildUpdateItxPastMeetingAttachmentPayload(meetingServiceUpdateItxPastMeeti
 
 // BuildDeleteItxPastMeetingAttachmentPayload builds the payload for the
 // Meeting Service delete-itx-past-meeting-attachment endpoint from CLI flags.
-func BuildDeleteItxPastMeetingAttachmentPayload(meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceID string, meetingServiceDeleteItxPastMeetingAttachmentAttachmentID string, meetingServiceDeleteItxPastMeetingAttachmentVersion string, meetingServiceDeleteItxPastMeetingAttachmentBearerToken string) (*meetingservice.DeleteItxPastMeetingAttachmentPayload, error) {
+func BuildDeleteItxPastMeetingAttachmentPayload(meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceID *string, meetingServiceDeleteItxPastMeetingAttachmentAttachmentID *string, meetingServiceDeleteItxPastMeetingAttachmentVersion *string, meetingServiceDeleteItxPastMeetingAttachmentBearerToken *string) (*meetingservice.DeleteItxPastMeetingAttachmentPayload, error) {
 	var err error
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceID
+		if meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceDeleteItxPastMeetingAttachmentMeetingAndOccurrenceID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceDeleteItxPastMeetingAttachmentAttachmentID
+		if meetingServiceDeleteItxPastMeetingAttachmentAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceDeleteItxPastMeetingAttachmentAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -2201,10 +2406,10 @@ func BuildDeleteItxPastMeetingAttachmentPayload(meetingServiceDeleteItxPastMeeti
 	}
 	var version *string
 	{
-		if meetingServiceDeleteItxPastMeetingAttachmentVersion != "" {
-			version = &meetingServiceDeleteItxPastMeetingAttachmentVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceDeleteItxPastMeetingAttachmentVersion != nil {
+			version = meetingServiceDeleteItxPastMeetingAttachmentVersion
+			if !(*meetingServiceDeleteItxPastMeetingAttachmentVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceDeleteItxPastMeetingAttachmentVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2213,8 +2418,8 @@ func BuildDeleteItxPastMeetingAttachmentPayload(meetingServiceDeleteItxPastMeeti
 	}
 	var bearerToken *string
 	{
-		if meetingServiceDeleteItxPastMeetingAttachmentBearerToken != "" {
-			bearerToken = &meetingServiceDeleteItxPastMeetingAttachmentBearerToken
+		if meetingServiceDeleteItxPastMeetingAttachmentBearerToken != nil {
+			bearerToken = meetingServiceDeleteItxPastMeetingAttachmentBearerToken
 		}
 	}
 	v := &meetingservice.DeleteItxPastMeetingAttachmentPayload{}
@@ -2229,13 +2434,16 @@ func BuildDeleteItxPastMeetingAttachmentPayload(meetingServiceDeleteItxPastMeeti
 // BuildCreateItxPastMeetingAttachmentPresignPayload builds the payload for the
 // Meeting Service create-itx-past-meeting-attachment-presign endpoint from CLI
 // flags.
-func BuildCreateItxPastMeetingAttachmentPresignPayload(meetingServiceCreateItxPastMeetingAttachmentPresignBody string, meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceID string, meetingServiceCreateItxPastMeetingAttachmentPresignVersion string, meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken string) (*meetingservice.CreateItxPastMeetingAttachmentPresignPayload, error) {
+func BuildCreateItxPastMeetingAttachmentPresignPayload(meetingServiceCreateItxPastMeetingAttachmentPresignBody *string, meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceID *string, meetingServiceCreateItxPastMeetingAttachmentPresignVersion *string, meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken *string) (*meetingservice.CreateItxPastMeetingAttachmentPresignPayload, error) {
 	var err error
 	var body CreateItxPastMeetingAttachmentPresignRequestBody
 	{
-		err = json.Unmarshal([]byte(meetingServiceCreateItxPastMeetingAttachmentPresignBody), &body)
+		if meetingServiceCreateItxPastMeetingAttachmentPresignBody == nil {
+			return nil, fmt.Errorf("missing required flag --body")
+		}
+		err = json.Unmarshal([]byte(*meetingServiceCreateItxPastMeetingAttachmentPresignBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Ipsum esse.\",\n      \"file_size\": 8231768421015774433,\n      \"file_type\": \"Distinctio et quia assumenda reiciendis sapiente.\",\n      \"name\": \"Rerum necessitatibus.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Presentation\",\n      \"description\": \"Sed nisi odit consequatur.\",\n      \"file_size\": 8344943170929811630,\n      \"file_type\": \"Ab quae aut ipsa ut laboriosam odit.\",\n      \"name\": \"Iusto ut animi alias laboriosam.\"\n   }'")
 		}
 		if body.Category != nil {
 			if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
@@ -2248,14 +2456,17 @@ func BuildCreateItxPastMeetingAttachmentPresignPayload(meetingServiceCreateItxPa
 	}
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceID
+		if meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceCreateItxPastMeetingAttachmentPresignMeetingAndOccurrenceID
 	}
 	var version *string
 	{
-		if meetingServiceCreateItxPastMeetingAttachmentPresignVersion != "" {
-			version = &meetingServiceCreateItxPastMeetingAttachmentPresignVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceCreateItxPastMeetingAttachmentPresignVersion != nil {
+			version = meetingServiceCreateItxPastMeetingAttachmentPresignVersion
+			if !(*meetingServiceCreateItxPastMeetingAttachmentPresignVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceCreateItxPastMeetingAttachmentPresignVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2264,8 +2475,8 @@ func BuildCreateItxPastMeetingAttachmentPresignPayload(meetingServiceCreateItxPa
 	}
 	var bearerToken *string
 	{
-		if meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken != "" {
-			bearerToken = &meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken
+		if meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken != nil {
+			bearerToken = meetingServiceCreateItxPastMeetingAttachmentPresignBearerToken
 		}
 	}
 	v := &meetingservice.CreateItxPastMeetingAttachmentPresignPayload{
@@ -2285,15 +2496,21 @@ func BuildCreateItxPastMeetingAttachmentPresignPayload(meetingServiceCreateItxPa
 // BuildGetItxPastMeetingAttachmentDownloadPayload builds the payload for the
 // Meeting Service get-itx-past-meeting-attachment-download endpoint from CLI
 // flags.
-func BuildGetItxPastMeetingAttachmentDownloadPayload(meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceID string, meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentID string, meetingServiceGetItxPastMeetingAttachmentDownloadVersion string, meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken string) (*meetingservice.GetItxPastMeetingAttachmentDownloadPayload, error) {
+func BuildGetItxPastMeetingAttachmentDownloadPayload(meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceID *string, meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentID *string, meetingServiceGetItxPastMeetingAttachmentDownloadVersion *string, meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken *string) (*meetingservice.GetItxPastMeetingAttachmentDownloadPayload, error) {
 	var err error
 	var meetingAndOccurrenceID string
 	{
-		meetingAndOccurrenceID = meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceID
+		if meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceGetItxPastMeetingAttachmentDownloadMeetingAndOccurrenceID
 	}
 	var attachmentID string
 	{
-		attachmentID = meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentID
+		if meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentID == nil {
+			return nil, fmt.Errorf("missing required flag --attachment-id")
+		}
+		attachmentID = *meetingServiceGetItxPastMeetingAttachmentDownloadAttachmentID
 		err = goa.MergeErrors(err, goa.ValidateFormat("attachment_id", attachmentID, goa.FormatUUID))
 		if err != nil {
 			return nil, err
@@ -2301,10 +2518,10 @@ func BuildGetItxPastMeetingAttachmentDownloadPayload(meetingServiceGetItxPastMee
 	}
 	var version *string
 	{
-		if meetingServiceGetItxPastMeetingAttachmentDownloadVersion != "" {
-			version = &meetingServiceGetItxPastMeetingAttachmentDownloadVersion
-			if !(*version == "1") {
-				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+		if meetingServiceGetItxPastMeetingAttachmentDownloadVersion != nil {
+			version = meetingServiceGetItxPastMeetingAttachmentDownloadVersion
+			if !(*meetingServiceGetItxPastMeetingAttachmentDownloadVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxPastMeetingAttachmentDownloadVersion, []any{"1"}))
 			}
 			if err != nil {
 				return nil, err
@@ -2313,8 +2530,8 @@ func BuildGetItxPastMeetingAttachmentDownloadPayload(meetingServiceGetItxPastMee
 	}
 	var bearerToken *string
 	{
-		if meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken != "" {
-			bearerToken = &meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken
+		if meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken != nil {
+			bearerToken = meetingServiceGetItxPastMeetingAttachmentDownloadBearerToken
 		}
 	}
 	v := &meetingservice.GetItxPastMeetingAttachmentDownloadPayload{}
