@@ -26,6 +26,7 @@ type fakeMeetingClient struct {
 	lastUpdateReq          *itx.CreateZoomMeetingRequest
 	lastUpdateOccurrenceID string
 	lastUpdateOccurrence   *itx.UpdateOccurrenceRequest
+	lastDeleteOccurrence   *itx.DeleteOccurrenceRequest
 	createResp             *itx.ZoomMeetingResponse
 	createErr              error
 	// getResp/getErr control GetZoomMeeting; used by update tests to set the
@@ -98,6 +99,11 @@ func (f *fakeMeetingClient) UpdateZoomMeeting(_ context.Context, _ string, req *
 func (f *fakeMeetingClient) UpdateOccurrence(_ context.Context, _, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
 	f.lastUpdateOccurrenceID = occurrenceID
 	f.lastUpdateOccurrence = req
+	return nil
+}
+
+func (f *fakeMeetingClient) DeleteOccurrence(_ context.Context, _, _ string, req *itx.DeleteOccurrenceRequest) error {
+	f.lastDeleteOccurrence = req
 	return nil
 }
 
@@ -523,6 +529,36 @@ func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client.lastUpdateOccurrence)
 		assert.Nil(t, client.lastUpdateOccurrence.UpdatedBy)
+	})
+}
+
+func TestMeetingService_DeleteOccurrence(t *testing.T) {
+	t.Run("forwards the note and stamps updated_by", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		reader := &fakeUserMetadataReader{
+			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", Email: "alice@example.com"},
+		}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+
+		err := svc.DeleteOccurrence(ctxWithPrincipal("alice", ""), "meeting-1", "occ-1", &itx.DeleteOccurrenceRequest{Note: "Holiday week"})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastDeleteOccurrence)
+		assert.Equal(t, "Holiday week", client.lastDeleteOccurrence.Note)
+		require.NotNil(t, client.lastDeleteOccurrence.UpdatedBy)
+		assert.Equal(t, "alice", client.lastDeleteOccurrence.UpdatedBy.Username)
+	})
+
+	t.Run("a nil request still reaches ITX without a note", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+
+		err := svc.DeleteOccurrence(context.Background(), "meeting-1", "occ-1", nil)
+		require.NoError(t, err)
+		require.NotNil(t, client.lastDeleteOccurrence)
+
+		body, err := json.Marshal(client.lastDeleteOccurrence)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{}`, string(body))
 	})
 }
 

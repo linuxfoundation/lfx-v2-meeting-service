@@ -4,7 +4,15 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"strings"
+	"unicode/utf8"
+
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -153,6 +161,8 @@ func ConvertITXMeetingResponseToGoa(resp *itx.ZoomMeetingResponse) *meetingservi
 				Duration:        &duration,
 				Status:          &status,
 				RegistrantCount: utils.IntPtrOmitZero(resp.Occurrences[i].RegistrantCount),
+				Title:           utils.StringPtrOmitEmpty(resp.Occurrences[i].Topic),
+				Description:     utils.StringPtrOmitEmpty(resp.Occurrences[i].Agenda),
 			}
 		}
 	}
@@ -295,4 +305,51 @@ func filterVotingStatuses(filters []itx.CommitteeFilter) []meetingservice.Allowe
 		}
 	}
 	return result
+}
+
+// MaxOccurrenceCancelNoteLength mirrors the ITX limit on the note sent with an occurrence cancellation.
+const MaxOccurrenceCancelNoteLength = 4000
+
+// maxDeleteOccurrenceBodyBytes bounds the hand-read delete body: a maximal note of 4-byte runes,
+// JSON-escaped, fits well inside it.
+const maxDeleteOccurrenceBodyBytes = 64 << 10
+
+// deleteOccurrenceBody is the optional JSON body accepted by delete-itx-occurrence.
+type deleteOccurrenceBody struct {
+	Note *string `json:"note"`
+}
+
+// ParseDeleteITXOccurrenceBody reads the optional {"note": "..."} body of an occurrence delete.
+// A missing or blank body is valid and yields an empty request; the note is trimmed.
+func ParseDeleteITXOccurrenceBody(body io.Reader) (*itx.DeleteOccurrenceRequest, error) {
+	req := &itx.DeleteOccurrenceRequest{}
+	if body == nil {
+		return req, nil
+	}
+
+	raw, err := io.ReadAll(io.LimitReader(body, maxDeleteOccurrenceBodyBytes+1))
+	if err != nil {
+		return nil, domain.NewValidationError("failed to read request body", err)
+	}
+	if len(raw) > maxDeleteOccurrenceBodyBytes {
+		return nil, domain.NewValidationError("request body too large")
+	}
+	if len(bytes.TrimSpace(raw)) == 0 {
+		return req, nil
+	}
+
+	var parsed deleteOccurrenceBody
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, domain.NewValidationError("request body must be a JSON object with an optional string note", err)
+	}
+	if parsed.Note == nil {
+		return req, nil
+	}
+
+	note := strings.TrimSpace(*parsed.Note)
+	if utf8.RuneCountInString(note) > MaxOccurrenceCancelNoteLength {
+		return nil, domain.NewValidationError(fmt.Sprintf("note cannot exceed %d characters", MaxOccurrenceCancelNoteLength))
+	}
+	req.Note = note
+	return req, nil
 }

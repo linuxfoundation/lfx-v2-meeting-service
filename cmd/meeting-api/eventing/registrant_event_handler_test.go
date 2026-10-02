@@ -455,3 +455,40 @@ func TestHandleRegistrantUpdate_UsernameUnchanged(t *testing.T) {
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
 }
+
+// TestHandleRegistrantUpdate_ParentMeetingTombstoned verifies that a registrant update is
+// dropped without publishing when the parent meeting mapping holds the tombstone marker,
+// i.e. the meeting was soft-deleted after the delete handler ran.
+func TestHandleRegistrantUpdate_ParentMeetingTombstoned(t *testing.T) {
+	const (
+		registrantUID = "reg-tomb"
+		meetingID     = "meeting-tomb"
+	)
+
+	mappingsKV := &mockKeyValue{}
+	publisher := &mockEventPublisher{}
+
+	mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+		Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte(tombstoneMarker)}, nil)
+
+	h := &EventHandlers{
+		publisher:    publisher,
+		userLookup:   stubV1UserLookup{},
+		idMapper:     stubIDMapper{},
+		v1MappingsKV: mappingsKV,
+		logger:       slog.Default(),
+	}
+
+	retry := h.handleRegistrantUpdate(context.Background(), "itx-zoom-meetings-registrants-v2."+registrantUID,
+		map[string]interface{}{
+			"registrant_id": registrantUID,
+			"meeting_id":    meetingID,
+			"username":      "alice",
+		})
+
+	assert.False(t, retry)
+	publisher.AssertNumberOfCalls(t, "PublishRegistrantEvent", 0)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	mappingsKV.AssertExpectations(t)
+	publisher.AssertExpectations(t)
+}

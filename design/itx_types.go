@@ -290,6 +290,8 @@ var ITXOccurrence = Type("ITXOccurrence", func() {
 		Enum("available", "cancel")
 	})
 	Attribute("registrant_count", Int, "Number of registrants for this occurrence")
+	Attribute("title", String, "Title of this occurrence (ITX topic); may differ from the series title")
+	Attribute("description", String, "Agenda of this occurrence (ITX agenda); may differ from the series description")
 })
 
 // ITXMeetingCountResponse represents the response from getting meeting count via ITX proxy

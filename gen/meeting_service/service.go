@@ -9,6 +9,7 @@ package meetingservice
 
 import (
 	"context"
+	"io"
 
 	"goa.design/goa/v3/security"
 )
@@ -54,8 +55,11 @@ type Service interface {
 	RegisterItxCommitteeMembers(context.Context, *RegisterItxCommitteeMembersPayload) (err error)
 	// Update a specific occurrence of a recurring meeting through ITX API proxy
 	UpdateItxOccurrence(context.Context, *UpdateItxOccurrencePayload) (err error)
-	// Delete a specific occurrence of a recurring meeting through ITX API proxy
-	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload) (err error)
+	// Delete a specific occurrence of a recurring meeting through ITX API proxy.
+	// Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that
+	// ITX includes in the cancellation emails sent to registrants. The body is
+	// read by hand so a request without one stays valid.
+	DeleteItxOccurrence(context.Context, *DeleteItxOccurrencePayload, io.ReadCloser) (err error)
 	// Submit a meeting response (invite response) for a meeting or occurrence
 	// through ITX API proxy
 	SubmitItxMeetingResponse(context.Context, *SubmitItxMeetingResponsePayload) (res *ITXMeetingResponseResult, err error)
@@ -820,6 +824,11 @@ type ITXOccurrence struct {
 	Status *string
 	// Number of registrants for this occurrence
 	RegistrantCount *int
+	// Title of this occurrence (ITX topic); may differ from the series title
+	Title *string
+	// Agenda of this occurrence (ITX agenda); may differ from the series
+	// description
+	Description *string
 }
 
 // ITXPastMeetingAttachment is the result type of the Meeting Service service

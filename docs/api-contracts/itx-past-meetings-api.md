@@ -75,7 +75,7 @@ Updates a past meeting record, including the invitees lists.
 
 **Authorization**: Requires `organizer` permission on the meeting
 
-**Immutable field**: `meeting_id` cannot be changed after a past meeting is created. If `meeting_id` is supplied in the request body, it must match the stored value; a mismatched value returns `403 Forbidden`. Callers that send the full object unchanged (echoing the stored `meeting_id`) are not blocked.
+**Immutable fields**: `meeting_id` and `project_uid` cannot be changed after a past meeting is created. If either field is supplied in the request body, it must match the stored value; a mismatched value returns `403 Forbidden`. Callers that send the full object unchanged (echoing the stored values) are not blocked. `project_uid` is compared in v1 SFID space after the v2→v1 mapping is applied, so a v2 UID that resolves to the same stored SFID is accepted.
 
 ---
 

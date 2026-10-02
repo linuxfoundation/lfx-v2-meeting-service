@@ -8,12 +8,12 @@ package itx
 // only on PUT (the service stamps whichever is appropriate).
 type CreatePastMeetingRequest struct {
 	// Required fields
-	MeetingID    string `json:"meeting_id"`    // Zoom meeting ID
-	OccurrenceID string `json:"occurrence_id"` // Zoom occurrence ID (Unix timestamp)
-	ProjectID    string `json:"project_id"`    // LF project ID
-	StartTime    string `json:"start_time"`    // Meeting start time in RFC3339 format
-	Duration     int    `json:"duration"`      // Meeting duration in minutes
-	Timezone     string `json:"timezone"`      // Meeting timezone
+	MeetingID    string `json:"meeting_id"`           // Zoom meeting ID
+	OccurrenceID string `json:"occurrence_id"`        // Zoom occurrence ID (Unix timestamp)
+	ProjectID    string `json:"project_id,omitempty"` // LF project ID
+	StartTime    string `json:"start_time"`           // Meeting start time in RFC3339 format
+	Duration     int    `json:"duration"`             // Meeting duration in minutes
+	Timezone     string `json:"timezone"`             // Meeting timezone
 
 	// Optional fields
 	Topic             string            `json:"topic,omitempty"`              // Meeting title/topic

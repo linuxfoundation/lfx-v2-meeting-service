@@ -9,6 +9,7 @@ package meetingservice
 
 import (
 	"context"
+	"io"
 
 	goa "goa.design/goa/v3/pkg"
 )
@@ -413,8 +414,8 @@ func (c *Client) UpdateItxOccurrence(ctx context.Context, p *UpdateItxOccurrence
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) DeleteItxOccurrence(ctx context.Context, p *DeleteItxOccurrencePayload) (err error) {
-	_, err = c.DeleteItxOccurrenceEndpoint(ctx, p)
+func (c *Client) DeleteItxOccurrence(ctx context.Context, p *DeleteItxOccurrencePayload, req io.ReadCloser) (err error) {
+	_, err = c.DeleteItxOccurrenceEndpoint(ctx, &DeleteItxOccurrenceRequestData{Payload: p, Body: req})
 	return
 }
 
