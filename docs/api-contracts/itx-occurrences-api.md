@@ -200,7 +200,9 @@ Authorization: Bearer <jwt_token>
 
 - `note` (string, optional) - Note ITX includes in the cancellation emails sent to registrants. Trimmed; at most 4000 characters.
 
-The body may be omitted entirely; a request without one behaves as before. The service reads it by hand
+The body may be omitted entirely; a request without one behaves as before. An empty or whitespace-only
+body, JSON `null`, `{}`, `{"note": null}`, and a note that is blank after trimming are all treated as no
+note. The service reads the body by hand
 (`SkipRequestBodyEncodeDecode`) because Goa would otherwise treat a declared body as required, so the
 generated OpenAPI spec does not show this schema.
 
@@ -210,7 +212,7 @@ No response body on success.
 
 **Error Responses**:
 
-- `400 Bad Request` - Invalid request parameters, a body that isn't a JSON object, a non-string `note`, or a `note` over 4000 characters
+- `400 Bad Request` - Invalid request parameters, a non-empty body that isn't a JSON object or `null`, malformed JSON, a `note` that is neither a string nor `null`, a `note` over 4000 characters, or a body over 64 KiB
 - `401 Unauthorized` - Missing or invalid authentication
 - `403 Forbidden` - Insufficient permissions
 - `404 Not Found` - Meeting or occurrence not found
