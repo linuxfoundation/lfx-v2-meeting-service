@@ -184,7 +184,7 @@ func NewCreateItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -207,7 +207,7 @@ func NewGetItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.End
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -230,7 +230,7 @@ func NewDeleteItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -253,7 +253,7 @@ func NewUpdateItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -276,7 +276,7 @@ func NewGetItxMeetingCountEndpoint(s Service, authJWTFn security.AuthJWTFunc) go
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -299,7 +299,7 @@ func NewCreateItxRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -322,7 +322,7 @@ func NewSelfRegisterItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -345,7 +345,7 @@ func NewGetItxRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -368,7 +368,7 @@ func NewUpdateItxRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -391,7 +391,7 @@ func NewDeleteItxRegistrantEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -414,7 +414,7 @@ func NewGetItxJoinLinkEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.En
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -437,7 +437,7 @@ func NewGetItxRegistrantIcsEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -461,7 +461,7 @@ func NewResendItxRegistrantInvitationEndpoint(s Service, authJWTFn security.Auth
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -485,7 +485,7 @@ func NewResendItxMeetingInvitationsEndpoint(s Service, authJWTFn security.AuthJW
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -509,7 +509,7 @@ func NewRegisterItxCommitteeMembersEndpoint(s Service, authJWTFn security.AuthJW
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -532,7 +532,7 @@ func NewUpdateItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -555,7 +555,7 @@ func NewDeleteItxOccurrenceEndpoint(s Service, authJWTFn security.AuthJWTFunc) g
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -578,7 +578,7 @@ func NewSubmitItxMeetingResponseEndpoint(s Service, authJWTFn security.AuthJWTFu
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -601,7 +601,7 @@ func NewCreateItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -624,7 +624,7 @@ func NewGetItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -647,7 +647,7 @@ func NewDeleteItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -670,7 +670,7 @@ func NewUpdateItxPastMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) 
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -693,7 +693,7 @@ func NewGetItxPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJWTFu
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -717,7 +717,7 @@ func NewUpdateItxPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJW
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -741,7 +741,7 @@ func NewCreateItxPastMeetingParticipantEndpoint(s Service, authJWTFn security.Au
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -765,7 +765,7 @@ func NewUpdateItxPastMeetingParticipantEndpoint(s Service, authJWTFn security.Au
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -789,7 +789,7 @@ func NewDeleteItxPastMeetingParticipantEndpoint(s Service, authJWTFn security.Au
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -813,7 +813,7 @@ func NewCreateItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWT
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -836,7 +836,7 @@ func NewGetItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWTFun
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -860,7 +860,7 @@ func NewUpdateItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWT
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -884,7 +884,7 @@ func NewDeleteItxMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJWT
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -908,7 +908,7 @@ func NewCreateItxMeetingAttachmentPresignEndpoint(s Service, authJWTFn security.
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -932,7 +932,7 @@ func NewGetItxMeetingAttachmentDownloadEndpoint(s Service, authJWTFn security.Au
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -956,7 +956,7 @@ func NewCreateItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.Aut
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -980,7 +980,7 @@ func NewGetItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.AuthJW
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -1004,7 +1004,7 @@ func NewUpdateItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.Aut
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -1028,7 +1028,7 @@ func NewDeleteItxPastMeetingAttachmentEndpoint(s Service, authJWTFn security.Aut
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -1052,7 +1052,7 @@ func NewCreateItxPastMeetingAttachmentPresignEndpoint(s Service, authJWTFn secur
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
@@ -1076,7 +1076,7 @@ func NewGetItxPastMeetingAttachmentDownloadEndpoint(s Service, authJWTFn securit
 		}
 		var token string
 		if p.BearerToken != nil {
-			token = *p.BearerToken
+			token = string(*p.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {

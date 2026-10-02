@@ -10,7 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -43,18 +43,24 @@ func (c *Client) BuildReadyzRequest(ctx context.Context, v any) (*http.Request, 
 //   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
 //   - error: internal error
 func DecodeReadyzResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "readyz", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "readyz", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -82,7 +88,10 @@ func DecodeReadyzResponse(decoder func(*http.Response) goahttp.Decoder, restoreB
 			}
 			return nil, NewReadyzServiceUnavailable(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "readyz", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "readyz", resp.StatusCode, string(body))
 		}
 	}
@@ -107,18 +116,24 @@ func (c *Client) BuildLivezRequest(ctx context.Context, v any) (*http.Request, e
 // Service livez endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 func DecodeLivezResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "livez", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "livez", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -132,7 +147,10 @@ func DecodeLivezResponse(decoder func(*http.Response) goahttp.Decoder, restoreBo
 			}
 			return body, nil
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "livez", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "livez", resp.StatusCode, string(body))
 		}
 	}
@@ -200,18 +218,24 @@ func EncodeCreateItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) 
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -314,7 +338,10 @@ func DecodeCreateItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder
 			}
 			return nil, NewCreateItxMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -382,18 +409,24 @@ func EncodeGetItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) fun
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -496,7 +529,10 @@ func DecodeGetItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 			}
 			return nil, NewGetItxMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -565,18 +601,24 @@ func EncodeDeleteItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) 
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -666,7 +708,10 @@ func DecodeDeleteItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder
 			}
 			return nil, NewDeleteItxMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -745,18 +790,24 @@ func EncodeUpdateItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) 
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -860,7 +911,10 @@ func DecodeUpdateItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder
 			}
 			return nil, NewUpdateItxMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -920,18 +974,24 @@ func EncodeGetItxMeetingCountRequest(encoder func(*http.Request) goahttp.Encoder
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxMeetingCountResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-count", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-count", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -1034,7 +1094,10 @@ func DecodeGetItxMeetingCountResponse(decoder func(*http.Response) goahttp.Decod
 			}
 			return nil, NewGetItxMeetingCountUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-count", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting-count", resp.StatusCode, string(body))
 		}
 	}
@@ -1108,18 +1171,24 @@ func EncodeCreateItxRegistrantRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -1236,7 +1305,10 @@ func DecodeCreateItxRegistrantResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewCreateItxRegistrantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-registrant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-registrant", resp.StatusCode, string(body))
 		}
 	}
@@ -1311,18 +1383,24 @@ func EncodeSelfRegisterItxMeetingRequest(encoder func(*http.Request) goahttp.Enc
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeSelfRegisterItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -1439,7 +1517,10 @@ func DecodeSelfRegisterItxMeetingResponse(decoder func(*http.Response) goahttp.D
 			}
 			return nil, NewSelfRegisterItxMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-register-itx-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "self-register-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -1510,18 +1591,24 @@ func EncodeGetItxRegistrantRequest(encoder func(*http.Request) goahttp.Encoder) 
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -1624,7 +1711,10 @@ func DecodeGetItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder
 			}
 			return nil, NewGetItxRegistrantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-registrant", resp.StatusCode, string(body))
 		}
 	}
@@ -1699,18 +1789,24 @@ func EncodeUpdateItxRegistrantRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -1800,7 +1896,10 @@ func DecodeUpdateItxRegistrantResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewUpdateItxRegistrantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-registrant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-registrant", resp.StatusCode, string(body))
 		}
 	}
@@ -1871,18 +1970,24 @@ func EncodeDeleteItxRegistrantRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxRegistrantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -1972,7 +2077,10 @@ func DecodeDeleteItxRegistrantResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewDeleteItxRegistrantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-registrant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-registrant", resp.StatusCode, string(body))
 		}
 	}
@@ -2025,7 +2133,7 @@ func EncodeGetItxJoinLinkRequest(encoder func(*http.Request) goahttp.Encoder) fu
 			values.Add("v", *p.Version)
 		}
 		if p.UseEmail != nil {
-			values.Add("use_email", fmt.Sprintf("%v", *p.UseEmail))
+			values.Add("use_email", strconv.FormatBool(*p.UseEmail))
 		}
 		if p.UserID != nil {
 			values.Add("user_id", *p.UserID)
@@ -2037,7 +2145,7 @@ func EncodeGetItxJoinLinkRequest(encoder func(*http.Request) goahttp.Encoder) fu
 			values.Add("email", *p.Email)
 		}
 		if p.Register != nil {
-			values.Add("register", fmt.Sprintf("%v", *p.Register))
+			values.Add("register", strconv.FormatBool(*p.Register))
 		}
 		req.URL.RawQuery = values.Encode()
 		return nil
@@ -2056,18 +2164,24 @@ func EncodeGetItxJoinLinkRequest(encoder func(*http.Request) goahttp.Encoder) fu
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxJoinLinkResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-join-link", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-join-link", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -2170,7 +2284,10 @@ func DecodeGetItxJoinLinkResponse(decoder func(*http.Response) goahttp.Decoder, 
 			}
 			return nil, NewGetItxJoinLinkUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-join-link", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-join-link", resp.StatusCode, string(body))
 		}
 	}
@@ -2241,18 +2358,24 @@ func EncodeGetItxRegistrantIcsRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxRegistrantIcsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant-ics", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant-ics", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -2350,7 +2473,10 @@ func DecodeGetItxRegistrantIcsResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewGetItxRegistrantIcsUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-registrant-ics", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-registrant-ics", resp.StatusCode, string(body))
 		}
 	}
@@ -2422,18 +2548,24 @@ func EncodeResendItxRegistrantInvitationRequest(encoder func(*http.Request) goah
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeResendItxRegistrantInvitationResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-itx-registrant-invitation", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "resend-itx-registrant-invitation", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -2523,7 +2655,10 @@ func DecodeResendItxRegistrantInvitationResponse(decoder func(*http.Response) go
 			}
 			return nil, NewResendItxRegistrantInvitationUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-itx-registrant-invitation", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "resend-itx-registrant-invitation", resp.StatusCode, string(body))
 		}
 	}
@@ -2597,18 +2732,24 @@ func EncodeResendItxMeetingInvitationsRequest(encoder func(*http.Request) goahtt
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeResendItxMeetingInvitationsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-itx-meeting-invitations", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "resend-itx-meeting-invitations", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -2698,7 +2839,10 @@ func DecodeResendItxMeetingInvitationsResponse(decoder func(*http.Response) goah
 			}
 			return nil, NewResendItxMeetingInvitationsUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "resend-itx-meeting-invitations", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "resend-itx-meeting-invitations", resp.StatusCode, string(body))
 		}
 	}
@@ -2768,18 +2912,24 @@ func EncodeRegisterItxCommitteeMembersRequest(encoder func(*http.Request) goahtt
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeRegisterItxCommitteeMembersResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -2869,7 +3019,10 @@ func DecodeRegisterItxCommitteeMembersResponse(decoder func(*http.Response) goah
 			}
 			return nil, NewRegisterItxCommitteeMembersUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "register-itx-committee-members", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "register-itx-committee-members", resp.StatusCode, string(body))
 		}
 	}
@@ -2944,18 +3097,24 @@ func EncodeUpdateItxOccurrenceRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxOccurrenceResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -3045,7 +3204,10 @@ func DecodeUpdateItxOccurrenceResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewUpdateItxOccurrenceUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-occurrence", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-occurrence", resp.StatusCode, string(body))
 		}
 	}
@@ -3116,18 +3278,24 @@ func EncodeDeleteItxOccurrenceRequest(encoder func(*http.Request) goahttp.Encode
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxOccurrenceResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -3217,7 +3385,10 @@ func DecodeDeleteItxOccurrenceResponse(decoder func(*http.Response) goahttp.Deco
 			}
 			return nil, NewDeleteItxOccurrenceUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-occurrence", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-occurrence", resp.StatusCode, string(body))
 		}
 	}
@@ -3291,18 +3462,24 @@ func EncodeSubmitItxMeetingResponseRequest(encoder func(*http.Request) goahttp.E
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeSubmitItxMeetingResponseResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "submit-itx-meeting-response", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "submit-itx-meeting-response", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -3405,7 +3582,10 @@ func DecodeSubmitItxMeetingResponseResponse(decoder func(*http.Response) goahttp
 			}
 			return nil, NewSubmitItxMeetingResponseUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "submit-itx-meeting-response", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "submit-itx-meeting-response", resp.StatusCode, string(body))
 		}
 	}
@@ -3469,18 +3649,24 @@ func EncodeCreateItxPastMeetingRequest(encoder func(*http.Request) goahttp.Encod
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxPastMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -3597,7 +3783,10 @@ func DecodeCreateItxPastMeetingResponse(decoder func(*http.Response) goahttp.Dec
 			}
 			return nil, NewCreateItxPastMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -3666,18 +3855,24 @@ func EncodeGetItxPastMeetingRequest(encoder func(*http.Request) goahttp.Encoder)
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxPastMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -3780,7 +3975,10 @@ func DecodeGetItxPastMeetingResponse(decoder func(*http.Response) goahttp.Decode
 			}
 			return nil, NewGetItxPastMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -3849,18 +4047,24 @@ func EncodeDeleteItxPastMeetingRequest(encoder func(*http.Request) goahttp.Encod
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxPastMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -3950,7 +4154,10 @@ func DecodeDeleteItxPastMeetingResponse(decoder func(*http.Response) goahttp.Dec
 			}
 			return nil, NewDeleteItxPastMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-past-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -4023,18 +4230,24 @@ func EncodeUpdateItxPastMeetingRequest(encoder func(*http.Request) goahttp.Encod
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxPastMeetingResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -4124,7 +4337,10 @@ func DecodeUpdateItxPastMeetingResponse(decoder func(*http.Response) goahttp.Dec
 			}
 			return nil, NewUpdateItxPastMeetingUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-past-meeting", resp.StatusCode, string(body))
 		}
 	}
@@ -4196,18 +4412,24 @@ func EncodeGetItxPastMeetingSummaryRequest(encoder func(*http.Request) goahttp.E
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxPastMeetingSummaryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-summary", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-summary", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -4310,7 +4532,10 @@ func DecodeGetItxPastMeetingSummaryResponse(decoder func(*http.Response) goahttp
 			}
 			return nil, NewGetItxPastMeetingSummaryUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-summary", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-summary", resp.StatusCode, string(body))
 		}
 	}
@@ -4386,18 +4611,24 @@ func EncodeUpdateItxPastMeetingSummaryRequest(encoder func(*http.Request) goahtt
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxPastMeetingSummaryResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-summary", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-summary", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -4500,7 +4731,10 @@ func DecodeUpdateItxPastMeetingSummaryResponse(decoder func(*http.Response) goah
 			}
 			return nil, NewUpdateItxPastMeetingSummaryUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-summary", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-past-meeting-summary", resp.StatusCode, string(body))
 		}
 	}
@@ -4575,18 +4809,24 @@ func EncodeCreateItxPastMeetingParticipantRequest(encoder func(*http.Request) go
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxPastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-participant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-participant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -4689,7 +4929,10 @@ func DecodeCreateItxPastMeetingParticipantResponse(decoder func(*http.Response) 
 			}
 			return nil, NewCreateItxPastMeetingParticipantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-participant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting-participant", resp.StatusCode, string(body))
 		}
 	}
@@ -4766,18 +5009,24 @@ func EncodeUpdateItxPastMeetingParticipantRequest(encoder func(*http.Request) go
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxPastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-participant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-participant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -4880,7 +5129,10 @@ func DecodeUpdateItxPastMeetingParticipantResponse(decoder func(*http.Response) 
 			}
 			return nil, NewUpdateItxPastMeetingParticipantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-participant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-past-meeting-participant", resp.StatusCode, string(body))
 		}
 	}
@@ -4953,18 +5205,24 @@ func EncodeDeleteItxPastMeetingParticipantRequest(encoder func(*http.Request) go
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxPastMeetingParticipantResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-participant", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-participant", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -5054,7 +5312,10 @@ func DecodeDeleteItxPastMeetingParticipantResponse(decoder func(*http.Response) 
 			}
 			return nil, NewDeleteItxPastMeetingParticipantUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-participant", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-past-meeting-participant", resp.StatusCode, string(body))
 		}
 	}
@@ -5128,18 +5389,24 @@ func EncodeCreateItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -5242,7 +5509,10 @@ func DecodeCreateItxMeetingAttachmentResponse(decoder func(*http.Response) goaht
 			}
 			return nil, NewCreateItxMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -5314,18 +5584,24 @@ func EncodeGetItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp.En
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -5428,7 +5704,10 @@ func DecodeGetItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.
 			}
 			return nil, NewGetItxMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -5504,18 +5783,24 @@ func EncodeUpdateItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -5605,7 +5890,10 @@ func DecodeUpdateItxMeetingAttachmentResponse(decoder func(*http.Response) goaht
 			}
 			return nil, NewUpdateItxMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -5677,18 +5965,24 @@ func EncodeDeleteItxMeetingAttachmentRequest(encoder func(*http.Request) goahttp
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -5778,7 +6072,10 @@ func DecodeDeleteItxMeetingAttachmentResponse(decoder func(*http.Response) goaht
 			}
 			return nil, NewDeleteItxMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -5854,18 +6151,24 @@ func EncodeCreateItxMeetingAttachmentPresignRequest(encoder func(*http.Request) 
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxMeetingAttachmentPresignResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -5968,7 +6271,10 @@ func DecodeCreateItxMeetingAttachmentPresignResponse(decoder func(*http.Response
 			}
 			return nil, NewCreateItxMeetingAttachmentPresignUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-meeting-attachment-presign", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-meeting-attachment-presign", resp.StatusCode, string(body))
 		}
 	}
@@ -6041,18 +6347,24 @@ func EncodeGetItxMeetingAttachmentDownloadRequest(encoder func(*http.Request) go
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxMeetingAttachmentDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -6155,7 +6467,10 @@ func DecodeGetItxMeetingAttachmentDownloadResponse(decoder func(*http.Response) 
 			}
 			return nil, NewGetItxMeetingAttachmentDownloadUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-meeting-attachment-download", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-meeting-attachment-download", resp.StatusCode, string(body))
 		}
 	}
@@ -6229,18 +6544,24 @@ func EncodeCreateItxPastMeetingAttachmentRequest(encoder func(*http.Request) goa
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -6343,7 +6664,10 @@ func DecodeCreateItxPastMeetingAttachmentResponse(decoder func(*http.Response) g
 			}
 			return nil, NewCreateItxPastMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -6415,18 +6739,24 @@ func EncodeGetItxPastMeetingAttachmentRequest(encoder func(*http.Request) goahtt
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -6529,7 +6859,10 @@ func DecodeGetItxPastMeetingAttachmentResponse(decoder func(*http.Response) goah
 			}
 			return nil, NewGetItxPastMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -6605,18 +6938,24 @@ func EncodeUpdateItxPastMeetingAttachmentRequest(encoder func(*http.Request) goa
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeUpdateItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -6706,7 +7045,10 @@ func DecodeUpdateItxPastMeetingAttachmentResponse(decoder func(*http.Response) g
 			}
 			return nil, NewUpdateItxPastMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "update-itx-past-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "update-itx-past-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -6778,18 +7120,24 @@ func EncodeDeleteItxPastMeetingAttachmentRequest(encoder func(*http.Request) goa
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeDeleteItxPastMeetingAttachmentResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusNoContent:
@@ -6879,7 +7227,10 @@ func DecodeDeleteItxPastMeetingAttachmentResponse(decoder func(*http.Response) g
 			}
 			return nil, NewDeleteItxPastMeetingAttachmentUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "delete-itx-past-meeting-attachment", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-past-meeting-attachment", resp.StatusCode, string(body))
 		}
 	}
@@ -6955,18 +7306,24 @@ func EncodeCreateItxPastMeetingAttachmentPresignRequest(encoder func(*http.Reque
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeCreateItxPastMeetingAttachmentPresignResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusCreated:
@@ -7069,7 +7426,10 @@ func DecodeCreateItxPastMeetingAttachmentPresignResponse(decoder func(*http.Resp
 			}
 			return nil, NewCreateItxPastMeetingAttachmentPresignUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "create-itx-past-meeting-attachment-presign", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "create-itx-past-meeting-attachment-presign", resp.StatusCode, string(body))
 		}
 	}
@@ -7143,18 +7503,24 @@ func EncodeGetItxPastMeetingAttachmentDownloadRequest(encoder func(*http.Request
 //   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
 //   - error: internal error
 func DecodeGetItxPastMeetingAttachmentDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
-	return func(resp *http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
 		if restoreBody {
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
 			}
 			resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			defer func() {
 				resp.Body = io.NopCloser(bytes.NewBuffer(b))
 			}()
 		} else {
-			defer resp.Body.Close()
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err))
+				}
+			}()
 		}
 		switch resp.StatusCode {
 		case http.StatusOK:
@@ -7257,7 +7623,10 @@ func DecodeGetItxPastMeetingAttachmentDownloadResponse(decoder func(*http.Respon
 			}
 			return nil, NewGetItxPastMeetingAttachmentDownloadUnauthorized(&body)
 		default:
-			body, _ := io.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-attachment-download", err)
+			}
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-attachment-download", resp.StatusCode, string(body))
 		}
 	}
@@ -7266,9 +7635,6 @@ func DecodeGetItxPastMeetingAttachmentDownloadResponse(decoder func(*http.Respon
 // marshalMeetingserviceCommitteeToCommitteeRequestBody builds a value of type
 // *CommitteeRequestBody from a value of type *meetingservice.Committee.
 func marshalMeetingserviceCommitteeToCommitteeRequestBody(v *meetingservice.Committee) *CommitteeRequestBody {
-	if v == nil {
-		return nil
-	}
 	res := &CommitteeRequestBody{
 		UID: v.UID,
 	}
@@ -7285,9 +7651,6 @@ func marshalMeetingserviceCommitteeToCommitteeRequestBody(v *meetingservice.Comm
 // marshalMeetingserviceRecurrenceToRecurrenceRequestBody builds a value of
 // type *RecurrenceRequestBody from a value of type *meetingservice.Recurrence.
 func marshalMeetingserviceRecurrenceToRecurrenceRequestBody(v *meetingservice.Recurrence) *RecurrenceRequestBody {
-	if v == nil {
-		return nil
-	}
 	res := &RecurrenceRequestBody{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
@@ -7305,9 +7668,6 @@ func marshalMeetingserviceRecurrenceToRecurrenceRequestBody(v *meetingservice.Re
 // marshalMeetingserviceITXUserToITXUserRequestBody builds a value of type
 // *ITXUserRequestBody from a value of type *meetingservice.ITXUser.
 func marshalMeetingserviceITXUserToITXUserRequestBody(v *meetingservice.ITXUser) *ITXUserRequestBody {
-	if v == nil {
-		return nil
-	}
 	res := &ITXUserRequestBody{
 		Username:       v.Username,
 		Name:           v.Name,
@@ -7321,9 +7681,6 @@ func marshalMeetingserviceITXUserToITXUserRequestBody(v *meetingservice.ITXUser)
 // marshalCommitteeRequestBodyToMeetingserviceCommittee builds a value of type
 // *meetingservice.Committee from a value of type *CommitteeRequestBody.
 func marshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBody) *meetingservice.Committee {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Committee{
 		UID: v.UID,
 	}
@@ -7340,9 +7697,6 @@ func marshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBod
 // marshalRecurrenceRequestBodyToMeetingserviceRecurrence builds a value of
 // type *meetingservice.Recurrence from a value of type *RecurrenceRequestBody.
 func marshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBody) *meetingservice.Recurrence {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Recurrence{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
@@ -7360,9 +7714,6 @@ func marshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequest
 // marshalITXUserRequestBodyToMeetingserviceITXUser builds a value of type
 // *meetingservice.ITXUser from a value of type *ITXUserRequestBody.
 func marshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *meetingservice.ITXUser {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ITXUser{
 		Username:       v.Username,
 		Name:           v.Name,
@@ -7376,9 +7727,6 @@ func marshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *me
 // unmarshalCommitteeResponseBodyToMeetingserviceCommittee builds a value of
 // type *meetingservice.Committee from a value of type *CommitteeResponseBody.
 func unmarshalCommitteeResponseBodyToMeetingserviceCommittee(v *CommitteeResponseBody) *meetingservice.Committee {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Committee{
 		UID: v.UID,
 	}
@@ -7395,9 +7743,6 @@ func unmarshalCommitteeResponseBodyToMeetingserviceCommittee(v *CommitteeRespons
 // unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence builds a value of
 // type *meetingservice.Recurrence from a value of type *RecurrenceResponseBody.
 func unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v *RecurrenceResponseBody) *meetingservice.Recurrence {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Recurrence{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
@@ -7415,9 +7760,6 @@ func unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(v *RecurrenceResp
 // unmarshalITXUserResponseBodyToMeetingserviceITXUser builds a value of type
 // *meetingservice.ITXUser from a value of type *ITXUserResponseBody.
 func unmarshalITXUserResponseBodyToMeetingserviceITXUser(v *ITXUserResponseBody) *meetingservice.ITXUser {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ITXUser{
 		Username:       v.Username,
 		Name:           v.Name,
@@ -7432,9 +7774,6 @@ func unmarshalITXUserResponseBodyToMeetingserviceITXUser(v *ITXUserResponseBody)
 // value of type *meetingservice.ITXOccurrence from a value of type
 // *ITXOccurrenceResponseBody.
 func unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence(v *ITXOccurrenceResponseBody) *meetingservice.ITXOccurrence {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ITXOccurrence{
 		OccurrenceID:    v.OccurrenceID,
 		StartTime:       v.StartTime,
@@ -7450,9 +7789,6 @@ func unmarshalITXOccurrenceResponseBodyToMeetingserviceITXOccurrence(v *ITXOccur
 // builds a value of type *meetingservice.PastMeetingSummaryZoomConfig from a
 // value of type *PastMeetingSummaryZoomConfigResponseBody.
 func unmarshalPastMeetingSummaryZoomConfigResponseBodyToMeetingservicePastMeetingSummaryZoomConfig(v *PastMeetingSummaryZoomConfigResponseBody) *meetingservice.PastMeetingSummaryZoomConfig {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.PastMeetingSummaryZoomConfig{
 		MeetingID:   v.MeetingID,
 		MeetingUUID: v.MeetingUUID,
@@ -7481,9 +7817,6 @@ func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataR
 // builds a value of type *ParticipantSessionRequestBody from a value of type
 // *meetingservice.ParticipantSession.
 func marshalMeetingserviceParticipantSessionToParticipantSessionRequestBody(v *meetingservice.ParticipantSession) *ParticipantSessionRequestBody {
-	if v == nil {
-		return nil
-	}
 	res := &ParticipantSessionRequestBody{
 		ParticipantUUID: v.ParticipantUUID,
 		JoinTime:        v.JoinTime,
@@ -7498,9 +7831,6 @@ func marshalMeetingserviceParticipantSessionToParticipantSessionRequestBody(v *m
 // builds a value of type *meetingservice.ParticipantSession from a value of
 // type *ParticipantSessionRequestBody.
 func marshalParticipantSessionRequestBodyToMeetingserviceParticipantSession(v *ParticipantSessionRequestBody) *meetingservice.ParticipantSession {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ParticipantSession{
 		ParticipantUUID: v.ParticipantUUID,
 		JoinTime:        v.JoinTime,
@@ -7515,9 +7845,6 @@ func marshalParticipantSessionRequestBodyToMeetingserviceParticipantSession(v *P
 // builds a value of type *meetingservice.ParticipantSession from a value of
 // type *ParticipantSessionResponseBody.
 func unmarshalParticipantSessionResponseBodyToMeetingserviceParticipantSession(v *ParticipantSessionResponseBody) *meetingservice.ParticipantSession {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ParticipantSession{
 		ParticipantUUID: v.ParticipantUUID,
 		JoinTime:        v.JoinTime,

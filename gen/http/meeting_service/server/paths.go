@@ -7,9 +7,7 @@
 
 package server
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // ReadyzMeetingServicePath returns the URL path to the Meeting Service service readyz HTTP endpoint.
 func ReadyzMeetingServicePath() string {

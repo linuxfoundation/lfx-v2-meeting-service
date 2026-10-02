@@ -3866,46 +3866,6 @@ type GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
-// CommitteeRequestBody is used to define fields on request body types.
-type CommitteeRequestBody struct {
-	// Committee UID
-	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
-	// Allowed voting statuses for committee members
-	AllowedVotingStatuses []string `form:"allowed_voting_statuses,omitempty" json:"allowed_voting_statuses,omitempty" xml:"allowed_voting_statuses,omitempty"`
-}
-
-// RecurrenceRequestBody is used to define fields on request body types.
-type RecurrenceRequestBody struct {
-	// Recurrence type: 1=Daily, 2=Weekly, 3=Monthly
-	Type *int `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
-	// Repeat interval
-	RepeatInterval *int `form:"repeat_interval,omitempty" json:"repeat_interval,omitempty" xml:"repeat_interval,omitempty"`
-	// Days of week for weekly recurrence
-	WeeklyDays *string `form:"weekly_days,omitempty" json:"weekly_days,omitempty" xml:"weekly_days,omitempty"`
-	// Day of month for monthly recurrence
-	MonthlyDay *int `form:"monthly_day,omitempty" json:"monthly_day,omitempty" xml:"monthly_day,omitempty"`
-	// Week of month for monthly recurrence
-	MonthlyWeek *int `form:"monthly_week,omitempty" json:"monthly_week,omitempty" xml:"monthly_week,omitempty"`
-	// Day of week for monthly recurrence
-	MonthlyWeekDay *int `form:"monthly_week_day,omitempty" json:"monthly_week_day,omitempty" xml:"monthly_week_day,omitempty"`
-	// Number of occurrences
-	EndTimes *int `form:"end_times,omitempty" json:"end_times,omitempty" xml:"end_times,omitempty"`
-	// End date/time in RFC3339
-	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
-}
-
-// ITXUserRequestBody is used to define fields on request body types.
-type ITXUserRequestBody struct {
-	// Username
-	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
-	// Full name
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// Email address
-	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
-	// Profile picture URL
-	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
-}
-
 // CommitteeResponseBody is used to define fields on response body types.
 type CommitteeResponseBody struct {
 	// Committee UID
@@ -3985,8 +3945,9 @@ type SummaryDataResponseBody struct {
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 }
 
-// ParticipantSessionRequestBody is used to define fields on request body types.
-type ParticipantSessionRequestBody struct {
+// ParticipantSessionResponseBody is used to define fields on response body
+// types.
+type ParticipantSessionResponseBody struct {
 	// Zoom participant UUID
 	ParticipantUUID *string `form:"participant_uuid,omitempty" json:"participant_uuid,omitempty" xml:"participant_uuid,omitempty"`
 	// When the participant joined (RFC3339)
@@ -3997,9 +3958,48 @@ type ParticipantSessionRequestBody struct {
 	LeaveReason *string `form:"leave_reason,omitempty" json:"leave_reason,omitempty" xml:"leave_reason,omitempty"`
 }
 
-// ParticipantSessionResponseBody is used to define fields on response body
-// types.
-type ParticipantSessionResponseBody struct {
+// CommitteeRequestBody is used to define fields on request body types.
+type CommitteeRequestBody struct {
+	// Committee UID
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// Allowed voting statuses for committee members
+	AllowedVotingStatuses []string `form:"allowed_voting_statuses,omitempty" json:"allowed_voting_statuses,omitempty" xml:"allowed_voting_statuses,omitempty"`
+}
+
+// RecurrenceRequestBody is used to define fields on request body types.
+type RecurrenceRequestBody struct {
+	// Recurrence type: 1=Daily, 2=Weekly, 3=Monthly
+	Type *int `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Repeat interval
+	RepeatInterval *int `form:"repeat_interval,omitempty" json:"repeat_interval,omitempty" xml:"repeat_interval,omitempty"`
+	// Days of week for weekly recurrence
+	WeeklyDays *string `form:"weekly_days,omitempty" json:"weekly_days,omitempty" xml:"weekly_days,omitempty"`
+	// Day of month for monthly recurrence
+	MonthlyDay *int `form:"monthly_day,omitempty" json:"monthly_day,omitempty" xml:"monthly_day,omitempty"`
+	// Week of month for monthly recurrence
+	MonthlyWeek *int `form:"monthly_week,omitempty" json:"monthly_week,omitempty" xml:"monthly_week,omitempty"`
+	// Day of week for monthly recurrence
+	MonthlyWeekDay *int `form:"monthly_week_day,omitempty" json:"monthly_week_day,omitempty" xml:"monthly_week_day,omitempty"`
+	// Number of occurrences
+	EndTimes *int `form:"end_times,omitempty" json:"end_times,omitempty" xml:"end_times,omitempty"`
+	// End date/time in RFC3339
+	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
+}
+
+// ITXUserRequestBody is used to define fields on request body types.
+type ITXUserRequestBody struct {
+	// Username
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Full name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Email address
+	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
+	// Profile picture URL
+	ProfilePicture *string `form:"profile_picture,omitempty" json:"profile_picture,omitempty" xml:"profile_picture,omitempty"`
+}
+
+// ParticipantSessionRequestBody is used to define fields on request body types.
+type ParticipantSessionRequestBody struct {
 	// Zoom participant UUID
 	ParticipantUUID *string `form:"participant_uuid,omitempty" json:"participant_uuid,omitempty" xml:"participant_uuid,omitempty"`
 	// When the participant joined (RFC3339)
@@ -7853,7 +7853,7 @@ func NewGetItxPastMeetingAttachmentDownloadUnauthorized(body *GetItxPastMeetingA
 }
 
 // ValidateCreateItxMeetingResponseBody runs the validations defined on
-// Create-Itx-MeetingResponseBody
+// CreateItxMeetingResponseBody
 func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (err error) {
 	if body.StartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -7862,8 +7862,6 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 		if *body.Duration < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
 		}
-	}
-	if body.Duration != nil {
 		if *body.Duration > 600 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
 		}
@@ -7880,7 +7878,7 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
+			if err2 := validateCommitteeResponseBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -7894,8 +7892,6 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 		if *body.EarlyJoinTimeMinutes < 10 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 		}
-	}
-	if body.EarlyJoinTimeMinutes != nil {
 		if *body.EarlyJoinTimeMinutes > 60 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 		}
@@ -7906,7 +7902,7 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 		}
 	}
 	if body.Recurrence != nil {
-		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
+		if err2 := validateRecurrenceResponseBody(body.Recurrence, "body.recurrence"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -7914,14 +7910,12 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 		if *body.AutoEmailReminderTime < 120 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 		}
-	}
-	if body.AutoEmailReminderTime != nil {
 		if *body.AutoEmailReminderTime > 1440 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
 	}
 	if body.Owner != nil {
-		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -7942,7 +7936,7 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 	}
 	for _, e := range body.Occurrences {
 		if e != nil {
-			if err2 := ValidateITXOccurrenceResponseBody(e); err2 != nil {
+			if err2 := validateITXOccurrenceResponseBody(e, "body.occurrences[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -7951,7 +7945,7 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 }
 
 // ValidateGetItxMeetingResponseBody runs the validations defined on
-// Get-Itx-MeetingResponseBody
+// GetItxMeetingResponseBody
 func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err error) {
 	if body.StartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -7960,8 +7954,6 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 		if *body.Duration < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
 		}
-	}
-	if body.Duration != nil {
 		if *body.Duration > 600 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
 		}
@@ -7978,7 +7970,7 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
+			if err2 := validateCommitteeResponseBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -7992,8 +7984,6 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 		if *body.EarlyJoinTimeMinutes < 10 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 		}
-	}
-	if body.EarlyJoinTimeMinutes != nil {
 		if *body.EarlyJoinTimeMinutes > 60 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 		}
@@ -8004,7 +7994,7 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 		}
 	}
 	if body.Recurrence != nil {
-		if err2 := ValidateRecurrenceResponseBody(body.Recurrence); err2 != nil {
+		if err2 := validateRecurrenceResponseBody(body.Recurrence, "body.recurrence"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8012,14 +8002,12 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 		if *body.AutoEmailReminderTime < 120 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 		}
-	}
-	if body.AutoEmailReminderTime != nil {
 		if *body.AutoEmailReminderTime > 1440 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
 	}
 	if body.Owner != nil {
-		if err2 := ValidateITXUserResponseBody(body.Owner); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8040,7 +8028,7 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 	}
 	for _, e := range body.Occurrences {
 		if e != nil {
-			if err2 := ValidateITXOccurrenceResponseBody(e); err2 != nil {
+			if err2 := validateITXOccurrenceResponseBody(e, "body.occurrences[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8049,7 +8037,7 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 }
 
 // ValidateGetItxMeetingCountResponseBody runs the validations defined on
-// Get-Itx-Meeting-CountResponseBody
+// GetItxMeetingCountResponseBody
 func ValidateGetItxMeetingCountResponseBody(body *GetItxMeetingCountResponseBody) (err error) {
 	if body.MeetingCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_count", "body"))
@@ -8058,7 +8046,7 @@ func ValidateGetItxMeetingCountResponseBody(body *GetItxMeetingCountResponseBody
 }
 
 // ValidateCreateItxRegistrantResponseBody runs the validations defined on
-// Create-Itx-RegistrantResponseBody
+// CreateItxRegistrantResponseBody
 func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -8069,12 +8057,12 @@ func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBo
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8082,7 +8070,7 @@ func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBo
 }
 
 // ValidateSelfRegisterItxMeetingResponseBody runs the validations defined on
-// Self-Register-Itx-MeetingResponseBody
+// SelfRegisterItxMeetingResponseBody
 func ValidateSelfRegisterItxMeetingResponseBody(body *SelfRegisterItxMeetingResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -8093,12 +8081,12 @@ func ValidateSelfRegisterItxMeetingResponseBody(body *SelfRegisterItxMeetingResp
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8106,7 +8094,7 @@ func ValidateSelfRegisterItxMeetingResponseBody(body *SelfRegisterItxMeetingResp
 }
 
 // ValidateGetItxRegistrantResponseBody runs the validations defined on
-// Get-Itx-RegistrantResponseBody
+// GetItxRegistrantResponseBody
 func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -8117,12 +8105,12 @@ func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (e
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8130,7 +8118,7 @@ func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (e
 }
 
 // ValidateGetItxJoinLinkResponseBody runs the validations defined on
-// Get-Itx-Join-LinkResponseBody
+// GetItxJoinLinkResponseBody
 func ValidateGetItxJoinLinkResponseBody(body *GetItxJoinLinkResponseBody) (err error) {
 	if body.Link == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("link", "body"))
@@ -8142,7 +8130,7 @@ func ValidateGetItxJoinLinkResponseBody(body *GetItxJoinLinkResponseBody) (err e
 }
 
 // ValidateSubmitItxMeetingResponseResponseBody runs the validations defined on
-// Submit-Itx-Meeting-ResponseResponseBody
+// SubmitItxMeetingResponseResponseBody
 func ValidateSubmitItxMeetingResponseResponseBody(body *SubmitItxMeetingResponseResponseBody) (err error) {
 	if body.ID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
@@ -8188,7 +8176,7 @@ func ValidateSubmitItxMeetingResponseResponseBody(body *SubmitItxMeetingResponse
 }
 
 // ValidateCreateItxPastMeetingResponseBody runs the validations defined on
-// Create-Itx-Past-MeetingResponseBody
+// CreateItxPastMeetingResponseBody
 func ValidateCreateItxPastMeetingResponseBody(body *CreateItxPastMeetingResponseBody) (err error) {
 	if body.ProjectUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
@@ -8208,7 +8196,7 @@ func ValidateCreateItxPastMeetingResponseBody(body *CreateItxPastMeetingResponse
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
+			if err2 := validateCommitteeResponseBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8225,7 +8213,7 @@ func ValidateCreateItxPastMeetingResponseBody(body *CreateItxPastMeetingResponse
 }
 
 // ValidateGetItxPastMeetingResponseBody runs the validations defined on
-// Get-Itx-Past-MeetingResponseBody
+// GetItxPastMeetingResponseBody
 func ValidateGetItxPastMeetingResponseBody(body *GetItxPastMeetingResponseBody) (err error) {
 	if body.ProjectUID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.project_uid", *body.ProjectUID, goa.FormatUUID))
@@ -8245,7 +8233,7 @@ func ValidateGetItxPastMeetingResponseBody(body *GetItxPastMeetingResponseBody) 
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeResponseBody(e); err2 != nil {
+			if err2 := validateCommitteeResponseBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8262,7 +8250,7 @@ func ValidateGetItxPastMeetingResponseBody(body *GetItxPastMeetingResponseBody) 
 }
 
 // ValidateGetItxPastMeetingSummaryResponseBody runs the validations defined on
-// Get-Itx-Past-Meeting-SummaryResponseBody
+// GetItxPastMeetingSummaryResponseBody
 func ValidateGetItxPastMeetingSummaryResponseBody(body *GetItxPastMeetingSummaryResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8303,7 +8291,7 @@ func ValidateGetItxPastMeetingSummaryResponseBody(body *GetItxPastMeetingSummary
 		}
 	}
 	if body.SummaryData != nil {
-		if err2 := ValidateSummaryDataResponseBody(body.SummaryData); err2 != nil {
+		if err2 := validateSummaryDataResponseBody(body.SummaryData, "body.summary_data"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8317,7 +8305,7 @@ func ValidateGetItxPastMeetingSummaryResponseBody(body *GetItxPastMeetingSummary
 }
 
 // ValidateUpdateItxPastMeetingSummaryResponseBody runs the validations defined
-// on Update-Itx-Past-Meeting-SummaryResponseBody
+// on UpdateItxPastMeetingSummaryResponseBody
 func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingSummaryResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8358,7 +8346,7 @@ func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingS
 		}
 	}
 	if body.SummaryData != nil {
-		if err2 := ValidateSummaryDataResponseBody(body.SummaryData); err2 != nil {
+		if err2 := validateSummaryDataResponseBody(body.SummaryData, "body.summary_data"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8372,7 +8360,7 @@ func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingS
 }
 
 // ValidateCreateItxPastMeetingParticipantResponseBody runs the validations
-// defined on Create-Itx-Past-Meeting-ParticipantResponseBody
+// defined on CreateItxPastMeetingParticipantResponseBody
 func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeetingParticipantResponseBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -8385,7 +8373,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 	}
 	for _, e := range body.Sessions {
 		if e != nil {
-			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+			if err2 := validateParticipantSessionResponseBody(e, "body.sessions[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8394,7 +8382,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8402,7 +8390,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
 	}
 	if body.ModifiedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.ModifiedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.ModifiedBy, "body.modified_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8410,7 +8398,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 }
 
 // ValidateUpdateItxPastMeetingParticipantResponseBody runs the validations
-// defined on Update-Itx-Past-Meeting-ParticipantResponseBody
+// defined on UpdateItxPastMeetingParticipantResponseBody
 func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeetingParticipantResponseBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -8423,7 +8411,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 	}
 	for _, e := range body.Sessions {
 		if e != nil {
-			if err2 := ValidateParticipantSessionResponseBody(e); err2 != nil {
+			if err2 := validateParticipantSessionResponseBody(e, "body.sessions[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8432,7 +8420,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8440,7 +8428,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
 	}
 	if body.ModifiedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.ModifiedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.ModifiedBy, "body.modified_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8448,7 +8436,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 }
 
 // ValidateCreateItxMeetingAttachmentResponseBody runs the validations defined
-// on Create-Itx-Meeting-AttachmentResponseBody
+// on CreateItxMeetingAttachmentResponseBody
 func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttachmentResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8492,7 +8480,7 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8500,12 +8488,12 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.FileUploadedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8516,7 +8504,7 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 }
 
 // ValidateGetItxMeetingAttachmentResponseBody runs the validations defined on
-// Get-Itx-Meeting-AttachmentResponseBody
+// GetItxMeetingAttachmentResponseBody
 func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8560,7 +8548,7 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8568,12 +8556,12 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.FileUploadedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8584,7 +8572,7 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 }
 
 // ValidateCreateItxMeetingAttachmentPresignResponseBody runs the validations
-// defined on Create-Itx-Meeting-Attachment-PresignResponseBody
+// defined on CreateItxMeetingAttachmentPresignResponseBody
 func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetingAttachmentPresignResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8602,7 +8590,7 @@ func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetin
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8610,7 +8598,7 @@ func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetin
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8618,7 +8606,7 @@ func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetin
 }
 
 // ValidateGetItxMeetingAttachmentDownloadResponseBody runs the validations
-// defined on Get-Itx-Meeting-Attachment-DownloadResponseBody
+// defined on GetItxMeetingAttachmentDownloadResponseBody
 func ValidateGetItxMeetingAttachmentDownloadResponseBody(body *GetItxMeetingAttachmentDownloadResponseBody) (err error) {
 	if body.DownloadURL == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("download_url", "body"))
@@ -8627,7 +8615,7 @@ func ValidateGetItxMeetingAttachmentDownloadResponseBody(body *GetItxMeetingAtta
 }
 
 // ValidateCreateItxPastMeetingAttachmentResponseBody runs the validations
-// defined on Create-Itx-Past-Meeting-AttachmentResponseBody
+// defined on CreateItxPastMeetingAttachmentResponseBody
 func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeetingAttachmentResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8674,7 +8662,7 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8682,12 +8670,12 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.FileUploadedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8698,7 +8686,7 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 }
 
 // ValidateGetItxPastMeetingAttachmentResponseBody runs the validations defined
-// on Get-Itx-Past-Meeting-AttachmentResponseBody
+// on GetItxPastMeetingAttachmentResponseBody
 func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAttachmentResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8745,7 +8733,7 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8753,12 +8741,12 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.FileUploadedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8769,7 +8757,7 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 }
 
 // ValidateCreateItxPastMeetingAttachmentPresignResponseBody runs the
-// validations defined on Create-Itx-Past-Meeting-Attachment-PresignResponseBody
+// validations defined on CreateItxPastMeetingAttachmentPresignResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPastMeetingAttachmentPresignResponseBody) (err error) {
 	if body.UID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
@@ -8787,7 +8775,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPa
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8795,7 +8783,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPa
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserResponseBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8803,7 +8791,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPa
 }
 
 // ValidateGetItxPastMeetingAttachmentDownloadResponseBody runs the validations
-// defined on Get-Itx-Past-Meeting-Attachment-DownloadResponseBody
+// defined on GetItxPastMeetingAttachmentDownloadResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadResponseBody(body *GetItxPastMeetingAttachmentDownloadResponseBody) (err error) {
 	if body.DownloadURL == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("download_url", "body"))
@@ -8812,7 +8800,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadResponseBody(body *GetItxPastMee
 }
 
 // ValidateReadyzServiceUnavailableResponseBody runs the validations defined on
-// readyz_ServiceUnavailable_response_body
+// ReadyzServiceUnavailableResponseBody
 func ValidateReadyzServiceUnavailableResponseBody(body *ReadyzServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8824,7 +8812,7 @@ func ValidateReadyzServiceUnavailableResponseBody(body *ReadyzServiceUnavailable
 }
 
 // ValidateCreateItxMeetingBadRequestResponseBody runs the validations defined
-// on create-itx-meeting_BadRequest_response_body
+// on CreateItxMeetingBadRequestResponseBody
 func ValidateCreateItxMeetingBadRequestResponseBody(body *CreateItxMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8836,7 +8824,7 @@ func ValidateCreateItxMeetingBadRequestResponseBody(body *CreateItxMeetingBadReq
 }
 
 // ValidateCreateItxMeetingConflictResponseBody runs the validations defined on
-// create-itx-meeting_Conflict_response_body
+// CreateItxMeetingConflictResponseBody
 func ValidateCreateItxMeetingConflictResponseBody(body *CreateItxMeetingConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8848,7 +8836,7 @@ func ValidateCreateItxMeetingConflictResponseBody(body *CreateItxMeetingConflict
 }
 
 // ValidateCreateItxMeetingForbiddenResponseBody runs the validations defined
-// on create-itx-meeting_Forbidden_response_body
+// on CreateItxMeetingForbiddenResponseBody
 func ValidateCreateItxMeetingForbiddenResponseBody(body *CreateItxMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8860,7 +8848,7 @@ func ValidateCreateItxMeetingForbiddenResponseBody(body *CreateItxMeetingForbidd
 }
 
 // ValidateCreateItxMeetingInternalServerErrorResponseBody runs the validations
-// defined on create-itx-meeting_InternalServerError_response_body
+// defined on CreateItxMeetingInternalServerErrorResponseBody
 func ValidateCreateItxMeetingInternalServerErrorResponseBody(body *CreateItxMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8872,7 +8860,7 @@ func ValidateCreateItxMeetingInternalServerErrorResponseBody(body *CreateItxMeet
 }
 
 // ValidateCreateItxMeetingServiceUnavailableResponseBody runs the validations
-// defined on create-itx-meeting_ServiceUnavailable_response_body
+// defined on CreateItxMeetingServiceUnavailableResponseBody
 func ValidateCreateItxMeetingServiceUnavailableResponseBody(body *CreateItxMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8884,7 +8872,7 @@ func ValidateCreateItxMeetingServiceUnavailableResponseBody(body *CreateItxMeeti
 }
 
 // ValidateCreateItxMeetingUnauthorizedResponseBody runs the validations
-// defined on create-itx-meeting_Unauthorized_response_body
+// defined on CreateItxMeetingUnauthorizedResponseBody
 func ValidateCreateItxMeetingUnauthorizedResponseBody(body *CreateItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8896,7 +8884,7 @@ func ValidateCreateItxMeetingUnauthorizedResponseBody(body *CreateItxMeetingUnau
 }
 
 // ValidateGetItxMeetingBadRequestResponseBody runs the validations defined on
-// get-itx-meeting_BadRequest_response_body
+// GetItxMeetingBadRequestResponseBody
 func ValidateGetItxMeetingBadRequestResponseBody(body *GetItxMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8908,7 +8896,7 @@ func ValidateGetItxMeetingBadRequestResponseBody(body *GetItxMeetingBadRequestRe
 }
 
 // ValidateGetItxMeetingForbiddenResponseBody runs the validations defined on
-// get-itx-meeting_Forbidden_response_body
+// GetItxMeetingForbiddenResponseBody
 func ValidateGetItxMeetingForbiddenResponseBody(body *GetItxMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8920,7 +8908,7 @@ func ValidateGetItxMeetingForbiddenResponseBody(body *GetItxMeetingForbiddenResp
 }
 
 // ValidateGetItxMeetingInternalServerErrorResponseBody runs the validations
-// defined on get-itx-meeting_InternalServerError_response_body
+// defined on GetItxMeetingInternalServerErrorResponseBody
 func ValidateGetItxMeetingInternalServerErrorResponseBody(body *GetItxMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8932,7 +8920,7 @@ func ValidateGetItxMeetingInternalServerErrorResponseBody(body *GetItxMeetingInt
 }
 
 // ValidateGetItxMeetingNotFoundResponseBody runs the validations defined on
-// get-itx-meeting_NotFound_response_body
+// GetItxMeetingNotFoundResponseBody
 func ValidateGetItxMeetingNotFoundResponseBody(body *GetItxMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8944,7 +8932,7 @@ func ValidateGetItxMeetingNotFoundResponseBody(body *GetItxMeetingNotFoundRespon
 }
 
 // ValidateGetItxMeetingServiceUnavailableResponseBody runs the validations
-// defined on get-itx-meeting_ServiceUnavailable_response_body
+// defined on GetItxMeetingServiceUnavailableResponseBody
 func ValidateGetItxMeetingServiceUnavailableResponseBody(body *GetItxMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8956,7 +8944,7 @@ func ValidateGetItxMeetingServiceUnavailableResponseBody(body *GetItxMeetingServ
 }
 
 // ValidateGetItxMeetingUnauthorizedResponseBody runs the validations defined
-// on get-itx-meeting_Unauthorized_response_body
+// on GetItxMeetingUnauthorizedResponseBody
 func ValidateGetItxMeetingUnauthorizedResponseBody(body *GetItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8968,7 +8956,7 @@ func ValidateGetItxMeetingUnauthorizedResponseBody(body *GetItxMeetingUnauthoriz
 }
 
 // ValidateDeleteItxMeetingBadRequestResponseBody runs the validations defined
-// on delete-itx-meeting_BadRequest_response_body
+// on DeleteItxMeetingBadRequestResponseBody
 func ValidateDeleteItxMeetingBadRequestResponseBody(body *DeleteItxMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8980,7 +8968,7 @@ func ValidateDeleteItxMeetingBadRequestResponseBody(body *DeleteItxMeetingBadReq
 }
 
 // ValidateDeleteItxMeetingForbiddenResponseBody runs the validations defined
-// on delete-itx-meeting_Forbidden_response_body
+// on DeleteItxMeetingForbiddenResponseBody
 func ValidateDeleteItxMeetingForbiddenResponseBody(body *DeleteItxMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -8992,7 +8980,7 @@ func ValidateDeleteItxMeetingForbiddenResponseBody(body *DeleteItxMeetingForbidd
 }
 
 // ValidateDeleteItxMeetingInternalServerErrorResponseBody runs the validations
-// defined on delete-itx-meeting_InternalServerError_response_body
+// defined on DeleteItxMeetingInternalServerErrorResponseBody
 func ValidateDeleteItxMeetingInternalServerErrorResponseBody(body *DeleteItxMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9004,7 +8992,7 @@ func ValidateDeleteItxMeetingInternalServerErrorResponseBody(body *DeleteItxMeet
 }
 
 // ValidateDeleteItxMeetingNotFoundResponseBody runs the validations defined on
-// delete-itx-meeting_NotFound_response_body
+// DeleteItxMeetingNotFoundResponseBody
 func ValidateDeleteItxMeetingNotFoundResponseBody(body *DeleteItxMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9016,7 +9004,7 @@ func ValidateDeleteItxMeetingNotFoundResponseBody(body *DeleteItxMeetingNotFound
 }
 
 // ValidateDeleteItxMeetingServiceUnavailableResponseBody runs the validations
-// defined on delete-itx-meeting_ServiceUnavailable_response_body
+// defined on DeleteItxMeetingServiceUnavailableResponseBody
 func ValidateDeleteItxMeetingServiceUnavailableResponseBody(body *DeleteItxMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9028,7 +9016,7 @@ func ValidateDeleteItxMeetingServiceUnavailableResponseBody(body *DeleteItxMeeti
 }
 
 // ValidateDeleteItxMeetingUnauthorizedResponseBody runs the validations
-// defined on delete-itx-meeting_Unauthorized_response_body
+// defined on DeleteItxMeetingUnauthorizedResponseBody
 func ValidateDeleteItxMeetingUnauthorizedResponseBody(body *DeleteItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9040,7 +9028,7 @@ func ValidateDeleteItxMeetingUnauthorizedResponseBody(body *DeleteItxMeetingUnau
 }
 
 // ValidateUpdateItxMeetingBadRequestResponseBody runs the validations defined
-// on update-itx-meeting_BadRequest_response_body
+// on UpdateItxMeetingBadRequestResponseBody
 func ValidateUpdateItxMeetingBadRequestResponseBody(body *UpdateItxMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9052,7 +9040,7 @@ func ValidateUpdateItxMeetingBadRequestResponseBody(body *UpdateItxMeetingBadReq
 }
 
 // ValidateUpdateItxMeetingConflictResponseBody runs the validations defined on
-// update-itx-meeting_Conflict_response_body
+// UpdateItxMeetingConflictResponseBody
 func ValidateUpdateItxMeetingConflictResponseBody(body *UpdateItxMeetingConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9064,7 +9052,7 @@ func ValidateUpdateItxMeetingConflictResponseBody(body *UpdateItxMeetingConflict
 }
 
 // ValidateUpdateItxMeetingForbiddenResponseBody runs the validations defined
-// on update-itx-meeting_Forbidden_response_body
+// on UpdateItxMeetingForbiddenResponseBody
 func ValidateUpdateItxMeetingForbiddenResponseBody(body *UpdateItxMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9076,7 +9064,7 @@ func ValidateUpdateItxMeetingForbiddenResponseBody(body *UpdateItxMeetingForbidd
 }
 
 // ValidateUpdateItxMeetingInternalServerErrorResponseBody runs the validations
-// defined on update-itx-meeting_InternalServerError_response_body
+// defined on UpdateItxMeetingInternalServerErrorResponseBody
 func ValidateUpdateItxMeetingInternalServerErrorResponseBody(body *UpdateItxMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9088,7 +9076,7 @@ func ValidateUpdateItxMeetingInternalServerErrorResponseBody(body *UpdateItxMeet
 }
 
 // ValidateUpdateItxMeetingNotFoundResponseBody runs the validations defined on
-// update-itx-meeting_NotFound_response_body
+// UpdateItxMeetingNotFoundResponseBody
 func ValidateUpdateItxMeetingNotFoundResponseBody(body *UpdateItxMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9100,7 +9088,7 @@ func ValidateUpdateItxMeetingNotFoundResponseBody(body *UpdateItxMeetingNotFound
 }
 
 // ValidateUpdateItxMeetingServiceUnavailableResponseBody runs the validations
-// defined on update-itx-meeting_ServiceUnavailable_response_body
+// defined on UpdateItxMeetingServiceUnavailableResponseBody
 func ValidateUpdateItxMeetingServiceUnavailableResponseBody(body *UpdateItxMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9112,7 +9100,7 @@ func ValidateUpdateItxMeetingServiceUnavailableResponseBody(body *UpdateItxMeeti
 }
 
 // ValidateUpdateItxMeetingUnauthorizedResponseBody runs the validations
-// defined on update-itx-meeting_Unauthorized_response_body
+// defined on UpdateItxMeetingUnauthorizedResponseBody
 func ValidateUpdateItxMeetingUnauthorizedResponseBody(body *UpdateItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9124,7 +9112,7 @@ func ValidateUpdateItxMeetingUnauthorizedResponseBody(body *UpdateItxMeetingUnau
 }
 
 // ValidateGetItxMeetingCountBadRequestResponseBody runs the validations
-// defined on get-itx-meeting-count_BadRequest_response_body
+// defined on GetItxMeetingCountBadRequestResponseBody
 func ValidateGetItxMeetingCountBadRequestResponseBody(body *GetItxMeetingCountBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9136,7 +9124,7 @@ func ValidateGetItxMeetingCountBadRequestResponseBody(body *GetItxMeetingCountBa
 }
 
 // ValidateGetItxMeetingCountForbiddenResponseBody runs the validations defined
-// on get-itx-meeting-count_Forbidden_response_body
+// on GetItxMeetingCountForbiddenResponseBody
 func ValidateGetItxMeetingCountForbiddenResponseBody(body *GetItxMeetingCountForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9148,8 +9136,7 @@ func ValidateGetItxMeetingCountForbiddenResponseBody(body *GetItxMeetingCountFor
 }
 
 // ValidateGetItxMeetingCountInternalServerErrorResponseBody runs the
-// validations defined on
-// get-itx-meeting-count_InternalServerError_response_body
+// validations defined on GetItxMeetingCountInternalServerErrorResponseBody
 func ValidateGetItxMeetingCountInternalServerErrorResponseBody(body *GetItxMeetingCountInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9161,7 +9148,7 @@ func ValidateGetItxMeetingCountInternalServerErrorResponseBody(body *GetItxMeeti
 }
 
 // ValidateGetItxMeetingCountNotFoundResponseBody runs the validations defined
-// on get-itx-meeting-count_NotFound_response_body
+// on GetItxMeetingCountNotFoundResponseBody
 func ValidateGetItxMeetingCountNotFoundResponseBody(body *GetItxMeetingCountNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9173,7 +9160,7 @@ func ValidateGetItxMeetingCountNotFoundResponseBody(body *GetItxMeetingCountNotF
 }
 
 // ValidateGetItxMeetingCountServiceUnavailableResponseBody runs the
-// validations defined on get-itx-meeting-count_ServiceUnavailable_response_body
+// validations defined on GetItxMeetingCountServiceUnavailableResponseBody
 func ValidateGetItxMeetingCountServiceUnavailableResponseBody(body *GetItxMeetingCountServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9185,7 +9172,7 @@ func ValidateGetItxMeetingCountServiceUnavailableResponseBody(body *GetItxMeetin
 }
 
 // ValidateGetItxMeetingCountUnauthorizedResponseBody runs the validations
-// defined on get-itx-meeting-count_Unauthorized_response_body
+// defined on GetItxMeetingCountUnauthorizedResponseBody
 func ValidateGetItxMeetingCountUnauthorizedResponseBody(body *GetItxMeetingCountUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9197,7 +9184,7 @@ func ValidateGetItxMeetingCountUnauthorizedResponseBody(body *GetItxMeetingCount
 }
 
 // ValidateCreateItxRegistrantBadRequestResponseBody runs the validations
-// defined on create-itx-registrant_BadRequest_response_body
+// defined on CreateItxRegistrantBadRequestResponseBody
 func ValidateCreateItxRegistrantBadRequestResponseBody(body *CreateItxRegistrantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9209,7 +9196,7 @@ func ValidateCreateItxRegistrantBadRequestResponseBody(body *CreateItxRegistrant
 }
 
 // ValidateCreateItxRegistrantConflictResponseBody runs the validations defined
-// on create-itx-registrant_Conflict_response_body
+// on CreateItxRegistrantConflictResponseBody
 func ValidateCreateItxRegistrantConflictResponseBody(body *CreateItxRegistrantConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9221,7 +9208,7 @@ func ValidateCreateItxRegistrantConflictResponseBody(body *CreateItxRegistrantCo
 }
 
 // ValidateCreateItxRegistrantForbiddenResponseBody runs the validations
-// defined on create-itx-registrant_Forbidden_response_body
+// defined on CreateItxRegistrantForbiddenResponseBody
 func ValidateCreateItxRegistrantForbiddenResponseBody(body *CreateItxRegistrantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9233,8 +9220,7 @@ func ValidateCreateItxRegistrantForbiddenResponseBody(body *CreateItxRegistrantF
 }
 
 // ValidateCreateItxRegistrantInternalServerErrorResponseBody runs the
-// validations defined on
-// create-itx-registrant_InternalServerError_response_body
+// validations defined on CreateItxRegistrantInternalServerErrorResponseBody
 func ValidateCreateItxRegistrantInternalServerErrorResponseBody(body *CreateItxRegistrantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9246,7 +9232,7 @@ func ValidateCreateItxRegistrantInternalServerErrorResponseBody(body *CreateItxR
 }
 
 // ValidateCreateItxRegistrantNotFoundResponseBody runs the validations defined
-// on create-itx-registrant_NotFound_response_body
+// on CreateItxRegistrantNotFoundResponseBody
 func ValidateCreateItxRegistrantNotFoundResponseBody(body *CreateItxRegistrantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9258,7 +9244,7 @@ func ValidateCreateItxRegistrantNotFoundResponseBody(body *CreateItxRegistrantNo
 }
 
 // ValidateCreateItxRegistrantServiceUnavailableResponseBody runs the
-// validations defined on create-itx-registrant_ServiceUnavailable_response_body
+// validations defined on CreateItxRegistrantServiceUnavailableResponseBody
 func ValidateCreateItxRegistrantServiceUnavailableResponseBody(body *CreateItxRegistrantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9270,7 +9256,7 @@ func ValidateCreateItxRegistrantServiceUnavailableResponseBody(body *CreateItxRe
 }
 
 // ValidateCreateItxRegistrantUnauthorizedResponseBody runs the validations
-// defined on create-itx-registrant_Unauthorized_response_body
+// defined on CreateItxRegistrantUnauthorizedResponseBody
 func ValidateCreateItxRegistrantUnauthorizedResponseBody(body *CreateItxRegistrantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9282,7 +9268,7 @@ func ValidateCreateItxRegistrantUnauthorizedResponseBody(body *CreateItxRegistra
 }
 
 // ValidateSelfRegisterItxMeetingBadRequestResponseBody runs the validations
-// defined on self-register-itx-meeting_BadRequest_response_body
+// defined on SelfRegisterItxMeetingBadRequestResponseBody
 func ValidateSelfRegisterItxMeetingBadRequestResponseBody(body *SelfRegisterItxMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9294,7 +9280,7 @@ func ValidateSelfRegisterItxMeetingBadRequestResponseBody(body *SelfRegisterItxM
 }
 
 // ValidateSelfRegisterItxMeetingConflictResponseBody runs the validations
-// defined on self-register-itx-meeting_Conflict_response_body
+// defined on SelfRegisterItxMeetingConflictResponseBody
 func ValidateSelfRegisterItxMeetingConflictResponseBody(body *SelfRegisterItxMeetingConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9306,7 +9292,7 @@ func ValidateSelfRegisterItxMeetingConflictResponseBody(body *SelfRegisterItxMee
 }
 
 // ValidateSelfRegisterItxMeetingForbiddenResponseBody runs the validations
-// defined on self-register-itx-meeting_Forbidden_response_body
+// defined on SelfRegisterItxMeetingForbiddenResponseBody
 func ValidateSelfRegisterItxMeetingForbiddenResponseBody(body *SelfRegisterItxMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9318,8 +9304,7 @@ func ValidateSelfRegisterItxMeetingForbiddenResponseBody(body *SelfRegisterItxMe
 }
 
 // ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody runs the
-// validations defined on
-// self-register-itx-meeting_InternalServerError_response_body
+// validations defined on SelfRegisterItxMeetingInternalServerErrorResponseBody
 func ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody(body *SelfRegisterItxMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9331,7 +9316,7 @@ func ValidateSelfRegisterItxMeetingInternalServerErrorResponseBody(body *SelfReg
 }
 
 // ValidateSelfRegisterItxMeetingNotFoundResponseBody runs the validations
-// defined on self-register-itx-meeting_NotFound_response_body
+// defined on SelfRegisterItxMeetingNotFoundResponseBody
 func ValidateSelfRegisterItxMeetingNotFoundResponseBody(body *SelfRegisterItxMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9343,8 +9328,7 @@ func ValidateSelfRegisterItxMeetingNotFoundResponseBody(body *SelfRegisterItxMee
 }
 
 // ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody runs the
-// validations defined on
-// self-register-itx-meeting_ServiceUnavailable_response_body
+// validations defined on SelfRegisterItxMeetingServiceUnavailableResponseBody
 func ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody(body *SelfRegisterItxMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9356,7 +9340,7 @@ func ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody(body *SelfRegi
 }
 
 // ValidateSelfRegisterItxMeetingUnauthorizedResponseBody runs the validations
-// defined on self-register-itx-meeting_Unauthorized_response_body
+// defined on SelfRegisterItxMeetingUnauthorizedResponseBody
 func ValidateSelfRegisterItxMeetingUnauthorizedResponseBody(body *SelfRegisterItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9368,7 +9352,7 @@ func ValidateSelfRegisterItxMeetingUnauthorizedResponseBody(body *SelfRegisterIt
 }
 
 // ValidateGetItxRegistrantBadRequestResponseBody runs the validations defined
-// on get-itx-registrant_BadRequest_response_body
+// on GetItxRegistrantBadRequestResponseBody
 func ValidateGetItxRegistrantBadRequestResponseBody(body *GetItxRegistrantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9380,7 +9364,7 @@ func ValidateGetItxRegistrantBadRequestResponseBody(body *GetItxRegistrantBadReq
 }
 
 // ValidateGetItxRegistrantForbiddenResponseBody runs the validations defined
-// on get-itx-registrant_Forbidden_response_body
+// on GetItxRegistrantForbiddenResponseBody
 func ValidateGetItxRegistrantForbiddenResponseBody(body *GetItxRegistrantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9392,7 +9376,7 @@ func ValidateGetItxRegistrantForbiddenResponseBody(body *GetItxRegistrantForbidd
 }
 
 // ValidateGetItxRegistrantInternalServerErrorResponseBody runs the validations
-// defined on get-itx-registrant_InternalServerError_response_body
+// defined on GetItxRegistrantInternalServerErrorResponseBody
 func ValidateGetItxRegistrantInternalServerErrorResponseBody(body *GetItxRegistrantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9404,7 +9388,7 @@ func ValidateGetItxRegistrantInternalServerErrorResponseBody(body *GetItxRegistr
 }
 
 // ValidateGetItxRegistrantNotFoundResponseBody runs the validations defined on
-// get-itx-registrant_NotFound_response_body
+// GetItxRegistrantNotFoundResponseBody
 func ValidateGetItxRegistrantNotFoundResponseBody(body *GetItxRegistrantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9416,7 +9400,7 @@ func ValidateGetItxRegistrantNotFoundResponseBody(body *GetItxRegistrantNotFound
 }
 
 // ValidateGetItxRegistrantServiceUnavailableResponseBody runs the validations
-// defined on get-itx-registrant_ServiceUnavailable_response_body
+// defined on GetItxRegistrantServiceUnavailableResponseBody
 func ValidateGetItxRegistrantServiceUnavailableResponseBody(body *GetItxRegistrantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9428,7 +9412,7 @@ func ValidateGetItxRegistrantServiceUnavailableResponseBody(body *GetItxRegistra
 }
 
 // ValidateGetItxRegistrantUnauthorizedResponseBody runs the validations
-// defined on get-itx-registrant_Unauthorized_response_body
+// defined on GetItxRegistrantUnauthorizedResponseBody
 func ValidateGetItxRegistrantUnauthorizedResponseBody(body *GetItxRegistrantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9440,7 +9424,7 @@ func ValidateGetItxRegistrantUnauthorizedResponseBody(body *GetItxRegistrantUnau
 }
 
 // ValidateUpdateItxRegistrantBadRequestResponseBody runs the validations
-// defined on update-itx-registrant_BadRequest_response_body
+// defined on UpdateItxRegistrantBadRequestResponseBody
 func ValidateUpdateItxRegistrantBadRequestResponseBody(body *UpdateItxRegistrantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9452,7 +9436,7 @@ func ValidateUpdateItxRegistrantBadRequestResponseBody(body *UpdateItxRegistrant
 }
 
 // ValidateUpdateItxRegistrantForbiddenResponseBody runs the validations
-// defined on update-itx-registrant_Forbidden_response_body
+// defined on UpdateItxRegistrantForbiddenResponseBody
 func ValidateUpdateItxRegistrantForbiddenResponseBody(body *UpdateItxRegistrantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9464,8 +9448,7 @@ func ValidateUpdateItxRegistrantForbiddenResponseBody(body *UpdateItxRegistrantF
 }
 
 // ValidateUpdateItxRegistrantInternalServerErrorResponseBody runs the
-// validations defined on
-// update-itx-registrant_InternalServerError_response_body
+// validations defined on UpdateItxRegistrantInternalServerErrorResponseBody
 func ValidateUpdateItxRegistrantInternalServerErrorResponseBody(body *UpdateItxRegistrantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9477,7 +9460,7 @@ func ValidateUpdateItxRegistrantInternalServerErrorResponseBody(body *UpdateItxR
 }
 
 // ValidateUpdateItxRegistrantNotFoundResponseBody runs the validations defined
-// on update-itx-registrant_NotFound_response_body
+// on UpdateItxRegistrantNotFoundResponseBody
 func ValidateUpdateItxRegistrantNotFoundResponseBody(body *UpdateItxRegistrantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9489,7 +9472,7 @@ func ValidateUpdateItxRegistrantNotFoundResponseBody(body *UpdateItxRegistrantNo
 }
 
 // ValidateUpdateItxRegistrantServiceUnavailableResponseBody runs the
-// validations defined on update-itx-registrant_ServiceUnavailable_response_body
+// validations defined on UpdateItxRegistrantServiceUnavailableResponseBody
 func ValidateUpdateItxRegistrantServiceUnavailableResponseBody(body *UpdateItxRegistrantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9501,7 +9484,7 @@ func ValidateUpdateItxRegistrantServiceUnavailableResponseBody(body *UpdateItxRe
 }
 
 // ValidateUpdateItxRegistrantUnauthorizedResponseBody runs the validations
-// defined on update-itx-registrant_Unauthorized_response_body
+// defined on UpdateItxRegistrantUnauthorizedResponseBody
 func ValidateUpdateItxRegistrantUnauthorizedResponseBody(body *UpdateItxRegistrantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9513,7 +9496,7 @@ func ValidateUpdateItxRegistrantUnauthorizedResponseBody(body *UpdateItxRegistra
 }
 
 // ValidateDeleteItxRegistrantBadRequestResponseBody runs the validations
-// defined on delete-itx-registrant_BadRequest_response_body
+// defined on DeleteItxRegistrantBadRequestResponseBody
 func ValidateDeleteItxRegistrantBadRequestResponseBody(body *DeleteItxRegistrantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9525,7 +9508,7 @@ func ValidateDeleteItxRegistrantBadRequestResponseBody(body *DeleteItxRegistrant
 }
 
 // ValidateDeleteItxRegistrantForbiddenResponseBody runs the validations
-// defined on delete-itx-registrant_Forbidden_response_body
+// defined on DeleteItxRegistrantForbiddenResponseBody
 func ValidateDeleteItxRegistrantForbiddenResponseBody(body *DeleteItxRegistrantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9537,8 +9520,7 @@ func ValidateDeleteItxRegistrantForbiddenResponseBody(body *DeleteItxRegistrantF
 }
 
 // ValidateDeleteItxRegistrantInternalServerErrorResponseBody runs the
-// validations defined on
-// delete-itx-registrant_InternalServerError_response_body
+// validations defined on DeleteItxRegistrantInternalServerErrorResponseBody
 func ValidateDeleteItxRegistrantInternalServerErrorResponseBody(body *DeleteItxRegistrantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9550,7 +9532,7 @@ func ValidateDeleteItxRegistrantInternalServerErrorResponseBody(body *DeleteItxR
 }
 
 // ValidateDeleteItxRegistrantNotFoundResponseBody runs the validations defined
-// on delete-itx-registrant_NotFound_response_body
+// on DeleteItxRegistrantNotFoundResponseBody
 func ValidateDeleteItxRegistrantNotFoundResponseBody(body *DeleteItxRegistrantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9562,7 +9544,7 @@ func ValidateDeleteItxRegistrantNotFoundResponseBody(body *DeleteItxRegistrantNo
 }
 
 // ValidateDeleteItxRegistrantServiceUnavailableResponseBody runs the
-// validations defined on delete-itx-registrant_ServiceUnavailable_response_body
+// validations defined on DeleteItxRegistrantServiceUnavailableResponseBody
 func ValidateDeleteItxRegistrantServiceUnavailableResponseBody(body *DeleteItxRegistrantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9574,7 +9556,7 @@ func ValidateDeleteItxRegistrantServiceUnavailableResponseBody(body *DeleteItxRe
 }
 
 // ValidateDeleteItxRegistrantUnauthorizedResponseBody runs the validations
-// defined on delete-itx-registrant_Unauthorized_response_body
+// defined on DeleteItxRegistrantUnauthorizedResponseBody
 func ValidateDeleteItxRegistrantUnauthorizedResponseBody(body *DeleteItxRegistrantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9586,7 +9568,7 @@ func ValidateDeleteItxRegistrantUnauthorizedResponseBody(body *DeleteItxRegistra
 }
 
 // ValidateGetItxJoinLinkBadRequestResponseBody runs the validations defined on
-// get-itx-join-link_BadRequest_response_body
+// GetItxJoinLinkBadRequestResponseBody
 func ValidateGetItxJoinLinkBadRequestResponseBody(body *GetItxJoinLinkBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9598,7 +9580,7 @@ func ValidateGetItxJoinLinkBadRequestResponseBody(body *GetItxJoinLinkBadRequest
 }
 
 // ValidateGetItxJoinLinkForbiddenResponseBody runs the validations defined on
-// get-itx-join-link_Forbidden_response_body
+// GetItxJoinLinkForbiddenResponseBody
 func ValidateGetItxJoinLinkForbiddenResponseBody(body *GetItxJoinLinkForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9610,7 +9592,7 @@ func ValidateGetItxJoinLinkForbiddenResponseBody(body *GetItxJoinLinkForbiddenRe
 }
 
 // ValidateGetItxJoinLinkInternalServerErrorResponseBody runs the validations
-// defined on get-itx-join-link_InternalServerError_response_body
+// defined on GetItxJoinLinkInternalServerErrorResponseBody
 func ValidateGetItxJoinLinkInternalServerErrorResponseBody(body *GetItxJoinLinkInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9622,7 +9604,7 @@ func ValidateGetItxJoinLinkInternalServerErrorResponseBody(body *GetItxJoinLinkI
 }
 
 // ValidateGetItxJoinLinkNotFoundResponseBody runs the validations defined on
-// get-itx-join-link_NotFound_response_body
+// GetItxJoinLinkNotFoundResponseBody
 func ValidateGetItxJoinLinkNotFoundResponseBody(body *GetItxJoinLinkNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9634,7 +9616,7 @@ func ValidateGetItxJoinLinkNotFoundResponseBody(body *GetItxJoinLinkNotFoundResp
 }
 
 // ValidateGetItxJoinLinkServiceUnavailableResponseBody runs the validations
-// defined on get-itx-join-link_ServiceUnavailable_response_body
+// defined on GetItxJoinLinkServiceUnavailableResponseBody
 func ValidateGetItxJoinLinkServiceUnavailableResponseBody(body *GetItxJoinLinkServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9646,7 +9628,7 @@ func ValidateGetItxJoinLinkServiceUnavailableResponseBody(body *GetItxJoinLinkSe
 }
 
 // ValidateGetItxJoinLinkUnauthorizedResponseBody runs the validations defined
-// on get-itx-join-link_Unauthorized_response_body
+// on GetItxJoinLinkUnauthorizedResponseBody
 func ValidateGetItxJoinLinkUnauthorizedResponseBody(body *GetItxJoinLinkUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9658,7 +9640,7 @@ func ValidateGetItxJoinLinkUnauthorizedResponseBody(body *GetItxJoinLinkUnauthor
 }
 
 // ValidateGetItxRegistrantIcsBadRequestResponseBody runs the validations
-// defined on get-itx-registrant-ics_BadRequest_response_body
+// defined on GetItxRegistrantIcsBadRequestResponseBody
 func ValidateGetItxRegistrantIcsBadRequestResponseBody(body *GetItxRegistrantIcsBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9670,7 +9652,7 @@ func ValidateGetItxRegistrantIcsBadRequestResponseBody(body *GetItxRegistrantIcs
 }
 
 // ValidateGetItxRegistrantIcsForbiddenResponseBody runs the validations
-// defined on get-itx-registrant-ics_Forbidden_response_body
+// defined on GetItxRegistrantIcsForbiddenResponseBody
 func ValidateGetItxRegistrantIcsForbiddenResponseBody(body *GetItxRegistrantIcsForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9682,8 +9664,7 @@ func ValidateGetItxRegistrantIcsForbiddenResponseBody(body *GetItxRegistrantIcsF
 }
 
 // ValidateGetItxRegistrantIcsInternalServerErrorResponseBody runs the
-// validations defined on
-// get-itx-registrant-ics_InternalServerError_response_body
+// validations defined on GetItxRegistrantIcsInternalServerErrorResponseBody
 func ValidateGetItxRegistrantIcsInternalServerErrorResponseBody(body *GetItxRegistrantIcsInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9695,7 +9676,7 @@ func ValidateGetItxRegistrantIcsInternalServerErrorResponseBody(body *GetItxRegi
 }
 
 // ValidateGetItxRegistrantIcsNotFoundResponseBody runs the validations defined
-// on get-itx-registrant-ics_NotFound_response_body
+// on GetItxRegistrantIcsNotFoundResponseBody
 func ValidateGetItxRegistrantIcsNotFoundResponseBody(body *GetItxRegistrantIcsNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9707,8 +9688,7 @@ func ValidateGetItxRegistrantIcsNotFoundResponseBody(body *GetItxRegistrantIcsNo
 }
 
 // ValidateGetItxRegistrantIcsServiceUnavailableResponseBody runs the
-// validations defined on
-// get-itx-registrant-ics_ServiceUnavailable_response_body
+// validations defined on GetItxRegistrantIcsServiceUnavailableResponseBody
 func ValidateGetItxRegistrantIcsServiceUnavailableResponseBody(body *GetItxRegistrantIcsServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9720,7 +9700,7 @@ func ValidateGetItxRegistrantIcsServiceUnavailableResponseBody(body *GetItxRegis
 }
 
 // ValidateGetItxRegistrantIcsUnauthorizedResponseBody runs the validations
-// defined on get-itx-registrant-ics_Unauthorized_response_body
+// defined on GetItxRegistrantIcsUnauthorizedResponseBody
 func ValidateGetItxRegistrantIcsUnauthorizedResponseBody(body *GetItxRegistrantIcsUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9732,8 +9712,7 @@ func ValidateGetItxRegistrantIcsUnauthorizedResponseBody(body *GetItxRegistrantI
 }
 
 // ValidateResendItxRegistrantInvitationBadRequestResponseBody runs the
-// validations defined on
-// resend-itx-registrant-invitation_BadRequest_response_body
+// validations defined on ResendItxRegistrantInvitationBadRequestResponseBody
 func ValidateResendItxRegistrantInvitationBadRequestResponseBody(body *ResendItxRegistrantInvitationBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9745,8 +9724,7 @@ func ValidateResendItxRegistrantInvitationBadRequestResponseBody(body *ResendItx
 }
 
 // ValidateResendItxRegistrantInvitationForbiddenResponseBody runs the
-// validations defined on
-// resend-itx-registrant-invitation_Forbidden_response_body
+// validations defined on ResendItxRegistrantInvitationForbiddenResponseBody
 func ValidateResendItxRegistrantInvitationForbiddenResponseBody(body *ResendItxRegistrantInvitationForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9759,7 +9737,7 @@ func ValidateResendItxRegistrantInvitationForbiddenResponseBody(body *ResendItxR
 
 // ValidateResendItxRegistrantInvitationInternalServerErrorResponseBody runs
 // the validations defined on
-// resend-itx-registrant-invitation_InternalServerError_response_body
+// ResendItxRegistrantInvitationInternalServerErrorResponseBody
 func ValidateResendItxRegistrantInvitationInternalServerErrorResponseBody(body *ResendItxRegistrantInvitationInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9771,8 +9749,7 @@ func ValidateResendItxRegistrantInvitationInternalServerErrorResponseBody(body *
 }
 
 // ValidateResendItxRegistrantInvitationNotFoundResponseBody runs the
-// validations defined on
-// resend-itx-registrant-invitation_NotFound_response_body
+// validations defined on ResendItxRegistrantInvitationNotFoundResponseBody
 func ValidateResendItxRegistrantInvitationNotFoundResponseBody(body *ResendItxRegistrantInvitationNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9785,7 +9762,7 @@ func ValidateResendItxRegistrantInvitationNotFoundResponseBody(body *ResendItxRe
 
 // ValidateResendItxRegistrantInvitationServiceUnavailableResponseBody runs the
 // validations defined on
-// resend-itx-registrant-invitation_ServiceUnavailable_response_body
+// ResendItxRegistrantInvitationServiceUnavailableResponseBody
 func ValidateResendItxRegistrantInvitationServiceUnavailableResponseBody(body *ResendItxRegistrantInvitationServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9797,8 +9774,7 @@ func ValidateResendItxRegistrantInvitationServiceUnavailableResponseBody(body *R
 }
 
 // ValidateResendItxRegistrantInvitationUnauthorizedResponseBody runs the
-// validations defined on
-// resend-itx-registrant-invitation_Unauthorized_response_body
+// validations defined on ResendItxRegistrantInvitationUnauthorizedResponseBody
 func ValidateResendItxRegistrantInvitationUnauthorizedResponseBody(body *ResendItxRegistrantInvitationUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9810,8 +9786,7 @@ func ValidateResendItxRegistrantInvitationUnauthorizedResponseBody(body *ResendI
 }
 
 // ValidateResendItxMeetingInvitationsBadRequestResponseBody runs the
-// validations defined on
-// resend-itx-meeting-invitations_BadRequest_response_body
+// validations defined on ResendItxMeetingInvitationsBadRequestResponseBody
 func ValidateResendItxMeetingInvitationsBadRequestResponseBody(body *ResendItxMeetingInvitationsBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9823,7 +9798,7 @@ func ValidateResendItxMeetingInvitationsBadRequestResponseBody(body *ResendItxMe
 }
 
 // ValidateResendItxMeetingInvitationsForbiddenResponseBody runs the
-// validations defined on resend-itx-meeting-invitations_Forbidden_response_body
+// validations defined on ResendItxMeetingInvitationsForbiddenResponseBody
 func ValidateResendItxMeetingInvitationsForbiddenResponseBody(body *ResendItxMeetingInvitationsForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9836,7 +9811,7 @@ func ValidateResendItxMeetingInvitationsForbiddenResponseBody(body *ResendItxMee
 
 // ValidateResendItxMeetingInvitationsInternalServerErrorResponseBody runs the
 // validations defined on
-// resend-itx-meeting-invitations_InternalServerError_response_body
+// ResendItxMeetingInvitationsInternalServerErrorResponseBody
 func ValidateResendItxMeetingInvitationsInternalServerErrorResponseBody(body *ResendItxMeetingInvitationsInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9848,7 +9823,7 @@ func ValidateResendItxMeetingInvitationsInternalServerErrorResponseBody(body *Re
 }
 
 // ValidateResendItxMeetingInvitationsNotFoundResponseBody runs the validations
-// defined on resend-itx-meeting-invitations_NotFound_response_body
+// defined on ResendItxMeetingInvitationsNotFoundResponseBody
 func ValidateResendItxMeetingInvitationsNotFoundResponseBody(body *ResendItxMeetingInvitationsNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9861,7 +9836,7 @@ func ValidateResendItxMeetingInvitationsNotFoundResponseBody(body *ResendItxMeet
 
 // ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody runs the
 // validations defined on
-// resend-itx-meeting-invitations_ServiceUnavailable_response_body
+// ResendItxMeetingInvitationsServiceUnavailableResponseBody
 func ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody(body *ResendItxMeetingInvitationsServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9873,8 +9848,7 @@ func ValidateResendItxMeetingInvitationsServiceUnavailableResponseBody(body *Res
 }
 
 // ValidateResendItxMeetingInvitationsUnauthorizedResponseBody runs the
-// validations defined on
-// resend-itx-meeting-invitations_Unauthorized_response_body
+// validations defined on ResendItxMeetingInvitationsUnauthorizedResponseBody
 func ValidateResendItxMeetingInvitationsUnauthorizedResponseBody(body *ResendItxMeetingInvitationsUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9886,8 +9860,7 @@ func ValidateResendItxMeetingInvitationsUnauthorizedResponseBody(body *ResendItx
 }
 
 // ValidateRegisterItxCommitteeMembersBadRequestResponseBody runs the
-// validations defined on
-// register-itx-committee-members_BadRequest_response_body
+// validations defined on RegisterItxCommitteeMembersBadRequestResponseBody
 func ValidateRegisterItxCommitteeMembersBadRequestResponseBody(body *RegisterItxCommitteeMembersBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9899,7 +9872,7 @@ func ValidateRegisterItxCommitteeMembersBadRequestResponseBody(body *RegisterItx
 }
 
 // ValidateRegisterItxCommitteeMembersForbiddenResponseBody runs the
-// validations defined on register-itx-committee-members_Forbidden_response_body
+// validations defined on RegisterItxCommitteeMembersForbiddenResponseBody
 func ValidateRegisterItxCommitteeMembersForbiddenResponseBody(body *RegisterItxCommitteeMembersForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9912,7 +9885,7 @@ func ValidateRegisterItxCommitteeMembersForbiddenResponseBody(body *RegisterItxC
 
 // ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody runs the
 // validations defined on
-// register-itx-committee-members_InternalServerError_response_body
+// RegisterItxCommitteeMembersInternalServerErrorResponseBody
 func ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody(body *RegisterItxCommitteeMembersInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9924,7 +9897,7 @@ func ValidateRegisterItxCommitteeMembersInternalServerErrorResponseBody(body *Re
 }
 
 // ValidateRegisterItxCommitteeMembersNotFoundResponseBody runs the validations
-// defined on register-itx-committee-members_NotFound_response_body
+// defined on RegisterItxCommitteeMembersNotFoundResponseBody
 func ValidateRegisterItxCommitteeMembersNotFoundResponseBody(body *RegisterItxCommitteeMembersNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9937,7 +9910,7 @@ func ValidateRegisterItxCommitteeMembersNotFoundResponseBody(body *RegisterItxCo
 
 // ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody runs the
 // validations defined on
-// register-itx-committee-members_ServiceUnavailable_response_body
+// RegisterItxCommitteeMembersServiceUnavailableResponseBody
 func ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody(body *RegisterItxCommitteeMembersServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9949,8 +9922,7 @@ func ValidateRegisterItxCommitteeMembersServiceUnavailableResponseBody(body *Reg
 }
 
 // ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody runs the
-// validations defined on
-// register-itx-committee-members_Unauthorized_response_body
+// validations defined on RegisterItxCommitteeMembersUnauthorizedResponseBody
 func ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody(body *RegisterItxCommitteeMembersUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9962,7 +9934,7 @@ func ValidateRegisterItxCommitteeMembersUnauthorizedResponseBody(body *RegisterI
 }
 
 // ValidateUpdateItxOccurrenceBadRequestResponseBody runs the validations
-// defined on update-itx-occurrence_BadRequest_response_body
+// defined on UpdateItxOccurrenceBadRequestResponseBody
 func ValidateUpdateItxOccurrenceBadRequestResponseBody(body *UpdateItxOccurrenceBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9974,7 +9946,7 @@ func ValidateUpdateItxOccurrenceBadRequestResponseBody(body *UpdateItxOccurrence
 }
 
 // ValidateUpdateItxOccurrenceForbiddenResponseBody runs the validations
-// defined on update-itx-occurrence_Forbidden_response_body
+// defined on UpdateItxOccurrenceForbiddenResponseBody
 func ValidateUpdateItxOccurrenceForbiddenResponseBody(body *UpdateItxOccurrenceForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9986,8 +9958,7 @@ func ValidateUpdateItxOccurrenceForbiddenResponseBody(body *UpdateItxOccurrenceF
 }
 
 // ValidateUpdateItxOccurrenceInternalServerErrorResponseBody runs the
-// validations defined on
-// update-itx-occurrence_InternalServerError_response_body
+// validations defined on UpdateItxOccurrenceInternalServerErrorResponseBody
 func ValidateUpdateItxOccurrenceInternalServerErrorResponseBody(body *UpdateItxOccurrenceInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -9999,7 +9970,7 @@ func ValidateUpdateItxOccurrenceInternalServerErrorResponseBody(body *UpdateItxO
 }
 
 // ValidateUpdateItxOccurrenceNotFoundResponseBody runs the validations defined
-// on update-itx-occurrence_NotFound_response_body
+// on UpdateItxOccurrenceNotFoundResponseBody
 func ValidateUpdateItxOccurrenceNotFoundResponseBody(body *UpdateItxOccurrenceNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10011,7 +9982,7 @@ func ValidateUpdateItxOccurrenceNotFoundResponseBody(body *UpdateItxOccurrenceNo
 }
 
 // ValidateUpdateItxOccurrenceServiceUnavailableResponseBody runs the
-// validations defined on update-itx-occurrence_ServiceUnavailable_response_body
+// validations defined on UpdateItxOccurrenceServiceUnavailableResponseBody
 func ValidateUpdateItxOccurrenceServiceUnavailableResponseBody(body *UpdateItxOccurrenceServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10023,7 +9994,7 @@ func ValidateUpdateItxOccurrenceServiceUnavailableResponseBody(body *UpdateItxOc
 }
 
 // ValidateUpdateItxOccurrenceUnauthorizedResponseBody runs the validations
-// defined on update-itx-occurrence_Unauthorized_response_body
+// defined on UpdateItxOccurrenceUnauthorizedResponseBody
 func ValidateUpdateItxOccurrenceUnauthorizedResponseBody(body *UpdateItxOccurrenceUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10035,7 +10006,7 @@ func ValidateUpdateItxOccurrenceUnauthorizedResponseBody(body *UpdateItxOccurren
 }
 
 // ValidateDeleteItxOccurrenceBadRequestResponseBody runs the validations
-// defined on delete-itx-occurrence_BadRequest_response_body
+// defined on DeleteItxOccurrenceBadRequestResponseBody
 func ValidateDeleteItxOccurrenceBadRequestResponseBody(body *DeleteItxOccurrenceBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10047,7 +10018,7 @@ func ValidateDeleteItxOccurrenceBadRequestResponseBody(body *DeleteItxOccurrence
 }
 
 // ValidateDeleteItxOccurrenceForbiddenResponseBody runs the validations
-// defined on delete-itx-occurrence_Forbidden_response_body
+// defined on DeleteItxOccurrenceForbiddenResponseBody
 func ValidateDeleteItxOccurrenceForbiddenResponseBody(body *DeleteItxOccurrenceForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10059,8 +10030,7 @@ func ValidateDeleteItxOccurrenceForbiddenResponseBody(body *DeleteItxOccurrenceF
 }
 
 // ValidateDeleteItxOccurrenceInternalServerErrorResponseBody runs the
-// validations defined on
-// delete-itx-occurrence_InternalServerError_response_body
+// validations defined on DeleteItxOccurrenceInternalServerErrorResponseBody
 func ValidateDeleteItxOccurrenceInternalServerErrorResponseBody(body *DeleteItxOccurrenceInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10072,7 +10042,7 @@ func ValidateDeleteItxOccurrenceInternalServerErrorResponseBody(body *DeleteItxO
 }
 
 // ValidateDeleteItxOccurrenceNotFoundResponseBody runs the validations defined
-// on delete-itx-occurrence_NotFound_response_body
+// on DeleteItxOccurrenceNotFoundResponseBody
 func ValidateDeleteItxOccurrenceNotFoundResponseBody(body *DeleteItxOccurrenceNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10084,7 +10054,7 @@ func ValidateDeleteItxOccurrenceNotFoundResponseBody(body *DeleteItxOccurrenceNo
 }
 
 // ValidateDeleteItxOccurrenceServiceUnavailableResponseBody runs the
-// validations defined on delete-itx-occurrence_ServiceUnavailable_response_body
+// validations defined on DeleteItxOccurrenceServiceUnavailableResponseBody
 func ValidateDeleteItxOccurrenceServiceUnavailableResponseBody(body *DeleteItxOccurrenceServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10096,7 +10066,7 @@ func ValidateDeleteItxOccurrenceServiceUnavailableResponseBody(body *DeleteItxOc
 }
 
 // ValidateDeleteItxOccurrenceUnauthorizedResponseBody runs the validations
-// defined on delete-itx-occurrence_Unauthorized_response_body
+// defined on DeleteItxOccurrenceUnauthorizedResponseBody
 func ValidateDeleteItxOccurrenceUnauthorizedResponseBody(body *DeleteItxOccurrenceUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10108,7 +10078,7 @@ func ValidateDeleteItxOccurrenceUnauthorizedResponseBody(body *DeleteItxOccurren
 }
 
 // ValidateSubmitItxMeetingResponseBadRequestResponseBody runs the validations
-// defined on submit-itx-meeting-response_BadRequest_response_body
+// defined on SubmitItxMeetingResponseBadRequestResponseBody
 func ValidateSubmitItxMeetingResponseBadRequestResponseBody(body *SubmitItxMeetingResponseBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10120,7 +10090,7 @@ func ValidateSubmitItxMeetingResponseBadRequestResponseBody(body *SubmitItxMeeti
 }
 
 // ValidateSubmitItxMeetingResponseForbiddenResponseBody runs the validations
-// defined on submit-itx-meeting-response_Forbidden_response_body
+// defined on SubmitItxMeetingResponseForbiddenResponseBody
 func ValidateSubmitItxMeetingResponseForbiddenResponseBody(body *SubmitItxMeetingResponseForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10133,7 +10103,7 @@ func ValidateSubmitItxMeetingResponseForbiddenResponseBody(body *SubmitItxMeetin
 
 // ValidateSubmitItxMeetingResponseInternalServerErrorResponseBody runs the
 // validations defined on
-// submit-itx-meeting-response_InternalServerError_response_body
+// SubmitItxMeetingResponseInternalServerErrorResponseBody
 func ValidateSubmitItxMeetingResponseInternalServerErrorResponseBody(body *SubmitItxMeetingResponseInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10145,7 +10115,7 @@ func ValidateSubmitItxMeetingResponseInternalServerErrorResponseBody(body *Submi
 }
 
 // ValidateSubmitItxMeetingResponseNotFoundResponseBody runs the validations
-// defined on submit-itx-meeting-response_NotFound_response_body
+// defined on SubmitItxMeetingResponseNotFoundResponseBody
 func ValidateSubmitItxMeetingResponseNotFoundResponseBody(body *SubmitItxMeetingResponseNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10157,8 +10127,7 @@ func ValidateSubmitItxMeetingResponseNotFoundResponseBody(body *SubmitItxMeeting
 }
 
 // ValidateSubmitItxMeetingResponseServiceUnavailableResponseBody runs the
-// validations defined on
-// submit-itx-meeting-response_ServiceUnavailable_response_body
+// validations defined on SubmitItxMeetingResponseServiceUnavailableResponseBody
 func ValidateSubmitItxMeetingResponseServiceUnavailableResponseBody(body *SubmitItxMeetingResponseServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10170,7 +10139,7 @@ func ValidateSubmitItxMeetingResponseServiceUnavailableResponseBody(body *Submit
 }
 
 // ValidateSubmitItxMeetingResponseUnauthorizedResponseBody runs the
-// validations defined on submit-itx-meeting-response_Unauthorized_response_body
+// validations defined on SubmitItxMeetingResponseUnauthorizedResponseBody
 func ValidateSubmitItxMeetingResponseUnauthorizedResponseBody(body *SubmitItxMeetingResponseUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10182,7 +10151,7 @@ func ValidateSubmitItxMeetingResponseUnauthorizedResponseBody(body *SubmitItxMee
 }
 
 // ValidateCreateItxPastMeetingBadRequestResponseBody runs the validations
-// defined on create-itx-past-meeting_BadRequest_response_body
+// defined on CreateItxPastMeetingBadRequestResponseBody
 func ValidateCreateItxPastMeetingBadRequestResponseBody(body *CreateItxPastMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10194,7 +10163,7 @@ func ValidateCreateItxPastMeetingBadRequestResponseBody(body *CreateItxPastMeeti
 }
 
 // ValidateCreateItxPastMeetingConflictResponseBody runs the validations
-// defined on create-itx-past-meeting_Conflict_response_body
+// defined on CreateItxPastMeetingConflictResponseBody
 func ValidateCreateItxPastMeetingConflictResponseBody(body *CreateItxPastMeetingConflictResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10206,7 +10175,7 @@ func ValidateCreateItxPastMeetingConflictResponseBody(body *CreateItxPastMeeting
 }
 
 // ValidateCreateItxPastMeetingForbiddenResponseBody runs the validations
-// defined on create-itx-past-meeting_Forbidden_response_body
+// defined on CreateItxPastMeetingForbiddenResponseBody
 func ValidateCreateItxPastMeetingForbiddenResponseBody(body *CreateItxPastMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10218,8 +10187,7 @@ func ValidateCreateItxPastMeetingForbiddenResponseBody(body *CreateItxPastMeetin
 }
 
 // ValidateCreateItxPastMeetingInternalServerErrorResponseBody runs the
-// validations defined on
-// create-itx-past-meeting_InternalServerError_response_body
+// validations defined on CreateItxPastMeetingInternalServerErrorResponseBody
 func ValidateCreateItxPastMeetingInternalServerErrorResponseBody(body *CreateItxPastMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10231,7 +10199,7 @@ func ValidateCreateItxPastMeetingInternalServerErrorResponseBody(body *CreateItx
 }
 
 // ValidateCreateItxPastMeetingNotFoundResponseBody runs the validations
-// defined on create-itx-past-meeting_NotFound_response_body
+// defined on CreateItxPastMeetingNotFoundResponseBody
 func ValidateCreateItxPastMeetingNotFoundResponseBody(body *CreateItxPastMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10243,8 +10211,7 @@ func ValidateCreateItxPastMeetingNotFoundResponseBody(body *CreateItxPastMeeting
 }
 
 // ValidateCreateItxPastMeetingServiceUnavailableResponseBody runs the
-// validations defined on
-// create-itx-past-meeting_ServiceUnavailable_response_body
+// validations defined on CreateItxPastMeetingServiceUnavailableResponseBody
 func ValidateCreateItxPastMeetingServiceUnavailableResponseBody(body *CreateItxPastMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10256,7 +10223,7 @@ func ValidateCreateItxPastMeetingServiceUnavailableResponseBody(body *CreateItxP
 }
 
 // ValidateCreateItxPastMeetingUnauthorizedResponseBody runs the validations
-// defined on create-itx-past-meeting_Unauthorized_response_body
+// defined on CreateItxPastMeetingUnauthorizedResponseBody
 func ValidateCreateItxPastMeetingUnauthorizedResponseBody(body *CreateItxPastMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10268,7 +10235,7 @@ func ValidateCreateItxPastMeetingUnauthorizedResponseBody(body *CreateItxPastMee
 }
 
 // ValidateGetItxPastMeetingBadRequestResponseBody runs the validations defined
-// on get-itx-past-meeting_BadRequest_response_body
+// on GetItxPastMeetingBadRequestResponseBody
 func ValidateGetItxPastMeetingBadRequestResponseBody(body *GetItxPastMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10280,7 +10247,7 @@ func ValidateGetItxPastMeetingBadRequestResponseBody(body *GetItxPastMeetingBadR
 }
 
 // ValidateGetItxPastMeetingForbiddenResponseBody runs the validations defined
-// on get-itx-past-meeting_Forbidden_response_body
+// on GetItxPastMeetingForbiddenResponseBody
 func ValidateGetItxPastMeetingForbiddenResponseBody(body *GetItxPastMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10292,7 +10259,7 @@ func ValidateGetItxPastMeetingForbiddenResponseBody(body *GetItxPastMeetingForbi
 }
 
 // ValidateGetItxPastMeetingInternalServerErrorResponseBody runs the
-// validations defined on get-itx-past-meeting_InternalServerError_response_body
+// validations defined on GetItxPastMeetingInternalServerErrorResponseBody
 func ValidateGetItxPastMeetingInternalServerErrorResponseBody(body *GetItxPastMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10304,7 +10271,7 @@ func ValidateGetItxPastMeetingInternalServerErrorResponseBody(body *GetItxPastMe
 }
 
 // ValidateGetItxPastMeetingNotFoundResponseBody runs the validations defined
-// on get-itx-past-meeting_NotFound_response_body
+// on GetItxPastMeetingNotFoundResponseBody
 func ValidateGetItxPastMeetingNotFoundResponseBody(body *GetItxPastMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10316,7 +10283,7 @@ func ValidateGetItxPastMeetingNotFoundResponseBody(body *GetItxPastMeetingNotFou
 }
 
 // ValidateGetItxPastMeetingServiceUnavailableResponseBody runs the validations
-// defined on get-itx-past-meeting_ServiceUnavailable_response_body
+// defined on GetItxPastMeetingServiceUnavailableResponseBody
 func ValidateGetItxPastMeetingServiceUnavailableResponseBody(body *GetItxPastMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10328,7 +10295,7 @@ func ValidateGetItxPastMeetingServiceUnavailableResponseBody(body *GetItxPastMee
 }
 
 // ValidateGetItxPastMeetingUnauthorizedResponseBody runs the validations
-// defined on get-itx-past-meeting_Unauthorized_response_body
+// defined on GetItxPastMeetingUnauthorizedResponseBody
 func ValidateGetItxPastMeetingUnauthorizedResponseBody(body *GetItxPastMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10340,7 +10307,7 @@ func ValidateGetItxPastMeetingUnauthorizedResponseBody(body *GetItxPastMeetingUn
 }
 
 // ValidateDeleteItxPastMeetingBadRequestResponseBody runs the validations
-// defined on delete-itx-past-meeting_BadRequest_response_body
+// defined on DeleteItxPastMeetingBadRequestResponseBody
 func ValidateDeleteItxPastMeetingBadRequestResponseBody(body *DeleteItxPastMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10352,7 +10319,7 @@ func ValidateDeleteItxPastMeetingBadRequestResponseBody(body *DeleteItxPastMeeti
 }
 
 // ValidateDeleteItxPastMeetingForbiddenResponseBody runs the validations
-// defined on delete-itx-past-meeting_Forbidden_response_body
+// defined on DeleteItxPastMeetingForbiddenResponseBody
 func ValidateDeleteItxPastMeetingForbiddenResponseBody(body *DeleteItxPastMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10364,8 +10331,7 @@ func ValidateDeleteItxPastMeetingForbiddenResponseBody(body *DeleteItxPastMeetin
 }
 
 // ValidateDeleteItxPastMeetingInternalServerErrorResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting_InternalServerError_response_body
+// validations defined on DeleteItxPastMeetingInternalServerErrorResponseBody
 func ValidateDeleteItxPastMeetingInternalServerErrorResponseBody(body *DeleteItxPastMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10377,7 +10343,7 @@ func ValidateDeleteItxPastMeetingInternalServerErrorResponseBody(body *DeleteItx
 }
 
 // ValidateDeleteItxPastMeetingNotFoundResponseBody runs the validations
-// defined on delete-itx-past-meeting_NotFound_response_body
+// defined on DeleteItxPastMeetingNotFoundResponseBody
 func ValidateDeleteItxPastMeetingNotFoundResponseBody(body *DeleteItxPastMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10389,8 +10355,7 @@ func ValidateDeleteItxPastMeetingNotFoundResponseBody(body *DeleteItxPastMeeting
 }
 
 // ValidateDeleteItxPastMeetingServiceUnavailableResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting_ServiceUnavailable_response_body
+// validations defined on DeleteItxPastMeetingServiceUnavailableResponseBody
 func ValidateDeleteItxPastMeetingServiceUnavailableResponseBody(body *DeleteItxPastMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10402,7 +10367,7 @@ func ValidateDeleteItxPastMeetingServiceUnavailableResponseBody(body *DeleteItxP
 }
 
 // ValidateDeleteItxPastMeetingUnauthorizedResponseBody runs the validations
-// defined on delete-itx-past-meeting_Unauthorized_response_body
+// defined on DeleteItxPastMeetingUnauthorizedResponseBody
 func ValidateDeleteItxPastMeetingUnauthorizedResponseBody(body *DeleteItxPastMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10414,7 +10379,7 @@ func ValidateDeleteItxPastMeetingUnauthorizedResponseBody(body *DeleteItxPastMee
 }
 
 // ValidateUpdateItxPastMeetingBadRequestResponseBody runs the validations
-// defined on update-itx-past-meeting_BadRequest_response_body
+// defined on UpdateItxPastMeetingBadRequestResponseBody
 func ValidateUpdateItxPastMeetingBadRequestResponseBody(body *UpdateItxPastMeetingBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10426,7 +10391,7 @@ func ValidateUpdateItxPastMeetingBadRequestResponseBody(body *UpdateItxPastMeeti
 }
 
 // ValidateUpdateItxPastMeetingForbiddenResponseBody runs the validations
-// defined on update-itx-past-meeting_Forbidden_response_body
+// defined on UpdateItxPastMeetingForbiddenResponseBody
 func ValidateUpdateItxPastMeetingForbiddenResponseBody(body *UpdateItxPastMeetingForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10438,8 +10403,7 @@ func ValidateUpdateItxPastMeetingForbiddenResponseBody(body *UpdateItxPastMeetin
 }
 
 // ValidateUpdateItxPastMeetingInternalServerErrorResponseBody runs the
-// validations defined on
-// update-itx-past-meeting_InternalServerError_response_body
+// validations defined on UpdateItxPastMeetingInternalServerErrorResponseBody
 func ValidateUpdateItxPastMeetingInternalServerErrorResponseBody(body *UpdateItxPastMeetingInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10451,7 +10415,7 @@ func ValidateUpdateItxPastMeetingInternalServerErrorResponseBody(body *UpdateItx
 }
 
 // ValidateUpdateItxPastMeetingNotFoundResponseBody runs the validations
-// defined on update-itx-past-meeting_NotFound_response_body
+// defined on UpdateItxPastMeetingNotFoundResponseBody
 func ValidateUpdateItxPastMeetingNotFoundResponseBody(body *UpdateItxPastMeetingNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10463,8 +10427,7 @@ func ValidateUpdateItxPastMeetingNotFoundResponseBody(body *UpdateItxPastMeeting
 }
 
 // ValidateUpdateItxPastMeetingServiceUnavailableResponseBody runs the
-// validations defined on
-// update-itx-past-meeting_ServiceUnavailable_response_body
+// validations defined on UpdateItxPastMeetingServiceUnavailableResponseBody
 func ValidateUpdateItxPastMeetingServiceUnavailableResponseBody(body *UpdateItxPastMeetingServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10476,7 +10439,7 @@ func ValidateUpdateItxPastMeetingServiceUnavailableResponseBody(body *UpdateItxP
 }
 
 // ValidateUpdateItxPastMeetingUnauthorizedResponseBody runs the validations
-// defined on update-itx-past-meeting_Unauthorized_response_body
+// defined on UpdateItxPastMeetingUnauthorizedResponseBody
 func ValidateUpdateItxPastMeetingUnauthorizedResponseBody(body *UpdateItxPastMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10488,7 +10451,7 @@ func ValidateUpdateItxPastMeetingUnauthorizedResponseBody(body *UpdateItxPastMee
 }
 
 // ValidateGetItxPastMeetingSummaryBadRequestResponseBody runs the validations
-// defined on get-itx-past-meeting-summary_BadRequest_response_body
+// defined on GetItxPastMeetingSummaryBadRequestResponseBody
 func ValidateGetItxPastMeetingSummaryBadRequestResponseBody(body *GetItxPastMeetingSummaryBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10500,7 +10463,7 @@ func ValidateGetItxPastMeetingSummaryBadRequestResponseBody(body *GetItxPastMeet
 }
 
 // ValidateGetItxPastMeetingSummaryForbiddenResponseBody runs the validations
-// defined on get-itx-past-meeting-summary_Forbidden_response_body
+// defined on GetItxPastMeetingSummaryForbiddenResponseBody
 func ValidateGetItxPastMeetingSummaryForbiddenResponseBody(body *GetItxPastMeetingSummaryForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10513,7 +10476,7 @@ func ValidateGetItxPastMeetingSummaryForbiddenResponseBody(body *GetItxPastMeeti
 
 // ValidateGetItxPastMeetingSummaryInternalServerErrorResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-summary_InternalServerError_response_body
+// GetItxPastMeetingSummaryInternalServerErrorResponseBody
 func ValidateGetItxPastMeetingSummaryInternalServerErrorResponseBody(body *GetItxPastMeetingSummaryInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10525,7 +10488,7 @@ func ValidateGetItxPastMeetingSummaryInternalServerErrorResponseBody(body *GetIt
 }
 
 // ValidateGetItxPastMeetingSummaryNotFoundResponseBody runs the validations
-// defined on get-itx-past-meeting-summary_NotFound_response_body
+// defined on GetItxPastMeetingSummaryNotFoundResponseBody
 func ValidateGetItxPastMeetingSummaryNotFoundResponseBody(body *GetItxPastMeetingSummaryNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10537,8 +10500,7 @@ func ValidateGetItxPastMeetingSummaryNotFoundResponseBody(body *GetItxPastMeetin
 }
 
 // ValidateGetItxPastMeetingSummaryServiceUnavailableResponseBody runs the
-// validations defined on
-// get-itx-past-meeting-summary_ServiceUnavailable_response_body
+// validations defined on GetItxPastMeetingSummaryServiceUnavailableResponseBody
 func ValidateGetItxPastMeetingSummaryServiceUnavailableResponseBody(body *GetItxPastMeetingSummaryServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10550,8 +10512,7 @@ func ValidateGetItxPastMeetingSummaryServiceUnavailableResponseBody(body *GetItx
 }
 
 // ValidateGetItxPastMeetingSummaryUnauthorizedResponseBody runs the
-// validations defined on
-// get-itx-past-meeting-summary_Unauthorized_response_body
+// validations defined on GetItxPastMeetingSummaryUnauthorizedResponseBody
 func ValidateGetItxPastMeetingSummaryUnauthorizedResponseBody(body *GetItxPastMeetingSummaryUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10563,8 +10524,7 @@ func ValidateGetItxPastMeetingSummaryUnauthorizedResponseBody(body *GetItxPastMe
 }
 
 // ValidateUpdateItxPastMeetingSummaryBadRequestResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-summary_BadRequest_response_body
+// validations defined on UpdateItxPastMeetingSummaryBadRequestResponseBody
 func ValidateUpdateItxPastMeetingSummaryBadRequestResponseBody(body *UpdateItxPastMeetingSummaryBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10576,8 +10536,7 @@ func ValidateUpdateItxPastMeetingSummaryBadRequestResponseBody(body *UpdateItxPa
 }
 
 // ValidateUpdateItxPastMeetingSummaryForbiddenResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-summary_Forbidden_response_body
+// validations defined on UpdateItxPastMeetingSummaryForbiddenResponseBody
 func ValidateUpdateItxPastMeetingSummaryForbiddenResponseBody(body *UpdateItxPastMeetingSummaryForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10590,7 +10549,7 @@ func ValidateUpdateItxPastMeetingSummaryForbiddenResponseBody(body *UpdateItxPas
 
 // ValidateUpdateItxPastMeetingSummaryInternalServerErrorResponseBody runs the
 // validations defined on
-// update-itx-past-meeting-summary_InternalServerError_response_body
+// UpdateItxPastMeetingSummaryInternalServerErrorResponseBody
 func ValidateUpdateItxPastMeetingSummaryInternalServerErrorResponseBody(body *UpdateItxPastMeetingSummaryInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10602,7 +10561,7 @@ func ValidateUpdateItxPastMeetingSummaryInternalServerErrorResponseBody(body *Up
 }
 
 // ValidateUpdateItxPastMeetingSummaryNotFoundResponseBody runs the validations
-// defined on update-itx-past-meeting-summary_NotFound_response_body
+// defined on UpdateItxPastMeetingSummaryNotFoundResponseBody
 func ValidateUpdateItxPastMeetingSummaryNotFoundResponseBody(body *UpdateItxPastMeetingSummaryNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10615,7 +10574,7 @@ func ValidateUpdateItxPastMeetingSummaryNotFoundResponseBody(body *UpdateItxPast
 
 // ValidateUpdateItxPastMeetingSummaryServiceUnavailableResponseBody runs the
 // validations defined on
-// update-itx-past-meeting-summary_ServiceUnavailable_response_body
+// UpdateItxPastMeetingSummaryServiceUnavailableResponseBody
 func ValidateUpdateItxPastMeetingSummaryServiceUnavailableResponseBody(body *UpdateItxPastMeetingSummaryServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10627,8 +10586,7 @@ func ValidateUpdateItxPastMeetingSummaryServiceUnavailableResponseBody(body *Upd
 }
 
 // ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-summary_Unauthorized_response_body
+// validations defined on UpdateItxPastMeetingSummaryUnauthorizedResponseBody
 func ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody(body *UpdateItxPastMeetingSummaryUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10640,8 +10598,7 @@ func ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody(body *UpdateItx
 }
 
 // ValidateCreateItxPastMeetingParticipantBadRequestResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-participant_BadRequest_response_body
+// validations defined on CreateItxPastMeetingParticipantBadRequestResponseBody
 func ValidateCreateItxPastMeetingParticipantBadRequestResponseBody(body *CreateItxPastMeetingParticipantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10653,8 +10610,7 @@ func ValidateCreateItxPastMeetingParticipantBadRequestResponseBody(body *CreateI
 }
 
 // ValidateCreateItxPastMeetingParticipantForbiddenResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-participant_Forbidden_response_body
+// validations defined on CreateItxPastMeetingParticipantForbiddenResponseBody
 func ValidateCreateItxPastMeetingParticipantForbiddenResponseBody(body *CreateItxPastMeetingParticipantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10667,7 +10623,7 @@ func ValidateCreateItxPastMeetingParticipantForbiddenResponseBody(body *CreateIt
 
 // ValidateCreateItxPastMeetingParticipantInternalServerErrorResponseBody runs
 // the validations defined on
-// create-itx-past-meeting-participant_InternalServerError_response_body
+// CreateItxPastMeetingParticipantInternalServerErrorResponseBody
 func ValidateCreateItxPastMeetingParticipantInternalServerErrorResponseBody(body *CreateItxPastMeetingParticipantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10679,8 +10635,7 @@ func ValidateCreateItxPastMeetingParticipantInternalServerErrorResponseBody(body
 }
 
 // ValidateCreateItxPastMeetingParticipantNotFoundResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-participant_NotFound_response_body
+// validations defined on CreateItxPastMeetingParticipantNotFoundResponseBody
 func ValidateCreateItxPastMeetingParticipantNotFoundResponseBody(body *CreateItxPastMeetingParticipantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10693,7 +10648,7 @@ func ValidateCreateItxPastMeetingParticipantNotFoundResponseBody(body *CreateItx
 
 // ValidateCreateItxPastMeetingParticipantServiceUnavailableResponseBody runs
 // the validations defined on
-// create-itx-past-meeting-participant_ServiceUnavailable_response_body
+// CreateItxPastMeetingParticipantServiceUnavailableResponseBody
 func ValidateCreateItxPastMeetingParticipantServiceUnavailableResponseBody(body *CreateItxPastMeetingParticipantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10706,7 +10661,7 @@ func ValidateCreateItxPastMeetingParticipantServiceUnavailableResponseBody(body 
 
 // ValidateCreateItxPastMeetingParticipantUnauthorizedResponseBody runs the
 // validations defined on
-// create-itx-past-meeting-participant_Unauthorized_response_body
+// CreateItxPastMeetingParticipantUnauthorizedResponseBody
 func ValidateCreateItxPastMeetingParticipantUnauthorizedResponseBody(body *CreateItxPastMeetingParticipantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10718,8 +10673,7 @@ func ValidateCreateItxPastMeetingParticipantUnauthorizedResponseBody(body *Creat
 }
 
 // ValidateUpdateItxPastMeetingParticipantBadRequestResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-participant_BadRequest_response_body
+// validations defined on UpdateItxPastMeetingParticipantBadRequestResponseBody
 func ValidateUpdateItxPastMeetingParticipantBadRequestResponseBody(body *UpdateItxPastMeetingParticipantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10731,8 +10685,7 @@ func ValidateUpdateItxPastMeetingParticipantBadRequestResponseBody(body *UpdateI
 }
 
 // ValidateUpdateItxPastMeetingParticipantForbiddenResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-participant_Forbidden_response_body
+// validations defined on UpdateItxPastMeetingParticipantForbiddenResponseBody
 func ValidateUpdateItxPastMeetingParticipantForbiddenResponseBody(body *UpdateItxPastMeetingParticipantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10745,7 +10698,7 @@ func ValidateUpdateItxPastMeetingParticipantForbiddenResponseBody(body *UpdateIt
 
 // ValidateUpdateItxPastMeetingParticipantInternalServerErrorResponseBody runs
 // the validations defined on
-// update-itx-past-meeting-participant_InternalServerError_response_body
+// UpdateItxPastMeetingParticipantInternalServerErrorResponseBody
 func ValidateUpdateItxPastMeetingParticipantInternalServerErrorResponseBody(body *UpdateItxPastMeetingParticipantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10757,8 +10710,7 @@ func ValidateUpdateItxPastMeetingParticipantInternalServerErrorResponseBody(body
 }
 
 // ValidateUpdateItxPastMeetingParticipantNotFoundResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-participant_NotFound_response_body
+// validations defined on UpdateItxPastMeetingParticipantNotFoundResponseBody
 func ValidateUpdateItxPastMeetingParticipantNotFoundResponseBody(body *UpdateItxPastMeetingParticipantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10771,7 +10723,7 @@ func ValidateUpdateItxPastMeetingParticipantNotFoundResponseBody(body *UpdateItx
 
 // ValidateUpdateItxPastMeetingParticipantServiceUnavailableResponseBody runs
 // the validations defined on
-// update-itx-past-meeting-participant_ServiceUnavailable_response_body
+// UpdateItxPastMeetingParticipantServiceUnavailableResponseBody
 func ValidateUpdateItxPastMeetingParticipantServiceUnavailableResponseBody(body *UpdateItxPastMeetingParticipantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10784,7 +10736,7 @@ func ValidateUpdateItxPastMeetingParticipantServiceUnavailableResponseBody(body 
 
 // ValidateUpdateItxPastMeetingParticipantUnauthorizedResponseBody runs the
 // validations defined on
-// update-itx-past-meeting-participant_Unauthorized_response_body
+// UpdateItxPastMeetingParticipantUnauthorizedResponseBody
 func ValidateUpdateItxPastMeetingParticipantUnauthorizedResponseBody(body *UpdateItxPastMeetingParticipantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10796,8 +10748,7 @@ func ValidateUpdateItxPastMeetingParticipantUnauthorizedResponseBody(body *Updat
 }
 
 // ValidateDeleteItxPastMeetingParticipantBadRequestResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-participant_BadRequest_response_body
+// validations defined on DeleteItxPastMeetingParticipantBadRequestResponseBody
 func ValidateDeleteItxPastMeetingParticipantBadRequestResponseBody(body *DeleteItxPastMeetingParticipantBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10809,8 +10760,7 @@ func ValidateDeleteItxPastMeetingParticipantBadRequestResponseBody(body *DeleteI
 }
 
 // ValidateDeleteItxPastMeetingParticipantForbiddenResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-participant_Forbidden_response_body
+// validations defined on DeleteItxPastMeetingParticipantForbiddenResponseBody
 func ValidateDeleteItxPastMeetingParticipantForbiddenResponseBody(body *DeleteItxPastMeetingParticipantForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10823,7 +10773,7 @@ func ValidateDeleteItxPastMeetingParticipantForbiddenResponseBody(body *DeleteIt
 
 // ValidateDeleteItxPastMeetingParticipantInternalServerErrorResponseBody runs
 // the validations defined on
-// delete-itx-past-meeting-participant_InternalServerError_response_body
+// DeleteItxPastMeetingParticipantInternalServerErrorResponseBody
 func ValidateDeleteItxPastMeetingParticipantInternalServerErrorResponseBody(body *DeleteItxPastMeetingParticipantInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10835,8 +10785,7 @@ func ValidateDeleteItxPastMeetingParticipantInternalServerErrorResponseBody(body
 }
 
 // ValidateDeleteItxPastMeetingParticipantNotFoundResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-participant_NotFound_response_body
+// validations defined on DeleteItxPastMeetingParticipantNotFoundResponseBody
 func ValidateDeleteItxPastMeetingParticipantNotFoundResponseBody(body *DeleteItxPastMeetingParticipantNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10849,7 +10798,7 @@ func ValidateDeleteItxPastMeetingParticipantNotFoundResponseBody(body *DeleteItx
 
 // ValidateDeleteItxPastMeetingParticipantServiceUnavailableResponseBody runs
 // the validations defined on
-// delete-itx-past-meeting-participant_ServiceUnavailable_response_body
+// DeleteItxPastMeetingParticipantServiceUnavailableResponseBody
 func ValidateDeleteItxPastMeetingParticipantServiceUnavailableResponseBody(body *DeleteItxPastMeetingParticipantServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10862,7 +10811,7 @@ func ValidateDeleteItxPastMeetingParticipantServiceUnavailableResponseBody(body 
 
 // ValidateDeleteItxPastMeetingParticipantUnauthorizedResponseBody runs the
 // validations defined on
-// delete-itx-past-meeting-participant_Unauthorized_response_body
+// DeleteItxPastMeetingParticipantUnauthorizedResponseBody
 func ValidateDeleteItxPastMeetingParticipantUnauthorizedResponseBody(body *DeleteItxPastMeetingParticipantUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10874,7 +10823,7 @@ func ValidateDeleteItxPastMeetingParticipantUnauthorizedResponseBody(body *Delet
 }
 
 // ValidateCreateItxMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on create-itx-meeting-attachment_BadRequest_response_body
+// validations defined on CreateItxMeetingAttachmentBadRequestResponseBody
 func ValidateCreateItxMeetingAttachmentBadRequestResponseBody(body *CreateItxMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10886,7 +10835,7 @@ func ValidateCreateItxMeetingAttachmentBadRequestResponseBody(body *CreateItxMee
 }
 
 // ValidateCreateItxMeetingAttachmentForbiddenResponseBody runs the validations
-// defined on create-itx-meeting-attachment_Forbidden_response_body
+// defined on CreateItxMeetingAttachmentForbiddenResponseBody
 func ValidateCreateItxMeetingAttachmentForbiddenResponseBody(body *CreateItxMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10899,7 +10848,7 @@ func ValidateCreateItxMeetingAttachmentForbiddenResponseBody(body *CreateItxMeet
 
 // ValidateCreateItxMeetingAttachmentInternalServerErrorResponseBody runs the
 // validations defined on
-// create-itx-meeting-attachment_InternalServerError_response_body
+// CreateItxMeetingAttachmentInternalServerErrorResponseBody
 func ValidateCreateItxMeetingAttachmentInternalServerErrorResponseBody(body *CreateItxMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10911,7 +10860,7 @@ func ValidateCreateItxMeetingAttachmentInternalServerErrorResponseBody(body *Cre
 }
 
 // ValidateCreateItxMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on create-itx-meeting-attachment_NotFound_response_body
+// defined on CreateItxMeetingAttachmentNotFoundResponseBody
 func ValidateCreateItxMeetingAttachmentNotFoundResponseBody(body *CreateItxMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10924,7 +10873,7 @@ func ValidateCreateItxMeetingAttachmentNotFoundResponseBody(body *CreateItxMeeti
 
 // ValidateCreateItxMeetingAttachmentServiceUnavailableResponseBody runs the
 // validations defined on
-// create-itx-meeting-attachment_ServiceUnavailable_response_body
+// CreateItxMeetingAttachmentServiceUnavailableResponseBody
 func ValidateCreateItxMeetingAttachmentServiceUnavailableResponseBody(body *CreateItxMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10936,8 +10885,7 @@ func ValidateCreateItxMeetingAttachmentServiceUnavailableResponseBody(body *Crea
 }
 
 // ValidateCreateItxMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// create-itx-meeting-attachment_Unauthorized_response_body
+// validations defined on CreateItxMeetingAttachmentUnauthorizedResponseBody
 func ValidateCreateItxMeetingAttachmentUnauthorizedResponseBody(body *CreateItxMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10949,7 +10897,7 @@ func ValidateCreateItxMeetingAttachmentUnauthorizedResponseBody(body *CreateItxM
 }
 
 // ValidateGetItxMeetingAttachmentBadRequestResponseBody runs the validations
-// defined on get-itx-meeting-attachment_BadRequest_response_body
+// defined on GetItxMeetingAttachmentBadRequestResponseBody
 func ValidateGetItxMeetingAttachmentBadRequestResponseBody(body *GetItxMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10961,7 +10909,7 @@ func ValidateGetItxMeetingAttachmentBadRequestResponseBody(body *GetItxMeetingAt
 }
 
 // ValidateGetItxMeetingAttachmentForbiddenResponseBody runs the validations
-// defined on get-itx-meeting-attachment_Forbidden_response_body
+// defined on GetItxMeetingAttachmentForbiddenResponseBody
 func ValidateGetItxMeetingAttachmentForbiddenResponseBody(body *GetItxMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10973,8 +10921,7 @@ func ValidateGetItxMeetingAttachmentForbiddenResponseBody(body *GetItxMeetingAtt
 }
 
 // ValidateGetItxMeetingAttachmentInternalServerErrorResponseBody runs the
-// validations defined on
-// get-itx-meeting-attachment_InternalServerError_response_body
+// validations defined on GetItxMeetingAttachmentInternalServerErrorResponseBody
 func ValidateGetItxMeetingAttachmentInternalServerErrorResponseBody(body *GetItxMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10986,7 +10933,7 @@ func ValidateGetItxMeetingAttachmentInternalServerErrorResponseBody(body *GetItx
 }
 
 // ValidateGetItxMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on get-itx-meeting-attachment_NotFound_response_body
+// defined on GetItxMeetingAttachmentNotFoundResponseBody
 func ValidateGetItxMeetingAttachmentNotFoundResponseBody(body *GetItxMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -10998,8 +10945,7 @@ func ValidateGetItxMeetingAttachmentNotFoundResponseBody(body *GetItxMeetingAtta
 }
 
 // ValidateGetItxMeetingAttachmentServiceUnavailableResponseBody runs the
-// validations defined on
-// get-itx-meeting-attachment_ServiceUnavailable_response_body
+// validations defined on GetItxMeetingAttachmentServiceUnavailableResponseBody
 func ValidateGetItxMeetingAttachmentServiceUnavailableResponseBody(body *GetItxMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11011,7 +10957,7 @@ func ValidateGetItxMeetingAttachmentServiceUnavailableResponseBody(body *GetItxM
 }
 
 // ValidateGetItxMeetingAttachmentUnauthorizedResponseBody runs the validations
-// defined on get-itx-meeting-attachment_Unauthorized_response_body
+// defined on GetItxMeetingAttachmentUnauthorizedResponseBody
 func ValidateGetItxMeetingAttachmentUnauthorizedResponseBody(body *GetItxMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11023,7 +10969,7 @@ func ValidateGetItxMeetingAttachmentUnauthorizedResponseBody(body *GetItxMeeting
 }
 
 // ValidateUpdateItxMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on update-itx-meeting-attachment_BadRequest_response_body
+// validations defined on UpdateItxMeetingAttachmentBadRequestResponseBody
 func ValidateUpdateItxMeetingAttachmentBadRequestResponseBody(body *UpdateItxMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11035,7 +10981,7 @@ func ValidateUpdateItxMeetingAttachmentBadRequestResponseBody(body *UpdateItxMee
 }
 
 // ValidateUpdateItxMeetingAttachmentForbiddenResponseBody runs the validations
-// defined on update-itx-meeting-attachment_Forbidden_response_body
+// defined on UpdateItxMeetingAttachmentForbiddenResponseBody
 func ValidateUpdateItxMeetingAttachmentForbiddenResponseBody(body *UpdateItxMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11048,7 +10994,7 @@ func ValidateUpdateItxMeetingAttachmentForbiddenResponseBody(body *UpdateItxMeet
 
 // ValidateUpdateItxMeetingAttachmentInternalServerErrorResponseBody runs the
 // validations defined on
-// update-itx-meeting-attachment_InternalServerError_response_body
+// UpdateItxMeetingAttachmentInternalServerErrorResponseBody
 func ValidateUpdateItxMeetingAttachmentInternalServerErrorResponseBody(body *UpdateItxMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11060,7 +11006,7 @@ func ValidateUpdateItxMeetingAttachmentInternalServerErrorResponseBody(body *Upd
 }
 
 // ValidateUpdateItxMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on update-itx-meeting-attachment_NotFound_response_body
+// defined on UpdateItxMeetingAttachmentNotFoundResponseBody
 func ValidateUpdateItxMeetingAttachmentNotFoundResponseBody(body *UpdateItxMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11073,7 +11019,7 @@ func ValidateUpdateItxMeetingAttachmentNotFoundResponseBody(body *UpdateItxMeeti
 
 // ValidateUpdateItxMeetingAttachmentServiceUnavailableResponseBody runs the
 // validations defined on
-// update-itx-meeting-attachment_ServiceUnavailable_response_body
+// UpdateItxMeetingAttachmentServiceUnavailableResponseBody
 func ValidateUpdateItxMeetingAttachmentServiceUnavailableResponseBody(body *UpdateItxMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11085,8 +11031,7 @@ func ValidateUpdateItxMeetingAttachmentServiceUnavailableResponseBody(body *Upda
 }
 
 // ValidateUpdateItxMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// update-itx-meeting-attachment_Unauthorized_response_body
+// validations defined on UpdateItxMeetingAttachmentUnauthorizedResponseBody
 func ValidateUpdateItxMeetingAttachmentUnauthorizedResponseBody(body *UpdateItxMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11098,7 +11043,7 @@ func ValidateUpdateItxMeetingAttachmentUnauthorizedResponseBody(body *UpdateItxM
 }
 
 // ValidateDeleteItxMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on delete-itx-meeting-attachment_BadRequest_response_body
+// validations defined on DeleteItxMeetingAttachmentBadRequestResponseBody
 func ValidateDeleteItxMeetingAttachmentBadRequestResponseBody(body *DeleteItxMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11110,7 +11055,7 @@ func ValidateDeleteItxMeetingAttachmentBadRequestResponseBody(body *DeleteItxMee
 }
 
 // ValidateDeleteItxMeetingAttachmentForbiddenResponseBody runs the validations
-// defined on delete-itx-meeting-attachment_Forbidden_response_body
+// defined on DeleteItxMeetingAttachmentForbiddenResponseBody
 func ValidateDeleteItxMeetingAttachmentForbiddenResponseBody(body *DeleteItxMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11123,7 +11068,7 @@ func ValidateDeleteItxMeetingAttachmentForbiddenResponseBody(body *DeleteItxMeet
 
 // ValidateDeleteItxMeetingAttachmentInternalServerErrorResponseBody runs the
 // validations defined on
-// delete-itx-meeting-attachment_InternalServerError_response_body
+// DeleteItxMeetingAttachmentInternalServerErrorResponseBody
 func ValidateDeleteItxMeetingAttachmentInternalServerErrorResponseBody(body *DeleteItxMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11135,7 +11080,7 @@ func ValidateDeleteItxMeetingAttachmentInternalServerErrorResponseBody(body *Del
 }
 
 // ValidateDeleteItxMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on delete-itx-meeting-attachment_NotFound_response_body
+// defined on DeleteItxMeetingAttachmentNotFoundResponseBody
 func ValidateDeleteItxMeetingAttachmentNotFoundResponseBody(body *DeleteItxMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11148,7 +11093,7 @@ func ValidateDeleteItxMeetingAttachmentNotFoundResponseBody(body *DeleteItxMeeti
 
 // ValidateDeleteItxMeetingAttachmentServiceUnavailableResponseBody runs the
 // validations defined on
-// delete-itx-meeting-attachment_ServiceUnavailable_response_body
+// DeleteItxMeetingAttachmentServiceUnavailableResponseBody
 func ValidateDeleteItxMeetingAttachmentServiceUnavailableResponseBody(body *DeleteItxMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11160,8 +11105,7 @@ func ValidateDeleteItxMeetingAttachmentServiceUnavailableResponseBody(body *Dele
 }
 
 // ValidateDeleteItxMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// delete-itx-meeting-attachment_Unauthorized_response_body
+// validations defined on DeleteItxMeetingAttachmentUnauthorizedResponseBody
 func ValidateDeleteItxMeetingAttachmentUnauthorizedResponseBody(body *DeleteItxMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11174,7 +11118,7 @@ func ValidateDeleteItxMeetingAttachmentUnauthorizedResponseBody(body *DeleteItxM
 
 // ValidateCreateItxMeetingAttachmentPresignBadRequestResponseBody runs the
 // validations defined on
-// create-itx-meeting-attachment-presign_BadRequest_response_body
+// CreateItxMeetingAttachmentPresignBadRequestResponseBody
 func ValidateCreateItxMeetingAttachmentPresignBadRequestResponseBody(body *CreateItxMeetingAttachmentPresignBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11186,8 +11130,7 @@ func ValidateCreateItxMeetingAttachmentPresignBadRequestResponseBody(body *Creat
 }
 
 // ValidateCreateItxMeetingAttachmentPresignForbiddenResponseBody runs the
-// validations defined on
-// create-itx-meeting-attachment-presign_Forbidden_response_body
+// validations defined on CreateItxMeetingAttachmentPresignForbiddenResponseBody
 func ValidateCreateItxMeetingAttachmentPresignForbiddenResponseBody(body *CreateItxMeetingAttachmentPresignForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11200,7 +11143,7 @@ func ValidateCreateItxMeetingAttachmentPresignForbiddenResponseBody(body *Create
 
 // ValidateCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody
 // runs the validations defined on
-// create-itx-meeting-attachment-presign_InternalServerError_response_body
+// CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody
 func ValidateCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody(body *CreateItxMeetingAttachmentPresignInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11212,8 +11155,7 @@ func ValidateCreateItxMeetingAttachmentPresignInternalServerErrorResponseBody(bo
 }
 
 // ValidateCreateItxMeetingAttachmentPresignNotFoundResponseBody runs the
-// validations defined on
-// create-itx-meeting-attachment-presign_NotFound_response_body
+// validations defined on CreateItxMeetingAttachmentPresignNotFoundResponseBody
 func ValidateCreateItxMeetingAttachmentPresignNotFoundResponseBody(body *CreateItxMeetingAttachmentPresignNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11226,7 +11168,7 @@ func ValidateCreateItxMeetingAttachmentPresignNotFoundResponseBody(body *CreateI
 
 // ValidateCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody runs
 // the validations defined on
-// create-itx-meeting-attachment-presign_ServiceUnavailable_response_body
+// CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody
 func ValidateCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody(body *CreateItxMeetingAttachmentPresignServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11239,7 +11181,7 @@ func ValidateCreateItxMeetingAttachmentPresignServiceUnavailableResponseBody(bod
 
 // ValidateCreateItxMeetingAttachmentPresignUnauthorizedResponseBody runs the
 // validations defined on
-// create-itx-meeting-attachment-presign_Unauthorized_response_body
+// CreateItxMeetingAttachmentPresignUnauthorizedResponseBody
 func ValidateCreateItxMeetingAttachmentPresignUnauthorizedResponseBody(body *CreateItxMeetingAttachmentPresignUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11251,8 +11193,7 @@ func ValidateCreateItxMeetingAttachmentPresignUnauthorizedResponseBody(body *Cre
 }
 
 // ValidateGetItxMeetingAttachmentDownloadBadRequestResponseBody runs the
-// validations defined on
-// get-itx-meeting-attachment-download_BadRequest_response_body
+// validations defined on GetItxMeetingAttachmentDownloadBadRequestResponseBody
 func ValidateGetItxMeetingAttachmentDownloadBadRequestResponseBody(body *GetItxMeetingAttachmentDownloadBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11264,8 +11205,7 @@ func ValidateGetItxMeetingAttachmentDownloadBadRequestResponseBody(body *GetItxM
 }
 
 // ValidateGetItxMeetingAttachmentDownloadForbiddenResponseBody runs the
-// validations defined on
-// get-itx-meeting-attachment-download_Forbidden_response_body
+// validations defined on GetItxMeetingAttachmentDownloadForbiddenResponseBody
 func ValidateGetItxMeetingAttachmentDownloadForbiddenResponseBody(body *GetItxMeetingAttachmentDownloadForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11278,7 +11218,7 @@ func ValidateGetItxMeetingAttachmentDownloadForbiddenResponseBody(body *GetItxMe
 
 // ValidateGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody runs
 // the validations defined on
-// get-itx-meeting-attachment-download_InternalServerError_response_body
+// GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody
 func ValidateGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody(body *GetItxMeetingAttachmentDownloadInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11290,8 +11230,7 @@ func ValidateGetItxMeetingAttachmentDownloadInternalServerErrorResponseBody(body
 }
 
 // ValidateGetItxMeetingAttachmentDownloadNotFoundResponseBody runs the
-// validations defined on
-// get-itx-meeting-attachment-download_NotFound_response_body
+// validations defined on GetItxMeetingAttachmentDownloadNotFoundResponseBody
 func ValidateGetItxMeetingAttachmentDownloadNotFoundResponseBody(body *GetItxMeetingAttachmentDownloadNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11304,7 +11243,7 @@ func ValidateGetItxMeetingAttachmentDownloadNotFoundResponseBody(body *GetItxMee
 
 // ValidateGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody runs
 // the validations defined on
-// get-itx-meeting-attachment-download_ServiceUnavailable_response_body
+// GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody
 func ValidateGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody(body *GetItxMeetingAttachmentDownloadServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11317,7 +11256,7 @@ func ValidateGetItxMeetingAttachmentDownloadServiceUnavailableResponseBody(body 
 
 // ValidateGetItxMeetingAttachmentDownloadUnauthorizedResponseBody runs the
 // validations defined on
-// get-itx-meeting-attachment-download_Unauthorized_response_body
+// GetItxMeetingAttachmentDownloadUnauthorizedResponseBody
 func ValidateGetItxMeetingAttachmentDownloadUnauthorizedResponseBody(body *GetItxMeetingAttachmentDownloadUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11329,8 +11268,7 @@ func ValidateGetItxMeetingAttachmentDownloadUnauthorizedResponseBody(body *GetIt
 }
 
 // ValidateCreateItxPastMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-attachment_BadRequest_response_body
+// validations defined on CreateItxPastMeetingAttachmentBadRequestResponseBody
 func ValidateCreateItxPastMeetingAttachmentBadRequestResponseBody(body *CreateItxPastMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11342,8 +11280,7 @@ func ValidateCreateItxPastMeetingAttachmentBadRequestResponseBody(body *CreateIt
 }
 
 // ValidateCreateItxPastMeetingAttachmentForbiddenResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-attachment_Forbidden_response_body
+// validations defined on CreateItxPastMeetingAttachmentForbiddenResponseBody
 func ValidateCreateItxPastMeetingAttachmentForbiddenResponseBody(body *CreateItxPastMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11356,7 +11293,7 @@ func ValidateCreateItxPastMeetingAttachmentForbiddenResponseBody(body *CreateItx
 
 // ValidateCreateItxPastMeetingAttachmentInternalServerErrorResponseBody runs
 // the validations defined on
-// create-itx-past-meeting-attachment_InternalServerError_response_body
+// CreateItxPastMeetingAttachmentInternalServerErrorResponseBody
 func ValidateCreateItxPastMeetingAttachmentInternalServerErrorResponseBody(body *CreateItxPastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11368,8 +11305,7 @@ func ValidateCreateItxPastMeetingAttachmentInternalServerErrorResponseBody(body 
 }
 
 // ValidateCreateItxPastMeetingAttachmentNotFoundResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-attachment_NotFound_response_body
+// validations defined on CreateItxPastMeetingAttachmentNotFoundResponseBody
 func ValidateCreateItxPastMeetingAttachmentNotFoundResponseBody(body *CreateItxPastMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11382,7 +11318,7 @@ func ValidateCreateItxPastMeetingAttachmentNotFoundResponseBody(body *CreateItxP
 
 // ValidateCreateItxPastMeetingAttachmentServiceUnavailableResponseBody runs
 // the validations defined on
-// create-itx-past-meeting-attachment_ServiceUnavailable_response_body
+// CreateItxPastMeetingAttachmentServiceUnavailableResponseBody
 func ValidateCreateItxPastMeetingAttachmentServiceUnavailableResponseBody(body *CreateItxPastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11394,8 +11330,7 @@ func ValidateCreateItxPastMeetingAttachmentServiceUnavailableResponseBody(body *
 }
 
 // ValidateCreateItxPastMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// create-itx-past-meeting-attachment_Unauthorized_response_body
+// validations defined on CreateItxPastMeetingAttachmentUnauthorizedResponseBody
 func ValidateCreateItxPastMeetingAttachmentUnauthorizedResponseBody(body *CreateItxPastMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11407,8 +11342,7 @@ func ValidateCreateItxPastMeetingAttachmentUnauthorizedResponseBody(body *Create
 }
 
 // ValidateGetItxPastMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on
-// get-itx-past-meeting-attachment_BadRequest_response_body
+// validations defined on GetItxPastMeetingAttachmentBadRequestResponseBody
 func ValidateGetItxPastMeetingAttachmentBadRequestResponseBody(body *GetItxPastMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11420,8 +11354,7 @@ func ValidateGetItxPastMeetingAttachmentBadRequestResponseBody(body *GetItxPastM
 }
 
 // ValidateGetItxPastMeetingAttachmentForbiddenResponseBody runs the
-// validations defined on
-// get-itx-past-meeting-attachment_Forbidden_response_body
+// validations defined on GetItxPastMeetingAttachmentForbiddenResponseBody
 func ValidateGetItxPastMeetingAttachmentForbiddenResponseBody(body *GetItxPastMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11434,7 +11367,7 @@ func ValidateGetItxPastMeetingAttachmentForbiddenResponseBody(body *GetItxPastMe
 
 // ValidateGetItxPastMeetingAttachmentInternalServerErrorResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment_InternalServerError_response_body
+// GetItxPastMeetingAttachmentInternalServerErrorResponseBody
 func ValidateGetItxPastMeetingAttachmentInternalServerErrorResponseBody(body *GetItxPastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11446,7 +11379,7 @@ func ValidateGetItxPastMeetingAttachmentInternalServerErrorResponseBody(body *Ge
 }
 
 // ValidateGetItxPastMeetingAttachmentNotFoundResponseBody runs the validations
-// defined on get-itx-past-meeting-attachment_NotFound_response_body
+// defined on GetItxPastMeetingAttachmentNotFoundResponseBody
 func ValidateGetItxPastMeetingAttachmentNotFoundResponseBody(body *GetItxPastMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11459,7 +11392,7 @@ func ValidateGetItxPastMeetingAttachmentNotFoundResponseBody(body *GetItxPastMee
 
 // ValidateGetItxPastMeetingAttachmentServiceUnavailableResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment_ServiceUnavailable_response_body
+// GetItxPastMeetingAttachmentServiceUnavailableResponseBody
 func ValidateGetItxPastMeetingAttachmentServiceUnavailableResponseBody(body *GetItxPastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11471,8 +11404,7 @@ func ValidateGetItxPastMeetingAttachmentServiceUnavailableResponseBody(body *Get
 }
 
 // ValidateGetItxPastMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// get-itx-past-meeting-attachment_Unauthorized_response_body
+// validations defined on GetItxPastMeetingAttachmentUnauthorizedResponseBody
 func ValidateGetItxPastMeetingAttachmentUnauthorizedResponseBody(body *GetItxPastMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11484,8 +11416,7 @@ func ValidateGetItxPastMeetingAttachmentUnauthorizedResponseBody(body *GetItxPas
 }
 
 // ValidateUpdateItxPastMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-attachment_BadRequest_response_body
+// validations defined on UpdateItxPastMeetingAttachmentBadRequestResponseBody
 func ValidateUpdateItxPastMeetingAttachmentBadRequestResponseBody(body *UpdateItxPastMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11497,8 +11428,7 @@ func ValidateUpdateItxPastMeetingAttachmentBadRequestResponseBody(body *UpdateIt
 }
 
 // ValidateUpdateItxPastMeetingAttachmentForbiddenResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-attachment_Forbidden_response_body
+// validations defined on UpdateItxPastMeetingAttachmentForbiddenResponseBody
 func ValidateUpdateItxPastMeetingAttachmentForbiddenResponseBody(body *UpdateItxPastMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11511,7 +11441,7 @@ func ValidateUpdateItxPastMeetingAttachmentForbiddenResponseBody(body *UpdateItx
 
 // ValidateUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody runs
 // the validations defined on
-// update-itx-past-meeting-attachment_InternalServerError_response_body
+// UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody
 func ValidateUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody(body *UpdateItxPastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11523,8 +11453,7 @@ func ValidateUpdateItxPastMeetingAttachmentInternalServerErrorResponseBody(body 
 }
 
 // ValidateUpdateItxPastMeetingAttachmentNotFoundResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-attachment_NotFound_response_body
+// validations defined on UpdateItxPastMeetingAttachmentNotFoundResponseBody
 func ValidateUpdateItxPastMeetingAttachmentNotFoundResponseBody(body *UpdateItxPastMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11537,7 +11466,7 @@ func ValidateUpdateItxPastMeetingAttachmentNotFoundResponseBody(body *UpdateItxP
 
 // ValidateUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody runs
 // the validations defined on
-// update-itx-past-meeting-attachment_ServiceUnavailable_response_body
+// UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody
 func ValidateUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody(body *UpdateItxPastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11549,8 +11478,7 @@ func ValidateUpdateItxPastMeetingAttachmentServiceUnavailableResponseBody(body *
 }
 
 // ValidateUpdateItxPastMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// update-itx-past-meeting-attachment_Unauthorized_response_body
+// validations defined on UpdateItxPastMeetingAttachmentUnauthorizedResponseBody
 func ValidateUpdateItxPastMeetingAttachmentUnauthorizedResponseBody(body *UpdateItxPastMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11562,8 +11490,7 @@ func ValidateUpdateItxPastMeetingAttachmentUnauthorizedResponseBody(body *Update
 }
 
 // ValidateDeleteItxPastMeetingAttachmentBadRequestResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-attachment_BadRequest_response_body
+// validations defined on DeleteItxPastMeetingAttachmentBadRequestResponseBody
 func ValidateDeleteItxPastMeetingAttachmentBadRequestResponseBody(body *DeleteItxPastMeetingAttachmentBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11575,8 +11502,7 @@ func ValidateDeleteItxPastMeetingAttachmentBadRequestResponseBody(body *DeleteIt
 }
 
 // ValidateDeleteItxPastMeetingAttachmentForbiddenResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-attachment_Forbidden_response_body
+// validations defined on DeleteItxPastMeetingAttachmentForbiddenResponseBody
 func ValidateDeleteItxPastMeetingAttachmentForbiddenResponseBody(body *DeleteItxPastMeetingAttachmentForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11589,7 +11515,7 @@ func ValidateDeleteItxPastMeetingAttachmentForbiddenResponseBody(body *DeleteItx
 
 // ValidateDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody runs
 // the validations defined on
-// delete-itx-past-meeting-attachment_InternalServerError_response_body
+// DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody
 func ValidateDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody(body *DeleteItxPastMeetingAttachmentInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11601,8 +11527,7 @@ func ValidateDeleteItxPastMeetingAttachmentInternalServerErrorResponseBody(body 
 }
 
 // ValidateDeleteItxPastMeetingAttachmentNotFoundResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-attachment_NotFound_response_body
+// validations defined on DeleteItxPastMeetingAttachmentNotFoundResponseBody
 func ValidateDeleteItxPastMeetingAttachmentNotFoundResponseBody(body *DeleteItxPastMeetingAttachmentNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11615,7 +11540,7 @@ func ValidateDeleteItxPastMeetingAttachmentNotFoundResponseBody(body *DeleteItxP
 
 // ValidateDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody runs
 // the validations defined on
-// delete-itx-past-meeting-attachment_ServiceUnavailable_response_body
+// DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody
 func ValidateDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody(body *DeleteItxPastMeetingAttachmentServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11627,8 +11552,7 @@ func ValidateDeleteItxPastMeetingAttachmentServiceUnavailableResponseBody(body *
 }
 
 // ValidateDeleteItxPastMeetingAttachmentUnauthorizedResponseBody runs the
-// validations defined on
-// delete-itx-past-meeting-attachment_Unauthorized_response_body
+// validations defined on DeleteItxPastMeetingAttachmentUnauthorizedResponseBody
 func ValidateDeleteItxPastMeetingAttachmentUnauthorizedResponseBody(body *DeleteItxPastMeetingAttachmentUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11641,7 +11565,7 @@ func ValidateDeleteItxPastMeetingAttachmentUnauthorizedResponseBody(body *Delete
 
 // ValidateCreateItxPastMeetingAttachmentPresignBadRequestResponseBody runs the
 // validations defined on
-// create-itx-past-meeting-attachment-presign_BadRequest_response_body
+// CreateItxPastMeetingAttachmentPresignBadRequestResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignBadRequestResponseBody(body *CreateItxPastMeetingAttachmentPresignBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11654,7 +11578,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignBadRequestResponseBody(body *C
 
 // ValidateCreateItxPastMeetingAttachmentPresignForbiddenResponseBody runs the
 // validations defined on
-// create-itx-past-meeting-attachment-presign_Forbidden_response_body
+// CreateItxPastMeetingAttachmentPresignForbiddenResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignForbiddenResponseBody(body *CreateItxPastMeetingAttachmentPresignForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11667,7 +11591,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignForbiddenResponseBody(body *Cr
 
 // ValidateCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody
 // runs the validations defined on
-// create-itx-past-meeting-attachment-presign_InternalServerError_response_body
+// CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody(body *CreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11680,7 +11604,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignInternalServerErrorResponseBod
 
 // ValidateCreateItxPastMeetingAttachmentPresignNotFoundResponseBody runs the
 // validations defined on
-// create-itx-past-meeting-attachment-presign_NotFound_response_body
+// CreateItxPastMeetingAttachmentPresignNotFoundResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignNotFoundResponseBody(body *CreateItxPastMeetingAttachmentPresignNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11693,7 +11617,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignNotFoundResponseBody(body *Cre
 
 // ValidateCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody
 // runs the validations defined on
-// create-itx-past-meeting-attachment-presign_ServiceUnavailable_response_body
+// CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody(body *CreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11706,7 +11630,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignServiceUnavailableResponseBody
 
 // ValidateCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody runs
 // the validations defined on
-// create-itx-past-meeting-attachment-presign_Unauthorized_response_body
+// CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody
 func ValidateCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody(body *CreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11719,7 +11643,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignUnauthorizedResponseBody(body 
 
 // ValidateGetItxPastMeetingAttachmentDownloadBadRequestResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment-download_BadRequest_response_body
+// GetItxPastMeetingAttachmentDownloadBadRequestResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadBadRequestResponseBody(body *GetItxPastMeetingAttachmentDownloadBadRequestResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11732,7 +11656,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadBadRequestResponseBody(body *Get
 
 // ValidateGetItxPastMeetingAttachmentDownloadForbiddenResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment-download_Forbidden_response_body
+// GetItxPastMeetingAttachmentDownloadForbiddenResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadForbiddenResponseBody(body *GetItxPastMeetingAttachmentDownloadForbiddenResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11745,7 +11669,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadForbiddenResponseBody(body *GetI
 
 // ValidateGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody
 // runs the validations defined on
-// get-itx-past-meeting-attachment-download_InternalServerError_response_body
+// GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody(body *GetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11758,7 +11682,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadInternalServerErrorResponseBody(
 
 // ValidateGetItxPastMeetingAttachmentDownloadNotFoundResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment-download_NotFound_response_body
+// GetItxPastMeetingAttachmentDownloadNotFoundResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadNotFoundResponseBody(body *GetItxPastMeetingAttachmentDownloadNotFoundResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11771,7 +11695,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadNotFoundResponseBody(body *GetIt
 
 // ValidateGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody
 // runs the validations defined on
-// get-itx-past-meeting-attachment-download_ServiceUnavailable_response_body
+// GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody(body *GetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11784,7 +11708,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadServiceUnavailableResponseBody(b
 
 // ValidateGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody runs the
 // validations defined on
-// get-itx-past-meeting-attachment-download_Unauthorized_response_body
+// GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody
 func ValidateGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody(body *GetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
@@ -11795,47 +11719,7 @@ func ValidateGetItxPastMeetingAttachmentDownloadUnauthorizedResponseBody(body *G
 	return
 }
 
-// ValidateCommitteeRequestBody runs the validations defined on
-// CommitteeRequestBody
-func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
-	if body.UID != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
-	}
-	for _, e := range body.AllowedVotingStatuses {
-		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
-		}
-	}
-	return
-}
-
-// ValidateRecurrenceRequestBody runs the validations defined on
-// RecurrenceRequestBody
-func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
-	if body.Type != nil {
-		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
-		}
-	}
-	if body.EndDateTime != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.end_date_time", *body.EndDateTime, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
-func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
-	if body.Email != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
-	}
-	if body.ProfilePicture != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
-	}
-	return
-}
-
-// ValidateCommitteeResponseBody runs the validations defined on
-// CommitteeResponseBody
+// ValidateCommitteeResponseBody runs the validations defined on Committee
 func ValidateCommitteeResponseBody(body *CommitteeResponseBody) (err error) {
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
@@ -11848,8 +11732,21 @@ func ValidateCommitteeResponseBody(body *CommitteeResponseBody) (err error) {
 	return
 }
 
-// ValidateRecurrenceResponseBody runs the validations defined on
-// RecurrenceResponseBody
+// validateCommitteeResponseBody checks Committee and reports errors using the
+// path supplied by its caller
+func validateCommitteeResponseBody(body *CommitteeResponseBody, path string) (err error) {
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".uid", *body.UID, goa.FormatUUID))
+	}
+	for _, e := range body.AllowedVotingStatuses {
+		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
+		}
+	}
+	return
+}
+
+// ValidateRecurrenceResponseBody runs the validations defined on Recurrence
 func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
@@ -11862,8 +11759,21 @@ func ValidateRecurrenceResponseBody(body *RecurrenceResponseBody) (err error) {
 	return
 }
 
-// ValidateITXUserResponseBody runs the validations defined on
-// ITXUserResponseBody
+// validateRecurrenceResponseBody checks Recurrence and reports errors using
+// the path supplied by its caller
+func validateRecurrenceResponseBody(body *RecurrenceResponseBody, path string) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.EndDateTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".end_date_time", *body.EndDateTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateITXUserResponseBody runs the validations defined on ITXUser
 func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -11874,8 +11784,20 @@ func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
 	return
 }
 
+// validateITXUserResponseBody checks ITXUser and reports errors using the path
+// supplied by its caller
+func validateITXUserResponseBody(body *ITXUserResponseBody, path string) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateITXOccurrenceResponseBody runs the validations defined on
-// ITXOccurrenceResponseBody
+// ITXOccurrence
 func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err error) {
 	if body.StartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -11888,8 +11810,21 @@ func ValidateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody) (err err
 	return
 }
 
-// ValidateSummaryDataResponseBody runs the validations defined on
-// SummaryDataResponseBody
+// validateITXOccurrenceResponseBody checks ITXOccurrence and reports errors
+// using the path supplied by its caller
+func validateITXOccurrenceResponseBody(body *ITXOccurrenceResponseBody, path string) (err error) {
+	if body.StartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".start_time", *body.StartTime, goa.FormatDateTime))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "available" || *body.Status == "cancel") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".status", *body.Status, []any{"available", "cancel"}))
+		}
+	}
+	return
+}
+
+// ValidateSummaryDataResponseBody runs the validations defined on SummaryData
 func ValidateSummaryDataResponseBody(body *SummaryDataResponseBody) (err error) {
 	if body.StartTime == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("start_time", "body"))
@@ -11906,8 +11841,127 @@ func ValidateSummaryDataResponseBody(body *SummaryDataResponseBody) (err error) 
 	return
 }
 
+// validateSummaryDataResponseBody checks SummaryData and reports errors using
+// the path supplied by its caller
+func validateSummaryDataResponseBody(body *SummaryDataResponseBody, path string) (err error) {
+	if body.StartTime == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("start_time", path))
+	}
+	if body.EndTime == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("end_time", path))
+	}
+	if body.StartTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".start_time", *body.StartTime, goa.FormatDateTime))
+	}
+	if body.EndTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".end_time", *body.EndTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateParticipantSessionResponseBody runs the validations defined on
+// ParticipantSession
+func ValidateParticipantSessionResponseBody(body *ParticipantSessionResponseBody) (err error) {
+	if body.JoinTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_time", *body.JoinTime, goa.FormatDateTime))
+	}
+	if body.LeaveTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.leave_time", *body.LeaveTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// validateParticipantSessionResponseBody checks ParticipantSession and reports
+// errors using the path supplied by its caller
+func validateParticipantSessionResponseBody(body *ParticipantSessionResponseBody, path string) (err error) {
+	if body.JoinTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".join_time", *body.JoinTime, goa.FormatDateTime))
+	}
+	if body.LeaveTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".leave_time", *body.LeaveTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateCommitteeRequestBody runs the validations defined on Committee
+func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
+	}
+	for _, e := range body.AllowedVotingStatuses {
+		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
+		}
+	}
+	return
+}
+
+// validateCommitteeRequestBody checks Committee and reports errors using the
+// path supplied by its caller
+func validateCommitteeRequestBody(body *CommitteeRequestBody, path string) (err error) {
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".uid", *body.UID, goa.FormatUUID))
+	}
+	for _, e := range body.AllowedVotingStatuses {
+		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
+		}
+	}
+	return
+}
+
+// ValidateRecurrenceRequestBody runs the validations defined on Recurrence
+func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.EndDateTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.end_date_time", *body.EndDateTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// validateRecurrenceRequestBody checks Recurrence and reports errors using the
+// path supplied by its caller
+func validateRecurrenceRequestBody(body *RecurrenceRequestBody, path string) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.EndDateTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".end_date_time", *body.EndDateTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateITXUserRequestBody runs the validations defined on ITXUser
+func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
+// validateITXUserRequestBody checks ITXUser and reports errors using the path
+// supplied by its caller
+func validateITXUserRequestBody(body *ITXUserRequestBody, path string) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateParticipantSessionRequestBody runs the validations defined on
-// ParticipantSessionRequestBody
+// ParticipantSession
 func ValidateParticipantSessionRequestBody(body *ParticipantSessionRequestBody) (err error) {
 	if body.JoinTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_time", *body.JoinTime, goa.FormatDateTime))
@@ -11918,14 +11972,14 @@ func ValidateParticipantSessionRequestBody(body *ParticipantSessionRequestBody) 
 	return
 }
 
-// ValidateParticipantSessionResponseBody runs the validations defined on
-// ParticipantSessionResponseBody
-func ValidateParticipantSessionResponseBody(body *ParticipantSessionResponseBody) (err error) {
+// validateParticipantSessionRequestBody checks ParticipantSession and reports
+// errors using the path supplied by its caller
+func validateParticipantSessionRequestBody(body *ParticipantSessionRequestBody, path string) (err error) {
 	if body.JoinTime != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_time", *body.JoinTime, goa.FormatDateTime))
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".join_time", *body.JoinTime, goa.FormatDateTime))
 	}
 	if body.LeaveTime != nil {
-		err = goa.MergeErrors(err, goa.ValidateFormat("body.leave_time", *body.LeaveTime, goa.FormatDateTime))
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".leave_time", *body.LeaveTime, goa.FormatDateTime))
 	}
 	return
 }

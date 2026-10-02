@@ -8146,7 +8146,7 @@ func NewGetItxPastMeetingAttachmentDownloadPayload(meetingAndOccurrenceID string
 }
 
 // ValidateCreateItxMeetingRequestBody runs the validations defined on
-// Create-Itx-MeetingRequestBody
+// CreateItxMeetingRequestBody
 func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err error) {
 	if body.ProjectUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("project_uid", "body"))
@@ -8173,8 +8173,6 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 		if *body.Duration < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
 		}
-	}
-	if body.Duration != nil {
 		if *body.Duration > 600 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
 		}
@@ -8191,7 +8189,7 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+			if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8205,8 +8203,6 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 		if *body.EarlyJoinTimeMinutes < 10 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 		}
-	}
-	if body.EarlyJoinTimeMinutes != nil {
 		if *body.EarlyJoinTimeMinutes > 60 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 		}
@@ -8217,7 +8213,7 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 		}
 	}
 	if body.Recurrence != nil {
-		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+		if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8225,14 +8221,12 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 		if *body.AutoEmailReminderTime < 120 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 		}
-	}
-	if body.AutoEmailReminderTime != nil {
 		if *body.AutoEmailReminderTime > 1440 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
 	}
 	if body.Owner != nil {
-		if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8240,7 +8234,7 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 }
 
 // ValidateUpdateItxMeetingRequestBody runs the validations defined on
-// Update-Itx-MeetingRequestBody
+// UpdateItxMeetingRequestBody
 func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err error) {
 	if body.ProjectUID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("project_uid", "body"))
@@ -8267,8 +8261,6 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 		if *body.Duration < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
 		}
-	}
-	if body.Duration != nil {
 		if *body.Duration > 600 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
 		}
@@ -8285,7 +8277,7 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+			if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8299,8 +8291,6 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 		if *body.EarlyJoinTimeMinutes < 10 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 10, true))
 		}
-	}
-	if body.EarlyJoinTimeMinutes != nil {
 		if *body.EarlyJoinTimeMinutes > 60 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.early_join_time_minutes", *body.EarlyJoinTimeMinutes, 60, false))
 		}
@@ -8311,7 +8301,7 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 		}
 	}
 	if body.Recurrence != nil {
-		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+		if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8319,8 +8309,6 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 		if *body.AutoEmailReminderTime < 120 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 120, true))
 		}
-	}
-	if body.AutoEmailReminderTime != nil {
 		if *body.AutoEmailReminderTime > 1440 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.auto_email_reminder_time", *body.AutoEmailReminderTime, 1440, false))
 		}
@@ -8331,7 +8319,7 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 		}
 	}
 	if body.Owner != nil {
-		if err2 := ValidateITXUserRequestBody(body.Owner); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8339,7 +8327,7 @@ func ValidateUpdateItxMeetingRequestBody(body *UpdateItxMeetingRequestBody) (err
 }
 
 // ValidateCreateItxRegistrantRequestBody runs the validations defined on
-// Create-Itx-RegistrantRequestBody
+// CreateItxRegistrantRequestBody
 func ValidateCreateItxRegistrantRequestBody(body *CreateItxRegistrantRequestBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -8350,12 +8338,12 @@ func ValidateCreateItxRegistrantRequestBody(body *CreateItxRegistrantRequestBody
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserRequestBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8363,7 +8351,7 @@ func ValidateCreateItxRegistrantRequestBody(body *CreateItxRegistrantRequestBody
 }
 
 // ValidateSelfRegisterItxMeetingRequestBody runs the validations defined on
-// Self-Register-Itx-MeetingRequestBody
+// SelfRegisterItxMeetingRequestBody
 func ValidateSelfRegisterItxMeetingRequestBody(body *SelfRegisterItxMeetingRequestBody) (err error) {
 	if body.FirstName == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("first_name", "body"))
@@ -8375,7 +8363,7 @@ func ValidateSelfRegisterItxMeetingRequestBody(body *SelfRegisterItxMeetingReque
 }
 
 // ValidateUpdateItxRegistrantRequestBody runs the validations defined on
-// Update-Itx-RegistrantRequestBody
+// UpdateItxRegistrantRequestBody
 func ValidateUpdateItxRegistrantRequestBody(body *UpdateItxRegistrantRequestBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == "direct" || *body.Type == "committee") {
@@ -8386,12 +8374,12 @@ func ValidateUpdateItxRegistrantRequestBody(body *UpdateItxRegistrantRequestBody
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := ValidateITXUserRequestBody(body.CreatedBy); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := ValidateITXUserRequestBody(body.UpdatedBy); err2 != nil {
+		if err2 := validateITXUserRequestBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8399,7 +8387,7 @@ func ValidateUpdateItxRegistrantRequestBody(body *UpdateItxRegistrantRequestBody
 }
 
 // ValidateUpdateItxOccurrenceRequestBody runs the validations defined on
-// Update-Itx-OccurrenceRequestBody
+// UpdateItxOccurrenceRequestBody
 func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody) (err error) {
 	if body.StartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -8410,7 +8398,7 @@ func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody
 		}
 	}
 	if body.Recurrence != nil {
-		if err2 := ValidateRecurrenceRequestBody(body.Recurrence); err2 != nil {
+		if err2 := validateRecurrenceRequestBody(body.Recurrence, "body.recurrence"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8418,7 +8406,7 @@ func ValidateUpdateItxOccurrenceRequestBody(body *UpdateItxOccurrenceRequestBody
 }
 
 // ValidateSubmitItxMeetingResponseRequestBody runs the validations defined on
-// Submit-Itx-Meeting-ResponseRequestBody
+// SubmitItxMeetingResponseRequestBody
 func ValidateSubmitItxMeetingResponseRequestBody(body *SubmitItxMeetingResponseRequestBody) (err error) {
 	if body.Response == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("response", "body"))
@@ -8446,7 +8434,7 @@ func ValidateSubmitItxMeetingResponseRequestBody(body *SubmitItxMeetingResponseR
 }
 
 // ValidateCreateItxPastMeetingRequestBody runs the validations defined on
-// Create-Itx-Past-MeetingRequestBody
+// CreateItxPastMeetingRequestBody
 func ValidateCreateItxPastMeetingRequestBody(body *CreateItxPastMeetingRequestBody) (err error) {
 	if body.MeetingID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_id", "body"))
@@ -8473,8 +8461,6 @@ func ValidateCreateItxPastMeetingRequestBody(body *CreateItxPastMeetingRequestBo
 		if *body.Duration < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 0, true))
 		}
-	}
-	if body.Duration != nil {
 		if *body.Duration > 600 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.duration", *body.Duration, 600, false))
 		}
@@ -8486,7 +8472,7 @@ func ValidateCreateItxPastMeetingRequestBody(body *CreateItxPastMeetingRequestBo
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+			if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8510,7 +8496,7 @@ func ValidateCreateItxPastMeetingRequestBody(body *CreateItxPastMeetingRequestBo
 }
 
 // ValidateUpdateItxPastMeetingRequestBody runs the validations defined on
-// Update-Itx-Past-MeetingRequestBody
+// UpdateItxPastMeetingRequestBody
 func ValidateUpdateItxPastMeetingRequestBody(body *UpdateItxPastMeetingRequestBody) (err error) {
 	if body.StartTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.start_time", *body.StartTime, goa.FormatDateTime))
@@ -8537,7 +8523,7 @@ func ValidateUpdateItxPastMeetingRequestBody(body *UpdateItxPastMeetingRequestBo
 	}
 	for _, e := range body.Committees {
 		if e != nil {
-			if err2 := ValidateCommitteeRequestBody(e); err2 != nil {
+			if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8546,7 +8532,7 @@ func ValidateUpdateItxPastMeetingRequestBody(body *UpdateItxPastMeetingRequestBo
 }
 
 // ValidateCreateItxPastMeetingParticipantRequestBody runs the validations
-// defined on Create-Itx-Past-Meeting-ParticipantRequestBody
+// defined on CreateItxPastMeetingParticipantRequestBody
 func ValidateCreateItxPastMeetingParticipantRequestBody(body *CreateItxPastMeetingParticipantRequestBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -8559,7 +8545,7 @@ func ValidateCreateItxPastMeetingParticipantRequestBody(body *CreateItxPastMeeti
 	}
 	for _, e := range body.Sessions {
 		if e != nil {
-			if err2 := ValidateParticipantSessionRequestBody(e); err2 != nil {
+			if err2 := validateParticipantSessionRequestBody(e, "body.sessions[*]"); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -8568,7 +8554,7 @@ func ValidateCreateItxPastMeetingParticipantRequestBody(body *CreateItxPastMeeti
 }
 
 // ValidateUpdateItxPastMeetingParticipantRequestBody runs the validations
-// defined on Update-Itx-Past-Meeting-ParticipantRequestBody
+// defined on UpdateItxPastMeetingParticipantRequestBody
 func ValidateUpdateItxPastMeetingParticipantRequestBody(body *UpdateItxPastMeetingParticipantRequestBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -8577,7 +8563,7 @@ func ValidateUpdateItxPastMeetingParticipantRequestBody(body *UpdateItxPastMeeti
 }
 
 // ValidateCreateItxMeetingAttachmentRequestBody runs the validations defined
-// on Create-Itx-Meeting-AttachmentRequestBody
+// on CreateItxMeetingAttachmentRequestBody
 func ValidateCreateItxMeetingAttachmentRequestBody(body *CreateItxMeetingAttachmentRequestBody) (err error) {
 	if body.Type == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
@@ -8607,7 +8593,7 @@ func ValidateCreateItxMeetingAttachmentRequestBody(body *CreateItxMeetingAttachm
 }
 
 // ValidateUpdateItxMeetingAttachmentRequestBody runs the validations defined
-// on Update-Itx-Meeting-AttachmentRequestBody
+// on UpdateItxMeetingAttachmentRequestBody
 func ValidateUpdateItxMeetingAttachmentRequestBody(body *UpdateItxMeetingAttachmentRequestBody) (err error) {
 	if body.Type == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
@@ -8632,7 +8618,7 @@ func ValidateUpdateItxMeetingAttachmentRequestBody(body *UpdateItxMeetingAttachm
 }
 
 // ValidateCreateItxMeetingAttachmentPresignRequestBody runs the validations
-// defined on Create-Itx-Meeting-Attachment-PresignRequestBody
+// defined on CreateItxMeetingAttachmentPresignRequestBody
 func ValidateCreateItxMeetingAttachmentPresignRequestBody(body *CreateItxMeetingAttachmentPresignRequestBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
@@ -8652,7 +8638,7 @@ func ValidateCreateItxMeetingAttachmentPresignRequestBody(body *CreateItxMeeting
 }
 
 // ValidateCreateItxPastMeetingAttachmentRequestBody runs the validations
-// defined on Create-Itx-Past-Meeting-AttachmentRequestBody
+// defined on CreateItxPastMeetingAttachmentRequestBody
 func ValidateCreateItxPastMeetingAttachmentRequestBody(body *CreateItxPastMeetingAttachmentRequestBody) (err error) {
 	if body.Type == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
@@ -8682,7 +8668,7 @@ func ValidateCreateItxPastMeetingAttachmentRequestBody(body *CreateItxPastMeetin
 }
 
 // ValidateUpdateItxPastMeetingAttachmentRequestBody runs the validations
-// defined on Update-Itx-Past-Meeting-AttachmentRequestBody
+// defined on UpdateItxPastMeetingAttachmentRequestBody
 func ValidateUpdateItxPastMeetingAttachmentRequestBody(body *UpdateItxPastMeetingAttachmentRequestBody) (err error) {
 	if body.Type == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
@@ -8707,7 +8693,7 @@ func ValidateUpdateItxPastMeetingAttachmentRequestBody(body *UpdateItxPastMeetin
 }
 
 // ValidateCreateItxPastMeetingAttachmentPresignRequestBody runs the
-// validations defined on Create-Itx-Past-Meeting-Attachment-PresignRequestBody
+// validations defined on CreateItxPastMeetingAttachmentPresignRequestBody
 func ValidateCreateItxPastMeetingAttachmentPresignRequestBody(body *CreateItxPastMeetingAttachmentPresignRequestBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
@@ -8726,8 +8712,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignRequestBody(body *CreateItxPas
 	return
 }
 
-// ValidateCommitteeRequestBody runs the validations defined on
-// CommitteeRequestBody
+// ValidateCommitteeRequestBody runs the validations defined on Committee
 func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
 	if body.UID != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
@@ -8740,8 +8725,21 @@ func ValidateCommitteeRequestBody(body *CommitteeRequestBody) (err error) {
 	return
 }
 
-// ValidateRecurrenceRequestBody runs the validations defined on
-// RecurrenceRequestBody
+// validateCommitteeRequestBody checks Committee and reports errors using the
+// path supplied by its caller
+func validateCommitteeRequestBody(body *CommitteeRequestBody, path string) (err error) {
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".uid", *body.UID, goa.FormatUUID))
+	}
+	for _, e := range body.AllowedVotingStatuses {
+		if !(e == "voting_rep" || e == "alt_voting_rep" || e == "observer" || e == "emeritus" || e == "none") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".allowed_voting_statuses[*]", e, []any{"voting_rep", "alt_voting_rep", "observer", "emeritus", "none"}))
+		}
+	}
+	return
+}
+
+// ValidateRecurrenceRequestBody runs the validations defined on Recurrence
 func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	if body.Type != nil {
 		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
@@ -8754,7 +8752,21 @@ func ValidateRecurrenceRequestBody(body *RecurrenceRequestBody) (err error) {
 	return
 }
 
-// ValidateITXUserRequestBody runs the validations defined on ITXUserRequestBody
+// validateRecurrenceRequestBody checks Recurrence and reports errors using the
+// path supplied by its caller
+func validateRecurrenceRequestBody(body *RecurrenceRequestBody, path string) (err error) {
+	if body.Type != nil {
+		if !(*body.Type == 1 || *body.Type == 2 || *body.Type == 3) {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".type", *body.Type, []any{1, 2, 3}))
+		}
+	}
+	if body.EndDateTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".end_date_time", *body.EndDateTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateITXUserRequestBody runs the validations defined on ITXUser
 func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
@@ -8765,14 +8777,38 @@ func ValidateITXUserRequestBody(body *ITXUserRequestBody) (err error) {
 	return
 }
 
+// validateITXUserRequestBody checks ITXUser and reports errors using the path
+// supplied by its caller
+func validateITXUserRequestBody(body *ITXUserRequestBody, path string) (err error) {
+	if body.Email != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".email", *body.Email, goa.FormatEmail))
+	}
+	if body.ProfilePicture != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".profile_picture", *body.ProfilePicture, goa.FormatURI))
+	}
+	return
+}
+
 // ValidateParticipantSessionRequestBody runs the validations defined on
-// ParticipantSessionRequestBody
+// ParticipantSession
 func ValidateParticipantSessionRequestBody(body *ParticipantSessionRequestBody) (err error) {
 	if body.JoinTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.join_time", *body.JoinTime, goa.FormatDateTime))
 	}
 	if body.LeaveTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.leave_time", *body.LeaveTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// validateParticipantSessionRequestBody checks ParticipantSession and reports
+// errors using the path supplied by its caller
+func validateParticipantSessionRequestBody(body *ParticipantSessionRequestBody, path string) (err error) {
+	if body.JoinTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".join_time", *body.JoinTime, goa.FormatDateTime))
+	}
+	if body.LeaveTime != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".leave_time", *body.LeaveTime, goa.FormatDateTime))
 	}
 	return
 }

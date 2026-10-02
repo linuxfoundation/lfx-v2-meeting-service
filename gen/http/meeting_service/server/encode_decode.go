@@ -145,9 +145,10 @@ func DecodeCreateItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request
 		}
 		payload = NewCreateItxMeetingPayload(&body, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -294,9 +295,10 @@ func DecodeGetItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request) g
 		}
 		payload = NewGetItxMeetingPayload(meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -440,9 +442,10 @@ func DecodeDeleteItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request
 		}
 		payload = NewDeleteItxMeetingPayload(meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -616,9 +619,10 @@ func DecodeUpdateItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.Request
 		}
 		payload = NewUpdateItxMeetingPayload(&body, meetingID, version, bearerToken, xSync)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -780,9 +784,10 @@ func DecodeGetItxMeetingCountRequest(mux goahttp.Muxer, decoder func(*http.Reque
 		}
 		payload = NewGetItxMeetingCountPayload(version, projectUID, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -948,9 +953,10 @@ func DecodeCreateItxRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewCreateItxRegistrantPayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1129,9 +1135,10 @@ func DecodeSelfRegisterItxMeetingRequest(mux goahttp.Muxer, decoder func(*http.R
 		}
 		payload = NewSelfRegisterItxMeetingPayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1293,9 +1300,10 @@ func DecodeGetItxRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Request
 		}
 		payload = NewGetItxRegistrantPayload(meetingID, registrantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1460,9 +1468,10 @@ func DecodeUpdateItxRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewUpdateItxRegistrantPayload(&body, meetingID, registrantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1608,9 +1617,10 @@ func DecodeDeleteItxRegistrantRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewDeleteItxRegistrantPayload(meetingID, registrantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1798,9 +1808,10 @@ func DecodeGetItxJoinLinkRequest(mux goahttp.Muxer, decoder func(*http.Request) 
 		}
 		payload = NewGetItxJoinLinkPayload(meetingID, version, useEmail, userID, name, email, register, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -1950,9 +1961,10 @@ func DecodeGetItxRegistrantIcsRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewGetItxRegistrantIcsPayload(meetingID, registrantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2098,9 +2110,10 @@ func DecodeResendItxRegistrantInvitationRequest(mux goahttp.Muxer, decoder func(
 		}
 		payload = NewResendItxRegistrantInvitationPayload(meetingID, registrantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2259,9 +2272,10 @@ func DecodeResendItxMeetingInvitationsRequest(mux goahttp.Muxer, decoder func(*h
 		}
 		payload = NewResendItxMeetingInvitationsPayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2405,9 +2419,10 @@ func DecodeRegisterItxCommitteeMembersRequest(mux goahttp.Muxer, decoder func(*h
 		}
 		payload = NewRegisterItxCommitteeMembersPayload(meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2572,9 +2587,10 @@ func DecodeUpdateItxOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewUpdateItxOccurrencePayload(&body, meetingID, occurrenceID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2720,9 +2736,10 @@ func DecodeDeleteItxOccurrenceRequest(mux goahttp.Muxer, decoder func(*http.Requ
 		}
 		payload = NewDeleteItxOccurrencePayload(meetingID, occurrenceID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -2888,9 +2905,10 @@ func DecodeSubmitItxMeetingResponseRequest(mux goahttp.Muxer, decoder func(*http
 		}
 		payload = NewSubmitItxMeetingResponsePayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3052,9 +3070,10 @@ func DecodeCreateItxPastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Req
 		}
 		payload = NewCreateItxPastMeetingPayload(&body, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3214,9 +3233,10 @@ func DecodeGetItxPastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Reques
 		}
 		payload = NewGetItxPastMeetingPayload(pastMeetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3360,9 +3380,10 @@ func DecodeDeleteItxPastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Req
 		}
 		payload = NewDeleteItxPastMeetingPayload(pastMeetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3525,9 +3546,10 @@ func DecodeUpdateItxPastMeetingRequest(mux goahttp.Muxer, decoder func(*http.Req
 		}
 		payload = NewUpdateItxPastMeetingPayload(&body, pastMeetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3677,9 +3699,10 @@ func DecodeGetItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*http
 		}
 		payload = NewGetItxPastMeetingSummaryPayload(pastMeetingID, summaryUID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -3844,9 +3867,10 @@ func DecodeUpdateItxPastMeetingSummaryRequest(mux goahttp.Muxer, decoder func(*h
 		}
 		payload = NewUpdateItxPastMeetingSummaryPayload(&body, pastMeetingID, summaryUID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4013,9 +4037,10 @@ func DecodeCreateItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder fun
 		}
 		payload = NewCreateItxPastMeetingParticipantPayload(&body, pastMeetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4184,9 +4209,10 @@ func DecodeUpdateItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder fun
 		}
 		payload = NewUpdateItxPastMeetingParticipantPayload(&body, pastMeetingID, participantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4333,9 +4359,10 @@ func DecodeDeleteItxPastMeetingParticipantRequest(mux goahttp.Muxer, decoder fun
 		}
 		payload = NewDeleteItxPastMeetingParticipantPayload(pastMeetingID, participantID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4501,9 +4528,10 @@ func DecodeCreateItxMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*ht
 		}
 		payload = NewCreateItxMeetingAttachmentPayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4653,9 +4681,10 @@ func DecodeGetItxMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*http.
 		}
 		payload = NewGetItxMeetingAttachmentPayload(meetingID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4821,9 +4850,10 @@ func DecodeUpdateItxMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*ht
 		}
 		payload = NewUpdateItxMeetingAttachmentPayload(&body, meetingID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -4970,9 +5000,10 @@ func DecodeDeleteItxMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*ht
 		}
 		payload = NewDeleteItxMeetingAttachmentPayload(meetingID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5140,9 +5171,10 @@ func DecodeCreateItxMeetingAttachmentPresignRequest(mux goahttp.Muxer, decoder f
 		}
 		payload = NewCreateItxMeetingAttachmentPresignPayload(&body, meetingID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5294,9 +5326,10 @@ func DecodeGetItxMeetingAttachmentDownloadRequest(mux goahttp.Muxer, decoder fun
 		}
 		payload = NewGetItxMeetingAttachmentDownloadPayload(meetingID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5463,9 +5496,10 @@ func DecodeCreateItxPastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func
 		}
 		payload = NewCreateItxPastMeetingAttachmentPayload(&body, meetingAndOccurrenceID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5615,9 +5649,10 @@ func DecodeGetItxPastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func(*h
 		}
 		payload = NewGetItxPastMeetingAttachmentPayload(meetingAndOccurrenceID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5784,9 +5819,10 @@ func DecodeUpdateItxPastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func
 		}
 		payload = NewUpdateItxPastMeetingAttachmentPayload(&body, meetingAndOccurrenceID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -5934,9 +5970,10 @@ func DecodeDeleteItxPastMeetingAttachmentRequest(mux goahttp.Muxer, decoder func
 		}
 		payload = NewDeleteItxPastMeetingAttachmentPayload(meetingAndOccurrenceID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -6104,9 +6141,10 @@ func DecodeCreateItxPastMeetingAttachmentPresignRequest(mux goahttp.Muxer, decod
 		}
 		payload = NewCreateItxPastMeetingAttachmentPresignPayload(&body, meetingAndOccurrenceID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -6259,9 +6297,10 @@ func DecodeGetItxPastMeetingAttachmentDownloadRequest(mux goahttp.Muxer, decoder
 		}
 		payload = NewGetItxPastMeetingAttachmentDownloadPayload(meetingAndOccurrenceID, attachmentID, version, bearerToken)
 		if payload.BearerToken != nil {
-			if strings.Contains(*payload.BearerToken, " ") {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
 				// Remove authorization scheme prefix (e.g. "Bearer")
-				cred := strings.SplitN(*payload.BearerToken, " ", 2)[1]
+				cred = cred[index+1:]
 				payload.BearerToken = &cred
 			}
 		}
@@ -6368,9 +6407,6 @@ func EncodeGetItxPastMeetingAttachmentDownloadError(encoder func(context.Context
 // unmarshalCommitteeRequestBodyToMeetingserviceCommittee builds a value of
 // type *meetingservice.Committee from a value of type *CommitteeRequestBody.
 func unmarshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestBody) *meetingservice.Committee {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Committee{
 		UID: v.UID,
 	}
@@ -6387,9 +6423,6 @@ func unmarshalCommitteeRequestBodyToMeetingserviceCommittee(v *CommitteeRequestB
 // unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence builds a value of
 // type *meetingservice.Recurrence from a value of type *RecurrenceRequestBody.
 func unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceRequestBody) *meetingservice.Recurrence {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.Recurrence{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
@@ -6407,9 +6440,6 @@ func unmarshalRecurrenceRequestBodyToMeetingserviceRecurrence(v *RecurrenceReque
 // unmarshalITXUserRequestBodyToMeetingserviceITXUser builds a value of type
 // *meetingservice.ITXUser from a value of type *ITXUserRequestBody.
 func unmarshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *meetingservice.ITXUser {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ITXUser{
 		Username:       v.Username,
 		Name:           v.Name,
@@ -6423,9 +6453,6 @@ func unmarshalITXUserRequestBodyToMeetingserviceITXUser(v *ITXUserRequestBody) *
 // marshalMeetingserviceCommitteeToCommitteeResponseBody builds a value of type
 // *CommitteeResponseBody from a value of type *meetingservice.Committee.
 func marshalMeetingserviceCommitteeToCommitteeResponseBody(v *meetingservice.Committee) *CommitteeResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &CommitteeResponseBody{
 		UID: v.UID,
 	}
@@ -6442,9 +6469,6 @@ func marshalMeetingserviceCommitteeToCommitteeResponseBody(v *meetingservice.Com
 // marshalMeetingserviceRecurrenceToRecurrenceResponseBody builds a value of
 // type *RecurrenceResponseBody from a value of type *meetingservice.Recurrence.
 func marshalMeetingserviceRecurrenceToRecurrenceResponseBody(v *meetingservice.Recurrence) *RecurrenceResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &RecurrenceResponseBody{
 		Type:           v.Type,
 		RepeatInterval: v.RepeatInterval,
@@ -6462,9 +6486,6 @@ func marshalMeetingserviceRecurrenceToRecurrenceResponseBody(v *meetingservice.R
 // marshalMeetingserviceITXUserToITXUserResponseBody builds a value of type
 // *ITXUserResponseBody from a value of type *meetingservice.ITXUser.
 func marshalMeetingserviceITXUserToITXUserResponseBody(v *meetingservice.ITXUser) *ITXUserResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &ITXUserResponseBody{
 		Username:       v.Username,
 		Name:           v.Name,
@@ -6479,9 +6500,6 @@ func marshalMeetingserviceITXUserToITXUserResponseBody(v *meetingservice.ITXUser
 // of type *ITXOccurrenceResponseBody from a value of type
 // *meetingservice.ITXOccurrence.
 func marshalMeetingserviceITXOccurrenceToITXOccurrenceResponseBody(v *meetingservice.ITXOccurrence) *ITXOccurrenceResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &ITXOccurrenceResponseBody{
 		OccurrenceID:    v.OccurrenceID,
 		StartTime:       v.StartTime,
@@ -6497,9 +6515,6 @@ func marshalMeetingserviceITXOccurrenceToITXOccurrenceResponseBody(v *meetingser
 // builds a value of type *PastMeetingSummaryZoomConfigResponseBody from a
 // value of type *meetingservice.PastMeetingSummaryZoomConfig.
 func marshalMeetingservicePastMeetingSummaryZoomConfigToPastMeetingSummaryZoomConfigResponseBody(v *meetingservice.PastMeetingSummaryZoomConfig) *PastMeetingSummaryZoomConfigResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &PastMeetingSummaryZoomConfigResponseBody{
 		MeetingID:   v.MeetingID,
 		MeetingUUID: v.MeetingUUID,
@@ -6528,9 +6543,6 @@ func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice
 // builds a value of type *meetingservice.ParticipantSession from a value of
 // type *ParticipantSessionRequestBody.
 func unmarshalParticipantSessionRequestBodyToMeetingserviceParticipantSession(v *ParticipantSessionRequestBody) *meetingservice.ParticipantSession {
-	if v == nil {
-		return nil
-	}
 	res := &meetingservice.ParticipantSession{
 		ParticipantUUID: v.ParticipantUUID,
 		JoinTime:        v.JoinTime,
@@ -6545,9 +6557,6 @@ func unmarshalParticipantSessionRequestBodyToMeetingserviceParticipantSession(v 
 // builds a value of type *ParticipantSessionResponseBody from a value of type
 // *meetingservice.ParticipantSession.
 func marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(v *meetingservice.ParticipantSession) *ParticipantSessionResponseBody {
-	if v == nil {
-		return nil
-	}
 	res := &ParticipantSessionResponseBody{
 		ParticipantUUID: v.ParticipantUUID,
 		JoinTime:        v.JoinTime,
