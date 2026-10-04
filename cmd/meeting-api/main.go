@@ -113,12 +113,16 @@ func run() int {
 	// User metadata reader (LFXV2-2809 / LFXV2-2821): resolves the requesting principal's
 	// display profile (name/email/avatar) via the auth service, token-free, so ITX writes
 	// (meetings, registrants, past meetings, invitees, attendees, summaries, attachments)
-	// can stamp created_by / updated_by / modified_by. Uses its own NATS connection since
+	// can stamp created_by / updated_by / modified_by. Shares its NATS connection with
+	// userReader below, which resolves the LFX username self-registration needs from the
+	// verified email (linuxfoundation/lfx-self-serve#3134) — the principal alone can be an
+	// Auth0 "sub" rather than a real LFX username. Uses its own NATS connection since
 	// it's needed regardless of whether ID mapping or event processing are enabled; nil
 	// (and a warning) when NATS isn't configured or the connection fails, so writes still
 	// work, just with audit fields limited to the JWT-derived username/email (profile
 	// enrichment such as name/avatar is unavailable).
 	var userMetadataReader domain.UserMetadataReader
+	var userReader domain.UserReader
 	var userMetadataNatsConn *natsgo.Conn
 	if natsURL == "" {
 		slog.WarnContext(ctx, "NATS_URL not set; ITX audit-stamp profile enrichment unavailable (created_by/updated_by/modified_by limited to JWT username/email)")
@@ -130,6 +134,7 @@ func run() int {
 		} else {
 			userMetadataNatsConn = nc
 			userMetadataReader = natsinfra.NewUserMetadataReader(nc, slog.Default())
+			userReader = natsinfra.NewUserReader(nc, slog.Default())
 		}
 	}
 	if userMetadataNatsConn != nil {
@@ -173,7 +178,7 @@ func run() int {
 	}
 
 	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
-	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader)
+	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)

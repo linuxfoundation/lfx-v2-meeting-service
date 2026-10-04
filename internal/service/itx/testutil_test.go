@@ -57,6 +57,21 @@ func (f *fakeUserMetadataReader) ResolveProfile(_ context.Context, username stri
 	return f.profile, nil
 }
 
+// fakeUserReader returns a canned username or error for UsernameByEmail.
+type fakeUserReader struct {
+	username string
+	err      error
+	calls    []string
+}
+
+func (f *fakeUserReader) UsernameByEmail(_ context.Context, email string) (string, error) {
+	f.calls = append(f.calls, email)
+	if f.err != nil {
+		return "", f.err
+	}
+	return f.username, nil
+}
+
 // ctxWithPrincipal builds a context matching what the JWT auth middleware installs
 // on a real request.
 func ctxWithPrincipal(principal, email string) context.Context {

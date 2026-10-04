@@ -48,8 +48,8 @@ func (f *fakeRegistrantMeetingClient) GetZoomMeeting(_ context.Context, _ string
 	return &itx.ZoomMeetingResponse{Visibility: f.visibility}, nil
 }
 
-func newSvcWithMeeting(registrant *fakeRegistrantClient, visibility itx.MeetingVisibility, reader domain.UserMetadataReader) *RegistrantService {
-	return NewRegistrantService(registrant, &fakeRegistrantMeetingClient{visibility: visibility}, noOpIDMapper{}, reader)
+func newSvcWithMeeting(registrant *fakeRegistrantClient, visibility itx.MeetingVisibility, reader domain.UserMetadataReader, userReader domain.UserReader) *RegistrantService {
+	return NewRegistrantService(registrant, &fakeRegistrantMeetingClient{visibility: visibility}, noOpIDMapper{}, reader, userReader)
 }
 
 func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
@@ -58,7 +58,7 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader, nil)
 
 		_, err := svc.CreateRegistrant(ctxWithPrincipal("alice", ""), "mtg-1", &itx.ZoomMeetingRegistrant{Email: "invitee@example.com"})
 		require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestRegistrantService_CreateRegistrant_StampsCreatedBy(t *testing.T) {
 
 	t.Run("omits created_by without principal", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, nil)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, nil, nil)
 
 		_, err := svc.CreateRegistrant(context.Background(), "mtg-1", &itx.ZoomMeetingRegistrant{})
 		require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader, nil)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -103,7 +103,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 
 	t.Run("propagates GetZoomMeeting error before any registrant call", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, nil)
 		// Swap to a client that returns an error on GetZoomMeeting.
 		svc.meetingClient = &fakeRegistrantMeetingClient{getErr: domain.NewNotFoundError("meeting not found")}
 
@@ -118,7 +118,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 
 	t.Run("returns forbidden error for private meeting", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPrivate, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPrivate, nil, nil)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -134,7 +134,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 	t.Run("returns validation error when email absent from JWT and profile", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		// No userMetadata reader and no JWT email — both sources are empty.
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, nil)
 
 		ctx := ctxWithPrincipal("svc-account", "")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{})
@@ -150,7 +150,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader, nil)
 
 		// No JWT email — should fall back to profile.Email.
 		ctx := ctxWithPrincipal("alice", "")
@@ -161,7 +161,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 
 	t.Run("returns validation error for M2M client token", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, nil)
 
 		// M2M principals carry the "@clients" suffix — self-registration requires a human identity.
 		ctx := ctxWithPrincipal("6cjgEeimLcnqcHtqmRYqmOSt6s5spXNP@clients", "svc@example.com")
@@ -175,7 +175,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 
 	t.Run("does not accept email from request body", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, nil)
 
 		ctx := ctxWithPrincipal("bob", "bob@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -195,7 +195,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 			JobTitle:     "Engineer",
 			Organization: "Linux Foundation",
 		}}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader, nil)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -217,7 +217,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader, nil)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -236,7 +236,7 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 	t.Run("proceeds with request payload when auth service lookup fails", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{err: fmt.Errorf("nats timeout")}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader, nil)
 
 		ctx := ctxWithPrincipal("alice", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -248,17 +248,17 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		assert.Equal(t, "Liddell", client.lastCreateReq.LastName)
 	})
 
-	t.Run("uses resolved profile username when JWT principal is not the LFX username", func(t *testing.T) {
+	t.Run("uses username resolved from email when JWT principal is not the LFX username", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		// The JWT principal is an auth identifier (e.g. an Auth0 "sub"), distinct from
-		// the user's actual LFX username that profile resolution returns. ITX looks up
-		// registrants by LFX username, so the resolved profile username must win —
-		// otherwise ITX rejects the registration with "invalid LFX username"
-		// (linuxfoundation/lfx-self-serve#3134).
-		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
-			Username: "alice", Email: "alice@example.com",
-		}}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		// the user's actual LFX username. ITX looks up registrants by LFX username, so
+		// the email_to_username lookup result must win — otherwise ITX rejects the
+		// registration with "invalid LFX username" (linuxfoundation/lfx-self-serve#3134).
+		// Note: ResolveProfile is an enrichment lookup only — it echoes back whatever
+		// username it's given rather than resolving one, so it cannot supply this value;
+		// only UserReader.UsernameByEmail can.
+		userReader := &fakeUserReader{username: "alice"}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, userReader)
 
 		ctx := ctxWithPrincipal("auth0|abc123", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -267,12 +267,29 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "alice", client.lastCreateReq.Username)
+		require.NotNil(t, client.lastCreateReq.CreatedBy)
+		assert.Equal(t, "alice", client.lastCreateReq.CreatedBy.Username)
+		require.Len(t, userReader.calls, 1)
+		assert.Equal(t, "alice@example.com", userReader.calls[0])
 	})
 
-	t.Run("falls back to JWT principal as username when profile resolution fails", func(t *testing.T) {
+	t.Run("falls back to JWT principal as username when email_to_username lookup fails", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
-		reader := &fakeUserMetadataReader{err: fmt.Errorf("nats timeout")}
-		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+		userReader := &fakeUserReader{err: fmt.Errorf("nats timeout")}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, userReader)
+
+		ctx := ctxWithPrincipal("auth0|abc123", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "auth0|abc123", client.lastCreateReq.Username)
+	})
+
+	t.Run("falls back to JWT principal as username when no user reader is wired", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, nil, nil)
 
 		ctx := ctxWithPrincipal("auth0|abc123", "alice@example.com")
 		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
@@ -381,7 +398,7 @@ func TestRegistrantService_UpdateRegistrant_StampsUpdatedByNotCreatedBy(t *testi
 	t.Run("stamps only updated_by on update", func(t *testing.T) {
 		client := &fakeRegistrantClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "bob", Email: "bob@example.com"}}
-		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader)
+		svc := NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader, nil)
 
 		err := svc.UpdateRegistrant(ctxWithPrincipal("bob", ""), "mtg-1", "reg-1", &itx.ZoomMeetingRegistrant{})
 		require.NoError(t, err)
