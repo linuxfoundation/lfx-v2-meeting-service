@@ -21,17 +21,20 @@ type RegistrantService struct {
 	registrantClient domain.ITXRegistrantClient
 	meetingClient    domain.ITXMeetingClient
 	idMapper         domain.IDMapper
+	userReader       domain.UserReader
 }
 
 // NewRegistrantService creates a new ITX registrant service. userMetadata may be nil (e.g.
 // when NATS is disabled), in which case created_by / updated_by are limited to the
-// JWT-derived username/email rather than blocking the request.
-func NewRegistrantService(registrantClient domain.ITXRegistrantClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader) *RegistrantService {
+// JWT-derived username/email rather than blocking the request. userReader may also be nil,
+// in which case self-registration falls back to the raw JWT principal as the username.
+func NewRegistrantService(registrantClient domain.ITXRegistrantClient, meetingClient domain.ITXMeetingClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, userReader domain.UserReader) *RegistrantService {
 	return &RegistrantService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		registrantClient: registrantClient,
 		meetingClient:    meetingClient,
 		idMapper:         idMapper,
+		userReader:       userReader,
 	}
 }
 
@@ -97,11 +100,32 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 		email = resolvedProfile.Email
 	}
 
+	// The JWT principal is an auth identifier (e.g. an Auth0 "sub" claim like
+	// "auth0|<id>"), not necessarily the user's LFX/LFID username — and
+	// ResolveProfile's username is only an enrichment lookup key, echoed back
+	// unchanged, never a resolved value. ITX looks up registrants by LFX
+	// username, so resolve the real one from the verified email via the
+	// auth-service's email_to_username lookup, falling back to the raw
+	// principal when no reader is wired or the lookup fails, to avoid ITX
+	// rejecting the registration with "invalid LFX username"
+	// (linuxfoundation/lfx-self-serve#3134).
+	if s.userReader != nil && email != "" {
+		if resolvedUsername, err := s.userReader.UsernameByEmail(ctx, email); err != nil {
+			slog.WarnContext(ctx, "failed to resolve LFX username from email for self-registration; using JWT principal",
+				"username", redaction.Redact(username), logging.ErrKey, err)
+		} else if resolvedUsername != "" {
+			username = resolvedUsername
+		}
+	}
+
 	if err := enrichRegistrantFromProfile(req, resolvedProfile, email, username); err != nil {
 		return nil, err
 	}
 
 	req.CreatedBy = s.buildRequestingUserFromProfile(ctx, resolvedProfile)
+	if req.CreatedBy != nil {
+		req.CreatedBy.Username = username
+	}
 
 	return s.registrantClient.CreateRegistrant(ctx, meetingID, req)
 }
@@ -111,7 +135,10 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 //
 //   - Email always comes from an authoritative source (JWT claim or profile); the
 //     request body value is unconditionally overwritten to prevent identity spoofing.
-//   - Username is always set from the JWT principal.
+//   - Username is the LFX username resolved from the verified email via
+//     UserReader.UsernameByEmail when available, falling back to the raw JWT
+//     principal when no reader is wired or the lookup failed (caller resolves this
+//     precedence before calling in).
 //   - FirstName, LastName, JobTitle, and Org: profile value wins when non-empty;
 //     the request payload serves as fallback when the profile field is absent or
 //     the lookup failed entirely (profile == nil).
