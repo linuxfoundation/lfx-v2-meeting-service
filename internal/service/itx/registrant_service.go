@@ -97,6 +97,16 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 		email = resolvedProfile.Email
 	}
 
+	// The JWT principal is an auth identifier (e.g. an Auth0 "sub" claim like
+	// "auth0|<id>"), not necessarily the user's LFX/LFID username. ITX looks up
+	// registrants by LFX username, so prefer the username the profile was
+	// actually resolved for — falling back to the raw principal only when
+	// profile resolution failed — to avoid ITX rejecting the registration with
+	// "invalid LFX username" (linuxfoundation/lfx-self-serve#3134).
+	if resolvedProfile != nil && resolvedProfile.Username != "" {
+		username = resolvedProfile.Username
+	}
+
 	if err := enrichRegistrantFromProfile(req, resolvedProfile, email, username); err != nil {
 		return nil, err
 	}
@@ -111,7 +121,9 @@ func (s *RegistrantService) SelfRegisterForMeeting(ctx context.Context, meetingI
 //
 //   - Email always comes from an authoritative source (JWT claim or profile); the
 //     request body value is unconditionally overwritten to prevent identity spoofing.
-//   - Username is always set from the JWT principal.
+//   - Username is the resolved profile's LFX username when available, falling back
+//     to the raw JWT principal when profile resolution failed (caller resolves this
+//     precedence before calling in).
 //   - FirstName, LastName, JobTitle, and Org: profile value wins when non-empty;
 //     the request payload serves as fallback when the profile field is absent or
 //     the lookup failed entirely (profile == nil).

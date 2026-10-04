@@ -247,6 +247,41 @@ func TestRegistrantService_SelfRegisterForMeeting(t *testing.T) {
 		assert.Equal(t, "Alice", client.lastCreateReq.FirstName)
 		assert.Equal(t, "Liddell", client.lastCreateReq.LastName)
 	})
+
+	t.Run("uses resolved profile username when JWT principal is not the LFX username", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		// The JWT principal is an auth identifier (e.g. an Auth0 "sub"), distinct from
+		// the user's actual LFX username that profile resolution returns. ITX looks up
+		// registrants by LFX username, so the resolved profile username must win —
+		// otherwise ITX rejects the registration with "invalid LFX username"
+		// (linuxfoundation/lfx-self-serve#3134).
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
+			Username: "alice", Email: "alice@example.com",
+		}}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		ctx := ctxWithPrincipal("auth0|abc123", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "alice", client.lastCreateReq.Username)
+	})
+
+	t.Run("falls back to JWT principal as username when profile resolution fails", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		reader := &fakeUserMetadataReader{err: fmt.Errorf("nats timeout")}
+		svc := newSvcWithMeeting(client, itx.MeetingVisibilityPublic, reader)
+
+		ctx := ctxWithPrincipal("auth0|abc123", "alice@example.com")
+		_, err := svc.SelfRegisterForMeeting(ctx, "mtg-1", &itx.ZoomMeetingRegistrant{
+			FirstName: "Alice",
+			LastName:  "Liddell",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "auth0|abc123", client.lastCreateReq.Username)
+	})
 }
 
 // =============================================================================
