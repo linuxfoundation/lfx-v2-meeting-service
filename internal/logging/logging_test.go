@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -415,10 +416,12 @@ func TestInitStructureLogConfig_NoSpanEventMirroring(t *testing.T) {
 		}
 	}
 
-	// Span attributes must not carry log record values.
+	// Span attributes must not carry log record values. Use Contains so composite
+	// query-string values (e.g. "email=alice@example.com&name=Alice") are also caught.
 	for _, attr := range s.Attributes {
 		val := attr.Value.AsString()
-		if val == "alice@example.com" || val == "Alice" || val == `{"message":"alice@example.com already registered"}` {
+		if strings.Contains(val, "alice@example.com") || strings.Contains(val, "Alice") ||
+			strings.Contains(val, `"alice@example.com already registered"`) {
 			t.Errorf("PII or upstream body found in span attribute %q=%q", attr.Key, val)
 		}
 	}
