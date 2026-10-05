@@ -13,7 +13,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/sdk/trace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func TestErrKeyConstant(t *testing.T) {
@@ -274,7 +275,7 @@ func TestInitStructureLogConfig_IncludesTraceAndSpanID(t *testing.T) {
 
 	// Set up a trace provider
 	prevTP := otel.GetTracerProvider()
-	tp := trace.NewTracerProvider()
+	tp := sdktrace.NewTracerProvider()
 	otel.SetTracerProvider(tp)
 	defer otel.SetTracerProvider(prevTP)
 	defer func() {
@@ -349,6 +350,77 @@ func TestInitStructureLogConfig_IncludesTraceAndSpanID(t *testing.T) {
 		t.Errorf("expected span_id in log output, got: %v", testLogLine)
 	} else if spanID != expectedSpanID {
 		t.Errorf("expected span_id %q, got %q", expectedSpanID, spanID)
+	}
+}
+
+// TestInitStructureLogConfig_NoSpanEventMirroring verifies that log record attributes
+// are not mirrored as span events onto the active OTel span. The slog-otel handler's
+// default behaviour (NoTraceEvents: false) would call span.AddEvent("log_record", ...)
+// carrying every inline and context-appended attribute; NoTraceEvents: true disables it.
+//
+// This guards the spans-carry-status-only policy: PII in log attributes (query params,
+// upstream error bodies) must not reach the trace backend.
+func TestInitStructureLogConfig_NoSpanEventMirroring(t *testing.T) {
+	// Use an in-memory exporter so we can inspect what the span captured.
+	exporter := tracetest.NewInMemoryExporter()
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSyncer(exporter),
+	)
+	prevTP := otel.GetTracerProvider()
+	otel.SetTracerProvider(tp)
+	defer otel.SetTracerProvider(prevTP)
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			t.Errorf("failed to shutdown trace provider: %v", err)
+		}
+	}()
+
+	// Redirect stdout so InitStructureLogConfig output is suppressed.
+	origStdout := os.Stdout
+	_, w, _ := os.Pipe()
+	os.Stdout = w
+	InitStructureLogConfig()
+	_ = w.Close()
+	os.Stdout = origStdout
+
+	tracer := otel.Tracer("test-tracer")
+	ctx, span := tracer.Start(context.Background(), "test-span")
+
+	// Simulate request_logger appending raw query params to context (the PII path).
+	ctx = AppendCtx(ctx, slog.String("query", "email=alice@example.com&name=Alice"))
+
+	// Simulate transport.go logging a non-2xx ITX response body at Error level.
+	slog.ErrorContext(ctx, "non-2xx response from ITX",
+		slog.String("response", `{"message":"alice@example.com already registered"}`),
+	)
+
+	// Also log at Info level to cover the common path.
+	slog.InfoContext(ctx, "request complete",
+		slog.String("method", "POST"),
+	)
+
+	span.End()
+
+	spans := exporter.GetSpans()
+	if len(spans) != 1 {
+		t.Fatalf("expected 1 exported span, got %d", len(spans))
+	}
+	s := spans[0]
+
+	// No span events: log records must not be mirrored onto the span.
+	if len(s.Events) != 0 {
+		t.Errorf("expected 0 span events, got %d; NoTraceEvents must be true on OtelHandler", len(s.Events))
+		for i, ev := range s.Events {
+			t.Logf("  event[%d]: name=%q attrs=%v", i, ev.Name, ev.Attributes)
+		}
+	}
+
+	// Span attributes must not carry log record values.
+	for _, attr := range s.Attributes {
+		val := attr.Value.AsString()
+		if val == "alice@example.com" || val == "Alice" || val == `{"message":"alice@example.com already registered"}` {
+			t.Errorf("PII or upstream body found in span attribute %q=%q", attr.Key, val)
+		}
 	}
 }
 
