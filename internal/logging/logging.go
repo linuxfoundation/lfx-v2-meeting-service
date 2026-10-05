@@ -95,8 +95,10 @@ func InitStructureLogConfig() slog.Handler {
 	h = slog.NewJSONHandler(os.Stdout, logOptions)
 	log.SetFlags(log.Llongfile)
 
-	// Wrap with slog-otel handler to add trace_id and span_id from context
-	otelHandler := slogotel.OtelHandler{Next: h}
+	// Wrap with slog-otel handler to add trace_id and span_id from context.
+	// NoTraceEvents: true disables the default behaviour of mirroring every log
+	// record as a span event; spans carry status only, not log attributes.
+	otelHandler := slogotel.OtelHandler{Next: h, NoTraceEvents: true}
 
 	// Wrap with contextHandler to support context-based attributes
 	logger := contextHandler{otelHandler}

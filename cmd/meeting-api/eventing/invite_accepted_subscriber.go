@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -117,8 +118,8 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 	}
 
 	if err := processInviteAcceptedEvent(ctx, evt, s.acceptanceClient, s.logger); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
+		span.RecordError(errors.New("invite acceptance failed"))
+		span.SetStatus(codes.Error, "invite acceptance failed")
 		s.logger.With(logging.ErrKey, err).WarnContext(ctx, "invite_accepted enrichment failed; best-effort, not retrying",
 			"email", redaction.RedactEmail(evt.Recipient.Email),
 			"username", redaction.Redact(evt.AcceptedBy),
