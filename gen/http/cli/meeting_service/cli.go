@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|self-register-itx-meeting|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|self-register-itx-meeting|self-unregister-itx-meeting|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
 	}
 }
 
@@ -107,6 +107,12 @@ func ParseEndpoint(
 		meetingServiceSelfRegisterItxMeetingMeetingIDFlag   = new(cliStringFlag)
 		meetingServiceSelfRegisterItxMeetingVersionFlag     = new(cliStringFlag)
 		meetingServiceSelfRegisterItxMeetingBearerTokenFlag = new(cliStringFlag)
+
+		meetingServiceSelfUnregisterItxMeetingFlags            = flag.NewFlagSet("self-unregister-itx-meeting", flag.ExitOnError)
+		meetingServiceSelfUnregisterItxMeetingMeetingIDFlag    = new(cliStringFlag)
+		meetingServiceSelfUnregisterItxMeetingVersionFlag      = new(cliStringFlag)
+		meetingServiceSelfUnregisterItxMeetingRegistrantIDFlag = new(cliStringFlag)
+		meetingServiceSelfUnregisterItxMeetingBearerTokenFlag  = new(cliStringFlag)
 
 		meetingServiceGetItxRegistrantFlags            = flag.NewFlagSet("get-itx-registrant", flag.ExitOnError)
 		meetingServiceGetItxRegistrantMeetingIDFlag    = new(cliStringFlag)
@@ -333,6 +339,10 @@ func ParseEndpoint(
 	meetingServiceSelfRegisterItxMeetingFlags.Var(meetingServiceSelfRegisterItxMeetingMeetingIDFlag, "meeting-id", "The ID of the meeting")
 	meetingServiceSelfRegisterItxMeetingFlags.Var(meetingServiceSelfRegisterItxMeetingVersionFlag, "version", "")
 	meetingServiceSelfRegisterItxMeetingFlags.Var(meetingServiceSelfRegisterItxMeetingBearerTokenFlag, "bearer-token", "")
+	meetingServiceSelfUnregisterItxMeetingFlags.Var(meetingServiceSelfUnregisterItxMeetingMeetingIDFlag, "meeting-id", "The ID of the meeting")
+	meetingServiceSelfUnregisterItxMeetingFlags.Var(meetingServiceSelfUnregisterItxMeetingVersionFlag, "version", "")
+	meetingServiceSelfUnregisterItxMeetingFlags.Var(meetingServiceSelfUnregisterItxMeetingRegistrantIDFlag, "registrant-id", "")
+	meetingServiceSelfUnregisterItxMeetingFlags.Var(meetingServiceSelfUnregisterItxMeetingBearerTokenFlag, "bearer-token", "")
 	meetingServiceGetItxRegistrantFlags.Var(meetingServiceGetItxRegistrantMeetingIDFlag, "meeting-id", "The ID of the meeting")
 	meetingServiceGetItxRegistrantFlags.Var(meetingServiceGetItxRegistrantRegistrantIDFlag, "registrant-id", "The ID of the registrant")
 	meetingServiceGetItxRegistrantFlags.Var(meetingServiceGetItxRegistrantVersionFlag, "version", "")
@@ -479,6 +489,7 @@ func ParseEndpoint(
 	meetingServiceGetItxMeetingCountFlags.Usage = meetingServiceGetItxMeetingCountUsage
 	meetingServiceCreateItxRegistrantFlags.Usage = meetingServiceCreateItxRegistrantUsage
 	meetingServiceSelfRegisterItxMeetingFlags.Usage = meetingServiceSelfRegisterItxMeetingUsage
+	meetingServiceSelfUnregisterItxMeetingFlags.Usage = meetingServiceSelfUnregisterItxMeetingUsage
 	meetingServiceGetItxRegistrantFlags.Usage = meetingServiceGetItxRegistrantUsage
 	meetingServiceUpdateItxRegistrantFlags.Usage = meetingServiceUpdateItxRegistrantUsage
 	meetingServiceDeleteItxRegistrantFlags.Usage = meetingServiceDeleteItxRegistrantUsage
@@ -572,6 +583,9 @@ func ParseEndpoint(
 
 			case "self-register-itx-meeting":
 				epf = meetingServiceSelfRegisterItxMeetingFlags
+
+			case "self-unregister-itx-meeting":
+				epf = meetingServiceSelfUnregisterItxMeetingFlags
 
 			case "get-itx-registrant":
 				epf = meetingServiceGetItxRegistrantFlags
@@ -719,6 +733,9 @@ func ParseEndpoint(
 			case "self-register-itx-meeting":
 				endpoint = c.SelfRegisterItxMeeting()
 				data, err = meetingservicec.BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBodyFlag.value, meetingServiceSelfRegisterItxMeetingMeetingIDFlag.value, meetingServiceSelfRegisterItxMeetingVersionFlag.value, meetingServiceSelfRegisterItxMeetingBearerTokenFlag.value)
+			case "self-unregister-itx-meeting":
+				endpoint = c.SelfUnregisterItxMeeting()
+				data, err = meetingservicec.BuildSelfUnregisterItxMeetingPayload(meetingServiceSelfUnregisterItxMeetingMeetingIDFlag.value, meetingServiceSelfUnregisterItxMeetingVersionFlag.value, meetingServiceSelfUnregisterItxMeetingRegistrantIDFlag.value, meetingServiceSelfUnregisterItxMeetingBearerTokenFlag.value)
 			case "get-itx-registrant":
 				endpoint = c.GetItxRegistrant()
 				data, err = meetingservicec.BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingIDFlag.value, meetingServiceGetItxRegistrantRegistrantIDFlag.value, meetingServiceGetItxRegistrantVersionFlag.value, meetingServiceGetItxRegistrantBearerTokenFlag.value)
@@ -847,6 +864,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-registrant: Create a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    self-register-itx-meeting: Register the authenticated user for a meeting through ITX API proxy. Only public meetings are supported; private meetings return 403. Requires viewer access on the meeting.`)
+	fmt.Fprintln(os.Stderr, `    self-unregister-itx-meeting: Unregister the authenticated user from a meeting through ITX API proxy. The caller must be the registrant themselves; you cannot unregister another user. Requires viewer access on the meeting.`)
 	fmt.Fprintln(os.Stderr, `    get-itx-registrant: Get a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-registrant: Update a meeting registrant through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-registrant: Delete a meeting registrant through ITX API proxy`)
@@ -1077,6 +1095,30 @@ func meetingServiceSelfRegisterItxMeetingUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service self-register-itx-meeting --body '{\n      \"first_name\": \"Bob\",\n      \"job_title\": \"developer\",\n      \"last_name\": \"Smith\",\n      \"occurrence\": \"1666848600\",\n      \"org\": \"google\"\n   }' --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceSelfUnregisterItxMeetingUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service self-unregister-itx-meeting", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -registrant-id STRING")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Unregister the authenticated user from a meeting through ITX API proxy. The caller must be the registrant themselves; you cannot unregister another user. Requires viewer access on the meeting.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The ID of the meeting`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -registrant-id STRING: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service self-unregister-itx-meeting --meeting-id \"1234567890\" --version \"1\" --registrant-id \"zjkfsdfjdfhg\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxRegistrantUsage() {

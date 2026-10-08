@@ -373,6 +373,45 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	Method("self-unregister-itx-meeting", func() {
+		Description("Unregister the authenticated user from a meeting through ITX API proxy. The caller must be the registrant themselves; you cannot unregister another user. Requires viewer access on the meeting.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "The ID of the meeting", func() {
+				Example("1234567890")
+			})
+			Attribute("registrant_id", String, "The ID of the registrant (must belong to the authenticated user)", func() {
+				Example("zjkfsdfjdfhg")
+			})
+			Required("meeting_id", "registrant_id")
+		})
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Registrant does not belong to the authenticated user")
+		Error("NotFound", NotFoundError, "Meeting or registrant not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			DELETE("/itx/meetings/{meeting_id}/registrants/self")
+			Param("version:v")
+			Param("registrant_id")
+			Header("bearer_token:Authorization")
+			Response(StatusNoContent)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("get-itx-registrant", func() {
 		Description("Get a meeting registrant through ITX API proxy")
 

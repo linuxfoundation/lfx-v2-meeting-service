@@ -34,6 +34,16 @@ func (s *MeetingsAPI) SelfRegisterItxMeeting(ctx context.Context, p *meetingsvc.
 	return service.ConvertITXRegistrantToGoa(resp), nil
 }
 
+// SelfUnregisterItxMeeting removes the authenticated user from a meeting as a registrant.
+// The caller supplies their own registrant_id; the service verifies ownership before deleting.
+func (s *MeetingsAPI) SelfUnregisterItxMeeting(ctx context.Context, p *meetingsvc.SelfUnregisterItxMeetingPayload) error {
+	if err := s.itxRegistrantService.SelfUnregisterFromMeeting(ctx, p.MeetingID, p.RegistrantID); err != nil {
+		return handleError(ctx, err)
+	}
+	slog.InfoContext(ctx, "self-unregistration completed", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
+	return nil
+}
+
 // GetItxRegistrant retrieves a meeting registrant via ITX proxy
 func (s *MeetingsAPI) GetItxRegistrant(ctx context.Context, p *meetingsvc.GetItxRegistrantPayload) (*meetingsvc.ITXZoomMeetingRegistrant, error) {
 	resp, err := s.itxRegistrantService.GetRegistrant(ctx, p.MeetingID, p.RegistrantID)

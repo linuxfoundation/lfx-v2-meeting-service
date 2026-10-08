@@ -1932,6 +1932,66 @@ type SelfRegisterItxMeetingUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// SelfUnregisterItxMeetingBadRequestResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "BadRequest" error.
+type SelfUnregisterItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfUnregisterItxMeetingForbiddenResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "Forbidden" error.
+type SelfUnregisterItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfUnregisterItxMeetingInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "self-unregister-itx-meeting" endpoint HTTP
+// response body for the "InternalServerError" error.
+type SelfUnregisterItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfUnregisterItxMeetingNotFoundResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "NotFound" error.
+type SelfUnregisterItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfUnregisterItxMeetingServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "self-unregister-itx-meeting" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type SelfUnregisterItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// SelfUnregisterItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "Unauthorized" error.
+type SelfUnregisterItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // GetItxRegistrantBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-itx-registrant" endpoint HTTP response body for the
 // "BadRequest" error.
@@ -5182,6 +5242,72 @@ func NewSelfRegisterItxMeetingServiceUnavailable(body *SelfRegisterItxMeetingSer
 // NewSelfRegisterItxMeetingUnauthorized builds a Meeting Service service
 // self-register-itx-meeting endpoint Unauthorized error.
 func NewSelfRegisterItxMeetingUnauthorized(body *SelfRegisterItxMeetingUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingBadRequest builds a Meeting Service service
+// self-unregister-itx-meeting endpoint BadRequest error.
+func NewSelfUnregisterItxMeetingBadRequest(body *SelfUnregisterItxMeetingBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingForbidden builds a Meeting Service service
+// self-unregister-itx-meeting endpoint Forbidden error.
+func NewSelfUnregisterItxMeetingForbidden(body *SelfUnregisterItxMeetingForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingInternalServerError builds a Meeting Service
+// service self-unregister-itx-meeting endpoint InternalServerError error.
+func NewSelfUnregisterItxMeetingInternalServerError(body *SelfUnregisterItxMeetingInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingNotFound builds a Meeting Service service
+// self-unregister-itx-meeting endpoint NotFound error.
+func NewSelfUnregisterItxMeetingNotFound(body *SelfUnregisterItxMeetingNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingServiceUnavailable builds a Meeting Service
+// service self-unregister-itx-meeting endpoint ServiceUnavailable error.
+func NewSelfUnregisterItxMeetingServiceUnavailable(body *SelfUnregisterItxMeetingServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingUnauthorized builds a Meeting Service service
+// self-unregister-itx-meeting endpoint Unauthorized error.
+func NewSelfUnregisterItxMeetingUnauthorized(body *SelfUnregisterItxMeetingUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
 	v := &meetingservice.UnauthorizedError{
 		Code:    *body.Code,
 		Message: *body.Message,
@@ -9347,6 +9473,79 @@ func ValidateSelfRegisterItxMeetingServiceUnavailableResponseBody(body *SelfRegi
 // ValidateSelfRegisterItxMeetingUnauthorizedResponseBody runs the validations
 // defined on SelfRegisterItxMeetingUnauthorizedResponseBody
 func ValidateSelfRegisterItxMeetingUnauthorizedResponseBody(body *SelfRegisterItxMeetingUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingBadRequestResponseBody runs the validations
+// defined on SelfUnregisterItxMeetingBadRequestResponseBody
+func ValidateSelfUnregisterItxMeetingBadRequestResponseBody(body *SelfUnregisterItxMeetingBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingForbiddenResponseBody runs the validations
+// defined on SelfUnregisterItxMeetingForbiddenResponseBody
+func ValidateSelfUnregisterItxMeetingForbiddenResponseBody(body *SelfUnregisterItxMeetingForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingInternalServerErrorResponseBody runs the
+// validations defined on
+// SelfUnregisterItxMeetingInternalServerErrorResponseBody
+func ValidateSelfUnregisterItxMeetingInternalServerErrorResponseBody(body *SelfUnregisterItxMeetingInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingNotFoundResponseBody runs the validations
+// defined on SelfUnregisterItxMeetingNotFoundResponseBody
+func ValidateSelfUnregisterItxMeetingNotFoundResponseBody(body *SelfUnregisterItxMeetingNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingServiceUnavailableResponseBody runs the
+// validations defined on SelfUnregisterItxMeetingServiceUnavailableResponseBody
+func ValidateSelfUnregisterItxMeetingServiceUnavailableResponseBody(body *SelfUnregisterItxMeetingServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateSelfUnregisterItxMeetingUnauthorizedResponseBody runs the
+// validations defined on SelfUnregisterItxMeetingUnauthorizedResponseBody
+func ValidateSelfUnregisterItxMeetingUnauthorizedResponseBody(body *SelfUnregisterItxMeetingUnauthorizedResponseBody) (err error) {
 	if body.Code == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
 	}

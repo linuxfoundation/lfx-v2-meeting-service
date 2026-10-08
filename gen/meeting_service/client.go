@@ -25,6 +25,7 @@ type Client struct {
 	GetItxMeetingCountEndpoint                    goa.Endpoint
 	CreateItxRegistrantEndpoint                   goa.Endpoint
 	SelfRegisterItxMeetingEndpoint                goa.Endpoint
+	SelfUnregisterItxMeetingEndpoint              goa.Endpoint
 	GetItxRegistrantEndpoint                      goa.Endpoint
 	UpdateItxRegistrantEndpoint                   goa.Endpoint
 	DeleteItxRegistrantEndpoint                   goa.Endpoint
@@ -60,7 +61,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                                readyz,
 		LivezEndpoint:                                 livez,
@@ -71,6 +72,7 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		GetItxMeetingCountEndpoint:                    getItxMeetingCount,
 		CreateItxRegistrantEndpoint:                   createItxRegistrant,
 		SelfRegisterItxMeetingEndpoint:                selfRegisterItxMeeting,
+		SelfUnregisterItxMeetingEndpoint:              selfUnregisterItxMeeting,
 		GetItxRegistrantEndpoint:                      getItxRegistrant,
 		UpdateItxRegistrantEndpoint:                   updateItxRegistrant,
 		DeleteItxRegistrantEndpoint:                   deleteItxRegistrant,
@@ -255,6 +257,21 @@ func (c *Client) SelfRegisterItxMeeting(ctx context.Context, p *SelfRegisterItxM
 		return
 	}
 	return ires.(*ITXZoomMeetingRegistrant), nil
+}
+
+// SelfUnregisterItxMeeting calls the "self-unregister-itx-meeting" endpoint of
+// the "Meeting Service" service.
+// SelfUnregisterItxMeeting may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Registrant does not belong to the authenticated user
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) SelfUnregisterItxMeeting(ctx context.Context, p *SelfUnregisterItxMeetingPayload) (err error) {
+	_, err = c.SelfUnregisterItxMeetingEndpoint(ctx, p)
+	return
 }
 
 // GetItxRegistrant calls the "get-itx-registrant" endpoint of the "Meeting

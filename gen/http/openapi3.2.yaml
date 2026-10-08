@@ -2620,6 +2620,102 @@ paths:
             security:
                 - jwt_header_Authorization: []
     /itx/meetings/{meeting_id}/registrants/self:
+        delete:
+            tags:
+                - Meeting Service
+            summary: self-unregister-itx-meeting Meeting Service
+            description: Unregister the authenticated user from a meeting through ITX API proxy. The caller must be the registrant themselves; you cannot unregister another user. Requires viewer access on the meeting.
+            operationId: Meeting Service#self-unregister-itx-meeting
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: registrant_id
+                  in: query
+                  description: The ID of the registrant (must belong to the authenticated user)
+                  allowEmptyValue: true
+                  required: true
+                  schema:
+                    type: string
+                    description: The ID of the registrant (must belong to the authenticated user)
+                    example: zjkfsdfjdfhg
+                  example: zjkfsdfjdfhg
+                - name: meeting_id
+                  in: path
+                  description: The ID of the meeting
+                  required: true
+                  schema:
+                    type: string
+                    description: The ID of the meeting
+                    example: "1234567890"
+                  example: "1234567890"
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "401":
+                    description: 'Unauthorized: Unauthorized'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnauthorizedError'
+                            example:
+                                code: "401"
+                                message: Unauthorized request.
+                "403":
+                    description: 'Forbidden: Registrant does not belong to the authenticated user'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ForbiddenError'
+                            example:
+                                code: "403"
+                                message: Access forbidden.
+                "404":
+                    description: 'NotFound: Meeting or registrant not found'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
         post:
             tags:
                 - Meeting Service

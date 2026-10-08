@@ -26,6 +26,7 @@ type Endpoints struct {
 	GetItxMeetingCount                    goa.Endpoint
 	CreateItxRegistrant                   goa.Endpoint
 	SelfRegisterItxMeeting                goa.Endpoint
+	SelfUnregisterItxMeeting              goa.Endpoint
 	GetItxRegistrant                      goa.Endpoint
 	UpdateItxRegistrant                   goa.Endpoint
 	DeleteItxRegistrant                   goa.Endpoint
@@ -84,6 +85,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxMeetingCount:                    NewGetItxMeetingCountEndpoint(s, a.JWTAuth),
 		CreateItxRegistrant:                   NewCreateItxRegistrantEndpoint(s, a.JWTAuth),
 		SelfRegisterItxMeeting:                NewSelfRegisterItxMeetingEndpoint(s, a.JWTAuth),
+		SelfUnregisterItxMeeting:              NewSelfUnregisterItxMeetingEndpoint(s, a.JWTAuth),
 		GetItxRegistrant:                      NewGetItxRegistrantEndpoint(s, a.JWTAuth),
 		UpdateItxRegistrant:                   NewUpdateItxRegistrantEndpoint(s, a.JWTAuth),
 		DeleteItxRegistrant:                   NewDeleteItxRegistrantEndpoint(s, a.JWTAuth),
@@ -131,6 +133,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxMeetingCount = m(e.GetItxMeetingCount)
 	e.CreateItxRegistrant = m(e.CreateItxRegistrant)
 	e.SelfRegisterItxMeeting = m(e.SelfRegisterItxMeeting)
+	e.SelfUnregisterItxMeeting = m(e.SelfUnregisterItxMeeting)
 	e.GetItxRegistrant = m(e.GetItxRegistrant)
 	e.UpdateItxRegistrant = m(e.UpdateItxRegistrant)
 	e.DeleteItxRegistrant = m(e.DeleteItxRegistrant)
@@ -339,6 +342,29 @@ func NewSelfRegisterItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc
 			return nil, err
 		}
 		return s.SelfRegisterItxMeeting(ctx, p)
+	}
+}
+
+// NewSelfUnregisterItxMeetingEndpoint returns an endpoint function that calls
+// the method "self-unregister-itx-meeting" of service "Meeting Service".
+func NewSelfUnregisterItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*SelfUnregisterItxMeetingPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = string(*p.BearerToken)
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.SelfUnregisterItxMeeting(ctx, p)
 	}
 }
 

@@ -193,6 +193,42 @@ func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, reg
 	return s.registrantClient.UpdateRegistrant(ctx, meetingID, registrantID, req)
 }
 
+// SelfUnregisterFromMeeting removes the authenticated user's own registrant record from a meeting.
+// The caller supplies their registrant_id; the service fetches the record, verifies the identity
+// matches the JWT principal (email or username), and only then deletes it. M2M tokens are rejected.
+func (s *RegistrantService) SelfUnregisterFromMeeting(ctx context.Context, meetingID, registrantID string) error {
+	username, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if username == "" {
+		return domain.NewForbiddenError("must be authenticated to unregister from a meeting")
+	}
+	if strings.HasSuffix(username, "@clients") {
+		return domain.NewValidationError("self-unregistration requires a user token, not an M2M client token")
+	}
+
+	registrant, err := s.registrantClient.GetRegistrant(ctx, meetingID, registrantID)
+	if err != nil {
+		return err
+	}
+
+	email, _ := ctx.Value(constants.EmailContextID).(string)
+	if email == "" && s.userMetadata != nil {
+		if profile, resolveErr := s.userMetadata.ResolveProfile(ctx, username); resolveErr == nil && profile != nil && profile.Email != "" {
+			email = profile.Email
+		}
+	}
+
+	emailMatch := email != "" && strings.EqualFold(registrant.Email, email)
+	usernameMatch := registrant.Username == username
+	if !emailMatch && !usernameMatch {
+		slog.WarnContext(ctx, "self-unregister ownership check failed: registrant does not belong to principal",
+			"principal", redaction.Redact(username),
+			"registrant_id", registrantID)
+		return domain.NewForbiddenError("registrant does not belong to the authenticated user")
+	}
+
+	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID)
+}
+
 // DeleteRegistrant deletes a meeting registrant via ITX proxy
 func (s *RegistrantService) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
 	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID)
