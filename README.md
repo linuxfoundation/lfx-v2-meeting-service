@@ -413,6 +413,7 @@ Access the live docs when the service is running:
 |----------|--------|-------------|
 | `/itx/meetings/{meeting_id}/registrants` | POST | Add registrant |
 | `/itx/meetings/{meeting_id}/registrants/self` | POST | Self-register (caller registers themselves) |
+| `/itx/meetings/{meeting_id}/registrants/self` | DELETE | Self-unregister (caller removes their own registration) |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}` | GET | Get registrant |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}` | PUT | Update registrant |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}` | DELETE | Delete registrant |

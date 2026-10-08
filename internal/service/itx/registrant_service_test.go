@@ -21,6 +21,12 @@ type fakeRegistrantClient struct {
 	domain.ITXRegistrantClient
 	lastCreateReq *itx.ZoomMeetingRegistrant
 	lastUpdateReq *itx.ZoomMeetingRegistrant
+
+	// self-unregister fields
+	getRegistrantResp      *itx.ZoomMeetingRegistrant
+	getRegistrantErr       error
+	deleteRegistrantCalled bool
+	deleteRegistrantErr    error
 }
 
 func (f *fakeRegistrantClient) CreateRegistrant(_ context.Context, _ string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
@@ -31,6 +37,15 @@ func (f *fakeRegistrantClient) CreateRegistrant(_ context.Context, _ string, req
 func (f *fakeRegistrantClient) UpdateRegistrant(_ context.Context, _, _ string, req *itx.ZoomMeetingRegistrant) error {
 	f.lastUpdateReq = req
 	return nil
+}
+
+func (f *fakeRegistrantClient) GetRegistrant(_ context.Context, _, _ string) (*itx.ZoomMeetingRegistrant, error) {
+	return f.getRegistrantResp, f.getRegistrantErr
+}
+
+func (f *fakeRegistrantClient) DeleteRegistrant(_ context.Context, _, _ string) error {
+	f.deleteRegistrantCalled = true
+	return f.deleteRegistrantErr
 }
 
 // fakeRegistrantMeetingClient returns a canned meeting response for visibility checks
@@ -391,6 +406,111 @@ func TestEnrichRegistrantFromProfile(t *testing.T) {
 		assert.Equal(t, "Example", req.LastName, "profile last name overrides request")
 		assert.Equal(t, "Dev", req.JobTitle, "empty profile job title leaves request value")
 		assert.Equal(t, "Test Org", req.Org, "empty profile org leaves request value")
+	})
+}
+
+func TestRegistrantService_SelfUnregisterFromMeeting(t *testing.T) {
+	newUnregisterSvc := func(client *fakeRegistrantClient, reader domain.UserMetadataReader) *RegistrantService {
+		return NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader, nil)
+	}
+
+	t.Run("deletes when email matches (case-insensitive)", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "Alice@Example.com", Username: "other"},
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("deletes when username matches", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "other@example.com", Username: "alice"},
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("returns forbidden and skips delete when identity does not match", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "bob@example.com", Username: "bob"},
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.deleteRegistrantCalled, "DeleteRegistrant must not be called when ownership check fails")
+	})
+
+	t.Run("returns validation error for M2M client token", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("6cjgEeimLcnqcHtqmRYqmOSt6s5spXNP@clients", "svc@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
+		assert.Nil(t, client.getRegistrantResp, "GetRegistrant must not be called for M2M tokens")
+		assert.False(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("returns forbidden when principal is absent", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(context.Background(), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("propagates GetRegistrant error", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantErr: domain.NewNotFoundError("registrant not found"),
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeNotFound, de.Type)
+		assert.False(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("propagates DeleteRegistrant error", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp:   &itx.ZoomMeetingRegistrant{Email: "alice@example.com"},
+			deleteRegistrantErr: domain.NewInternalError("itx unavailable"),
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		assert.True(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("uses profile email from NATS when JWT email is absent", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "alice@example.com"},
+		}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Email: "alice@example.com"}}
+		svc := newUnregisterSvc(client, reader)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.deleteRegistrantCalled)
 	})
 }
 

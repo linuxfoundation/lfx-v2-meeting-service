@@ -571,12 +571,49 @@ Same response shape as [Create Registrant](#create-registrant). The `type` field
 
 ---
 
+## Self-Unregister Registrant
+
+Allows any authenticated user with at least `viewer` access to a meeting to remove their own registrant record. The caller supplies their `registrant_id`; the service verifies ownership (email or username from the JWT) before deleting. M2M tokens are rejected.
+
+### Proxy API Endpoint
+
+**Method**: `DELETE /itx/meetings/{meeting_id}/registrants/self`
+
+**Authorization**: Requires `viewer` permission on the meeting; caller must own the registrant record
+
+**Request Headers**:
+
+```text
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters**:
+
+- `meeting_id` (string, required) - The Zoom meeting ID
+
+**Query Parameters**:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `registrant_id` | string | Yes | ID of the caller's own registrant record |
+
+**Response**: `204 No Content`
+
+**Error Responses**:
+
+- `401 Unauthorized` — Missing or invalid JWT
+- `403 Forbidden` — Caller lacks viewer access, or the `registrant_id` does not belong to the authenticated user
+- `404 Not Found` — Meeting or registrant not found
+
+---
+
 ## Authorization Requirements
 
 | Endpoint | Required Permission |
 |----------|-------------------|
 | Create Registrant | `organizer` on meeting |
 | Self-Register Registrant | `viewer` on meeting |
+| Self-Unregister Registrant | `viewer` on meeting (+ must own the registrant record) |
 | Get Registrant | `auditor` on meeting |
 | Update Registrant | `organizer` on meeting |
 | Delete Registrant | `organizer` on meeting |
