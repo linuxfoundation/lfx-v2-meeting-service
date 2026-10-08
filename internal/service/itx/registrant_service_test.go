@@ -25,6 +25,7 @@ type fakeRegistrantClient struct {
 	// self-unregister fields
 	getRegistrantResp      *itx.ZoomMeetingRegistrant
 	getRegistrantErr       error
+	getRegistrantCalled    bool
 	deleteRegistrantCalled bool
 	deleteRegistrantErr    error
 }
@@ -40,6 +41,7 @@ func (f *fakeRegistrantClient) UpdateRegistrant(_ context.Context, _, _ string, 
 }
 
 func (f *fakeRegistrantClient) GetRegistrant(_ context.Context, _, _ string) (*itx.ZoomMeetingRegistrant, error) {
+	f.getRegistrantCalled = true
 	return f.getRegistrantResp, f.getRegistrantErr
 }
 
@@ -459,7 +461,7 @@ func TestRegistrantService_SelfUnregisterFromMeeting(t *testing.T) {
 		var de *domain.DomainError
 		require.ErrorAs(t, err, &de)
 		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
-		assert.Nil(t, client.getRegistrantResp, "GetRegistrant must not be called for M2M tokens")
+		assert.False(t, client.getRegistrantCalled, "GetRegistrant must not be called for M2M tokens")
 		assert.False(t, client.deleteRegistrantCalled)
 	})
 
@@ -472,6 +474,7 @@ func TestRegistrantService_SelfUnregisterFromMeeting(t *testing.T) {
 		var de *domain.DomainError
 		require.ErrorAs(t, err, &de)
 		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.getRegistrantCalled, "GetRegistrant must not be called when principal is absent")
 		assert.False(t, client.deleteRegistrantCalled)
 	})
 

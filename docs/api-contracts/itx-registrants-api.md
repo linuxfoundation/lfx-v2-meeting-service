@@ -601,6 +601,7 @@ Authorization: Bearer <jwt_token>
 
 **Error Responses**:
 
+- `400 Bad Request` — M2M client token used; self-unregistration requires a user token
 - `401 Unauthorized` — Missing or invalid JWT
 - `403 Forbidden` — Caller lacks viewer access, or the `registrant_id` does not belong to the authenticated user
 - `404 Not Found` — Meeting or registrant not found
