@@ -192,11 +192,22 @@ redacted identity fields.
 > service:
 >
 > 1. **NATS account/user permissions** on the platform NATS deployment, scoping each subject to its
->    legitimate publisher: `lfx.invite.accepted` to the self-serve identity, and publish plus
->    subscribe/reply on the `lfx.invite-service.*` subjects to the invite service identity. **Both are
->    required** — restricting only the `lfx.invite-service.*` subjects leaves the upstream path in
->    point 2 open. This authorization lives in the platform NATS configuration, not in this service's
->    chart. **This is the recommended fix.**
+>    legitimate publisher *and* its legitimate consumers. This authorization lives in the platform NATS
+>    configuration, not in this service's chart. **This is the recommended fix.**
+>
+>    | Subject | Publish | Subscribe |
+>    |---|---|---|
+>    | `lfx.invite.accepted` | LFX self-serve only | invite service only |
+>    | `lfx.invite-service.invite_accepted` | invite service only | its downstream consumers (this service, project-service) |
+>    | `lfx.invite-service.get_invite` | its callers | invite service only (reply) |
+>
+>    **All three rows are required.** Restricting only the `lfx.invite-service.*` subjects leaves the
+>    upstream path in point 2 wide open, which is the actual ingress.
+>
+>    The subscribe column is not incidental. The attack in point 2 needs a *real, pending* invite UID,
+>    and these subjects carry exactly those UIDs — an unrestricted subscriber can harvest the
+>    precondition. Restricting publish alone removes the ability to forge; restricting subscribe removes
+>    the ability to learn what to forge against.
 > 2. **A signed acceptance assertion** carried from whoever authenticated the user through to this
 >    subscriber, verified here against a public key. This would require changes to the self-serve app and
 >    the invite service's published contract.
