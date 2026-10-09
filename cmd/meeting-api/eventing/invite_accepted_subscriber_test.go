@@ -151,14 +151,20 @@ func TestProcessInviteAcceptedEvent(t *testing.T) {
 	})
 
 	t.Run("discards a forged event whose invite the invite service does not know", func(t *testing.T) {
+		// The UID must be well-formed so the event actually reaches the lookup: the point
+		// of this case is the ErrInviteNotFound branch, which a UID rejected earlier by
+		// the canonical-UUID guard would never exercise.
+		const unknownUID = "00000000-0000-0000-0000-0000000000ff"
 		lookup := &fakeInviteLookup{err: domain.ErrInviteNotFound}
 		client := &fakeAcceptanceClient{}
 
 		err := processInviteAcceptedEvent(ctx,
-			acceptedEvent("forged-uid", victim, attacker, meetingconstants.ResourceTypeMeeting),
+			acceptedEvent(unknownUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
 			lookup, client, slog.Default())
 
-		require.NoError(t, err)
+		require.NoError(t, err, "an unknown invite is discarded quietly, not reported as an error")
+		assert.Equal(t, []string{unknownUID}, lookup.requestedID,
+			"the lookup must actually run; otherwise this case stops testing the not-found branch")
 		assert.Empty(t, client.calls, "no ITX call for an unknown invite")
 	})
 
