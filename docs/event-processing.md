@@ -166,23 +166,42 @@ Every other outcome — unknown invite, still pending, mismatch, or a lookup tha
 results in **no ITX call** (fail closed). Verification failures are logged with the invite UID and
 redacted identity fields.
 
-> **⚠️ Deployment note — this check is not a complete control on its own.** The `get_invite` lookup the
-> verification depends on is reached over the same channel as the event it is verifying, so the
-> verification is only as trustworthy as that channel. Subscriber-side validation stops stale, malformed
-> and unrecognised events and keeps the service from acting on identity values it was simply handed; it
-> does not by itself establish that a message originated from the invite service.
+> **⚠️ Deployment note — this check is not a complete control, and the gap is wider than this service.**
+> Subscriber-side validation stops stale, malformed and unrecognised events, and keeps the service from
+> acting on identity values it was simply handed. It does **not** establish that an acceptance is genuine,
+> for two separate reasons:
 >
-> Completing the control requires one of the following, neither of which can be implemented inside this
+> 1. **The lookup shares the event's channel.** `get_invite` is reached over the same unauthenticated bus
+>    as the event being verified, so the verification is only as trustworthy as that channel.
+> 2. **The stored record is itself derived from an unauthenticated event.** This is the important one.
+>    Upstream of this service, the invite service subscribes to `lfx.invite.accepted` (published by the
+>    LFX self-serve app) and, in `HandleInviteAccepted`, writes that event's caller-supplied `username`
+>    into the invite's `accepted_by` before publishing the enriched event consumed here. Nothing
+>    authenticates that upstream publisher. A publisher that knows a *pending* invite UID can therefore
+>    submit an arbitrary LFID on `lfx.invite.accepted`; the invite service records it as a genuine
+>    acceptance, and re-reading the record here returns `status = accepted` with that LFID. Every check
+>    below passes, and the ITX binding runs — not because verification was bypassed, but because the
+>    authoritative record itself was poisoned at the source.
+>
+> What re-verification *does* buy: an acceptance must correspond to a real, pending invite this platform
+> issued, and the email bound is the one on that stored invite rather than one the publisher chose. An
+> attacker can no longer name an arbitrary victim address; they are limited to invites that exist. That
+> narrows the exposure, it does not remove it.
+>
+> Completing the control requires one of the following, none of which can be implemented inside this
 > service:
 >
-> 1. **NATS account/user permissions** on the platform NATS deployment, scoping publish and
->    subscribe/reply on the `lfx.invite-service.*` subjects to the invite service identity. This
->    authorization lives in the platform NATS configuration, not in this service's chart.
->    **This is the recommended fix.**
-> 2. **A signed acceptance assertion** from the invite service, verified here against its public key.
->    This would require a change to the invite service's published contract.
+> 1. **NATS account/user permissions** on the platform NATS deployment, scoping each subject to its
+>    legitimate publisher: `lfx.invite.accepted` to the self-serve identity, and publish plus
+>    subscribe/reply on the `lfx.invite-service.*` subjects to the invite service identity. **Both are
+>    required** — restricting only the `lfx.invite-service.*` subjects leaves the upstream path in
+>    point 2 open. This authorization lives in the platform NATS configuration, not in this service's
+>    chart. **This is the recommended fix.**
+> 2. **A signed acceptance assertion** carried from whoever authenticated the user through to this
+>    subscriber, verified here against a public key. This would require changes to the self-serve app and
+>    the invite service's published contract.
 >
-> Until one of those is deployed, treat subscriber-side verification as a partial control.
+> Until one of those is deployed, treat the `invite_accepted` path as narrowed, not closed.
 
 ### Consumer Configuration
 

@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	natsgo "github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -31,11 +32,18 @@ const (
 	inviteAcceptedQueueGroup  = "meeting-service-invite-accepted"
 	inviteAcceptedCallTimeout = 30 * time.Second
 
-	// Caps for the values read out of an acceptance event. Invite UIDs are UUIDs and
-	// addresses cannot exceed the RFC 5321 limit, so both are generous; they exist to
-	// bound what a publisher can put into a log line, not to validate format.
-	maxInviteUIDLen      = 200
+	// Cap for the identity values read out of an acceptance event. Addresses cannot
+	// exceed the RFC 5321 limit, so this is generous; it exists to bound what a publisher
+	// can put into a log line, not to validate format.
 	maxInviteIdentityLen = 320
+
+	// Length of a canonical hyphenated UUID, the form the invite service mints.
+	canonicalUUIDLen = 36
+
+	// Cap for the resource type, which arrives in a lookup reply rather than from the
+	// event. The set of LFX resource types is open-ended, so this bounds rather than
+	// allow-lists, leaving a new type readable in logs.
+	maxResourceTypeLen = 64
 )
 
 // InviteAcceptedSubscriber subscribes to lfx.invite-service.invite_accepted events
@@ -48,12 +56,20 @@ const (
 // credential, every event is re-verified against the invite service (the owner of invite
 // state) before any ITX call is made — see processInviteAcceptedEvent.
 //
-// That verification is defense in depth, not a complete origin control: the get_invite
-// lookup it relies on is reached over the same channel as the event it verifies, so it is
-// only as trustworthy as that channel. Completing the control needs something this service
-// cannot do on its own — NATS account permissions scoping the invite-service subjects to
-// the invite service identity (platform NATS configuration), or a cryptographically signed
-// acceptance assertion from the invite service. See docs/event-processing.md.
+// That verification is defense in depth, not a complete origin control, for two reasons.
+// The get_invite lookup it relies on is reached over the same unauthenticated channel as
+// the event it verifies. More importantly, the stored record is itself built from an
+// unauthenticated event: the invite service takes the caller-supplied username off
+// lfx.invite.accepted and writes it to accepted_by, so a publisher that knows a pending
+// invite UID can have an arbitrary LFID recorded as a genuine acceptance, and re-reading
+// it here returns exactly that. What re-reading does buy is that an acceptance must match
+// a real pending invite and binds that invite's own recipient address, so a publisher can
+// no longer name an arbitrary victim — the exposure is narrowed, not closed.
+//
+// Closing it needs something this service cannot do on its own: NATS permissions scoping
+// lfx.invite.accepted to the self-serve identity *and* the lfx.invite-service.* subjects
+// to the invite service (platform NATS configuration), or a signed acceptance assertion
+// carried from whoever authenticated the user. See docs/event-processing.md.
 type InviteAcceptedSubscriber struct {
 	nc               *natsgo.Conn
 	acceptanceClient domain.InviteAcceptanceClient
@@ -195,17 +211,24 @@ func processInviteAcceptedEvent(
 		return nil
 	}
 
-	// Values this long are malformed, and the check earns its place on the logging side
-	// rather than the parsing side: the invite UID is echoed into a warning on every
-	// rejected event, and redaction bounds a username but not an email's domain. Since any
-	// workload on the bus can publish here, an unbounded value would let a publisher drive
-	// this service's log volume with events it knows will be rejected. Log the lengths, not
-	// the values — echoing them is the thing being avoided.
-	if len(inviteUID) > maxInviteUIDLen ||
-		len(claimedEmail) > maxInviteIdentityLen ||
-		len(claimedUsername) > maxInviteIdentityLen {
-		logger.WarnContext(ctx, "invite_accepted event carries oversized fields; discarding",
+	// The invite UID is echoed into a warning on every rejected event, so it must not be
+	// free text. The invite service mints it with uuid.NewString — it is the invite JWT's
+	// jti — so anything that is not a canonical UUID cannot name a real invite. Requiring
+	// that form bounds the value and stops a publisher parking arbitrary text in this
+	// service's logs, which redaction would not catch: a UID is not an identity field, so
+	// nothing redacts it.
+	if !isCanonicalUUID(inviteUID) {
+		logger.WarnContext(ctx, "invite_accepted event carries a non-canonical invite uid; discarding",
 			"invite_uid_len", len(inviteUID),
+		)
+		return nil
+	}
+
+	// Addresses and usernames are redacted where they are logged, but redaction bounds a
+	// username and leaves an email's domain intact, so cap both. Log the lengths, not the
+	// values — echoing them is the thing being avoided.
+	if len(claimedEmail) > maxInviteIdentityLen || len(claimedUsername) > maxInviteIdentityLen {
+		logger.WarnContext(ctx, "invite_accepted event carries oversized identity fields; discarding",
 			"email_len", len(claimedEmail),
 			"username_len", len(claimedUsername),
 		)
@@ -264,13 +287,13 @@ func processInviteAcceptedEvent(
 	if invite.Resource.Type != "" && invite.Resource.Type != meetingconstants.ResourceTypeMeeting {
 		logger.DebugContext(ctx, "received invite_accepted event for non-meeting resource; enriching Zoom records by email",
 			"email", redaction.RedactEmail(verifiedEmail),
-			"resource_type", invite.Resource.Type,
+			"resource_type", boundedResourceType(invite.Resource.Type),
 		)
 	} else {
 		logger.DebugContext(ctx, "received invite_accepted event",
 			"email", redaction.RedactEmail(verifiedEmail),
 			"username", redaction.Redact(verifiedUsername),
-			"resource_type", invite.Resource.Type,
+			"resource_type", boundedResourceType(invite.Resource.Type),
 		)
 	}
 
@@ -284,6 +307,27 @@ func processInviteAcceptedEvent(
 		"username", redaction.Redact(verifiedUsername),
 	)
 	return nil
+}
+
+// isCanonicalUUID reports whether s is a UUID in the canonical hyphenated form the invite
+// service mints. uuid.Parse alone also accepts the urn:, braced and unhyphenated forms, so
+// the length is checked too: the point is to pin one known shape, not to be permissive.
+func isCanonicalUUID(s string) bool {
+	if len(s) != canonicalUUIDLen {
+		return false
+	}
+	_, err := uuid.Parse(s)
+	return err == nil
+}
+
+// boundedResourceType renders a resource type for logging. The value comes from a lookup
+// reply, so its length is not ours to trust; unlike status it is not a closed set, so it
+// is truncated rather than matched against an allow-list.
+func boundedResourceType(resourceType string) string {
+	if len(resourceType) <= maxResourceTypeLen {
+		return resourceType
+	}
+	return resourceType[:maxResourceTypeLen] + "…"
 }
 
 // boundedStatus renders an invite status for logging. InviteStatus is an open string

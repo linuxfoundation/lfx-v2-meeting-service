@@ -241,7 +241,7 @@ func TestProcessInviteAcceptedEvent(t *testing.T) {
 		// still writes a warning naming the invite UID. Without a cap a publisher could
 		// drive log volume with values it knows will be rejected.
 		cases := map[string]inviteapi.InviteServiceAcceptedEvent{
-			"uid": acceptedEvent(strings.Repeat("A", maxInviteUIDLen+1), victim, acceptor,
+			"uid": acceptedEvent(strings.Repeat("A", canonicalUUIDLen+1), victim, acceptor,
 				meetingconstants.ResourceTypeMeeting),
 			"email": acceptedEvent(inviteUID, strings.Repeat("a", maxInviteIdentityLen)+"@example.com",
 				acceptor, meetingconstants.ResourceTypeMeeting),
@@ -267,20 +267,41 @@ func TestProcessInviteAcceptedEvent(t *testing.T) {
 		}
 	})
 
-	t.Run("accepts fields at the size limit", func(t *testing.T) {
-		// The guard rejects what is over the cap, not what is at it.
-		uid := strings.Repeat("A", maxInviteUIDLen)
-		lookup := &fakeInviteLookup{invite: acceptedInvite(uid, victim, acceptor,
-			meetingconstants.ResourceTypeMeeting)}
-		client := &fakeAcceptanceClient{}
+	t.Run("rejects non-canonical invite uids before the lookup", func(t *testing.T) {
+		// The invite service mints UIDs with uuid.NewString, so anything else cannot name
+		// a real invite. Rejecting the non-canonical forms uuid.Parse would otherwise
+		// accept keeps one known shape and stops free text reaching the logs.
+		for name, uid := range map[string]string{
+			"not a uuid":   "../../etc/passwd",
+			"pii as uid":   "victim@example.com-not-a-uuid-padding00",
+			"unhyphenated": "00000000000000000000000000000001",
+			"urn form":     "urn:uuid:00000000-0000-0000-0000-000000000001",
+			"braced form":  "{00000000-0000-0000-0000-000000000001}",
+			"empty-ish":    "   ",
+		} {
+			t.Run(name, func(t *testing.T) {
+				lookup := &fakeInviteLookup{invite: acceptedInvite(uid, victim, acceptor,
+					meetingconstants.ResourceTypeMeeting)}
+				client := &fakeAcceptanceClient{}
 
-		err := processInviteAcceptedEvent(ctx,
-			acceptedEvent(uid, victim, acceptor, meetingconstants.ResourceTypeMeeting),
-			lookup, client, slog.Default())
+				err := processInviteAcceptedEvent(ctx,
+					acceptedEvent(uid, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+					lookup, client, slog.Default())
 
-		require.NoError(t, err)
-		require.Len(t, client.calls, 1)
-		assert.Equal(t, []string{uid}, lookup.requestedID)
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "a non-canonical uid must not reach ITX")
+				assert.Empty(t, lookup.requestedID,
+					"a non-canonical uid must be rejected before the lookup")
+			})
+		}
+	})
+
+	t.Run("bounds an oversized resource type from the lookup reply", func(t *testing.T) {
+		// Resource type comes from the reply, so its length is not ours to trust.
+		assert.Len(t, boundedResourceType(strings.Repeat("x", 5000)),
+			maxResourceTypeLen+len("\u2026"))
+		assert.Equal(t, "meeting", boundedResourceType("meeting"),
+			"a normal resource type must stay readable")
 	})
 
 	t.Run("enriches an invite with no resource type", func(t *testing.T) {

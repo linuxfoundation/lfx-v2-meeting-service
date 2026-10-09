@@ -115,16 +115,41 @@ func TestNATSInviteLookup_GetInvite(t *testing.T) {
 		assert.Nil(t, invite)
 	})
 
-	t.Run("bounds an oversized error string before it reaches the error message", func(t *testing.T) {
+	t.Run("does not echo unrecognised reply text into the error", func(t *testing.T) {
+		// A reply on this subject is not authenticated, so its text must not reach our
+		// logs at all — bounding the length would still forward the content.
+		secret := "s3cret-" + strings.Repeat("A", 5000) + "-victim@example.com"
 		requester := &MockRequester{}
 		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
-			Return(replyWith(t, inviteapi.GetInviteResponse{Error: strings.Repeat("A", 5000)}), nil)
+			Return(replyWith(t, inviteapi.GetInviteResponse{Error: secret}), nil)
 
 		invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
 
 		require.Error(t, err)
 		assert.Nil(t, invite)
-		assert.Less(t, len(err.Error()), 300, "attacker-controlled reply text must not set the log line length")
+		assert.NotContains(t, err.Error(), "s3cret")
+		assert.NotContains(t, err.Error(), "victim@example.com")
+		assert.NotContains(t, err.Error(), "AAAA")
+		assert.Less(t, len(err.Error()), 200, "reply text must not set the log line length")
+	})
+
+	t.Run("keeps the invite service's own error codes readable", func(t *testing.T) {
+		// Refusing to echo unknown text must not cost diagnostics for the codes the
+		// real responder actually sends.
+		for _, code := range []string{"invalid_request", "malformed_request", "internal_error"} {
+			t.Run(code, func(t *testing.T) {
+				requester := &MockRequester{}
+				requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+					Return(replyWith(t, inviteapi.GetInviteResponse{Error: code}), nil)
+
+				invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+				require.Error(t, err)
+				assert.Nil(t, invite)
+				assert.NotErrorIs(t, err, domain.ErrInviteNotFound)
+				assert.Contains(t, err.Error(), code)
+			})
+		}
 	})
 
 	t.Run("errors when the reply answers a different invite uid", func(t *testing.T) {

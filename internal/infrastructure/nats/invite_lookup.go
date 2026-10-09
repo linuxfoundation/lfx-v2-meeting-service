@@ -66,7 +66,7 @@ func (l *NATSInviteLookup) GetInvite(ctx context.Context, uid string) (*inviteap
 		if isNotFoundError(resp.Error) {
 			return nil, domain.ErrInviteNotFound
 		}
-		return nil, fmt.Errorf("invite service returned error: %q", truncateForLog(resp.Error))
+		return nil, fmt.Errorf("invite service returned error: %s", knownErrorCode(resp.Error))
 	}
 	// Invite is an embedded pointer: it stays nil when the reply carried no record.
 	if resp.Invite == nil {
@@ -86,15 +86,26 @@ func isNotFoundError(s string) bool {
 	return s == "not_found" || s == "not found" || s == "invite not found"
 }
 
-// truncateForLog bounds a string taken from a reply before it reaches a log line or an
-// error message. The reply comes from off-process and the contract does not bound this
-// field, so its length must not drive ours.
-func truncateForLog(s string) string {
-	const maxLen = 120
-	if len(s) <= maxLen {
-		return s
+// knownErrorCode maps a reply's error field onto the closed set of codes the invite
+// service's get_invite responder actually emits, and reports anything else as a fixed
+// string.
+//
+// Echoing the field verbatim would carry responder-controlled text into this service's
+// logs. Truncating it bounds the length but still forwards the content, and a reply on
+// this subject is not authenticated — so a spoofed responder could use it to place
+// arbitrary text, PII included, in our logs. Since the real responder only ever sends
+// these four codes, nothing diagnostic is lost by refusing to repeat anything else.
+func knownErrorCode(s string) string {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "invalid_request":
+		return "invalid_request"
+	case "malformed_request":
+		return "malformed_request"
+	case "internal_error":
+		return "internal_error"
+	default:
+		return "(unrecognised error code)"
 	}
-	return s[:maxLen] + "…"
 }
 
 // Ensure NATSInviteLookup implements domain.InviteLookup.

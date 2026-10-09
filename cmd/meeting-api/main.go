@@ -199,9 +199,11 @@ func run() int {
 				slog.With(logging.ErrKey, err).WarnContext(ctx,
 					"failed to connect to NATS for invite_accepted subscriber; continuing without enrichment")
 			} else {
-				// The invite lookup is what makes an acceptance event trustworthy: the
-				// subscriber re-reads every invite from the invite service before it
-				// asks ITX to bind an LFID to an email's Zoom records.
+				// The subscriber re-reads every invite from the invite service before it
+				// asks ITX to bind an LFID to an email's Zoom records. That is defense in
+				// depth, not a guarantee the event is genuine: the lookup reply travels
+				// the same unauthenticated bus as the event. See the subscriber's doc
+				// comment and docs/event-processing.md for the boundary.
 				inviteLookup := natsinfra.NewInviteLookup(nc, slog.Default())
 				sub := apieventing.NewInviteAcceptedSubscriber(nc, itxClient, inviteLookup, slog.Default())
 				if err := sub.Start(ctx); err != nil {
