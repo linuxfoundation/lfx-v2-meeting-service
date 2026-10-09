@@ -1757,6 +1757,79 @@ paths:
                 - http
             security:
                 - jwt_header_Authorization: []
+        delete:
+            tags:
+                - Meeting Service
+            summary: self-unregister-itx-meeting Meeting Service
+            description: Unregister the authenticated user from a meeting through ITX API proxy. The caller must be the registrant themselves; you cannot unregister another user. Requires viewer access on the meeting.
+            operationId: Meeting Service#self-unregister-itx-meeting
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: registrant_id
+                  in: query
+                  description: The ID of the registrant (must belong to the authenticated user)
+                  required: true
+                  type: string
+                - name: meeting_id
+                  in: path
+                  description: The ID of the meeting
+                  required: true
+                  type: string
+            responses:
+                "204":
+                    description: No Content response.
+                "400":
+                    description: 'BadRequest: Bad request'
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "401":
+                    description: 'Unauthorized: Unauthorized'
+                    schema:
+                        $ref: '#/definitions/UnauthorizedError'
+                        required:
+                            - code
+                            - message
+                "403":
+                    description: 'Forbidden: Registrant does not belong to the authenticated user'
+                    schema:
+                        $ref: '#/definitions/ForbiddenError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: 'NotFound: Meeting or registrant not found'
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
     /itx/meetings/{meeting_id}/resend:
         post:
             tags:

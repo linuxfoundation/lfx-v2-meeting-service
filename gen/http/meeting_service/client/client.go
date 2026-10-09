@@ -51,6 +51,10 @@ type Client struct {
 	// self-register-itx-meeting endpoint.
 	SelfRegisterItxMeetingDoer goahttp.Doer
 
+	// SelfUnregisterItxMeeting Doer is the HTTP client used to make requests to
+	// the self-unregister-itx-meeting endpoint.
+	SelfUnregisterItxMeetingDoer goahttp.Doer
+
 	// GetItxRegistrant Doer is the HTTP client used to make requests to the
 	// get-itx-registrant endpoint.
 	GetItxRegistrantDoer goahttp.Doer
@@ -209,6 +213,7 @@ func NewClient(
 		GetItxMeetingCountDoer:                    doer,
 		CreateItxRegistrantDoer:                   doer,
 		SelfRegisterItxMeetingDoer:                doer,
+		SelfUnregisterItxMeetingDoer:              doer,
 		GetItxRegistrantDoer:                      doer,
 		UpdateItxRegistrantDoer:                   doer,
 		DeleteItxRegistrantDoer:                   doer,
@@ -450,6 +455,30 @@ func (c *Client) SelfRegisterItxMeeting() goa.Endpoint {
 		resp, err := c.SelfRegisterItxMeetingDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "self-register-itx-meeting", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SelfUnregisterItxMeeting returns an endpoint that makes HTTP requests to the
+// Meeting Service service self-unregister-itx-meeting server.
+func (c *Client) SelfUnregisterItxMeeting() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSelfUnregisterItxMeetingRequest(c.encoder)
+		decodeResponse = DecodeSelfUnregisterItxMeetingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildSelfUnregisterItxMeetingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SelfUnregisterItxMeetingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "self-unregister-itx-meeting", err)
 		}
 		return decodeResponse(resp)
 	}

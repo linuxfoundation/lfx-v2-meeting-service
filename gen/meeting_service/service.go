@@ -37,6 +37,10 @@ type Service interface {
 	// public meetings are supported; private meetings return 403. Requires viewer
 	// access on the meeting.
 	SelfRegisterItxMeeting(context.Context, *SelfRegisterItxMeetingPayload) (res *ITXZoomMeetingRegistrant, err error)
+	// Unregister the authenticated user from a meeting through ITX API proxy. The
+	// caller must be the registrant themselves; you cannot unregister another
+	// user. Requires viewer access on the meeting.
+	SelfUnregisterItxMeeting(context.Context, *SelfUnregisterItxMeetingPayload) (err error)
 	// Get a meeting registrant through ITX API proxy
 	GetItxRegistrant(context.Context, *GetItxRegistrantPayload) (res *ITXZoomMeetingRegistrant, err error)
 	// Update a meeting registrant through ITX API proxy
@@ -132,7 +136,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [41]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
+var MethodNames = [42]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "self-unregister-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 // Voting status filter for committee members
 type AllowedVotingStatus string
@@ -1326,6 +1330,19 @@ type SelfRegisterItxMeetingPayload struct {
 	JobTitle *string
 	// Specific occurrence ID to register for (blank = all occurrences)
 	Occurrence *string
+}
+
+// SelfUnregisterItxMeetingPayload is the payload type of the Meeting Service
+// service self-unregister-itx-meeting method.
+type SelfUnregisterItxMeetingPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// The ID of the meeting
+	MeetingID string
+	// The ID of the registrant (must belong to the authenticated user)
+	RegistrantID string
 }
 
 type ServiceUnavailableError struct {

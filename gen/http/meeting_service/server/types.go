@@ -1932,6 +1932,66 @@ type SelfRegisterItxMeetingUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// SelfUnregisterItxMeetingBadRequestResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "BadRequest" error.
+type SelfUnregisterItxMeetingBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfUnregisterItxMeetingForbiddenResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "Forbidden" error.
+type SelfUnregisterItxMeetingForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfUnregisterItxMeetingInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "self-unregister-itx-meeting" endpoint HTTP
+// response body for the "InternalServerError" error.
+type SelfUnregisterItxMeetingInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfUnregisterItxMeetingNotFoundResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "NotFound" error.
+type SelfUnregisterItxMeetingNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfUnregisterItxMeetingServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "self-unregister-itx-meeting" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type SelfUnregisterItxMeetingServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfUnregisterItxMeetingUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "self-unregister-itx-meeting" endpoint HTTP response body
+// for the "Unauthorized" error.
+type SelfUnregisterItxMeetingUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // GetItxRegistrantBadRequestResponseBody is the type of the "Meeting Service"
 // service "get-itx-registrant" endpoint HTTP response body for the
 // "BadRequest" error.
@@ -5254,6 +5314,72 @@ func NewSelfRegisterItxMeetingUnauthorizedResponseBody(res *meetingservice.Unaut
 	return body
 }
 
+// NewSelfUnregisterItxMeetingBadRequestResponseBody builds the HTTP response
+// body from the result of the "self-unregister-itx-meeting" endpoint of the
+// "Meeting Service" service.
+func NewSelfUnregisterItxMeetingBadRequestResponseBody(res *meetingservice.BadRequestError) *SelfUnregisterItxMeetingBadRequestResponseBody {
+	body := &SelfUnregisterItxMeetingBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfUnregisterItxMeetingForbiddenResponseBody builds the HTTP response
+// body from the result of the "self-unregister-itx-meeting" endpoint of the
+// "Meeting Service" service.
+func NewSelfUnregisterItxMeetingForbiddenResponseBody(res *meetingservice.ForbiddenError) *SelfUnregisterItxMeetingForbiddenResponseBody {
+	body := &SelfUnregisterItxMeetingForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfUnregisterItxMeetingInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "self-unregister-itx-meeting" endpoint
+// of the "Meeting Service" service.
+func NewSelfUnregisterItxMeetingInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *SelfUnregisterItxMeetingInternalServerErrorResponseBody {
+	body := &SelfUnregisterItxMeetingInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfUnregisterItxMeetingNotFoundResponseBody builds the HTTP response
+// body from the result of the "self-unregister-itx-meeting" endpoint of the
+// "Meeting Service" service.
+func NewSelfUnregisterItxMeetingNotFoundResponseBody(res *meetingservice.NotFoundError) *SelfUnregisterItxMeetingNotFoundResponseBody {
+	body := &SelfUnregisterItxMeetingNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfUnregisterItxMeetingServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "self-unregister-itx-meeting" endpoint
+// of the "Meeting Service" service.
+func NewSelfUnregisterItxMeetingServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *SelfUnregisterItxMeetingServiceUnavailableResponseBody {
+	body := &SelfUnregisterItxMeetingServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfUnregisterItxMeetingUnauthorizedResponseBody builds the HTTP response
+// body from the result of the "self-unregister-itx-meeting" endpoint of the
+// "Meeting Service" service.
+func NewSelfUnregisterItxMeetingUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *SelfUnregisterItxMeetingUnauthorizedResponseBody {
+	body := &SelfUnregisterItxMeetingUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewGetItxRegistrantBadRequestResponseBody builds the HTTP response body from
 // the result of the "get-itx-registrant" endpoint of the "Meeting Service"
 // service.
@@ -7583,6 +7709,18 @@ func NewSelfRegisterItxMeetingPayload(body *SelfRegisterItxMeetingRequestBody, m
 	}
 	v.MeetingID = meetingID
 	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewSelfUnregisterItxMeetingPayload builds a Meeting Service service
+// self-unregister-itx-meeting endpoint payload.
+func NewSelfUnregisterItxMeetingPayload(meetingID string, version *string, registrantID string, bearerToken *string) *meetingservice.SelfUnregisterItxMeetingPayload {
+	v := &meetingservice.SelfUnregisterItxMeetingPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.RegistrantID = registrantID
 	v.BearerToken = bearerToken
 
 	return v

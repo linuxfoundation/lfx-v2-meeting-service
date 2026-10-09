@@ -586,6 +586,51 @@ func BuildSelfRegisterItxMeetingPayload(meetingServiceSelfRegisterItxMeetingBody
 	return v, nil
 }
 
+// BuildSelfUnregisterItxMeetingPayload builds the payload for the Meeting
+// Service self-unregister-itx-meeting endpoint from CLI flags.
+func BuildSelfUnregisterItxMeetingPayload(meetingServiceSelfUnregisterItxMeetingMeetingID *string, meetingServiceSelfUnregisterItxMeetingVersion *string, meetingServiceSelfUnregisterItxMeetingRegistrantID *string, meetingServiceSelfUnregisterItxMeetingBearerToken *string) (*meetingservice.SelfUnregisterItxMeetingPayload, error) {
+	var err error
+	var meetingID string
+	{
+		if meetingServiceSelfUnregisterItxMeetingMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceSelfUnregisterItxMeetingMeetingID
+	}
+	var version *string
+	{
+		if meetingServiceSelfUnregisterItxMeetingVersion != nil {
+			version = meetingServiceSelfUnregisterItxMeetingVersion
+			if !(*meetingServiceSelfUnregisterItxMeetingVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceSelfUnregisterItxMeetingVersion, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var registrantID string
+	{
+		if meetingServiceSelfUnregisterItxMeetingRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceSelfUnregisterItxMeetingRegistrantID
+	}
+	var bearerToken *string
+	{
+		if meetingServiceSelfUnregisterItxMeetingBearerToken != nil {
+			bearerToken = meetingServiceSelfUnregisterItxMeetingBearerToken
+		}
+	}
+	v := &meetingservice.SelfUnregisterItxMeetingPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.RegistrantID = registrantID
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildGetItxRegistrantPayload builds the payload for the Meeting Service
 // get-itx-registrant endpoint from CLI flags.
 func BuildGetItxRegistrantPayload(meetingServiceGetItxRegistrantMeetingID *string, meetingServiceGetItxRegistrantRegistrantID *string, meetingServiceGetItxRegistrantVersion *string, meetingServiceGetItxRegistrantBearerToken *string) (*meetingservice.GetItxRegistrantPayload, error) {

@@ -670,6 +670,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 - `POST /itx/meetings/{meeting_id}/registrants` - Add registrant
 - `POST /itx/meetings/{meeting_id}/registrants/self` - Self-register (caller registers themselves)
+- `DELETE /itx/meetings/{meeting_id}/registrants/self` - Self-unregister (caller removes their own registration)
 - `GET /itx/meetings/{meeting_id}/registrants/{registrant_id}` - Get registrant
 - `PUT /itx/meetings/{meeting_id}/registrants/{registrant_id}` - Update registrant
 - `DELETE /itx/meetings/{meeting_id}/registrants/{registrant_id}` - Delete registrant

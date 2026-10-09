@@ -29,6 +29,7 @@ type Server struct {
 	GetItxMeetingCount                    http.Handler
 	CreateItxRegistrant                   http.Handler
 	SelfRegisterItxMeeting                http.Handler
+	SelfUnregisterItxMeeting              http.Handler
 	GetItxRegistrant                      http.Handler
 	UpdateItxRegistrant                   http.Handler
 	DeleteItxRegistrant                   http.Handler
@@ -123,6 +124,7 @@ func New(
 			{"GetItxMeetingCount", "GET", "/itx/meeting_count"},
 			{"CreateItxRegistrant", "POST", "/itx/meetings/{meeting_id}/registrants"},
 			{"SelfRegisterItxMeeting", "POST", "/itx/meetings/{meeting_id}/registrants/self"},
+			{"SelfUnregisterItxMeeting", "DELETE", "/itx/meetings/{meeting_id}/registrants/self"},
 			{"GetItxRegistrant", "GET", "/itx/meetings/{meeting_id}/registrants/{registrant_id}"},
 			{"UpdateItxRegistrant", "PUT", "/itx/meetings/{meeting_id}/registrants/{registrant_id}"},
 			{"DeleteItxRegistrant", "DELETE", "/itx/meetings/{meeting_id}/registrants/{registrant_id}"},
@@ -169,6 +171,7 @@ func New(
 		GetItxMeetingCount:                    NewGetItxMeetingCountHandler(e.GetItxMeetingCount, mux, decoder, encoder, errhandler, formatter),
 		CreateItxRegistrant:                   NewCreateItxRegistrantHandler(e.CreateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
 		SelfRegisterItxMeeting:                NewSelfRegisterItxMeetingHandler(e.SelfRegisterItxMeeting, mux, decoder, encoder, errhandler, formatter),
+		SelfUnregisterItxMeeting:              NewSelfUnregisterItxMeetingHandler(e.SelfUnregisterItxMeeting, mux, decoder, encoder, errhandler, formatter),
 		GetItxRegistrant:                      NewGetItxRegistrantHandler(e.GetItxRegistrant, mux, decoder, encoder, errhandler, formatter),
 		UpdateItxRegistrant:                   NewUpdateItxRegistrantHandler(e.UpdateItxRegistrant, mux, decoder, encoder, errhandler, formatter),
 		DeleteItxRegistrant:                   NewDeleteItxRegistrantHandler(e.DeleteItxRegistrant, mux, decoder, encoder, errhandler, formatter),
@@ -222,6 +225,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetItxMeetingCount = m(s.GetItxMeetingCount)
 	s.CreateItxRegistrant = m(s.CreateItxRegistrant)
 	s.SelfRegisterItxMeeting = m(s.SelfRegisterItxMeeting)
+	s.SelfUnregisterItxMeeting = m(s.SelfUnregisterItxMeeting)
 	s.GetItxRegistrant = m(s.GetItxRegistrant)
 	s.UpdateItxRegistrant = m(s.UpdateItxRegistrant)
 	s.DeleteItxRegistrant = m(s.DeleteItxRegistrant)
@@ -270,6 +274,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetItxMeetingCountHandler(mux, h.GetItxMeetingCount)
 	MountCreateItxRegistrantHandler(mux, h.CreateItxRegistrant)
 	MountSelfRegisterItxMeetingHandler(mux, h.SelfRegisterItxMeeting)
+	MountSelfUnregisterItxMeetingHandler(mux, h.SelfUnregisterItxMeeting)
 	MountGetItxRegistrantHandler(mux, h.GetItxRegistrant)
 	MountUpdateItxRegistrantHandler(mux, h.UpdateItxRegistrant)
 	MountDeleteItxRegistrantHandler(mux, h.DeleteItxRegistrant)
@@ -759,6 +764,60 @@ func NewSelfRegisterItxMeetingHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "self-register-itx-meeting")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountSelfUnregisterItxMeetingHandler configures the mux to serve the
+// "Meeting Service" service "self-unregister-itx-meeting" endpoint.
+func MountSelfUnregisterItxMeetingHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("DELETE", "/itx/meetings/{meeting_id}/registrants/self", f)
+}
+
+// NewSelfUnregisterItxMeetingHandler creates a HTTP handler which loads the
+// HTTP request and calls the "Meeting Service" service
+// "self-unregister-itx-meeting" endpoint.
+func NewSelfUnregisterItxMeetingHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeSelfUnregisterItxMeetingRequest(mux, decoder)
+		encodeResponse = EncodeSelfUnregisterItxMeetingResponse(encoder)
+		encodeError    = EncodeSelfUnregisterItxMeetingError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "self-unregister-itx-meeting")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

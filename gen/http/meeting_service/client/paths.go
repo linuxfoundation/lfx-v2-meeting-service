@@ -54,6 +54,11 @@ func SelfRegisterItxMeetingMeetingServicePath(meetingID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/registrants/self", meetingID)
 }
 
+// SelfUnregisterItxMeetingMeetingServicePath returns the URL path to the Meeting Service service self-unregister-itx-meeting HTTP endpoint.
+func SelfUnregisterItxMeetingMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/self", meetingID)
+}
+
 // GetItxRegistrantMeetingServicePath returns the URL path to the Meeting Service service get-itx-registrant HTTP endpoint.
 func GetItxRegistrantMeetingServicePath(meetingID string, registrantID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/registrants/%v", meetingID, registrantID)
