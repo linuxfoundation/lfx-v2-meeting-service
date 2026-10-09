@@ -24,3 +24,18 @@ type InviteSender interface {
 	// continue — invite sending is always best-effort and must never block indexing.
 	SendInvite(ctx context.Context, req inviteapi.SendInviteRequest) (*InviteResult, error)
 }
+
+// InviteLookup re-reads a stored invite record from the invite service, which owns
+// invite state and is the only component that can attest that an invite was actually
+// accepted and by whom.
+//
+// It exists so that acceptance notifications arriving on the shared NATS bus — where
+// any workload can publish — are verified against the issuing service before the
+// meeting service performs a privileged identity-binding write on their behalf.
+type InviteLookup interface {
+	// GetInvite returns the stored invite record for uid.
+	// Returns ErrInviteNotFound when the invite service has no record for uid, and a
+	// non-nil error for transient NATS or parsing failures. Callers must fail closed
+	// on both: an unverifiable acceptance must not be acted on.
+	GetInvite(ctx context.Context, uid string) (*inviteapi.Invite, error)
+}

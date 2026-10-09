@@ -138,12 +138,51 @@ All invite operations are best-effort: errors are logged and never cause KV mess
 #### Invite acceptance enrichment (independent of event processing)
 
 When `INVITES_ENABLED=true` and `NATS_URL` is set, `main.go` starts a NATS queue subscriber on
-`lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On acceptance it
-calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB records for
-the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee reconciliation
-behavior).
+`lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On a **verified**
+acceptance it calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB
+records for the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee
+reconciliation behavior).
 
 The subscriber uses the process shutdown context, drains on stop, and waits for in-flight handlers to finish.
+
+##### Event verification (defense in depth, not a complete origin control)
+
+The subject sits on the shared platform bus, so an incoming message is a notification, not an
+authenticated assertion of identity. The ITX call it drives binds an LFID to the registrant,
+past-meeting invitee and past-meeting attendee rows carrying the given email, and those rows feed
+downstream access-control state. An identity binding of that weight has to be validated against the
+component that owns invite state — it cannot be taken from the message.
+
+The event body is treated purely as a hint to go and re-read the authoritative record:
+
+1. The event must carry an invite UID (`uid`), plus a recipient email and `accepted_by`.
+2. That invite is re-fetched from the invite service over `lfx.invite-service.get_invite` — the invite
+   service owns invite state and is the only component that records who completed the acceptance flow.
+3. The stored record must have `status = accepted`, and its `accepted_by` and `recipient.email` must match
+   what the event claimed.
+4. The ITX call is made with the values from the **stored record**, never from the event body.
+
+Every other outcome — unknown invite, still pending, mismatch, or a lookup that could not be completed —
+results in **no ITX call** (fail closed). Verification failures are logged with the invite UID and
+redacted identity fields.
+
+> **⚠️ Deployment note — this check is not a complete control on its own.** The `get_invite` lookup the
+> verification depends on is reached over the same channel as the event it is verifying, so the
+> verification is only as trustworthy as that channel. Subscriber-side validation stops stale, malformed
+> and unrecognised events and keeps the service from acting on identity values it was simply handed; it
+> does not by itself establish that a message originated from the invite service.
+>
+> Completing the control requires one of the following, neither of which can be implemented inside this
+> service:
+>
+> 1. **NATS account/user permissions** on the platform NATS deployment, scoping publish and
+>    subscribe/reply on the `lfx.invite-service.*` subjects to the invite service identity. This
+>    authorization lives in the platform NATS configuration, not in this service's chart.
+>    **This is the recommended fix.**
+> 2. **A signed acceptance assertion** from the invite service, verified here against its public key.
+>    This would require a change to the invite service's published contract.
+>
+> Until one of those is deployed, treat subscriber-side verification as a partial control.
 
 ### Consumer Configuration
 
