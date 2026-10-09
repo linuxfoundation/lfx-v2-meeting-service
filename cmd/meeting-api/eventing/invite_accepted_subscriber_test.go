@@ -236,6 +236,53 @@ func TestProcessInviteAcceptedEvent(t *testing.T) {
 		assert.Empty(t, client.calls)
 	})
 
+	t.Run("discards oversized fields without reaching the lookup", func(t *testing.T) {
+		// The subject is publishable by any workload on the bus, and a rejected event
+		// still writes a warning naming the invite UID. Without a cap a publisher could
+		// drive log volume with values it knows will be rejected.
+		cases := map[string]inviteapi.InviteServiceAcceptedEvent{
+			"uid": acceptedEvent(strings.Repeat("A", maxInviteUIDLen+1), victim, acceptor,
+				meetingconstants.ResourceTypeMeeting),
+			"email": acceptedEvent(inviteUID, strings.Repeat("a", maxInviteIdentityLen)+"@example.com",
+				acceptor, meetingconstants.ResourceTypeMeeting),
+			"username": acceptedEvent(inviteUID, victim, strings.Repeat("u", maxInviteIdentityLen+1),
+				meetingconstants.ResourceTypeMeeting),
+		}
+
+		for field, evt := range cases {
+			t.Run(field, func(t *testing.T) {
+				// A lookup that would otherwise verify successfully, so the only thing
+				// that can reject this event is the size guard.
+				lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor,
+					meetingconstants.ResourceTypeMeeting)}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx, evt, lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "oversized fields must not reach ITX")
+				assert.Empty(t, lookup.requestedID,
+					"oversized fields must be rejected before the lookup, not after")
+			})
+		}
+	})
+
+	t.Run("accepts fields at the size limit", func(t *testing.T) {
+		// The guard rejects what is over the cap, not what is at it.
+		uid := strings.Repeat("A", maxInviteUIDLen)
+		lookup := &fakeInviteLookup{invite: acceptedInvite(uid, victim, acceptor,
+			meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(uid, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, []string{uid}, lookup.requestedID)
+	})
+
 	t.Run("enriches an invite with no resource type", func(t *testing.T) {
 		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, "")}
 		client := &fakeAcceptanceClient{}

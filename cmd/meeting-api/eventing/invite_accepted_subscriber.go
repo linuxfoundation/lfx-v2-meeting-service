@@ -30,6 +30,12 @@ import (
 const (
 	inviteAcceptedQueueGroup  = "meeting-service-invite-accepted"
 	inviteAcceptedCallTimeout = 30 * time.Second
+
+	// Caps for the values read out of an acceptance event. Invite UIDs are UUIDs and
+	// addresses cannot exceed the RFC 5321 limit, so both are generous; they exist to
+	// bound what a publisher can put into a log line, not to validate format.
+	maxInviteUIDLen      = 200
+	maxInviteIdentityLen = 320
 )
 
 // InviteAcceptedSubscriber subscribes to lfx.invite-service.invite_accepted events
@@ -186,6 +192,23 @@ func processInviteAcceptedEvent(
 
 	if inviteUID == "" || claimedEmail == "" || claimedUsername == "" {
 		logger.WarnContext(ctx, "invite_accepted event missing required fields; discarding")
+		return nil
+	}
+
+	// Values this long are malformed, and the check earns its place on the logging side
+	// rather than the parsing side: the invite UID is echoed into a warning on every
+	// rejected event, and redaction bounds a username but not an email's domain. Since any
+	// workload on the bus can publish here, an unbounded value would let a publisher drive
+	// this service's log volume with events it knows will be rejected. Log the lengths, not
+	// the values — echoing them is the thing being avoided.
+	if len(inviteUID) > maxInviteUIDLen ||
+		len(claimedEmail) > maxInviteIdentityLen ||
+		len(claimedUsername) > maxInviteIdentityLen {
+		logger.WarnContext(ctx, "invite_accepted event carries oversized fields; discarding",
+			"invite_uid_len", len(inviteUID),
+			"email_len", len(claimedEmail),
+			"username_len", len(claimedUsername),
+		)
 		return nil
 	}
 
