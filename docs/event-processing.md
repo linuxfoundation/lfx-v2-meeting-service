@@ -138,12 +138,82 @@ All invite operations are best-effort: errors are logged and never cause KV mess
 #### Invite acceptance enrichment (independent of event processing)
 
 When `INVITES_ENABLED=true` and `NATS_URL` is set, `main.go` starts a NATS queue subscriber on
-`lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On acceptance it
-calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB records for
-the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee reconciliation
-behavior).
+`lfx.invite-service.invite_accepted` (queue group: `meeting-service-invite-accepted`). On a **verified**
+acceptance it calls the ITX endpoint `POST /v2/zoom/meetings/invite_accepted` to enrich all Zoom DynamoDB
+records for the acceptor's email, regardless of the invite's `resource_type` (mirroring project/committee
+reconciliation behavior).
 
 The subscriber uses the process shutdown context, drains on stop, and waits for in-flight handlers to finish.
+
+##### Event verification (defense in depth, not a complete origin control)
+
+The subject sits on the shared platform bus, so an incoming message is a notification, not an
+authenticated assertion of identity. The ITX call it drives binds an LFID to the registrant,
+past-meeting invitee and past-meeting attendee rows carrying the given email, and those rows feed
+downstream access-control state. An identity binding of that weight has to be validated against the
+component that owns invite state — it cannot be taken from the message.
+
+The event body is treated purely as a hint to go and re-read the authoritative record:
+
+1. The event must carry an invite UID (`uid`), plus a recipient email and `accepted_by`.
+2. That invite is re-fetched from the invite service over `lfx.invite-service.get_invite` — the invite
+   service owns invite state and is where an acceptance is recorded. The stored record says what was
+   recorded, not who performed it; see the deployment note below.
+3. The stored record must have `status = accepted`, and its `accepted_by` and `recipient.email` must match
+   what the event claimed.
+4. The ITX call is made with the values from the **stored record**, never from the event body.
+
+Every other outcome — unknown invite, still pending, mismatch, or a lookup that could not be completed —
+results in **no ITX call** (fail closed). Verification failures are logged with the invite UID and
+redacted identity fields.
+
+> **⚠️ Deployment note — this check is not a complete control, and the gap is wider than this service.**
+> Subscriber-side validation stops stale, malformed and unrecognised events, and keeps the service from
+> acting on identity values it was simply handed. It does **not** establish that an acceptance is genuine,
+> for two separate reasons:
+>
+> 1. **The lookup shares the event's channel.** `get_invite` is reached over the same unauthenticated bus
+>    as the event being verified, so the verification is only as trustworthy as that channel.
+> 2. **The stored record is itself derived from an unauthenticated event.** This is the important one.
+>    Upstream of this service, the invite service subscribes to `lfx.invite.accepted` (published by the
+>    LFX self-serve app) and, in `HandleInviteAccepted`, writes that event's caller-supplied `username`
+>    into the invite's `accepted_by` before publishing the enriched event consumed here. Nothing
+>    authenticates that upstream publisher. A publisher that knows a *pending* invite UID can therefore
+>    submit an arbitrary LFID on `lfx.invite.accepted`; the invite service records it as a genuine
+>    acceptance, and re-reading the record here returns `status = accepted` with that LFID. Every check
+>    below passes, and the ITX binding runs — not because verification was bypassed, but because the
+>    authoritative record itself was poisoned at the source.
+>
+> What re-verification *does* buy: an acceptance must correspond to a real, pending invite this platform
+> issued, and the email bound is the one on that stored invite rather than one the publisher chose. An
+> attacker can no longer name an arbitrary victim address; they are limited to invites that exist. That
+> narrows the exposure, it does not remove it.
+>
+> Completing the control requires one of the following, none of which can be implemented inside this
+> service:
+>
+> 1. **NATS account/user permissions** on the platform NATS deployment, scoping each subject to its
+>    legitimate publisher *and* its legitimate consumers. This authorization lives in the platform NATS
+>    configuration, not in this service's chart. **This is the recommended fix.**
+>
+>    | Subject | Publish | Subscribe |
+>    |---|---|---|
+>    | `lfx.invite.accepted` | LFX self-serve only | invite service only |
+>    | `lfx.invite-service.invite_accepted` | invite service only | its downstream consumers (this service, project-service) |
+>    | `lfx.invite-service.get_invite` | its callers | invite service only (reply) |
+>
+>    **All three rows are required.** Restricting only the `lfx.invite-service.*` subjects leaves the
+>    upstream path in point 2 wide open, which is the actual ingress.
+>
+>    The subscribe column is not incidental. The attack in point 2 needs a *real, pending* invite UID,
+>    and these subjects carry exactly those UIDs — an unrestricted subscriber can harvest the
+>    precondition. Restricting publish alone removes the ability to forge; restricting subscribe removes
+>    the ability to learn what to forge against.
+> 2. **A signed acceptance assertion** carried from whoever authenticated the user through to this
+>    subscriber, verified here against a public key. This would require changes to the self-serve app and
+>    the invite service's published contract.
+>
+> Until one of those is deployed, treat the `invite_accepted` path as narrowed, not closed.
 
 ### Consumer Configuration
 

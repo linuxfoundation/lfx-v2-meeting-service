@@ -4,23 +4,30 @@
 package eventing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 	natsgo "github.com/nats-io/nats.go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	meetingconstants "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 )
 
 func TestInviteAcceptedSubscriber_StopWithNoInFlightMessages(t *testing.T) {
-	sub := NewInviteAcceptedSubscriber(nil, nil, slog.Default())
+	sub := NewInviteAcceptedSubscriber(nil, nil, nil, slog.Default())
 
 	done := make(chan struct{})
 	go func() {
@@ -35,39 +42,389 @@ func TestInviteAcceptedSubscriber_StopWithNoInFlightMessages(t *testing.T) {
 	}
 }
 
-// fakeAcceptanceClient implements domain.InviteAcceptanceClient for testing.
-type fakeAcceptanceClient struct {
-	err error
+// fakeInviteLookup returns a canned invite record (or error) for any UID and records
+// the UIDs it was asked about.
+type fakeInviteLookup struct {
+	invite      *inviteapi.Invite
+	err         error
+	requestedID []string
 }
 
-func (f *fakeAcceptanceClient) AcceptInvite(_ context.Context, _, _ string) error {
+func (f *fakeInviteLookup) GetInvite(_ context.Context, uid string) (*inviteapi.Invite, error) {
+	f.requestedID = append(f.requestedID, uid)
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.invite, nil
+}
+
+// fakeAcceptanceClient records the arguments of every AcceptInvite call.
+type fakeAcceptanceClient struct {
+	calls []acceptInviteCall
+	err   error
+}
+
+type acceptInviteCall struct {
+	email    string
+	username string
+}
+
+func (f *fakeAcceptanceClient) AcceptInvite(_ context.Context, email, username string) error {
+	f.calls = append(f.calls, acceptInviteCall{email: email, username: username})
 	return f.err
+}
+
+// acceptedInvite builds an invite record in the state the invite service publishes
+// after a genuine acceptance.
+func acceptedInvite(uid, email, acceptedBy, resourceType string) *inviteapi.Invite {
+	return &inviteapi.Invite{
+		UID:        uid,
+		Status:     inviteapi.InviteStatusAccepted,
+		Recipient:  inviteapi.Recipient{Email: email},
+		Resource:   inviteapi.Resource{UID: "mtg-1", Type: resourceType},
+		AcceptedBy: acceptedBy,
+	}
+}
+
+// acceptedEvent builds the NATS event body for a given invite record.
+func acceptedEvent(uid, email, acceptedBy, resourceType string) inviteapi.InviteServiceAcceptedEvent {
+	return inviteapi.InviteServiceAcceptedEvent{
+		Invite: inviteapi.Invite{
+			UID:        uid,
+			Status:     inviteapi.InviteStatusAccepted,
+			Recipient:  inviteapi.Recipient{Email: email},
+			Resource:   inviteapi.Resource{UID: "mtg-1", Type: resourceType},
+			AcceptedBy: acceptedBy,
+		},
+	}
+}
+
+func TestProcessInviteAcceptedEvent(t *testing.T) {
+	const (
+		inviteUID = "00000000-0000-0000-0000-000000000001"
+		victim    = "alice@example.com"
+		attacker  = "attacker-lfid"
+		acceptor  = "alice"
+	)
+	ctx := context.Background()
+
+	t.Run("enriches when the invite service confirms the acceptance", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, victim, client.calls[0].email)
+		assert.Equal(t, acceptor, client.calls[0].username)
+		assert.Equal(t, []string{inviteUID}, lookup.requestedID)
+	})
+
+	t.Run("enriches for non-meeting resource types", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, "committee")}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, "committee"),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, victim, client.calls[0].email)
+		assert.Equal(t, acceptor, client.calls[0].username)
+	})
+
+	t.Run("uses the stored record's values, not the event's", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		// Same identities, different casing/whitespace in the event body.
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, "  ALICE@Example.com ", "  Alice ", meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, victim, client.calls[0].email, "ITX must be called with the invite service's email")
+		assert.Equal(t, acceptor, client.calls[0].username, "ITX must be called with the invite service's username")
+	})
+
+	t.Run("discards a forged event whose invite the invite service does not know", func(t *testing.T) {
+		// The UID must be well-formed so the event actually reaches the lookup: the point
+		// of this case is the ErrInviteNotFound branch, which a UID rejected earlier by
+		// the canonical-UUID guard would never exercise.
+		const unknownUID = "00000000-0000-0000-0000-0000000000ff"
+		lookup := &fakeInviteLookup{err: domain.ErrInviteNotFound}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(unknownUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err, "an unknown invite is discarded quietly, not reported as an error")
+		assert.Equal(t, []string{unknownUID}, lookup.requestedID,
+			"the lookup must actually run; otherwise this case stops testing the not-found branch")
+		assert.Empty(t, client.calls, "no ITX call for an unknown invite")
+	})
+
+	t.Run("discards a forged event that binds an attacker username to a real invite", func(t *testing.T) {
+		// The invite exists and was genuinely accepted by its recipient, but the
+		// attacker replays its UID with their own accepted_by.
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls, "no ITX call when accepted_by does not match the stored record")
+	})
+
+	t.Run("discards a forged event that swaps in a different victim email", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, "bob@example.com", acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls, "no ITX call when the recipient email does not match the stored record")
+	})
+
+	t.Run("discards an event for an invite that is still pending", func(t *testing.T) {
+		invite := acceptedInvite(inviteUID, victim, "", meetingconstants.ResourceTypeMeeting)
+		invite.Status = inviteapi.InviteStatusPending
+		lookup := &fakeInviteLookup{invite: invite}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls, "no ITX call for an invite that has not been accepted")
+	})
+
+	t.Run("discards a non-accepted invite whose accepted_by matches the event", func(t *testing.T) {
+		// Isolates the status check: every other guard passes, so only the status
+		// gate can reject this. A re-issued, revoked or partially-written record
+		// reaches this shape with a populated accepted_by.
+		for _, status := range []inviteapi.InviteStatus{inviteapi.InviteStatusPending, "revoked", ""} {
+			t.Run(string(status), func(t *testing.T) {
+				invite := acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)
+				invite.Status = status
+				lookup := &fakeInviteLookup{invite: invite}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx,
+					acceptedEvent(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+					lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "only status = accepted may reach ITX")
+			})
+		}
+	})
+
+	t.Run("discards when the lookup returns no record and no error", func(t *testing.T) {
+		// The interface permits (nil, nil); this must not panic the process.
+		lookup := &fakeInviteLookup{}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls)
+	})
+
+	t.Run("discards oversized fields without reaching the lookup", func(t *testing.T) {
+		// The subject is publishable by any workload on the bus, and a rejected event
+		// still writes a warning naming the invite UID. Without a cap a publisher could
+		// drive log volume with values it knows will be rejected.
+		cases := map[string]inviteapi.InviteServiceAcceptedEvent{
+			"uid": acceptedEvent(strings.Repeat("A", canonicalUUIDLen+1), victim, acceptor,
+				meetingconstants.ResourceTypeMeeting),
+			"email": acceptedEvent(inviteUID, strings.Repeat("a", maxInviteIdentityLen)+"@example.com",
+				acceptor, meetingconstants.ResourceTypeMeeting),
+			"username": acceptedEvent(inviteUID, victim, strings.Repeat("u", maxInviteIdentityLen+1),
+				meetingconstants.ResourceTypeMeeting),
+		}
+
+		for field, evt := range cases {
+			t.Run(field, func(t *testing.T) {
+				// A lookup that would otherwise verify successfully, so the only thing
+				// that can reject this event is the size guard.
+				lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor,
+					meetingconstants.ResourceTypeMeeting)}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx, evt, lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "oversized fields must not reach ITX")
+				assert.Empty(t, lookup.requestedID,
+					"oversized fields must be rejected before the lookup, not after")
+			})
+		}
+	})
+
+	t.Run("rejects non-canonical invite uids before the lookup", func(t *testing.T) {
+		// The invite service mints UIDs with uuid.NewString, so anything else cannot name
+		// a real invite. Rejecting the non-canonical forms uuid.Parse would otherwise
+		// accept keeps one known shape and stops free text reaching the logs.
+		for name, uid := range map[string]string{
+			"not a uuid":   "../../etc/passwd",
+			"pii as uid":   "victim@example.com-not-a-uuid-padding00",
+			"unhyphenated": "00000000000000000000000000000001",
+			"urn form":     "urn:uuid:00000000-0000-0000-0000-000000000001",
+			"braced form":  "{00000000-0000-0000-0000-000000000001}",
+			"empty-ish":    "   ",
+		} {
+			t.Run(name, func(t *testing.T) {
+				lookup := &fakeInviteLookup{invite: acceptedInvite(uid, victim, acceptor,
+					meetingconstants.ResourceTypeMeeting)}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx,
+					acceptedEvent(uid, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+					lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls, "a non-canonical uid must not reach ITX")
+				assert.Empty(t, lookup.requestedID,
+					"a non-canonical uid must be rejected before the lookup")
+			})
+		}
+	})
+
+	t.Run("bounds an oversized resource type from the lookup reply", func(t *testing.T) {
+		// Resource type comes from the reply, so its length is not ours to trust.
+		assert.Len(t, boundedResourceType(strings.Repeat("x", 5000)),
+			maxResourceTypeLen+len("\u2026"))
+		assert.Equal(t, "meeting", boundedResourceType("meeting"),
+			"a normal resource type must stay readable")
+	})
+
+	t.Run("enriches an invite with no resource type", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, "")}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, ""),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		require.Len(t, client.calls, 1)
+		assert.Equal(t, victim, client.calls[0].email)
+	})
+
+	t.Run("discards an accepted record with an empty accepted_by", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, "", meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls)
+	})
+
+	t.Run("discards an event with no invite uid", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent("  ", victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, lookup.requestedID, "an event without an invite uid is dropped before any lookup")
+		assert.Empty(t, client.calls)
+	})
+
+	t.Run("discards an event missing email or username", func(t *testing.T) {
+		for name, evt := range map[string]inviteapi.InviteServiceAcceptedEvent{
+			"no email":    acceptedEvent(inviteUID, "", acceptor, meetingconstants.ResourceTypeMeeting),
+			"no username": acceptedEvent(inviteUID, victim, "", meetingconstants.ResourceTypeMeeting),
+		} {
+			t.Run(name, func(t *testing.T) {
+				lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+				client := &fakeAcceptanceClient{}
+
+				err := processInviteAcceptedEvent(ctx, evt, lookup, client, slog.Default())
+
+				require.NoError(t, err)
+				assert.Empty(t, client.calls)
+			})
+		}
+	})
+
+	t.Run("fails closed and reports the error when the lookup cannot be completed", func(t *testing.T) {
+		lookup := &fakeInviteLookup{err: errors.New("nats timeout")}
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.Error(t, err)
+		assert.Empty(t, client.calls, "a transient verification failure must not fall through to an ITX call")
+	})
+
+	t.Run("fails closed when no invite lookup is configured", func(t *testing.T) {
+		client := &fakeAcceptanceClient{}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, attacker, meetingconstants.ResourceTypeMeeting),
+			nil, client, slog.Default())
+
+		require.NoError(t, err)
+		assert.Empty(t, client.calls)
+	})
+
+	t.Run("propagates ITX errors on a verified acceptance", func(t *testing.T) {
+		lookup := &fakeInviteLookup{invite: acceptedInvite(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting)}
+		client := &fakeAcceptanceClient{err: errors.New("itx unavailable")}
+
+		err := processInviteAcceptedEvent(ctx,
+			acceptedEvent(inviteUID, victim, acceptor, meetingconstants.ResourceTypeMeeting),
+			lookup, client, slog.Default())
+
+		require.Error(t, err)
+		assert.Len(t, client.calls, 1)
+	})
 }
 
 func TestInviteAcceptedSubscriber_Handle_ErrorSpanSanitized(t *testing.T) {
 	// PII that must never reach the trace backend.
+	const spanInviteUID = "00000000-0000-0000-0000-00000000000a"
 	piiEmail := "alice@example.com"
 	piiBody := `{"message":"alice@example.com is not registered"}`
 
-	exporter := tracetest.NewInMemoryExporter()
-	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
-	prevTP := otel.GetTracerProvider()
-	otel.SetTracerProvider(tp)
-	defer otel.SetTracerProvider(prevTP)
-	defer func() { _ = tp.Shutdown(context.Background()) }()
+	exporter := newSpanRecorder(t)
 
 	client := &fakeAcceptanceClient{err: errors.New(piiBody)}
-	sub := NewInviteAcceptedSubscriber(nil, client, slog.Default())
+	// The event must pass verification so the ITX call is reached and its
+	// PII-bearing error is what lands on the span.
+	lookup := &fakeInviteLookup{invite: acceptedInvite(spanInviteUID, piiEmail, "alice-lfid", meetingconstants.ResourceTypeMeeting)}
+	sub := NewInviteAcceptedSubscriber(nil, client, lookup, slog.Default())
 	sub.ctx = context.Background() // set ctx directly; Start is not called (no NATS conn needed)
 
-	evt := inviteapi.InviteServiceAcceptedEvent{
-		Invite: inviteapi.Invite{
-			Recipient:  inviteapi.Recipient{Email: piiEmail},
-			AcceptedBy: "alice-lfid",
-		},
-	}
+	evt := acceptedEvent(spanInviteUID, piiEmail, "alice-lfid", meetingconstants.ResourceTypeMeeting)
 	data, _ := json.Marshal(evt)
 	sub.handle(&natsgo.Msg{Data: data})
+
+	// Without this the span assertions below pass vacuously if a verification
+	// change ever discards the event before the ITX call is reached.
+	require.Len(t, client.calls, 1, "the ITX call must be reached for this test to mean anything")
 
 	spans := exporter.GetSpans()
 	if len(spans) != 1 {
@@ -99,5 +456,103 @@ func TestInviteAcceptedSubscriber_Handle_ErrorSpanSanitized(t *testing.T) {
 	statusDesc := s.Status.Description
 	if strings.Contains(statusDesc, piiEmail) || strings.Contains(statusDesc, piiBody) {
 		t.Errorf("PII in span status description: %q", statusDesc)
+	}
+}
+
+// spanExporter receives every span this package's tests produce.
+//
+// The package-level tracer in tracing.go is bound through OpenTelemetry's global
+// provider, which caches its delegate the first time a provider is installed. A
+// test that installs its own provider therefore only records spans if it happens
+// to run first, which made span assertions depend on test order. One provider is
+// installed for the whole package instead, and tests reset the exporter.
+var spanExporter = tracetest.NewInMemoryExporter()
+
+func TestMain(m *testing.M) {
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(spanExporter))
+	otel.SetTracerProvider(tp)
+	code := m.Run()
+	_ = tp.Shutdown(context.Background())
+	os.Exit(code)
+}
+
+// newSpanRecorder returns the package's span exporter, emptied for this test.
+func newSpanRecorder(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+	spanExporter.Reset()
+	return spanExporter
+}
+
+// TestInviteAcceptedSubscriber_Handle_ParseErrorSanitized covers the path taken
+// when the event body does not decode. The subject is unauthenticated, and several
+// standard library decode errors embed the offending input verbatim, so neither the
+// log nor the span may repeat it.
+func TestInviteAcceptedSubscriber_Handle_ParseErrorSanitized(t *testing.T) {
+	cases := []struct {
+		name   string
+		data   []byte
+		leaked string // a substring of the payload that must not appear anywhere
+	}{
+		{
+			// Invite.ExpirationDays is an int: encoding/json embeds the literal
+			// whenever it attempts a numeric conversion.
+			name:   "oversized number literal in a numeric field",
+			data:   []byte(`{"expiration_days": ` + strings.Repeat("9", 50_000) + `}`),
+			leaked: "99999",
+		},
+		{
+			// Invite.CreatedAt is a time.Time: *time.ParseError renders the full
+			// value and encoding/json returns it untouched.
+			name:   "oversized value in a timestamp field",
+			data:   []byte(`{"created_at":"` + strings.Repeat("A", 50_000) + `"}`),
+			leaked: "AAAA",
+		},
+		{
+			name:   "malformed JSON carrying an address",
+			data:   []byte(`{"accepted_by": "alice@example.com"`), // unterminated
+			leaked: "alice@example.com",
+		},
+	}
+
+	// One provider for the whole test: the package-level tracer binds to the first
+	// provider installed in the process, so a per-subtest provider would silently
+	// receive nothing. Reset the exporter between cases instead.
+	exporter := newSpanRecorder(t)
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			exporter.Reset()
+
+			buf := &bytes.Buffer{}
+			logger := slog.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			client := &fakeAcceptanceClient{}
+			lookup := &fakeInviteLookup{}
+			sub := NewInviteAcceptedSubscriber(nil, client, lookup, logger)
+			sub.ctx = context.Background()
+
+			sub.handle(&natsgo.Msg{Data: tc.data})
+
+			// An unparseable event is discarded before verification or any ITX call.
+			assert.Empty(t, lookup.requestedID)
+			assert.Empty(t, client.calls)
+
+			// The log carries the diagnosis, not the document.
+			assert.NotContains(t, buf.String(), tc.leaked)
+			assert.Less(t, buf.Len(), 1024, "the payload must not set the log line length")
+			assert.Contains(t, buf.String(), "failed to parse InviteServiceAcceptedEvent")
+			assert.Contains(t, buf.String(), "payload_bytes")
+
+			// A span takes a fixed value, never a redacted one.
+			spans := exporter.GetSpans()
+			require.Len(t, spans, 1)
+			assert.Equal(t, "invite_accepted event parse failed", spans[0].Status.Description)
+			for _, ev := range spans[0].Events {
+				for _, attr := range ev.Attributes {
+					assert.NotContains(t, attr.Value.AsString(), tc.leaked,
+						"span event %q attr %q", ev.Name, attr.Key)
+				}
+			}
+		})
 	}
 }
