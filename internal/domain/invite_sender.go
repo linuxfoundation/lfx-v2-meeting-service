@@ -26,12 +26,20 @@ type InviteSender interface {
 }
 
 // InviteLookup re-reads a stored invite record from the invite service, which owns
-// invite state and is the only component that can attest that an invite was actually
-// accepted and by whom.
+// invite state and is where an acceptance is recorded.
 //
-// It exists so that acceptance notifications arriving on the shared NATS bus — where
-// any workload can publish — are verified against the issuing service before the
-// meeting service performs a privileged identity-binding write on their behalf.
+// It exists so that acceptance notifications arriving on the shared NATS bus — where any
+// workload can publish — are checked against that stored record before the meeting
+// service performs a privileged identity-binding write on their behalf.
+//
+// The stored record is evidence of what was recorded, not of who performed it. The invite
+// service writes the caller-supplied username from its own unauthenticated upstream
+// subject into accepted_by, so a record can say an acceptance happened without that being
+// true. Checking it narrows what a publisher can cause — an acceptance has to match a real
+// pending invite, and binds that invite's own recipient address — but it does not
+// establish origin. Origin comes only from NATS subject authorization or a signed
+// assertion; see docs/event-processing.md and the InviteAcceptedSubscriber doc comment.
+// Implementations and callers should not present this as proof of who accepted.
 type InviteLookup interface {
 	// GetInvite returns the stored invite record for uid.
 	// Returns ErrInviteNotFound when the invite service has no record for uid, and a

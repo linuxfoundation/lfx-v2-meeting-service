@@ -188,7 +188,8 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 //
 //  1. The event must name an invite UID.
 //  2. That invite is re-fetched from the invite service, which owns invite state and is
-//     the only component that records who completed the acceptance flow.
+//     where an acceptance is recorded. The record says what was recorded, not who
+//     performed it — see the trust boundary on InviteAcceptedSubscriber above.
 //  3. The stored record must say the invite is accepted, and its accepted_by and
 //     recipient email must match what the event claimed.
 //  4. The ITX call is made with the values from the stored record, never from the event.

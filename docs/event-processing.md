@@ -157,7 +157,8 @@ The event body is treated purely as a hint to go and re-read the authoritative r
 
 1. The event must carry an invite UID (`uid`), plus a recipient email and `accepted_by`.
 2. That invite is re-fetched from the invite service over `lfx.invite-service.get_invite` — the invite
-   service owns invite state and is the only component that records who completed the acceptance flow.
+   service owns invite state and is where an acceptance is recorded. The stored record says what was
+   recorded, not who performed it; see the deployment note below.
 3. The stored record must have `status = accepted`, and its `accepted_by` and `recipient.email` must match
    what the event claimed.
 4. The ITX call is made with the values from the **stored record**, never from the event body.
