@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strings"
 	"testing"
@@ -150,6 +151,57 @@ func TestNATSInviteLookup_GetInvite(t *testing.T) {
 				assert.Contains(t, err.Error(), code)
 			})
 		}
+	})
+
+	t.Run("does not echo an unparseable reply's content into the error", func(t *testing.T) {
+		// Invite.ExpirationDays is an int, and encoding/json embeds the literal in
+		// the error whenever it actually attempts a numeric conversion. This error
+		// is logged by the invite_accepted subscriber.
+		digits := strings.Repeat("9", 50_000)
+		requester := &MockRequester{}
+		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+			Return(&natsgo.Msg{Data: []byte(`{"expiration_days": ` + digits + `}`)}, nil)
+
+		invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+		require.Error(t, err)
+		assert.Nil(t, invite)
+		assert.NotContains(t, err.Error(), "99999")
+		assert.Less(t, len(err.Error()), 200, "reply content must not set the log line length")
+		assert.Contains(t, err.Error(), "get_invite response", "the failure stays identifiable")
+	})
+
+	t.Run("does not echo a malformed reply timestamp into the error", func(t *testing.T) {
+		// Invite.CreatedAt is a time.Time; its UnmarshalJSON returns a
+		// *time.ParseError carrying the full value, which encoding/json does not
+		// rewrite. Guarding only the json error types would miss this one.
+		junk := strings.Repeat("A", 50_000)
+		requester := &MockRequester{}
+		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+			Return(&natsgo.Msg{Data: []byte(`{"created_at":"` + junk + `"}`)}, nil)
+
+		invite, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+		require.Error(t, err)
+		assert.Nil(t, invite)
+		assert.NotContains(t, err.Error(), "AAAA")
+		assert.Less(t, len(err.Error()), 200)
+	})
+
+	t.Run("the sanitized parse error is not unwrappable to the raw one", func(t *testing.T) {
+		// %s rather than %w: a future caller must not be able to recover the
+		// unredacted standard library error through errors.Unwrap or %+v.
+		digits := strings.Repeat("9", 50_000)
+		requester := &MockRequester{}
+		requester.On("RequestWithContext", mock.Anything, mock.Anything, mock.Anything).
+			Return(&natsgo.Msg{Data: []byte(`{"expiration_days": ` + digits + `}`)}, nil)
+
+		_, err := NewInviteLookup(requester, slog.Default()).GetInvite(ctx, uid)
+
+		require.Error(t, err)
+		var typeErr *json.UnmarshalTypeError
+		assert.False(t, errors.As(err, &typeErr), "the raw decode error must not be reachable")
+		assert.NotContains(t, fmt.Sprintf("%+v", err), "99999")
 	})
 
 	t.Run("errors when the reply answers a different invite uid", func(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
 )
 
 const inviteLookupTimeout = 10 * time.Second
@@ -54,7 +55,13 @@ func (l *NATSInviteLookup) GetInvite(ctx context.Context, uid string) (*inviteap
 
 	var resp inviteapi.GetInviteResponse
 	if err := json.Unmarshal(msg.Data, &resp); err != nil {
-		return nil, fmt.Errorf("failed to parse get_invite response: %w", err)
+		// %s, not %w: a decode error embeds bytes from the reply itself — a number
+		// literal lands in UnmarshalTypeError.Value, and a malformed timestamp
+		// yields a *time.ParseError carrying the whole value — and this error is
+		// logged by the invite_accepted subscriber. Dropping the wrap is
+		// deliberate: it keeps the unredacted error unreachable through
+		// errors.Unwrap and %+v. Same reasoning as knownErrorCode below.
+		return nil, fmt.Errorf("failed to parse get_invite response: %s", redaction.RedactJSONError(err))
 	}
 	if resp.Error != "" {
 		// A reply that reports the invite does not exist is the expected answer for a

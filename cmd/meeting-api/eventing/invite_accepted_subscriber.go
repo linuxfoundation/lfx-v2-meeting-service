@@ -153,9 +153,16 @@ func (s *InviteAcceptedSubscriber) handle(msg *natsgo.Msg) {
 
 	var evt inviteapi.InviteServiceAcceptedEvent
 	if err := json.Unmarshal(msg.Data, &evt); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		s.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to parse InviteServiceAcceptedEvent; discarding")
+		// A decode error carries bytes from the message body, and this subject is
+		// unauthenticated. The span gets a fixed string — a span takes no redacted
+		// value, only a constant — and the log gets a schema-derived description
+		// plus the payload size, which is the one diagnostic sanitizing costs.
+		span.RecordError(errors.New("invite_accepted event parse failed"))
+		span.SetStatus(codes.Error, "invite_accepted event parse failed")
+		s.logger.With(logging.ErrKey, redaction.RedactJSONError(err)).
+			WarnContext(ctx, "failed to parse InviteServiceAcceptedEvent; discarding",
+				"payload_bytes", len(msg.Data),
+			)
 		return
 	}
 

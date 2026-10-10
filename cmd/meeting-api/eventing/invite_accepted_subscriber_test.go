@@ -4,10 +4,12 @@
 package eventing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -407,12 +409,7 @@ func TestInviteAcceptedSubscriber_Handle_ErrorSpanSanitized(t *testing.T) {
 	piiEmail := "alice@example.com"
 	piiBody := `{"message":"alice@example.com is not registered"}`
 
-	exporter := tracetest.NewInMemoryExporter()
-	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
-	prevTP := otel.GetTracerProvider()
-	otel.SetTracerProvider(tp)
-	defer otel.SetTracerProvider(prevTP)
-	defer func() { _ = tp.Shutdown(context.Background()) }()
+	exporter := newSpanRecorder(t)
 
 	client := &fakeAcceptanceClient{err: errors.New(piiBody)}
 	// The event must pass verification so the ITX call is reached and its
@@ -424,6 +421,10 @@ func TestInviteAcceptedSubscriber_Handle_ErrorSpanSanitized(t *testing.T) {
 	evt := acceptedEvent(spanInviteUID, piiEmail, "alice-lfid", meetingconstants.ResourceTypeMeeting)
 	data, _ := json.Marshal(evt)
 	sub.handle(&natsgo.Msg{Data: data})
+
+	// Without this the span assertions below pass vacuously if a verification
+	// change ever discards the event before the ITX call is reached.
+	require.Len(t, client.calls, 1, "the ITX call must be reached for this test to mean anything")
 
 	spans := exporter.GetSpans()
 	if len(spans) != 1 {
@@ -455,5 +456,103 @@ func TestInviteAcceptedSubscriber_Handle_ErrorSpanSanitized(t *testing.T) {
 	statusDesc := s.Status.Description
 	if strings.Contains(statusDesc, piiEmail) || strings.Contains(statusDesc, piiBody) {
 		t.Errorf("PII in span status description: %q", statusDesc)
+	}
+}
+
+// spanExporter receives every span this package's tests produce.
+//
+// The package-level tracer in tracing.go is bound through OpenTelemetry's global
+// provider, which caches its delegate the first time a provider is installed. A
+// test that installs its own provider therefore only records spans if it happens
+// to run first, which made span assertions depend on test order. One provider is
+// installed for the whole package instead, and tests reset the exporter.
+var spanExporter = tracetest.NewInMemoryExporter()
+
+func TestMain(m *testing.M) {
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(spanExporter))
+	otel.SetTracerProvider(tp)
+	code := m.Run()
+	_ = tp.Shutdown(context.Background())
+	os.Exit(code)
+}
+
+// newSpanRecorder returns the package's span exporter, emptied for this test.
+func newSpanRecorder(t *testing.T) *tracetest.InMemoryExporter {
+	t.Helper()
+	spanExporter.Reset()
+	return spanExporter
+}
+
+// TestInviteAcceptedSubscriber_Handle_ParseErrorSanitized covers the path taken
+// when the event body does not decode. The subject is unauthenticated, and several
+// standard library decode errors embed the offending input verbatim, so neither the
+// log nor the span may repeat it.
+func TestInviteAcceptedSubscriber_Handle_ParseErrorSanitized(t *testing.T) {
+	cases := []struct {
+		name   string
+		data   []byte
+		leaked string // a substring of the payload that must not appear anywhere
+	}{
+		{
+			// Invite.ExpirationDays is an int: encoding/json embeds the literal
+			// whenever it attempts a numeric conversion.
+			name:   "oversized number literal in a numeric field",
+			data:   []byte(`{"expiration_days": ` + strings.Repeat("9", 50_000) + `}`),
+			leaked: "99999",
+		},
+		{
+			// Invite.CreatedAt is a time.Time: *time.ParseError renders the full
+			// value and encoding/json returns it untouched.
+			name:   "oversized value in a timestamp field",
+			data:   []byte(`{"created_at":"` + strings.Repeat("A", 50_000) + `"}`),
+			leaked: "AAAA",
+		},
+		{
+			name:   "malformed JSON carrying an address",
+			data:   []byte(`{"accepted_by": "alice@example.com"`), // unterminated
+			leaked: "alice@example.com",
+		},
+	}
+
+	// One provider for the whole test: the package-level tracer binds to the first
+	// provider installed in the process, so a per-subtest provider would silently
+	// receive nothing. Reset the exporter between cases instead.
+	exporter := newSpanRecorder(t)
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			exporter.Reset()
+
+			buf := &bytes.Buffer{}
+			logger := slog.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+			client := &fakeAcceptanceClient{}
+			lookup := &fakeInviteLookup{}
+			sub := NewInviteAcceptedSubscriber(nil, client, lookup, logger)
+			sub.ctx = context.Background()
+
+			sub.handle(&natsgo.Msg{Data: tc.data})
+
+			// An unparseable event is discarded before verification or any ITX call.
+			assert.Empty(t, lookup.requestedID)
+			assert.Empty(t, client.calls)
+
+			// The log carries the diagnosis, not the document.
+			assert.NotContains(t, buf.String(), tc.leaked)
+			assert.Less(t, buf.Len(), 1024, "the payload must not set the log line length")
+			assert.Contains(t, buf.String(), "failed to parse InviteServiceAcceptedEvent")
+			assert.Contains(t, buf.String(), "payload_bytes")
+
+			// A span takes a fixed value, never a redacted one.
+			spans := exporter.GetSpans()
+			require.Len(t, spans, 1)
+			assert.Equal(t, "invite_accepted event parse failed", spans[0].Status.Description)
+			for _, ev := range spans[0].Events {
+				for _, attr := range ev.Attributes {
+					assert.NotContains(t, attr.Value.AsString(), tc.leaked,
+						"span event %q attr %q", ev.Name, attr.Key)
+				}
+			}
+		})
 	}
 }
