@@ -578,6 +578,11 @@ func convertMapToMeetingData(
 		100,   // numOccurrencesToReturn
 	)
 	if err != nil {
+		// A budget timeout depends on load, not on the data: fail the update so it is retried
+		// instead of indexing an empty occurrence list over the meeting's existing occurrences.
+		if errors.Is(err, errOccurrenceExpansionTimeout) {
+			return nil, fmt.Errorf("failed to calculate occurrences: %w", err)
+		}
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to calculate occurrences")
 	}
 	meeting.Occurrences = make([]models.ZoomMeetingOccurrence, len(occurrences))

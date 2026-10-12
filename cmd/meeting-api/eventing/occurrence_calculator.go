@@ -6,6 +6,7 @@ package eventing
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -49,6 +50,12 @@ const (
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
 var typeName = []string{"Daily", "Weekly", "Monthly"}
 
+// errOccurrenceExpansionTimeout marks an expansion stopped by the expansion budget. Unlike a
+// validation error it depends on load rather than on the data, so callers must not treat the
+// empty result as the meeting's occurrences. The "timeout" wording makes isTransientError
+// classify it as retryable.
+var errOccurrenceExpansionTimeout = errors.New("occurrence expansion timeout")
+
 // OccurrenceCalculator calculates meeting occurrences based on RRULE recurrence patterns.
 // The algorithm mirrors the canonical ITX CalculateOccurrencesV2 logic to ensure that
 // what is stored in OpenSearch matches what ITX computes.
@@ -56,6 +63,8 @@ type OccurrenceCalculator struct {
 	logger *slog.Logger
 	// expansionBudget is the cumulative segment-expansion budget per CalculateOccurrences call.
 	expansionBudget time.Duration
+	// now is the clock the expansion budget is measured with.
+	now func() time.Time
 }
 
 // NewOccurrenceCalculator creates a new occurrence calculator
@@ -63,6 +72,7 @@ func NewOccurrenceCalculator(logger *slog.Logger) *OccurrenceCalculator {
 	return &OccurrenceCalculator{
 		logger:          logger,
 		expansionBudget: maxExpansionDuration,
+		now:             time.Now,
 	}
 }
 
@@ -124,14 +134,14 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 
 	// 2. Expand segments
 	occurrencesByID := make(map[string]models.Occurrence)
-	expansionStart := time.Now()
+	expansionStart := c.now()
 	for si, seg := range segments {
 		// A single expansion cannot be interrupted, so enforce the budget between segments:
 		// a crafted never-matching rule repeated across many all_following segments would
 		// otherwise multiply the per-segment walk to MAXYEAR.
-		if time.Since(expansionStart) > c.expansionBudget {
-			return nil, fmt.Errorf("occurrence expansion exceeded %s budget after %d of %d segments",
-				c.expansionBudget, si, len(segments))
+		if c.now().Sub(expansionStart) > c.expansionBudget {
+			return nil, fmt.Errorf("%w: exceeded %s budget after %d of %d segments",
+				errOccurrenceExpansionTimeout, c.expansionBudget, si, len(segments))
 		}
 
 		var boundUnix int64

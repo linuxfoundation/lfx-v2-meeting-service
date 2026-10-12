@@ -881,12 +881,23 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			Recurrence:         &models.ZoomMeetingRecurrence{Type: 2, RepeatInterval: 1},
 			UpdatedOccurrences: updates,
 		}
+		// Each clock read advances one second: the budget start reads 1s and the check before
+		// segment i reads (i+2)s, so a 2.5s budget lets two segments expand and stops the third.
+		// This fails if the budget were checked only once rather than between segments.
 		budgeted := NewOccurrenceCalculator(slog.Default())
-		budgeted.expansionBudget = time.Nanosecond
+		budgeted.expansionBudget = 2500 * time.Millisecond
+		clock := time.Unix(0, 0)
+		budgeted.now = func() time.Time {
+			clock = clock.Add(time.Second)
+			return clock
+		}
 
 		_, err := budgeted.CalculateOccurrences(context.Background(), meeting, false, false, 100)
 		require.Error(t, err, "exceeding the expansion budget must return an error")
-		assert.Contains(t, err.Error(), "budget")
+		assert.ErrorIs(t, err, errOccurrenceExpansionTimeout)
+		assert.Contains(t, err.Error(), "after 2 of 11 segments")
+		assert.True(t, isTransientError(err),
+			"a budget timeout depends on load, so it must be retried rather than indexed as no occurrences")
 
 		_, err = calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
 		require.NoError(t, err, "the default budget must not reject a legitimate multi-segment meeting")
