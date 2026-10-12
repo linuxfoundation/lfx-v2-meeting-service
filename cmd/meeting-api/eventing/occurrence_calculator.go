@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -52,8 +53,7 @@ var typeName = []string{"Daily", "Weekly", "Monthly"}
 
 // errOccurrenceExpansionTimeout marks an expansion stopped by the expansion budget. Unlike a
 // validation error it depends on load rather than on the data, so callers must not treat the
-// empty result as the meeting's occurrences. The "timeout" wording makes isTransientError
-// classify it as retryable.
+// empty result as the meeting's occurrences; isTransientError classifies it as retryable.
 var errOccurrenceExpansionTimeout = errors.New("occurrence expansion timeout")
 
 // OccurrenceCalculator calculates meeting occurrences based on RRULE recurrence patterns.
@@ -697,12 +697,19 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 // every interval months ever has its nth weekday (week -1 or 1–4; weekday 1=Sunday … 7=Saturday)
 // fall on the day set getRRule emits for day (1–31; 29–31 expand to 28..day with BYSETPOS=-1).
 // The Gregorian calendar, weekdays included, repeats every 4800 months, so the months the rule
-// visits repeat within 4800 steps and the walk is bounded.
+// visits repeat within 4800 steps and the walk is bounded. Like rrule-go, it ignores a match in the
+// start month before the start day, and it only counts matches rrule-go would yield: up to year
+// 9999 (MAXYEAR) and, since getRRule sets no UNTIL alongside COUNT, up to DTSTART plus the longest
+// time.Duration (about 292 years), which rrule-go uses as the default UNTIL.
 func monthlyWeekCanMatchDay(start time.Time, interval, week, weekday, day int) bool {
 	interval = max(interval, 1)
-	year, month, _ := start.Date()
+	horizon := start.Add(time.Duration(math.MaxInt64))
+	year, month, startDay := start.Date()
 	for k := range 4800 {
 		first := time.Date(year, month+time.Month(k*interval), 1, 0, 0, 0, 0, time.UTC)
+		if first.Year() > 9999 || first.After(horizon) {
+			return false
+		}
 		monthLen := first.AddDate(0, 1, -1).Day()
 		firstMatch := 1 + (weekday-1-int(first.Weekday())+7)%7
 		nth := firstMatch + 7*(week-1)
@@ -713,8 +720,10 @@ func monthlyWeekCanMatchDay(start time.Time, interval, week, weekday, day int) b
 		if day > 28 {
 			lo, hi = 28, min(day, monthLen)
 		}
-		if nth >= lo && nth <= hi {
-			return true
+		if nth >= lo && nth <= hi && (k > 0 || nth >= startDay) {
+			match := time.Date(first.Year(), first.Month(), nth,
+				start.Hour(), start.Minute(), start.Second(), 0, start.Location())
+			return !match.After(horizon)
 		}
 	}
 	return false

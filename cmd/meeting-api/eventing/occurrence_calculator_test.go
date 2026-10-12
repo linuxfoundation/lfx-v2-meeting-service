@@ -837,6 +837,30 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		}
 	})
 
+	t.Run("monthly overlap only counts matches rrule-go would yield", func(t *testing.T) {
+		// From 2021-02-23 every 49 months, the last Monday next falls on the 22nd beyond
+		// DTSTART + ~292 years (rrule-go's default UNTIL), so rrule-go yields nothing.
+		start := time.Date(2021, 2, 23, 10, 0, 0, 0, time.UTC)
+		rec := &models.ZoomMeetingRecurrence{Type: 3, RepeatInterval: 49, MonthlyWeek: -1, MonthlyWeekDay: 2, MonthlyDay: 22}
+		_, err := calc.getRRuleOccurrences(start, "UTC", rec, nil)
+		require.Error(t, err)
+	})
+
+	t.Run("daily weekday check uses the segment timezone", func(t *testing.T) {
+		// 2026-01-04T23:00Z is a Sunday in UTC but Monday noon in Auckland.
+		start := time.Date(2026, 1, 4, 23, 0, 0, 0, time.UTC)
+		require.Equal(t, time.Sunday, start.Weekday())
+
+		monday := &models.ZoomMeetingRecurrence{Type: 1, RepeatInterval: 7, WeeklyDays: "2", EndTimes: 3}
+		occurrences, err := calc.getRRuleOccurrences(start, "Pacific/Auckland", monday, nil)
+		require.NoError(t, err)
+		assert.Len(t, occurrences, 3)
+
+		sunday := &models.ZoomMeetingRecurrence{Type: 1, RepeatInterval: 7, WeeklyDays: "1", EndTimes: 3}
+		_, err = calc.getRRuleOccurrences(start, "Pacific/Auckland", sunday, nil)
+		require.Error(t, err, "the UTC weekday must not be used for a non-UTC segment")
+	})
+
 	t.Run("segment starts before 1970 are rejected or skipped", func(t *testing.T) {
 		rec := &models.ZoomMeetingRecurrence{Type: 2, RepeatInterval: 1, EndTimes: 3}
 		for _, startTime := range []string{"1969-12-31T23:59:59Z", "0000-01-01T10:00:00Z"} {
