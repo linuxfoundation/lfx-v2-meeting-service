@@ -822,6 +822,8 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			"monthly_week 4":                 {Type: 3, RepeatInterval: 1, MonthlyWeek: 4, MonthlyWeekDay: 2, EndTimes: 3},
 			"2nd weekday on monthly_day 10":  {Type: 3, RepeatInterval: 1, MonthlyWeek: 2, MonthlyWeekDay: 2, MonthlyDay: 10, EndTimes: 3},
 			"last weekday on monthly_day 31": {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, MonthlyDay: 31, EndTimes: 3},
+			// The last Monday is the 22nd only in a 28-day February, which a monthly rule visits.
+			"last weekday on monthly_day 22": {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, MonthlyDay: 22, EndTimes: 3},
 			// The nth prefix is ignored for weekly rules, so monthly_week is not range-checked there.
 			"weekly with stale monthly_week 5":    {Type: 2, RepeatInterval: 1, MonthlyWeek: 5, MonthlyWeekDay: 3, EndTimes: 3},
 			"daily every 7 days on start weekday": {Type: 1, RepeatInterval: 7, WeeklyDays: "3", EndTimes: 3},

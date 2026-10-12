@@ -544,6 +544,16 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 		return nil, fmt.Errorf("invalid daily recurrence: repeat_interval %d from a %s never reaches weekly_days %q",
 			recurrence.RepeatInterval, startTime.Weekday(), recurrence.WeeklyDays)
 	}
+	// Likewise, a monthly nth weekday combined with a day of month only matches in months
+	// where the two coincide (the 1st Monday is never the 15th; the last Monday is the 22nd
+	// only in a 28-day February), which depends on the start month and the interval.
+	if recurrence.Type == 3 && recurrence.WeeklyDays == "" &&
+		recurrence.MonthlyWeek != 0 && recurrence.MonthlyWeekDay != 0 && recurrence.MonthlyDay != 0 &&
+		!monthlyWeekCanMatchDay(startTime, recurrence.RepeatInterval,
+			recurrence.MonthlyWeek, recurrence.MonthlyWeekDay, recurrence.MonthlyDay) {
+		return nil, fmt.Errorf("invalid monthly recurrence: monthly_week %d never falls on monthly_day %d at repeat_interval %d",
+			recurrence.MonthlyWeek, recurrence.MonthlyDay, recurrence.RepeatInterval)
+	}
 
 	set := rrule.Set{}
 	r, err := rrule.StrToRRule(rruleString)
@@ -611,13 +621,6 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 			if reccurrence.MonthlyWeek < -1 || reccurrence.MonthlyWeek > 4 {
 				return "", fmt.Errorf("invalid monthly_week %d: must be -1 or 1–4", reccurrence.MonthlyWeek)
 			}
-			// An nth weekday combined with a day of month that it can never fall on (e.g. the
-			// 1st Monday is never the 15th) never matches, so rrule-go would walk to MAXYEAR.
-			if reccurrence.MonthlyDay >= 1 && reccurrence.MonthlyDay <= 31 &&
-				!monthlyWeekCanMatchDay(reccurrence.MonthlyWeek, reccurrence.MonthlyDay) {
-				return "", fmt.Errorf("invalid monthly recurrence: monthly_week %d can never fall on monthly_day %d",
-					reccurrence.MonthlyWeek, reccurrence.MonthlyDay)
-			}
 		}
 		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
@@ -680,16 +683,31 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 	return strings.TrimSuffix(rrule.String(), ";"), nil
 }
 
-// monthlyWeekCanMatchDay reports whether the nth weekday of a month (week -1 or 1–4) can fall
-// on the day set getRRule emits for day (1–31; 29–31 expand to 28..day with BYSETPOS=-1).
-func monthlyWeekCanMatchDay(week, day int) bool {
-	lo := min(day, 28)
-	if week == -1 {
-		// The last weekday of a month falls on day len-6..len; day 25 onward is in that range
-		// for every month length, earlier days only in short months.
-		return day >= 25
+// monthlyWeekCanMatchDay reports whether a monthly rule starting in start's month and repeating
+// every interval months ever has its nth weekday (week -1 or 1–4; weekday 1=Sunday … 7=Saturday)
+// fall on the day set getRRule emits for day (1–31; 29–31 expand to 28..day with BYSETPOS=-1).
+// The Gregorian calendar, weekdays included, repeats every 4800 months, so the months the rule
+// visits repeat within 4800 steps and the walk is bounded.
+func monthlyWeekCanMatchDay(start time.Time, interval, week, weekday, day int) bool {
+	interval = max(interval, 1)
+	year, month, _ := start.Date()
+	for k := range 4800 {
+		first := time.Date(year, month+time.Month(k*interval), 1, 0, 0, 0, 0, time.UTC)
+		monthLen := first.AddDate(0, 1, -1).Day()
+		firstMatch := 1 + (weekday-1-int(first.Weekday())+7)%7
+		nth := firstMatch + 7*(week-1)
+		if week == -1 {
+			nth = firstMatch + 7*((monthLen-firstMatch)/7)
+		}
+		lo, hi := day, day
+		if day > 28 {
+			lo, hi = 28, min(day, monthLen)
+		}
+		if nth >= lo && nth <= hi {
+			return true
+		}
 	}
-	return lo <= 7*week && day >= 7*week-6
+	return false
 }
 
 // dailyByDayWeekdays returns the weekdays (1=Sunday … 7=Saturday) a daily recurrence filters
