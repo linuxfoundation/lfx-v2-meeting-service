@@ -270,8 +270,8 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 }
 
 // TestHandlePastMeetingRecordingUpdate_StaleTranscriptDelete verifies that a recording update
-// with no transcript files deletes the transcript document of a previously indexed recording,
-// so a transcript indexed as public cannot outlive its files and keep that flag.
+// with no transcript files deletes the transcript document, so a transcript indexed as public
+// cannot outlive its files and keep that flag.
 func TestHandlePastMeetingRecordingUpdate_StaleTranscriptDelete(t *testing.T) {
 	const (
 		meetingAndOccID  = "99000000002-1700000000000"
@@ -314,15 +314,15 @@ func TestHandlePastMeetingRecordingUpdate_StaleTranscriptDelete(t *testing.T) {
 		return pub
 	}
 
-	t.Run("indexed recording without transcript files deletes the transcript document", func(t *testing.T) {
+	t.Run("recording without transcript files deletes the transcript document", func(t *testing.T) {
 		pub := run(t, true, recordingMap("MP4"))
 		assert.Nil(t, pub.transcriptData)
 		assert.Equal(t, []string{transcriptDelete}, pub.indexerDeletes)
 	})
 
-	t.Run("new recording without transcript files sends no delete", func(t *testing.T) {
+	t.Run("recording without transcript files deletes the transcript document even without a mapping", func(t *testing.T) {
 		pub := run(t, false, recordingMap("MP4"))
-		assert.Empty(t, pub.indexerDeletes)
+		assert.Equal(t, []string{transcriptDelete}, pub.indexerDeletes)
 	})
 
 	t.Run("recording with transcript files publishes the transcript and sends no delete", func(t *testing.T) {

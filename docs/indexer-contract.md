@@ -717,7 +717,7 @@ The `public` flag is derived from `recording_access`, which is sourced from the 
 
 **Built by:** the recording handler (`handlePastMeetingRecordingUpdate` / `convertMapToRecordingData` in `cmd/meeting-api/eventing/recording_event_handler.go`), from the same v1 `itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}` record as the [recording document](#v1-past-meeting-recording). There is no separate transcript record in v1.
 
-**Indexed on:** every create or update of the recording record that has at least one `TRANSCRIPT` or `TIMELINE` file; a record without such files publishes no transcript message. Deleting the recording record sends a `deleted` message for this document. A later update that no longer carries transcript files does not delete an already indexed transcript document.
+**Indexed on:** every create or update of the recording record that has at least one `TRANSCRIPT` or `TIMELINE` file. A create or update of a record without such files sends a `deleted` message for this document instead, as does deleting the recording record.
 
 ### Data Schema
 
@@ -768,7 +768,7 @@ The `public` flag is derived from `recording_access`, which is sourced from the 
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `transcript_access` is `"public"`, `false` otherwise |
 
-The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `transcript_access` re-indexes it with the matching `public` flag. When an update of an already indexed recording record has no `TRANSCRIPT` or `TIMELINE` files, the transcript document is deleted instead.
+The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `transcript_access` re-indexes it with the matching `public` flag. When the recording record has no `TRANSCRIPT` or `TIMELINE` files, the transcript document is deleted instead.
 
 ### Search Behavior
 

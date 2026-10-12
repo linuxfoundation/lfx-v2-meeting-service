@@ -62,6 +62,12 @@ type artifactRepublishPublisher struct {
 	pastMeetings []*models.PastMeetingEventData
 	recordings   []*models.RecordingEventData
 	summaries    []publishedSummary
+	deletes      []string // "subject:id"
+}
+
+func (p *artifactRepublishPublisher) PublishIndexerDelete(_ context.Context, subject, id string) error {
+	p.deletes = append(p.deletes, subject+":"+id)
+	return nil
 }
 
 func (p *artifactRepublishPublisher) PublishPastMeetingEvent(_ context.Context, _ string, data *models.PastMeetingEventData) error {
@@ -135,6 +141,8 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 
 		require.Len(t, publisher.recordings, 1)
 		assert.Equal(t, "meeting_hosts", publisher.recordings[0].RecordingAccess)
+		// The recording record has no transcript files, so any old transcript document is removed.
+		assert.Equal(t, []string{eventing.IndexV1PastMeetingTranscriptSubject + ":" + testSummaryMeetOcc}, publisher.deletes)
 
 		require.Len(t, publisher.summaries, 1)
 		got := publisher.summaries[0]

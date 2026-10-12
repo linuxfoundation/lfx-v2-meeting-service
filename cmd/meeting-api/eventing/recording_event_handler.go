@@ -271,10 +271,12 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
 			return isTransientError(err)
 		}
-	} else if indexerAction == indexerConstants.ActionUpdated {
-		// A previously indexed recording no longer has transcript files. Remove any transcript
-		// document an earlier publish left behind: it would otherwise keep the public flag it
-		// was last indexed with, since no transcript event will republish it.
+	} else {
+		// The record has no transcript files. Remove any transcript document an earlier publish
+		// left behind: it would otherwise keep the public flag it was last indexed with, since
+		// no transcript event will republish it. This does not depend on the mapping lookup
+		// above, which reads "created" when an earlier mapping write failed; deleting a document
+		// that was never indexed is harmless, as on the recording delete path.
 		if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1PastMeetingTranscriptSubject, recordingData.ID); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to delete stale transcript document")
 			return isTransientError(err)
