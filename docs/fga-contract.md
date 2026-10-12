@@ -59,7 +59,7 @@ A plain-text message starting with a space in the first 20 bytes indicates an er
 
 **Timeout:** 10 seconds (unconditional cap; caller's deadline takes over if shorter).
 
-**Fail-closed:** any transport error or unexpected reply format causes the `CreateMeeting` / `UpdateMeeting` call to return `503 Service Unavailable`. The service refuses to start when `NATS_URL` is configured but unreachable, so a nil authorizer means NATS is intentionally absent (not transiently unavailable).
+**Fail-closed:** any transport error or unexpected reply format causes the `CreateMeeting` / `UpdateMeeting` call to return `503 Service Unavailable`. The service refuses to start when `NATS_URL` is configured but unreachable, so a nil authorizer means NATS is intentionally absent (not transiently unavailable). With a nil authorizer, `UpdateMeeting` skips the check and `CreateMeeting` rejects requests that carry committees with `503`.
 
 ---
 

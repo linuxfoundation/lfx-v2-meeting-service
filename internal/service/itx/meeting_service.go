@@ -30,8 +30,8 @@ type MeetingService struct {
 // created_by / updated_by are limited to the JWT-derived username/email.
 //
 // committeeAuthz may be nil (e.g. when NATS is not configured), in which case
-// the per-committee FGA write-access checks are skipped on UpdateMeeting and
-// CreateMeeting and Heimdall is the sole gate. When non-nil, UpdateMeeting
+// the per-committee FGA write-access check is skipped on UpdateMeeting and
+// CreateMeeting rejects requests that carry committees (503). When non-nil, UpdateMeeting
 // checks every newly attached committee and CreateMeeting checks every committee
 // plus the project (see authorizeCreateScope); RPC errors fail closed (503) to
 // prevent bypass during fga-sync outages.
@@ -320,13 +320,17 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 //     can only create meetings under their committee's own project.
 //
 // req must already be in v1 SFID space; v2ProjectUID and v2CommitteeUIDs are the
-// pre-mapping IDs, which FGA uses as object IDs. As on UpdateMeeting, a nil
-// committeeAuthz (NATS not configured) skips the check and RPC errors fail
-// closed (503). A request without committees is left to Heimdall, whose only
-// branch in that case is meetings_creator on the project.
+// pre-mapping IDs, which FGA uses as object IDs. A request without committees
+// is left to Heimdall, whose only branch in that case is meetings_creator on the
+// project. With committees, the request fails closed (503) when committeeAuthz
+// is nil (NATS not configured) or an RPC errors.
 func (s *MeetingService) authorizeCreateScope(ctx context.Context, req *models.CreateITXMeetingRequest, v2ProjectUID string, v2CommitteeUIDs []string) error {
-	if s.committeeAuthz == nil || len(req.Committees) == 0 {
+	if len(req.Committees) == 0 {
 		return nil
+	}
+	if s.committeeAuthz == nil {
+		slog.WarnContext(ctx, "committee authorizer not configured; rejecting meeting create with committees")
+		return domain.NewUnavailableError("cannot verify committee access; please retry")
 	}
 
 	principal, _ := ctx.Value(constants.PrincipalContextID).(string)

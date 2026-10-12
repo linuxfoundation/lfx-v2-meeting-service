@@ -966,6 +966,25 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 		assert.Nil(t, client.lastCreateReq)
 	})
 
+	t.Run("fails closed when the committee authorizer is not configured", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, nil, mapper, nil, nil)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq, "ITX must not be called when committees cannot be authorized")
+	})
+
+	t.Run("allows a create without committees when the authorizer is not configured", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, nil, mapper, nil, nil)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq())
+		require.NoError(t, err)
+		assert.NotNil(t, client.lastCreateReq)
+	})
+
 	t.Run("rejects committees without an authenticated principal", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
