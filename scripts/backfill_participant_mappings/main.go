@@ -85,7 +85,8 @@ type mappingConfig struct {
 	meetingIDField string
 	// userIDField, when set, is the JSON field holding the v1 user ID used to resolve the
 	// username (user.<id> -> lf_sso) when usernameField is blank. Mappings for this family
-	// are written with principal_authoritative set.
+	// are still written without principal_authoritative: resolving from the current object
+	// does not prove it names every principal ever granted.
 	userIDField string
 }
 

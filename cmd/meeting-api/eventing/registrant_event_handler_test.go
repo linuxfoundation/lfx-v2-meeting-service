@@ -715,6 +715,12 @@ func TestHandleRegistrantUpdate_LegacyMapping(t *testing.T) {
 			wantMapping: buildRegistrantMappingValue(registrantUID, "bob", meetingID),
 		},
 		{
+			name:    "explicit username with an unresolvable prior principal keeps legacy mapping",
+			v1Data:  map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID, "username": "bob"},
+			lookup:  fakeV1UserLookup{},
+			history: priorHistory,
+		},
+		{
 			name:   "unresolvable principal keeps legacy mapping",
 			v1Data: map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID},
 			lookup: fakeV1UserLookup{},

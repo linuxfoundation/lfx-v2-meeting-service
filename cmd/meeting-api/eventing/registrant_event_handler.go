@@ -235,15 +235,16 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	if oldUsername != "" {
 		oldUsernames = []string{oldUsername}
 	}
+	legacyKnown := true
 	if legacyMapping {
 		principals, _, known, retry := h.legacyRegistrantPrincipals(ctx, funcLogger, key, v1Data)
 		if retry {
 			return true
 		}
 		if !known {
-			funcLogger.WarnContext(ctx, "cannot determine every principal previously granted access for this legacy registrant mapping")
+			funcLogger.WarnContext(ctx, "cannot determine every principal previously granted access for this legacy registrant mapping; keeping the mapping for reconciliation")
 		}
-		oldUsernames = principals
+		oldUsernames, legacyKnown = principals, known
 	}
 
 	// If the username was removed or changed during an update, revoke the old FGA access
@@ -267,8 +268,10 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	//
 	// The mapping is authoritative only when it was before (or this is the first grant):
 	// a legacy mapping may front grants from revisions no longer retained, so it stays
-	// non-authoritative, and is left untouched when there is no new username to record.
-	if !legacyMapping || registrantData.Username != "" {
+	// non-authoritative. It is left untouched when there is no new username to record, or
+	// when a prior principal could not be resolved: replacing it with a non-empty username
+	// would make later deletes trust that username and stop looking for the unresolved one.
+	if !legacyMapping || (legacyKnown && registrantData.Username != "") {
 		var mappingValue string
 		if indexerAction == indexerConstants.ActionCreated || mappingAuthoritative {
 			mappingValue = buildAuthoritativeRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
