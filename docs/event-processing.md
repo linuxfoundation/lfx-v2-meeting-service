@@ -661,7 +661,7 @@ A v1 recording record (`itx-zoom-past-meetings-recordings.{meeting_and_occurrenc
 1. **Recording document** (`lfx.index.v1_past_meeting_recording`): always, with the non-transcript files.
 2. **Transcript document** (`lfx.index.v1_past_meeting_transcript`): only when the record has at least one `TRANSCRIPT` or `TIMELINE` file, with those files only.
 
-Both documents use the record's `meeting_and_occurrence_id` as their ID and share one `created`/`updated` action, taken from the `v1_past_meeting_recordings.{id}` key in `v1-mappings`. Neither sends an FGA message. A recording delete sends a `deleted` indexer message on both subjects. An update whose record no longer has transcript files publishes only the recording document; it does not delete an already indexed transcript document.
+Both documents use the record's `meeting_and_occurrence_id` as their ID and share one `created`/`updated` action, taken from the `v1_past_meeting_recordings.{id}` key in `v1-mappings`. Neither sends an FGA message. A recording delete sends a `deleted` indexer message on both subjects. An update whose record has no transcript files publishes only the recording document; when the recording was indexed before (the action is `updated`), it also sends a `deleted` indexer message on the transcript subject, so a transcript document indexed earlier cannot outlive its files and keep the `public` flag it was last indexed with.
 
 #### Past Meeting FGA References
 

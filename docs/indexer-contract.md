@@ -768,7 +768,7 @@ The `public` flag is derived from `recording_access`, which is sourced from the 
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `transcript_access` is `"public"`, `false` otherwise |
 
-The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `transcript_access` re-indexes it with the matching `public` flag.
+The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `transcript_access` re-indexes it with the matching `public` flag. When an update of an already indexed recording record has no `TRANSCRIPT` or `TIMELINE` files, the transcript document is deleted instead.
 
 ### Search Behavior
 

@@ -209,6 +209,31 @@ func TestRecordPastMeetingSummary(t *testing.T) {
 		kv.AssertExpectations(t)
 	})
 
+	t.Run("re-reads and keeps the other writer's entries after an update conflict", func(t *testing.T) {
+		const concurrentSummaryID = "00000000-0000-0000-0000-000000000003"
+		extended := mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + otherSummaryID + `","` + concurrentSummaryID + `"]`)}
+		allThree := []byte(`["` + otherSummaryID + `","` + concurrentSummaryID + `","` + testSummaryID + `"]`)
+
+		kv := &mockKeyValue{}
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil).Once()
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyExists).Once()
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(extended, nil).Once()
+		kv.On("Update", mock.Anything, testSummaryIndexKey, allThree, uint64(1)).Return(uint64(3), nil).Once()
+
+		require.NoError(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
+		kv.AssertExpectations(t)
+	})
+
+	t.Run("returns an error once conflicts exhaust the attempts", func(t *testing.T) {
+		kv := &mockKeyValue{}
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil)
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyExists)
+
+		require.Error(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
+		kv.AssertNumberOfCalls(t, "Get", maxSummaryIndexUpdateAttempts)
+		kv.AssertNumberOfCalls(t, "Update", maxSummaryIndexUpdateAttempts)
+	})
+
 	t.Run("does not rewrite a set that already holds the summary", func(t *testing.T) {
 		kv := &mockKeyValue{}
 		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + testSummaryID + `"]`)}, nil)
