@@ -153,6 +153,15 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 		assert.False(t, *cfg.Public, "summary must be republished as non-public")
 	})
 
+	t.Run("invalid summary list key is not retried", func(t *testing.T) {
+		h, publisher := newHandlers(t, nil, jetstream.ErrInvalidKey)
+
+		retry := handleKVPut(context.Background(), testPastMeetingKey, parent, h)
+		assert.False(t, retry, "an invalid key is permanent; retrying the past meeting event cannot help")
+		assert.Empty(t, publisher.summaries)
+		require.Len(t, publisher.recordings, 1, "the recording is still republished")
+	})
+
 	t.Run("summary listing failure retries the past meeting event", func(t *testing.T) {
 		h, publisher := newHandlers(t, nil, errors.New("kv unavailable"))
 

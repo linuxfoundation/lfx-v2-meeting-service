@@ -331,7 +331,9 @@ func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue
 func listPastMeetingSummaryIDs(ctx context.Context, meetingAndOccurrenceID string, mappingsKV jetstream.KeyValue) ([]string, error) {
 	entry, err := mappingsKV.Get(ctx, pastMeetingSummaryIndexKeyPrefix+meetingAndOccurrenceID)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
+		// An invalid key is permanent and recordPastMeetingSummary could never have written
+		// it, so it means no summaries are recorded, the same as a missing key.
+		if isKVAbsenceError(err) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to load summaries of past meeting: %w", err)
