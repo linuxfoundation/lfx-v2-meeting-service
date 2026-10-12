@@ -781,4 +781,84 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		_, err = calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
 		require.NoError(t, err)
 	})
+
+	t.Run("out-of-range monthly_day and monthly_week are rejected before expansion", func(t *testing.T) {
+		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
+		cases := map[string]*models.ZoomMeetingRecurrence{
+			"monthly_day 32":           {Type: 1, RepeatInterval: 1, MonthlyDay: 32},
+			"monthly_day -1":           {Type: 3, RepeatInterval: 1, MonthlyDay: -1},
+			"monthly_day -40":          {Type: 3, RepeatInterval: 1, MonthlyDay: -40},
+			"monthly_week 5":           {Type: 3, RepeatInterval: 1, MonthlyWeek: 5, MonthlyWeekDay: 2},
+			"monthly_week 6":           {Type: 3, RepeatInterval: 1, MonthlyWeek: 6, MonthlyWeekDay: 2},
+			"monthly_week 53 (panics)": {Type: 3, RepeatInterval: 1, MonthlyWeek: 53, MonthlyWeekDay: 2},
+			"monthly_week -2":          {Type: 3, RepeatInterval: 1, MonthlyWeek: -2, MonthlyWeekDay: 2},
+			// The 1st Monday is never the 15th: valid fields, but the rule can never match.
+			"monthly_week with monthly_day": {Type: 3, RepeatInterval: 1, MonthlyWeek: 1, MonthlyWeekDay: 2, MonthlyDay: 15},
+		}
+		for name, rec := range cases {
+			t.Run(name, func(t *testing.T) {
+				start := time.Now()
+				_, err := calc.getRRuleOccurrences(ancient, "UTC", rec, nil)
+				require.Error(t, err)
+				assert.Less(t, time.Since(start), 50*time.Millisecond,
+					"invalid recurrence must be rejected before rrule-go walks to MAXYEAR")
+			})
+		}
+	})
+
+	t.Run("valid monthly_day and monthly_week boundaries are accepted", func(t *testing.T) {
+		cases := map[string]*models.ZoomMeetingRecurrence{
+			"monthly_day 1":   {Type: 3, RepeatInterval: 1, MonthlyDay: 1, EndTimes: 3},
+			"monthly_day 31":  {Type: 3, RepeatInterval: 1, MonthlyDay: 31, EndTimes: 3},
+			"monthly_week -1": {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, EndTimes: 3},
+			"monthly_week 4":  {Type: 3, RepeatInterval: 1, MonthlyWeek: 4, MonthlyWeekDay: 2, EndTimes: 3},
+		}
+		for name, rec := range cases {
+			t.Run(name, func(t *testing.T) {
+				occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+				require.NoError(t, err)
+				assert.Len(t, occurrences, 3)
+			})
+		}
+	})
+
+	t.Run("never-matching rule across many segments is cut off by the expansion budget", func(t *testing.T) {
+		// FREQ=DAILY;INTERVAL=7 from a Monday only ever visits Mondays, so BYDAY=TU never
+		// matches and each segment walks to rrule-go's MAXYEAR. Every field is individually
+		// valid, so only the cumulative budget bounds the work across segments.
+		monday := time.Date(1, 1, 1, 10, 0, 0, 0, time.UTC) // 0001-01-01 is a Monday
+		require.Equal(t, time.Monday, monday.Weekday())
+		updates := make([]models.UpdatedOccurrence, maxSeriesSegments-1)
+		for i := range updates {
+			unix := monday.AddDate(0, 0, (i+1)*7).Unix()
+			updates[i] = models.UpdatedOccurrence{
+				OldOccurrenceID: strconv.FormatInt(unix, 10),
+				NewOccurrenceID: strconv.FormatInt(unix, 10),
+				AllFollowing:    true,
+			}
+		}
+		meeting := models.MeetingEventData{
+			ID:        "test-meeting-never-matching",
+			StartTime: monday.Format(time.RFC3339),
+			Timezone:  "UTC",
+			Duration:  60,
+			Recurrence: &models.ZoomMeetingRecurrence{
+				Type:           1, // Daily
+				RepeatInterval: 7,
+				WeeklyDays:     "3", // Tuesday
+			},
+			UpdatedOccurrences: updates,
+		}
+		budgeted := NewOccurrenceCalculator(slog.Default())
+		budgeted.expansionBudget = 50 * time.Millisecond
+
+		start := time.Now()
+		_, err := budgeted.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		elapsed := time.Since(start)
+		require.Error(t, err, "exceeding the expansion budget must return an error")
+		assert.Contains(t, err.Error(), "budget")
+		// Budget plus at most one in-flight segment; generous slack for -race and slow CI.
+		assert.Less(t, elapsed, time.Second,
+			"never-matching segments must stop shortly after the budget, not run for every segment")
+	})
 }

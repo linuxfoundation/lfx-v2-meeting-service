@@ -33,6 +33,12 @@ const (
 	// maxSeriesSegments caps the number of series segments derived from updated_occurrences
 	// to prevent a crafted long all_following array from multiplying RRULE expansions.
 	maxSeriesSegments = 100
+	// maxExpansionDuration is the cumulative wall-clock budget for expanding all series segments
+	// of one meeting. The COUNT/UNTIL/iterator caps only bound yielded occurrences: a rule that
+	// never matches makes rrule-go walk from DTSTART to its MAXYEAR (9999) inside a single
+	// iterator call, and rrule-go only checks UNTIL against a matching candidate. The budget is
+	// checked between segments, so total work is bounded by the budget plus one segment.
+	maxExpansionDuration = 2 * time.Second
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
@@ -43,12 +49,15 @@ var typeName = []string{"Daily", "Weekly", "Monthly"}
 // what is stored in OpenSearch matches what ITX computes.
 type OccurrenceCalculator struct {
 	logger *slog.Logger
+	// expansionBudget is the cumulative segment-expansion budget per CalculateOccurrences call.
+	expansionBudget time.Duration
 }
 
 // NewOccurrenceCalculator creates a new occurrence calculator
 func NewOccurrenceCalculator(logger *slog.Logger) *OccurrenceCalculator {
 	return &OccurrenceCalculator{
-		logger: logger,
+		logger:          logger,
+		expansionBudget: maxExpansionDuration,
 	}
 }
 
@@ -110,7 +119,16 @@ func (c *OccurrenceCalculator) CalculateOccurrences(
 
 	// 2. Expand segments
 	occurrencesByID := make(map[string]models.Occurrence)
+	expansionStart := time.Now()
 	for si, seg := range segments {
+		// A single expansion cannot be interrupted, so enforce the budget between segments:
+		// a crafted never-matching rule repeated across many all_following segments would
+		// otherwise multiply the per-segment walk to MAXYEAR.
+		if time.Since(expansionStart) > c.expansionBudget {
+			return nil, fmt.Errorf("occurrence expansion exceeded %s budget after %d of %d segments",
+				c.expansionBudget, si, len(segments))
+		}
+
 		var boundUnix int64
 
 		if seg.oldOccurrenceUnix == 0 {
@@ -516,7 +534,9 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 	// the entire series into a slice before returning — a KV-supplied DTSTART in year 0001 with
 	// UNTIL=now+10y still produces ~740k time.Time values from set.All() even after the RRULE
 	// clamps. The iterator stops after maxOccurrenceCount calls, so work is O(maxOccurrenceCount)
-	// regardless of DTSTART age or the RRULE terminal.
+	// regardless of DTSTART age or the RRULE terminal — provided the rule yields. A rule that
+	// never matches walks to rrule-go's MAXYEAR in one call; getRRule rejects the field values
+	// that produce such rules and CalculateOccurrences bounds the remainder with expansionBudget.
 	next := set.Iterator()
 	out := make([]time.Time, 0, maxOccurrenceCount)
 	for len(out) < maxOccurrenceCount {
@@ -560,10 +580,26 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		if reccurrence.MonthlyWeekDay < 1 || reccurrence.MonthlyWeekDay > 7 {
 			return "", fmt.Errorf("invalid monthly_week_day %d: must be 1–7", reccurrence.MonthlyWeekDay)
 		}
+		// Zoom's domain is -1 (last week) or 1–4. Other values either never match (e.g. a 5th
+		// weekday in a month visited only in non-leap Februaries, or |n| > 5) or panic in
+		// rrule-go (large |n| indexes past the weekday mask).
+		if reccurrence.MonthlyWeek < -1 || reccurrence.MonthlyWeek > 4 {
+			return "", fmt.Errorf("invalid monthly_week %d: must be -1 or 1–4", reccurrence.MonthlyWeek)
+		}
+		// For monthly rules, an nth-weekday BYDAY combined with BYMONTHDAY can never match
+		// (e.g. the 1st Monday is never the 15th), so rrule-go would walk to MAXYEAR without
+		// yielding. Zoom treats the two monthly modes as mutually exclusive.
+		if reccurrence.Type == 3 && reccurrence.MonthlyDay != 0 {
+			return "", fmt.Errorf("invalid monthly recurrence: monthly_day %d and monthly_week %d are mutually exclusive",
+				reccurrence.MonthlyDay, reccurrence.MonthlyWeek)
+		}
 		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
 
 	if reccurrence.MonthlyDay != 0 {
+		if reccurrence.MonthlyDay < 1 || reccurrence.MonthlyDay > 31 {
+			return "", fmt.Errorf("invalid monthly_day %d: must be 1–31", reccurrence.MonthlyDay)
+		}
 		switch reccurrence.MonthlyDay {
 		case 29:
 			rrule.WriteString("BYMONTHDAY=28,29;BYSETPOS=-1;") // fall back to the 28th on months with 28 days if recurrence set to every 29th
