@@ -7,10 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 	"time"
 
+	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	inviteapi "github.com/linuxfoundation/lfx-v2-invite-service/pkg/api"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/assert"
@@ -439,4 +441,330 @@ func TestHandleRegistrantUpdate_ParentMeetingTombstoned(t *testing.T) {
 	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
+}
+
+// fakeV1UserLookup resolves platform IDs from a fixed map; unknown IDs return err
+// (or jetstream.ErrKeyNotFound when err is nil), mirroring NATSUserLookup.
+type fakeV1UserLookup struct {
+	users map[string]string
+	err   error
+}
+
+func (f fakeV1UserLookup) LookupUser(_ context.Context, platformID string) (*domain.V1User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if username, ok := f.users[platformID]; ok {
+		return &domain.V1User{Username: username}, nil
+	}
+	return nil, fmt.Errorf("failed to lookup v1 user: %w", jetstream.ErrKeyNotFound)
+}
+
+// historyEntry is a KV entry with a configurable operation, for v1-objects History results.
+type historyEntry struct {
+	mockKeyValueEntry
+	op jetstream.KeyValueOp
+}
+
+func (e historyEntry) Operation() jetstream.KeyValueOp { return e.op }
+
+// removedUsernames decodes the usernames of every member_remove published on publisher.
+func removedUsernames(t *testing.T, publisher *mockEventPublisher, meetingID string) []string {
+	t.Helper()
+	var usernames []string
+	for _, call := range publisher.Calls {
+		if call.Method != "PublishAccessDelete" {
+			continue
+		}
+		require.Equal(t, fgaconstants.GenericMemberRemoveSubject, call.Arguments.String(1))
+		var msg struct {
+			Data struct {
+				UID      string `json:"uid"`
+				Username string `json:"username"`
+			} `json:"data"`
+		}
+		require.NoError(t, json.Unmarshal(call.Arguments.Get(2).([]byte), &msg))
+		assert.Equal(t, meetingID, msg.Data.UID)
+		usernames = append(usernames, msg.Data.Username)
+	}
+	return usernames
+}
+
+// TestHandleRegistrantDelete verifies that every registrant removal revokes the principals
+// the create path could have granted — including the user_id-enriched username behind a
+// legacy "1" mapping — and that the mapping is not tombstoned while a principal is unknown.
+func TestHandleRegistrantDelete(t *testing.T) {
+	const (
+		registrantUID = "reg-del"
+		meetingID     = "meeting-del"
+		userID        = "user-1"
+		enriched      = "alice"
+	)
+	key := "itx-zoom-meetings-registrants-v2." + registrantUID
+	mappingKey := "v1_meeting_registrants." + registrantUID
+	record := func(fields map[string]any) []byte {
+		fields["registrant_id"] = registrantUID
+		fields["meeting_id"] = meetingID
+		b, err := json.Marshal(fields)
+		require.NoError(t, err)
+		return b
+	}
+	put := func(value []byte) jetstream.KeyValueEntry {
+		return historyEntry{mockKeyValueEntry{key: key, value: value}, jetstream.KeyValuePut}
+	}
+	noHistory := func(kv *mockKeyValue) {
+		kv.On("History", mock.Anything, key).Return(nil, jetstream.ErrKeyNotFound)
+	}
+	userIDOnly := map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID}
+
+	tests := []struct {
+		name          string
+		mapping       string // "" means no mapping exists
+		v1Data        map[string]interface{}
+		lookup        fakeV1UserLookup
+		setupObjects  func(*mockKeyValue)
+		wantRetry     bool
+		wantRemoved   []string
+		wantTombstone bool
+	}{
+		{
+			name:    "hard delete of legacy mapping resolves user_id from v1 history",
+			mapping: "1",
+			lookup:  fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			setupObjects: func(kv *mockKeyValue) {
+				kv.On("History", mock.Anything, key).Return([]jetstream.KeyValueEntry{
+					put(record(map[string]any{"user_id": userID})),
+					historyEntry{mockKeyValueEntry{key: key}, jetstream.KeyValueDelete},
+				}, nil)
+			},
+			wantRemoved:   []string{enriched},
+			wantTombstone: true,
+		},
+		{
+			name:          "soft delete of legacy mapping resolves user_id from payload",
+			mapping:       "1",
+			v1Data:        userIDOnly,
+			lookup:        fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			setupObjects:  noHistory,
+			wantRemoved:   []string{enriched},
+			wantTombstone: true,
+		},
+		{
+			name:    "legacy mapping revokes principals of earlier retained revisions",
+			mapping: "1",
+			v1Data:  map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": "user-2"},
+			lookup:  fakeV1UserLookup{users: map[string]string{userID: enriched, "user-2": "bob"}},
+			setupObjects: func(kv *mockKeyValue) {
+				kv.On("History", mock.Anything, key).Return([]jetstream.KeyValueEntry{
+					put(record(map[string]any{"user_id": userID})),
+					put(record(map[string]any{"user_id": "user-2"})),
+				}, nil)
+			},
+			wantRemoved:   []string{"bob", enriched},
+			wantTombstone: true,
+		},
+		{
+			name:          "soft delete of pre-authoritative JSON mapping with empty username resolves user_id",
+			mapping:       buildRegistrantMappingValue(registrantUID, "", meetingID),
+			v1Data:        userIDOnly,
+			lookup:        fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			setupObjects:  noHistory,
+			wantRemoved:   []string{enriched},
+			wantTombstone: true,
+		},
+		{
+			name:         "hard delete of legacy mapping without v1 history leaves mapping untombstoned",
+			mapping:      "1",
+			setupObjects: noHistory,
+		},
+		{
+			name:         "legacy mapping whose user_id does not resolve leaves mapping untombstoned",
+			mapping:      "1",
+			v1Data:       userIDOnly,
+			lookup:       fakeV1UserLookup{},
+			setupObjects: noHistory,
+		},
+		{
+			name:         "transient user lookup failure retries",
+			mapping:      "1",
+			v1Data:       userIDOnly,
+			lookup:       fakeV1UserLookup{err: errors.New("nats: timeout")},
+			setupObjects: noHistory,
+			wantRetry:    true,
+		},
+		{
+			name:    "transient v1 history failure retries",
+			mapping: "1",
+			setupObjects: func(kv *mockKeyValue) {
+				kv.On("History", mock.Anything, key).Return(nil, errors.New("nats: timeout"))
+			},
+			wantRetry: true,
+		},
+		{
+			name:          "authoritative mapping with no principal tombstones without lookup",
+			mapping:       buildAuthoritativeRegistrantMappingValue(registrantUID, "", meetingID),
+			wantTombstone: true,
+		},
+		{
+			name:          "authoritative mapping revokes stored username",
+			mapping:       buildAuthoritativeRegistrantMappingValue(registrantUID, enriched, meetingID),
+			wantRemoved:   []string{enriched},
+			wantTombstone: true,
+		},
+		{
+			name:          "no mapping revokes only the payload username, not user_id",
+			v1Data:        userIDOnly,
+			lookup:        fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			wantTombstone: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			objectsKV := &mockKeyValue{}
+			mappingsKV := &mockKeyValue{}
+			publisher := &mockEventPublisher{}
+			if tt.setupObjects != nil {
+				tt.setupObjects(objectsKV)
+			}
+			if tt.mapping == "" {
+				mappingsKV.On("Get", mock.Anything, mappingKey).Return(nil, jetstream.ErrKeyNotFound)
+			} else {
+				mappingsKV.On("Get", mock.Anything, mappingKey).
+					Return(mockKeyValueEntry{key: mappingKey, value: []byte(tt.mapping)}, nil)
+			}
+			if tt.wantTombstone {
+				mappingsKV.On("Put", mock.Anything, mappingKey, []byte(tombstoneMarker)).Return(uint64(2), nil)
+			}
+			publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+			h := &EventHandlers{
+				publisher:    publisher,
+				userLookup:   tt.lookup,
+				idMapper:     stubIDMapper{},
+				v1ObjectsKV:  objectsKV,
+				v1MappingsKV: mappingsKV,
+				logger:       slog.Default(),
+			}
+
+			retry := h.handleRegistrantDelete(context.Background(), key, tt.v1Data)
+
+			assert.Equal(t, tt.wantRetry, retry)
+			assert.Equal(t, tt.wantRemoved, removedUsernames(t, publisher, meetingID))
+			if !tt.wantTombstone {
+				mappingsKV.AssertNotCalled(t, "Put", mock.Anything, mock.Anything, mock.Anything)
+			}
+			objectsKV.AssertExpectations(t)
+			mappingsKV.AssertExpectations(t)
+		})
+	}
+}
+
+// TestHandleRegistrantUpdate_LegacyMapping verifies that an update over a legacy mapping
+// revokes every principal the earlier revisions could have been granted — not just the one
+// the new payload resolves to — and never marks the mapping authoritative.
+func TestHandleRegistrantUpdate_LegacyMapping(t *testing.T) {
+	const (
+		registrantUID = "reg-legacy"
+		meetingID     = "meeting-legacy"
+		userID        = "user-1"
+		enriched      = "alice"
+	)
+	key := "itx-zoom-meetings-registrants-v2." + registrantUID
+	mappingKey := "v1_meeting_registrants." + registrantUID
+	priorRecord, err := json.Marshal(map[string]any{
+		"registrant_id": registrantUID,
+		"meeting_id":    meetingID,
+		"user_id":       userID,
+	})
+	require.NoError(t, err)
+	priorHistory := func(kv *mockKeyValue) {
+		kv.On("History", mock.Anything, key).Return([]jetstream.KeyValueEntry{
+			historyEntry{mockKeyValueEntry{key: key, value: priorRecord}, jetstream.KeyValuePut},
+		}, nil)
+	}
+
+	tests := []struct {
+		name        string
+		v1Data      map[string]interface{}
+		lookup      fakeV1UserLookup
+		history     func(*mockKeyValue)
+		wantRemoved []string
+		wantMapping string // "" means the legacy mapping must be left untouched
+	}{
+		{
+			name:        "user_id-only update revokes enriched principal and keeps legacy mapping",
+			v1Data:      map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID},
+			lookup:      fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			history:     priorHistory,
+			wantRemoved: []string{enriched},
+		},
+		{
+			name:        "changed user_id revokes the principal granted from the earlier revision too",
+			v1Data:      map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": "user-2"},
+			lookup:      fakeV1UserLookup{users: map[string]string{userID: enriched, "user-2": "bob"}},
+			history:     priorHistory,
+			wantRemoved: []string{"bob", enriched},
+		},
+		{
+			name:        "explicit username records a non-authoritative mapping",
+			v1Data:      map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": "user-2", "username": "bob"},
+			lookup:      fakeV1UserLookup{users: map[string]string{userID: enriched}},
+			history:     priorHistory,
+			wantRemoved: []string{enriched},
+			wantMapping: buildRegistrantMappingValue(registrantUID, "bob", meetingID),
+		},
+		{
+			name:    "explicit username with an unresolvable prior principal keeps legacy mapping",
+			v1Data:  map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID, "username": "bob"},
+			lookup:  fakeV1UserLookup{},
+			history: priorHistory,
+		},
+		{
+			name:   "unresolvable principal keeps legacy mapping",
+			v1Data: map[string]interface{}{"registrant_id": registrantUID, "meeting_id": meetingID, "user_id": userID},
+			lookup: fakeV1UserLookup{},
+			history: func(kv *mockKeyValue) {
+				kv.On("History", mock.Anything, key).Return(nil, jetstream.ErrKeyNotFound)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			objectsKV := &mockKeyValue{}
+			mappingsKV := &mockKeyValue{}
+			publisher := &mockEventPublisher{}
+			tt.history(objectsKV)
+
+			mappingsKV.On("Get", mock.Anything, "v1_meetings."+meetingID).
+				Return(mockKeyValueEntry{key: "v1_meetings." + meetingID, value: []byte("1")}, nil)
+			mappingsKV.On("Get", mock.Anything, mappingKey).
+				Return(mockKeyValueEntry{key: mappingKey, value: []byte("1")}, nil)
+			if tt.wantMapping != "" {
+				mappingsKV.On("Put", mock.Anything, mappingKey, []byte(tt.wantMapping)).Return(uint64(2), nil)
+			}
+			publisher.On("PublishRegistrantEvent", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+			h := &EventHandlers{
+				publisher:    publisher,
+				userLookup:   tt.lookup,
+				idMapper:     stubIDMapper{},
+				v1ObjectsKV:  objectsKV,
+				v1MappingsKV: mappingsKV,
+				logger:       slog.Default(),
+			}
+
+			retry := h.handleRegistrantUpdate(context.Background(), key, tt.v1Data)
+
+			assert.False(t, retry)
+			assert.Equal(t, tt.wantRemoved, removedUsernames(t, publisher, meetingID))
+			if tt.wantMapping == "" {
+				mappingsKV.AssertNotCalled(t, "Put", mock.Anything, mock.Anything, mock.Anything)
+			}
+			objectsKV.AssertExpectations(t)
+			mappingsKV.AssertExpectations(t)
+		})
+	}
 }
