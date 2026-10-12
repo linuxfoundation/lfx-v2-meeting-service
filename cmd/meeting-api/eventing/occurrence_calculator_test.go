@@ -507,6 +507,20 @@ func TestGetEffectiveRecurrence(t *testing.T) {
 	eff = getEffectiveRecurrence(noUpdates, afterChange)
 	assert.Equal(t, 1, eff.RepeatInterval, "no updates: should always return base rule")
 
+	// A pre-1970 all_following update is skipped when building segments, so it must not
+	// supply the indexed rule either.
+	preEpoch := models.MeetingEventData{
+		Recurrence: baseRecurrence,
+		UpdatedOccurrences: []models.UpdatedOccurrence{{
+			OldOccurrenceID: "1",
+			NewOccurrenceID: "-1000000000000000",
+			AllFollowing:    true,
+			Recurrence:      quarterlyRecurrence,
+		}},
+	}
+	eff = getEffectiveRecurrence(preEpoch, afterChange)
+	assert.Equal(t, 1, eff.RepeatInterval, "pre-1970 update: should return base rule")
+
 	// nil recurrence: should return nil
 	nilMeeting := models.MeetingEventData{Recurrence: nil}
 	assert.Nil(t, getEffectiveRecurrence(nilMeeting, afterChange))

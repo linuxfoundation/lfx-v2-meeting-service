@@ -495,7 +495,8 @@ func getEffectiveRecurrence(meeting models.MeetingEventData, t time.Time) *model
 			continue
 		}
 		unix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
-		if err != nil {
+		// Skip updates buildSeriesSegments skips, so the indexed rule matches the occurrences.
+		if err != nil || unix < minSegmentStartUnix {
 			continue
 		}
 		entries = append(entries, entry{startUnix: unix, rec: uo.Recurrence})
