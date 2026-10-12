@@ -316,8 +316,9 @@ func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue
 			}
 			_, err = mappingsKV.Update(ctx, key, value, entry.Revision())
 		}
-		// ErrKeyExists covers both a lost Create race and an Update revision conflict.
-		if !errors.Is(err, jetstream.ErrKeyExists) {
+		// A lost Create race returns ErrKeyExists; an Update revision conflict returns
+		// ErrKeyRevisionMismatch (which ErrKeyExists does not match on replicated streams).
+		if !errors.Is(err, jetstream.ErrKeyExists) && !errors.Is(err, jetstream.ErrKeyRevisionMismatch) {
 			return err
 		}
 	}

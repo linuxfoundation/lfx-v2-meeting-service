@@ -216,7 +216,7 @@ func TestRecordPastMeetingSummary(t *testing.T) {
 
 		kv := &mockKeyValue{}
 		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil).Once()
-		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyExists).Once()
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyRevisionMismatch).Once()
 		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(extended, nil).Once()
 		kv.On("Update", mock.Anything, testSummaryIndexKey, allThree, uint64(1)).Return(uint64(3), nil).Once()
 
@@ -227,7 +227,7 @@ func TestRecordPastMeetingSummary(t *testing.T) {
 	t.Run("returns an error once conflicts exhaust the attempts", func(t *testing.T) {
 		kv := &mockKeyValue{}
 		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil)
-		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyExists)
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(0), jetstream.ErrKeyRevisionMismatch)
 
 		require.Error(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
 		kv.AssertNumberOfCalls(t, "Get", maxSummaryIndexUpdateAttempts)
