@@ -27,35 +27,42 @@ This service uses four FGA operation types for publishing tuple changes and one 
 | `lfx.fga-sync.member_put` | `member_put` | Adds a user to one or more relations on an object |
 | `lfx.fga-sync.member_remove` | `member_remove` | Removes a user from an object; sent on registrant delete and on full participant deletes. An empty `relations` array removes all relations for that user on the object |
 | `lfx.fga-sync.delete_access` | `delete_access` | Delete — removes all FGA tuples for the object |
-| `lfx.access_check.request` | request/reply | Synchronous committee write-access check during `UpdateMeeting` |
+| `lfx.access_check.request` | request/reply | Synchronous committee write-access and project `meetings_creator` checks during `CreateMeeting` / `UpdateMeeting` |
 
 ---
 
 ## Access Check RPC
 
-The service uses `lfx.access_check.request` as a **synchronous NATS request/reply** to ask fga-sync whether the authenticated principal holds the `writer` relation on a `committee` object before forwarding a `PUT /itx/meetings/{id}` to ITX.
+The service uses `lfx.access_check.request` as a **synchronous NATS request/reply** to ask fga-sync whether the authenticated principal holds the `writer` relation on a `committee` object before forwarding a `POST /itx/meetings` or `PUT /itx/meetings/{id}` to ITX, and (on create) the `meetings_creator` relation on the meeting's `project`.
 
-**When:** `UpdateMeeting` detects one or more committees that are present in the request but absent from the live ITX record (newly added committees). One request is sent per newly added committee.
+**When:**
+
+- `UpdateMeeting` detects one or more committees that are present in the request but absent from the live ITX record (newly added committees). One request is sent per newly added committee.
+- `CreateMeeting` receives a request with one or more committees. One `writer` request is sent per committee, then one `meetings_creator` request for the project. When the project check is denied, every committee must be owned by the requested project (from the `committee.uid.{v2 uid}` v1-mapping reply, `{project_sfid}:{committee_sfid}`), otherwise the request is rejected with `403`.
 
 **Request payload:**
 
 ```
 committee:{v2 uid}#writer@user:{jwt username}
+project:{v2 uid}#meetings_creator@user:{jwt username}
 ```
 
-`v2 uid` is the committee's v2 UID (FGA object IDs are always v2 UIDs, even though the downstream ITX request carries v1 SFIDs after ID mapping).
+`v2 uid` is the committee's or project's v2 UID (FGA object IDs are always v2 UIDs, even though the downstream ITX request carries v1 SFIDs after ID mapping).
 
 **Reply payload** — newline-delimited lines, each tab-separated:
 
 ```
 committee:{v2 uid}#writer@user:{jwt username}\t{true|false}
+project:{v2 uid}#meetings_creator@user:{jwt username}\t{true|false}
 ```
+
+The reply must echo the exact requested tuple; a reply without it fails closed.
 
 A plain-text message starting with a space in the first 20 bytes indicates an error response from fga-sync rather than a result line.
 
 **Timeout:** 10 seconds (unconditional cap; caller's deadline takes over if shorter).
 
-**Fail-closed:** any transport error or unexpected reply format causes the `UpdateMeeting` call to return `503 Service Unavailable`. The service refuses to start when `NATS_URL` is configured but unreachable, so a nil authorizer means NATS is intentionally absent (not transiently unavailable).
+**Fail-closed:** any transport error or unexpected reply format causes the `CreateMeeting` / `UpdateMeeting` call to return `503 Service Unavailable`. The service refuses to start when `NATS_URL` is configured but unreachable, so a nil authorizer means NATS is intentionally absent (not transiently unavailable). With a nil authorizer, `UpdateMeeting` skips the check and `CreateMeeting` rejects requests that carry committees with `503`.
 
 ---
 
@@ -121,8 +128,10 @@ Published to `lfx.fga-sync.member_remove` in two cases:
 |---|---|
 | `object_type` | `v1_meeting` |
 | `uid` | `MeetingID` (parent meeting) |
-| `username` | Old LFX username — on updates: from the stored mapping (pre-update value); on deletes: from the stored mapping if present, otherwise from the v1 `username` field on the delete payload |
+| `username` | Old LFX username — from the stored mapping (pre-update value on updates). For a legacy mapping with no username, one message per principal resolved as described below. On deletes with no mapping at all, from the v1 `username` field on the delete payload |
 | `relations` | `[]` (empty — removes all relations for the user) |
+
+**Legacy mappings.** The `v1_meeting_registrants.<uid>` mapping is the only durable record of which principal was granted. Mappings written by the create path set `principal_authoritative: true`, meaning `username` is exactly the granted principal (`""` = none). Updates over such a mapping keep the flag. A mapping without the flag (the legacy `"1"` sentinel, pipe-delimited values, or older JSON) that carries no username may front a tuple granted from `user_id`, possibly from an earlier revision of the record. For those, update and delete resolve every principal the create path could have granted: the v1 `username` field, else `LookupUser(user_id)`, for the current record and for every revision of the v1 object retained in `v1-objects` history. Each principal gets a `member_remove`, except the new username on an update. An update never marks such a mapping authoritative. It records a new non-empty username as a non-authoritative mapping only when every prior principal was resolved, and otherwise leaves the mapping untouched. A hard KV DEL/PURGE carries no payload, so its resolution depends entirely on that history. Grants from revisions the bucket no longer retains (a bucket keeping one revision per key, or a PURGE) cannot be named. If any principal cannot be determined, delete publishes the indexer delete but **does not tombstone** the mapping, and logs an error for reconciliation. `scripts/backfill_participant_mappings` converts legacy registrant mappings with the same `user_id` resolution, and reports entries it cannot resolve as `unresolved`. Run it as soon as possible after deploy so that fewer deletes depend on history.
 
 ### Delete
 
@@ -231,7 +240,7 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Create/update meeting | `v1_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete meeting | `v1_meeting` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
-| Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty |
+| Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty after legacy-mapping resolution (mapping left untombstoned when the principal is unknown) |
 | Create/update meeting RSVP | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting | `v1_past_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete past meeting | `v1_past_meeting` | `lfx.fga-sync.delete_access` | Always sent |
@@ -247,4 +256,5 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Delete summary | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Create/update meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting attachment | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
+| Create meeting — every committee, then project | `committee`, `project` | `lfx.access_check.request` | Request/reply per committee plus one `meetings_creator` check; failure returns 503 (fail-closed) |
 | Update meeting — newly added committees | `committee` | `lfx.access_check.request` | Request/reply per new committee; failure returns 503 (fail-closed) |
