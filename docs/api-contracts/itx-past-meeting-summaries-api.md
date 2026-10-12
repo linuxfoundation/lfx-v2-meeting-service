@@ -33,7 +33,7 @@ Retrieves a specific AI-generated summary by ID for a past meeting occurrence.
 - `past_meeting_id` (string, required): The hyphenated meeting and occurrence ID
 - `summary_id` (string, required): UUID of the summary record
 
-**Authorization**: Requires `viewer` permission on the meeting (subject to summary access restrictions)
+**Authorization**: Requires `ai_summary_viewer` on `v1_past_meeting:{past_meeting_id}` (checked by Heimdall). A summary awaiting approval (`requires_approval=true` and `approved!=true`) is returned only to principals holding `organizer` on the same past meeting; the proxy checks this after fetching the summary and returns `403` to everyone else (`503` if the organizer check cannot be completed). This matches the search index, which also restricts summaries awaiting approval to organizers.
 
 ---
 
