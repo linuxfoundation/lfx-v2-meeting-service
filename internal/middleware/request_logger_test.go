@@ -5,6 +5,7 @@ package middleware
 
 import (
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -100,6 +101,7 @@ func captureServiceLogs(t *testing.T, fn func()) string {
 	t.Setenv("LOG_LEVEL", "info")
 
 	prevLogger := slog.Default()
+	prevFlags := log.Flags()
 	prevStdout := os.Stdout
 	r, w, err := os.Pipe()
 	require.NoError(t, err)
@@ -107,16 +109,23 @@ func captureServiceLogs(t *testing.T, fn func()) string {
 	t.Cleanup(func() {
 		os.Stdout = prevStdout
 		slog.SetDefault(prevLogger)
+		log.SetFlags(prevFlags)
 	})
+
+	// Drain the pipe concurrently so output larger than the pipe buffer
+	// can't block the writer.
+	done := make(chan []byte)
+	go func() {
+		b, _ := io.ReadAll(r)
+		done <- b
+	}()
 
 	logging.InitStructureLogConfig()
 	fn()
 
-	require.NoError(t, w.Close())
 	os.Stdout = prevStdout
-	out, err := io.ReadAll(r)
-	require.NoError(t, err)
-	return string(out)
+	require.NoError(t, w.Close())
+	return string(<-done)
 }
 
 func TestRequestLoggerMiddleware_RedactsQueryPII(t *testing.T) {
@@ -173,6 +182,16 @@ func TestQueryForLog(t *testing.T) {
 			name:     "unknown params are redacted",
 			rawQuery: "foo=alice%40example.com",
 			want:     "foo=REDACTED",
+		},
+		{
+			name:     "allowlisted params with unexpected values are redacted",
+			rawQuery: "v=1&v=alice%40example.com&use_email=Alice+Example&register=u1",
+			want:     "register=REDACTED&use_email=REDACTED&v=1&v=REDACTED",
+		},
+		{
+			name:     "percent-encoded key is matched after decoding",
+			rawQuery: "%65mail=alice%40example.com&%76=alice%40example.com",
+			want:     "email=REDACTED&v=REDACTED",
 		},
 		{
 			name:     "repeated values are all redacted",

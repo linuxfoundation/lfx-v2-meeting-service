@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -52,16 +53,22 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 }
 
 // loggableQueryParams lists the inbound query parameters whose values carry no
-// personal data and may be logged verbatim. Every other parameter keeps its
-// name but has its value replaced, so identifiers such as the join-link
-// email/name/user_id never reach logs unredacted.
-var loggableQueryParams = map[string]bool{
-	"v":         true,
-	"use_email": true,
-	"register":  true,
+// personal data, each with a check its value must pass to be logged verbatim.
+// Every other value, and any listed value that fails its check, is replaced,
+// so identifiers such as the join-link email/name/user_id never reach logs
+// unredacted.
+var loggableQueryParams = map[string]func(string) bool{
+	"v":         func(v string) bool { return v == "1" },
+	"use_email": isBoolString,
+	"register":  isBoolString,
 }
 
-// queryForLog returns rawQuery with the value of every parameter not listed in
+func isBoolString(v string) bool {
+	_, err := strconv.ParseBool(v)
+	return err == nil
+}
+
+// queryForLog returns rawQuery with every parameter value not accepted by
 // loggableQueryParams replaced with "REDACTED", for safe use in log output.
 func queryForLog(rawQuery string) string {
 	if rawQuery == "" {
@@ -74,11 +81,11 @@ func queryForLog(rawQuery string) string {
 		return "REDACTED (unparseable query)"
 	}
 	for k, vs := range q {
-		if loggableQueryParams[k] {
-			continue
-		}
-		for i := range vs {
-			vs[i] = "REDACTED"
+		loggable := loggableQueryParams[k]
+		for i, v := range vs {
+			if loggable == nil || !loggable(v) {
+				vs[i] = "REDACTED"
+			}
 		}
 	}
 	return q.Encode()
