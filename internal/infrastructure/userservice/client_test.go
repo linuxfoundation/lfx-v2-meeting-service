@@ -4,11 +4,15 @@
 package userservice
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -282,6 +286,86 @@ func TestClearMeetingEmailPreference(t *testing.T) {
 		defer server.Close()
 
 		require.NoError(t, testClient(server).ClearMeetingEmailPreference(context.Background(), testToken, "SFID1"))
+	})
+}
+
+func TestDoJSON_ResponseBodyCap(t *testing.T) {
+	// streamBytes writes n bytes of b to w in chunks, stopping early once the client
+	// hangs up. n is finite only so a regression fails the test instead of hanging it.
+	streamBytes := func(w io.Writer, b byte, n int) {
+		chunk := bytes.Repeat([]byte{b}, 32<<10)
+		for written := 0; written < n; written += len(chunk) {
+			if _, err := w.Write(chunk); err != nil {
+				return
+			}
+		}
+	}
+
+	t.Run("endless body fails with bounded memory", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(`{"ID":"`))
+			streamBytes(w, 'a', 256<<20)
+		}))
+		defer server.Close()
+
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		_, err := testClient(server).GetSelf(context.Background(), testToken)
+		runtime.ReadMemStats(&after)
+
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
+		assert.Contains(t, err.Error(), "exceeds")
+		assert.Less(t, after.TotalAlloc-before.TotalAlloc, uint64(32<<20),
+			"reading the response must not buffer the oversized body")
+	})
+
+	t.Run("gzip-amplified body is capped after decompression", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Encoding", "gzip")
+			gz, _ := gzip.NewWriterLevel(w, gzip.BestCompression)
+			_, _ = gz.Write([]byte(`{"ID":"`))
+			streamBytes(gz, 'a', 256<<20)
+			_ = gz.Close()
+		}))
+		defer server.Close()
+
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		_, err := testClient(server).GetSelf(context.Background(), testToken)
+		runtime.ReadMemStats(&after)
+
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
+		assert.Contains(t, err.Error(), "exceeds")
+		assert.Less(t, after.TotalAlloc-before.TotalAlloc, uint64(32<<20),
+			"reading the response must not buffer the decompressed body")
+	})
+
+	t.Run("oversized error body keeps its status classification", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadGateway)
+			streamBytes(w, 'x', 4<<20)
+		}))
+		defer server.Close()
+
+		_, err := testClient(server).GetSelf(context.Background(), testToken)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+	})
+
+	t.Run("body at the cap is accepted", func(t *testing.T) {
+		prefix, suffix := `{"ID":"SFID1","pad":"`, `"}`
+		pad := strings.Repeat("a", maxResponseBodyBytes-len(prefix)-len(suffix))
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(prefix + pad + suffix))
+		}))
+		defer server.Close()
+
+		self, err := testClient(server).GetSelf(context.Background(), testToken)
+		require.NoError(t, err)
+		assert.Equal(t, "SFID1", self.SFID)
 	})
 }
 

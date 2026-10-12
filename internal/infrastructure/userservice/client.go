@@ -37,6 +37,11 @@ const (
 
 	// meetingFilter selects the Type=Meeting preference record (case-insensitive match).
 	meetingFilter = "type eq meeting"
+
+	// maxResponseBodyBytes caps how much of a user-service response body is buffered.
+	// Expected payloads (a /me record, a filtered preference list) are a few KB; the cap
+	// keeps an oversized or decompression-amplified body from exhausting process memory.
+	maxResponseBodyBytes = 256 << 10
 )
 
 // Config holds v1 user-service (API-gateway) client configuration.
@@ -283,13 +288,19 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	// Read at most one byte past the cap so an oversized body is detected without
+	// buffering it; the remainder is discarded when the body is closed.
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodyBytes+1))
 	if err != nil {
 		return domain.NewInternalError("failed to read response", err)
 	}
+	bodyTooLarge := len(respBody) > maxResponseBodyBytes
+	if bodyTooLarge {
+		respBody = respBody[:maxResponseBodyBytes]
+	}
 
 	slog.DebugContext(ctx, "user-service response",
-		"method", method, "status", resp.StatusCode, "body_len", len(respBody))
+		"method", method, "status", resp.StatusCode, "body_len", len(respBody), "body_truncated", bodyTooLarge)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		domainErr := mapHTTPError(resp.StatusCode, respBody)
@@ -302,6 +313,12 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 			span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d", resp.StatusCode))
 		}
 		return domainErr
+	}
+
+	// Checked after the status gate so an oversized error body keeps its status-based
+	// classification (e.g. a retryable 502) and is mapped from the truncated prefix.
+	if bodyTooLarge {
+		return domain.NewInternalError(fmt.Sprintf("user-service response exceeds %d bytes", maxResponseBodyBytes))
 	}
 
 	if out == nil || len(respBody) == 0 {
