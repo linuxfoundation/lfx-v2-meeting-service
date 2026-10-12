@@ -747,6 +747,8 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
+    # ai_summary_viewer does not depend on the summary's approval state; the
+    # service additionally requires organizer for a summary awaiting approval.
     - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_summaries:get"
       match:
         methods:
