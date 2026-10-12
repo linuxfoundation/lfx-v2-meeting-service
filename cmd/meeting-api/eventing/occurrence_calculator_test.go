@@ -782,8 +782,9 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("out-of-range monthly_day and monthly_week are rejected before expansion", func(t *testing.T) {
-		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
+	t.Run("never-matching recurrences are rejected before expansion", func(t *testing.T) {
+		ancient := time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC) // a Monday
+		require.Equal(t, time.Monday, ancient.Weekday())
 		cases := map[string]*models.ZoomMeetingRecurrence{
 			"monthly_day 32":           {Type: 1, RepeatInterval: 1, MonthlyDay: 32},
 			"monthly_day -1":           {Type: 3, RepeatInterval: 1, MonthlyDay: -1},
@@ -793,7 +794,12 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			"monthly_week 53 (panics)": {Type: 3, RepeatInterval: 1, MonthlyWeek: 53, MonthlyWeekDay: 2},
 			"monthly_week -2":          {Type: 3, RepeatInterval: 1, MonthlyWeek: -2, MonthlyWeekDay: 2},
 			// The 1st Monday is never the 15th: valid fields, but the rule can never match.
-			"monthly_week with monthly_day": {Type: 3, RepeatInterval: 1, MonthlyWeek: 1, MonthlyWeekDay: 2, MonthlyDay: 15},
+			"1st weekday on monthly_day 15": {Type: 3, RepeatInterval: 1, MonthlyWeek: 1, MonthlyWeekDay: 2, MonthlyDay: 15},
+			// The last weekday of a 31-day month is the 25th or later; January-only never matches.
+			"last weekday on monthly_day 22": {Type: 3, RepeatInterval: 12, MonthlyWeek: -1, MonthlyWeekDay: 2, MonthlyDay: 22},
+			// FREQ=DAILY;INTERVAL=7 from a Monday only visits Mondays.
+			"daily every 7 days from Monday on Tuesdays":         {Type: 1, RepeatInterval: 7, WeeklyDays: "3"},
+			"daily every 14 days from Monday on monthly weekday": {Type: 1, RepeatInterval: 14, MonthlyWeek: 2, MonthlyWeekDay: 3},
 		}
 		for name, rec := range cases {
 			t.Run(name, func(t *testing.T) {
@@ -806,31 +812,59 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 		}
 	})
 
-	t.Run("valid monthly_day and monthly_week boundaries are accepted", func(t *testing.T) {
+	t.Run("valid recurrences near the validation boundaries are accepted", func(t *testing.T) {
+		tuesday := time.Date(2026, 1, 6, 10, 0, 0, 0, time.UTC)
+		require.Equal(t, time.Tuesday, tuesday.Weekday())
 		cases := map[string]*models.ZoomMeetingRecurrence{
-			"monthly_day 1":   {Type: 3, RepeatInterval: 1, MonthlyDay: 1, EndTimes: 3},
-			"monthly_day 31":  {Type: 3, RepeatInterval: 1, MonthlyDay: 31, EndTimes: 3},
-			"monthly_week -1": {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, EndTimes: 3},
-			"monthly_week 4":  {Type: 3, RepeatInterval: 1, MonthlyWeek: 4, MonthlyWeekDay: 2, EndTimes: 3},
+			"monthly_day 1":                  {Type: 3, RepeatInterval: 1, MonthlyDay: 1, EndTimes: 3},
+			"monthly_day 31":                 {Type: 3, RepeatInterval: 1, MonthlyDay: 31, EndTimes: 3},
+			"monthly_week -1":                {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, EndTimes: 3},
+			"monthly_week 4":                 {Type: 3, RepeatInterval: 1, MonthlyWeek: 4, MonthlyWeekDay: 2, EndTimes: 3},
+			"2nd weekday on monthly_day 10":  {Type: 3, RepeatInterval: 1, MonthlyWeek: 2, MonthlyWeekDay: 2, MonthlyDay: 10, EndTimes: 3},
+			"last weekday on monthly_day 31": {Type: 3, RepeatInterval: 1, MonthlyWeek: -1, MonthlyWeekDay: 2, MonthlyDay: 31, EndTimes: 3},
+			// The nth prefix is ignored for weekly rules, so monthly_week is not range-checked there.
+			"weekly with stale monthly_week 5":    {Type: 2, RepeatInterval: 1, MonthlyWeek: 5, MonthlyWeekDay: 3, EndTimes: 3},
+			"daily every 7 days on start weekday": {Type: 1, RepeatInterval: 7, WeeklyDays: "3", EndTimes: 3},
 		}
 		for name, rec := range cases {
 			t.Run(name, func(t *testing.T) {
-				occurrences, err := calc.getRRuleOccurrences(startTime, "UTC", rec, nil)
+				occurrences, err := calc.getRRuleOccurrences(tuesday, "UTC", rec, nil)
 				require.NoError(t, err)
 				assert.Len(t, occurrences, 3)
 			})
 		}
 	})
 
-	t.Run("never-matching rule across many segments is cut off by the expansion budget", func(t *testing.T) {
-		// FREQ=DAILY;INTERVAL=7 from a Monday only ever visits Mondays, so BYDAY=TU never
-		// matches and each segment walks to rrule-go's MAXYEAR. Every field is individually
-		// valid, so only the cumulative budget bounds the work across segments.
-		monday := time.Date(1, 1, 1, 10, 0, 0, 0, time.UTC) // 0001-01-01 is a Monday
-		require.Equal(t, time.Monday, monday.Weekday())
-		updates := make([]models.UpdatedOccurrence, maxSeriesSegments-1)
+	t.Run("segment starts before 1970 are rejected or skipped", func(t *testing.T) {
+		rec := &models.ZoomMeetingRecurrence{Type: 2, RepeatInterval: 1, EndTimes: 3}
+		for _, startTime := range []string{"1969-12-31T23:59:59Z", "0000-01-01T10:00:00Z"} {
+			meeting := models.MeetingEventData{ID: "test-meeting-ancient", StartTime: startTime, Duration: 60, Recurrence: rec}
+			_, err := calc.CalculateOccurrences(context.Background(), meeting, true, false, 100)
+			require.Error(t, err, "start_time %s must be rejected", startTime)
+		}
+
+		// An all_following update whose new start is before 1970 is skipped, not expanded.
+		meeting := models.MeetingEventData{
+			ID:         "test-meeting-ancient-segment",
+			StartTime:  startTime.Format(time.RFC3339),
+			Timezone:   "UTC",
+			Duration:   60,
+			Recurrence: rec,
+			UpdatedOccurrences: []models.UpdatedOccurrence{{
+				OldOccurrenceID: strconv.FormatInt(startTime.Unix(), 10),
+				NewOccurrenceID: "-1000000000000000",
+				AllFollowing:    true,
+			}},
+		}
+		segs, err := calc.buildSeriesSegments(meeting)
+		require.NoError(t, err)
+		assert.Len(t, segs, 1, "a pre-1970 all_following segment must be skipped")
+	})
+
+	t.Run("expansion stops once the per-meeting budget is exhausted", func(t *testing.T) {
+		updates := make([]models.UpdatedOccurrence, 10)
 		for i := range updates {
-			unix := monday.AddDate(0, 0, (i+1)*7).Unix()
+			unix := startTime.AddDate(0, 0, (i+1)*7).Unix()
 			updates[i] = models.UpdatedOccurrence{
 				OldOccurrenceID: strconv.FormatInt(unix, 10),
 				NewOccurrenceID: strconv.FormatInt(unix, 10),
@@ -838,27 +872,21 @@ func TestOccurrenceCalculator_BoundedExpansion(t *testing.T) {
 			}
 		}
 		meeting := models.MeetingEventData{
-			ID:        "test-meeting-never-matching",
-			StartTime: monday.Format(time.RFC3339),
-			Timezone:  "UTC",
-			Duration:  60,
-			Recurrence: &models.ZoomMeetingRecurrence{
-				Type:           1, // Daily
-				RepeatInterval: 7,
-				WeeklyDays:     "3", // Tuesday
-			},
+			ID:                 "test-meeting-budget",
+			StartTime:          startTime.Format(time.RFC3339),
+			Timezone:           "UTC",
+			Duration:           60,
+			Recurrence:         &models.ZoomMeetingRecurrence{Type: 2, RepeatInterval: 1},
 			UpdatedOccurrences: updates,
 		}
 		budgeted := NewOccurrenceCalculator(slog.Default())
-		budgeted.expansionBudget = 50 * time.Millisecond
+		budgeted.expansionBudget = time.Nanosecond
 
-		start := time.Now()
 		_, err := budgeted.CalculateOccurrences(context.Background(), meeting, false, false, 100)
-		elapsed := time.Since(start)
 		require.Error(t, err, "exceeding the expansion budget must return an error")
 		assert.Contains(t, err.Error(), "budget")
-		// Budget plus at most one in-flight segment; generous slack for -race and slow CI.
-		assert.Less(t, elapsed, time.Second,
-			"never-matching segments must stop shortly after the budget, not run for every segment")
+
+		_, err = calc.CalculateOccurrences(context.Background(), meeting, false, false, 100)
+		require.NoError(t, err, "the default budget must not reject a legitimate multi-segment meeting")
 	})
 }

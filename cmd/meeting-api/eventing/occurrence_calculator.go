@@ -39,6 +39,11 @@ const (
 	// iterator call, and rrule-go only checks UNTIL against a matching candidate. The budget is
 	// checked between segments, so total work is bounded by the budget plus one segment.
 	maxExpansionDuration = 2 * time.Second
+	// minSegmentStartUnix is the earliest accepted segment start (1970-01-01T00:00:00Z).
+	// start_time and all_following new_occurrence_id are KV-supplied with no lower bound; an
+	// ancient DTSTART lengthens a non-yielding rrule-go walk without limit (it runs to MAXYEAR
+	// in one uninterruptible call) and a year-0 DTSTART panics inside rrule-go.
+	minSegmentStartUnix = 0
 )
 
 var weekdaysABBRV = []string{"SU", "MO", "TU", "WE", "TH", "FR", "SA"}
@@ -355,6 +360,9 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse meeting start_time %q: %w", meeting.StartTime, err)
 	}
+	if startObj.Unix() < minSegmentStartUnix {
+		return nil, fmt.Errorf("meeting start_time %q is before 1970-01-01", meeting.StartTime)
+	}
 
 	base := seriesSegment{
 		startUnix:   startObj.Unix(),
@@ -399,6 +407,11 @@ func (c *OccurrenceCalculator) buildSeriesSegments(meeting models.MeetingEventDa
 		newUnix, err := strconv.ParseInt(uo.NewOccurrenceID, 10, 64)
 		if err != nil {
 			c.logger.Warn("failed to parse NewOccurrenceID for all_following update, skipping",
+				"new_occurrence_id", uo.NewOccurrenceID)
+			continue
+		}
+		if newUnix < minSegmentStartUnix {
+			c.logger.Warn("NewOccurrenceID for all_following update is before 1970-01-01, skipping",
 				"new_occurrence_id", uo.NewOccurrenceID)
 			continue
 		}
@@ -522,6 +535,16 @@ func (c *OccurrenceCalculator) getRRuleOccurrences(startTime time.Time, timezone
 		}
 	}
 
+	// FREQ=DAILY with an INTERVAL that is a multiple of 7 only ever visits DTSTART's weekday
+	// (in the segment timezone), so a BYDAY that excludes it never matches and rrule-go would
+	// walk to MAXYEAR. Every field is individually valid, so this needs the resolved start.
+	if days := dailyByDayWeekdays(recurrence); len(days) > 0 &&
+		recurrence.RepeatInterval > 0 && recurrence.RepeatInterval%7 == 0 &&
+		!slices.Contains(days, int(startTime.Weekday())+1) {
+		return nil, fmt.Errorf("invalid daily recurrence: repeat_interval %d from a %s never reaches weekly_days %q",
+			recurrence.RepeatInterval, startTime.Weekday(), recurrence.WeeklyDays)
+	}
+
 	set := rrule.Set{}
 	r, err := rrule.StrToRRule(rruleString)
 	if err != nil {
@@ -580,18 +603,21 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 		if reccurrence.MonthlyWeekDay < 1 || reccurrence.MonthlyWeekDay > 7 {
 			return "", fmt.Errorf("invalid monthly_week_day %d: must be 1–7", reccurrence.MonthlyWeekDay)
 		}
-		// Zoom's domain is -1 (last week) or 1–4. Other values either never match (e.g. a 5th
-		// weekday in a month visited only in non-leap Februaries, or |n| > 5) or panic in
+		// rrule-go only honours the nth prefix for monthly rules (it is dropped for DAILY/WEEKLY).
+		// There, Zoom's domain is -1 (last week) or 1–4. Other values either never match (e.g. a
+		// 5th weekday in a month visited only in non-leap Februaries, or |n| > 5) or panic in
 		// rrule-go (large |n| indexes past the weekday mask).
-		if reccurrence.MonthlyWeek < -1 || reccurrence.MonthlyWeek > 4 {
-			return "", fmt.Errorf("invalid monthly_week %d: must be -1 or 1–4", reccurrence.MonthlyWeek)
-		}
-		// For monthly rules, an nth-weekday BYDAY combined with BYMONTHDAY can never match
-		// (e.g. the 1st Monday is never the 15th), so rrule-go would walk to MAXYEAR without
-		// yielding. Zoom treats the two monthly modes as mutually exclusive.
-		if reccurrence.Type == 3 && reccurrence.MonthlyDay != 0 {
-			return "", fmt.Errorf("invalid monthly recurrence: monthly_day %d and monthly_week %d are mutually exclusive",
-				reccurrence.MonthlyDay, reccurrence.MonthlyWeek)
+		if reccurrence.Type == 3 {
+			if reccurrence.MonthlyWeek < -1 || reccurrence.MonthlyWeek > 4 {
+				return "", fmt.Errorf("invalid monthly_week %d: must be -1 or 1–4", reccurrence.MonthlyWeek)
+			}
+			// An nth weekday combined with a day of month that it can never fall on (e.g. the
+			// 1st Monday is never the 15th) never matches, so rrule-go would walk to MAXYEAR.
+			if reccurrence.MonthlyDay >= 1 && reccurrence.MonthlyDay <= 31 &&
+				!monthlyWeekCanMatchDay(reccurrence.MonthlyWeek, reccurrence.MonthlyDay) {
+				return "", fmt.Errorf("invalid monthly recurrence: monthly_week %d can never fall on monthly_day %d",
+					reccurrence.MonthlyWeek, reccurrence.MonthlyDay)
+			}
 		}
 		fmt.Fprintf(&rrule, "BYDAY=%d%s;", reccurrence.MonthlyWeek, weekdaysABBRV[reccurrence.MonthlyWeekDay-1])
 	}
@@ -652,6 +678,39 @@ func (c *OccurrenceCalculator) getRRule(reccurrence *models.ZoomMeetingRecurrenc
 	}
 
 	return strings.TrimSuffix(rrule.String(), ";"), nil
+}
+
+// monthlyWeekCanMatchDay reports whether the nth weekday of a month (week -1 or 1–4) can fall
+// on the day set getRRule emits for day (1–31; 29–31 expand to 28..day with BYSETPOS=-1).
+func monthlyWeekCanMatchDay(week, day int) bool {
+	lo := min(day, 28)
+	if week == -1 {
+		// The last weekday of a month falls on day len-6..len; day 25 onward is in that range
+		// for every month length, earlier days only in short months.
+		return day >= 25
+	}
+	return lo <= 7*week && day >= 7*week-6
+}
+
+// dailyByDayWeekdays returns the weekdays (1=Sunday … 7=Saturday) a daily recurrence filters
+// on via BYDAY, mirroring getRRule (nth prefixes are ignored by rrule-go for DAILY), or nil.
+func dailyByDayWeekdays(recurrence *models.ZoomMeetingRecurrence) []int {
+	if recurrence.Type != 1 {
+		return nil
+	}
+	if recurrence.WeeklyDays == "" {
+		if recurrence.MonthlyWeek != 0 && recurrence.MonthlyWeekDay >= 1 && recurrence.MonthlyWeekDay <= 7 {
+			return []int{recurrence.MonthlyWeekDay}
+		}
+		return nil
+	}
+	var days []int
+	for _, item := range strings.Split(recurrence.WeeklyDays, ",") {
+		if n, err := strconv.Atoi(item); err == nil && n >= 1 && n <= 7 {
+			days = append(days, n)
+		}
+	}
+	return days
 }
 
 // parseByDay takes a list of weekdays as a string and returns the list of
