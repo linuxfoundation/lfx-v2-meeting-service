@@ -9,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"regexp"
+	"slices"
 	"strings"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
@@ -174,12 +174,11 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	// ai_summary_access below, so that a parent access change processed from here on finds
 	// this summary and republishes it (see republishPastMeetingArtifacts). A summary that
 	// cannot be recorded is not published: its public flag could never be revoked.
-	indexKey, keyErr := pastMeetingSummaryIndexKey(summaryData.MeetingAndOccurrenceID, summaryData.ID)
-	if keyErr != nil {
-		funcLogger.With(logging.ErrKey, keyErr).ErrorContext(ctx, "skipping summary: cannot record it under its past meeting")
-		return false
-	}
-	if _, err := h.v1MappingsKV.Put(ctx, indexKey, []byte("1")); err != nil {
+	if err := recordPastMeetingSummary(ctx, h.v1MappingsKV, summaryData.MeetingAndOccurrenceID, summaryData.ID); err != nil {
+		if errors.Is(err, jetstream.ErrInvalidKey) {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "skipping summary: cannot record it under its past meeting")
+			return false
+		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to record summary under its past meeting, will retry")
 		return true
 	}
@@ -279,47 +278,66 @@ func (h *EventHandlers) handlePastMeetingSummaryDelete(
 	})
 }
 
-// pastMeetingSummaryIndexKeyPrefix prefixes the v1-mappings keys that record which summaries
-// belong to a past meeting: {prefix}{meeting_and_occurrence_id}.{summary_id}. The summary KV
-// record is keyed by summary ID and carries no access field, so a change to the parent's
-// ai_summary_access produces no summary event; the past meeting handler lists these keys to
-// republish the summaries itself.
+// pastMeetingSummaryIndexKeyPrefix prefixes the v1-mappings key that records which summaries
+// belong to a past meeting: {prefix}{meeting_and_occurrence_id} holds a JSON array of summary
+// IDs. The summary KV record is keyed by summary ID and carries no access field, so a change
+// to the parent's ai_summary_access produces no summary event; the past meeting handler reads
+// this key to republish the summaries itself.
 const pastMeetingSummaryIndexKeyPrefix = "v1-mappings.past-meeting-summaries."
 
-// kvKeyTokenRe matches one NATS KV key token: no '.' separator and no '*' or '>' wildcard,
-// so a token can neither spill into another past meeting's keys nor widen a key filter.
-var kvKeyTokenRe = regexp.MustCompile(`^[-/_=a-zA-Z0-9]+$`)
+// maxSummaryIndexUpdateAttempts bounds the compare-and-swap retries in recordPastMeetingSummary
+// when concurrent summary events for the same past meeting race on its key.
+const maxSummaryIndexUpdateAttempts = 5
 
-// pastMeetingSummaryIndexKey returns the v1-mappings key that records summaryID under its
-// past meeting.
-func pastMeetingSummaryIndexKey(meetingAndOccurrenceID, summaryID string) (string, error) {
-	if !kvKeyTokenRe.MatchString(meetingAndOccurrenceID) || !kvKeyTokenRe.MatchString(summaryID) {
-		return "", fmt.Errorf("meeting_and_occurrence_id and summary id must each be a single KV key token")
+// recordPastMeetingSummary adds summaryID to the set of summaries recorded under the past
+// meeting. The set is updated with compare-and-swap so concurrent summary events for the same
+// past meeting cannot drop each other's entries.
+func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue, meetingAndOccurrenceID, summaryID string) error {
+	key := pastMeetingSummaryIndexKeyPrefix + meetingAndOccurrenceID
+	for attempt := 0; attempt < maxSummaryIndexUpdateAttempts; attempt++ {
+		entry, err := mappingsKV.Get(ctx, key)
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			value, marshalErr := json.Marshal([]string{summaryID})
+			if marshalErr != nil {
+				return marshalErr
+			}
+			_, err = mappingsKV.Create(ctx, key, value)
+		} else if err == nil {
+			var ids []string
+			if unmarshalErr := json.Unmarshal(entry.Value(), &ids); unmarshalErr != nil {
+				return fmt.Errorf("failed to decode summaries of past meeting: %w", unmarshalErr)
+			}
+			if slices.Contains(ids, summaryID) {
+				return nil
+			}
+			value, marshalErr := json.Marshal(append(ids, summaryID))
+			if marshalErr != nil {
+				return marshalErr
+			}
+			_, err = mappingsKV.Update(ctx, key, value, entry.Revision())
+		}
+		// ErrKeyExists covers both a lost Create race and an Update revision conflict.
+		if !errors.Is(err, jetstream.ErrKeyExists) {
+			return err
+		}
 	}
-	return pastMeetingSummaryIndexKeyPrefix + meetingAndOccurrenceID + "." + summaryID, nil
+	return fmt.Errorf("failed to record summary under its past meeting: too many concurrent updates")
 }
 
 // listPastMeetingSummaryIDs returns the IDs of the summaries recorded under the past meeting
-// by handlePastMeetingSummaryUpdate. Any error, including a listing cut short by ctx, is
-// returned so the caller retries rather than acting on a partial list.
+// by handlePastMeetingSummaryUpdate. Any KV or decode error is returned so the caller retries
+// rather than acting on an incomplete list.
 func listPastMeetingSummaryIDs(ctx context.Context, meetingAndOccurrenceID string, mappingsKV jetstream.KeyValue) ([]string, error) {
-	if !kvKeyTokenRe.MatchString(meetingAndOccurrenceID) {
-		// pastMeetingSummaryIndexKey never records a summary under such an ID.
-		return nil, nil
-	}
-	prefix := pastMeetingSummaryIndexKeyPrefix + meetingAndOccurrenceID + "."
-	lister, err := mappingsKV.ListKeysFiltered(ctx, prefix+"*")
+	entry, err := mappingsKV.Get(ctx, pastMeetingSummaryIndexKeyPrefix+meetingAndOccurrenceID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list summaries of past meeting: %w", err)
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to load summaries of past meeting: %w", err)
 	}
 	var ids []string
-	for key := range lister.Keys() {
-		if id := strings.TrimPrefix(key, prefix); id != key && id != "" {
-			ids = append(ids, id)
-		}
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("listing summaries of past meeting interrupted: %w", err)
+	if err := json.Unmarshal(entry.Value(), &ids); err != nil {
+		return nil, fmt.Errorf("failed to decode summaries of past meeting: %w", err)
 	}
 	return ids, nil
 }

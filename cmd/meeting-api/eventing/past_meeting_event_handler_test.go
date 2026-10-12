@@ -55,21 +55,6 @@ func TestConvertMapToPastMeetingDataOmitsRecordingPassword(t *testing.T) {
 	assert.Equal(t, true, zoomConfig["ai_companion_enabled"])
 }
 
-// stubKeyLister is a jetstream.KeyLister over a fixed set of keys.
-type stubKeyLister struct{ keys chan string }
-
-func newStubKeyLister(keys ...string) stubKeyLister {
-	ch := make(chan string, len(keys))
-	for _, k := range keys {
-		ch <- k
-	}
-	close(ch)
-	return stubKeyLister{keys: ch}
-}
-
-func (l stubKeyLister) Keys() <-chan string { return l.keys }
-func (l stubKeyLister) Stop() error         { return nil }
-
 // artifactRepublishPublisher records past meeting, recording and summary publishes and
 // no-ops everything else.
 type artifactRepublishPublisher struct {
@@ -99,7 +84,6 @@ func (p *artifactRepublishPublisher) PublishPastMeetingSummaryEvent(_ context.Co
 // meeting, so tightening a setting revokes their public flag in the index.
 func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 	const recordingKey = "itx-zoom-past-meetings-recordings." + testSummaryMeetOcc
-	summaryIndexFilter := []string{pastMeetingSummaryIndexKeyPrefix + testSummaryMeetOcc + ".*"}
 
 	// The past meeting as v1 now stores it, after the host restricted every artifact.
 	parent := map[string]any{
@@ -111,7 +95,7 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 		"ai_summary_access":         "meeting_hosts",
 	}
 
-	newHandlers := func(t *testing.T, lister jetstream.KeyLister, listErr error) (*EventHandlers, *artifactRepublishPublisher) {
+	newHandlers := func(t *testing.T, summaryIndex jetstream.KeyValueEntry, summaryIndexErr error) (*EventHandlers, *artifactRepublishPublisher) {
 		t.Helper()
 		objectsKV := &mockKeyValue{}
 		objectsKV.On("Get", mock.Anything, testPastMeetingKey).Return(mockKeyValueEntry{key: testPastMeetingKey, value: mustMarshalJSON(t, parent)}, nil)
@@ -128,13 +112,9 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 		})}, nil)
 
 		mappingsKV := &mockKeyValue{}
+		mappingsKV.On("Get", mock.Anything, testSummaryIndexKey).Return(summaryIndex, summaryIndexErr)
 		mappingsKV.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
 		mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
-		if lister != nil {
-			mappingsKV.On("ListKeysFiltered", mock.Anything, summaryIndexFilter).Return(lister, nil)
-		} else {
-			mappingsKV.On("ListKeysFiltered", mock.Anything, summaryIndexFilter).Return(nil, listErr)
-		}
 
 		publisher := &artifactRepublishPublisher{}
 		return &EventHandlers{
@@ -147,7 +127,7 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 	}
 
 	t.Run("tightened access republishes recording and summary as non-public", func(t *testing.T) {
-		h, publisher := newHandlers(t, newStubKeyLister(testSummaryIndexKey), nil)
+		h, publisher := newHandlers(t, mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + testSummaryID + `"]`)}, nil)
 
 		retry := handleKVPut(context.Background(), testPastMeetingKey, parent, h)
 		require.False(t, retry)

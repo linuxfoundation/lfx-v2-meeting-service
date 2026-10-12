@@ -25,7 +25,7 @@ const (
 	testSummaryMapping  = "v1_past_meeting_summaries." + testSummaryID
 	testPastMeetingKey  = "itx-zoom-past-meetings." + testSummaryMeetOcc
 	testPastMeetingRefs = "v1-mappings.past-meeting-mappings." + testSummaryMeetOcc
-	testSummaryIndexKey = pastMeetingSummaryIndexKeyPrefix + testSummaryMeetOcc + "." + testSummaryID
+	testSummaryIndexKey = pastMeetingSummaryIndexKeyPrefix + testSummaryMeetOcc
 )
 
 // publishedSummary is one captured PublishPastMeetingSummaryEvent call.
@@ -85,7 +85,9 @@ func newSummaryTestHandlers(t *testing.T, aiSummaryAccess string) (*EventHandler
 	mappingsKV.On("Get", mock.Anything, testSummaryMapping).Return(mockKeyValueEntry{key: testSummaryMapping, value: []byte("1")}, nil)
 	mappingsKV.On("Get", mock.Anything, testPastMeetingRefs).Return(nil, jetstream.ErrKeyNotFound)
 	mappingsKV.On("Put", mock.Anything, testSummaryMapping, mock.Anything).Return(uint64(1), nil)
-	mappingsKV.On("Put", mock.Anything, testSummaryIndexKey, mock.Anything).Return(uint64(1), nil)
+	mappingsKV.On("Get", mock.Anything, testSummaryIndexKey).Return(nil, jetstream.ErrKeyNotFound).Once()
+	mappingsKV.On("Get", mock.Anything, testSummaryIndexKey).Return(mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + testSummaryID + `"]`)}, nil)
+	mappingsKV.On("Create", mock.Anything, testSummaryIndexKey, []byte(`["`+testSummaryID+`"]`)).Return(uint64(1), nil)
 
 	publisher := &summaryRecordingPublisher{}
 	return &EventHandlers{
@@ -177,4 +179,41 @@ func TestHandlePastMeetingSummaryUpdate_DropsWebhookPayload(t *testing.T) {
 	assert.NotContains(t, fields, "zoom_webhook_event")
 	assert.Equal(t, testSummaryID, fields["id"])
 	assert.Equal(t, "Example Foundation Board", fields["zoom_meeting_topic"])
+}
+
+// TestRecordPastMeetingSummary verifies that summaries are recorded under their past meeting
+// without losing entries to concurrent writers: a lost entry would leave that summary's public
+// flag unrevoked when the past meeting's ai_summary_access is tightened.
+func TestRecordPastMeetingSummary(t *testing.T) {
+	const otherSummaryID = "00000000-0000-0000-0000-000000000002"
+	existing := mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + otherSummaryID + `"]`)}
+	merged := []byte(`["` + otherSummaryID + `","` + testSummaryID + `"]`)
+
+	t.Run("appends to the existing set", func(t *testing.T) {
+		kv := &mockKeyValue{}
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil)
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(2), nil)
+
+		require.NoError(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
+		kv.AssertExpectations(t)
+	})
+
+	t.Run("re-reads and retries after losing a create race", func(t *testing.T) {
+		kv := &mockKeyValue{}
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(nil, jetstream.ErrKeyNotFound).Once()
+		kv.On("Create", mock.Anything, testSummaryIndexKey, mock.Anything).Return(uint64(0), jetstream.ErrKeyExists)
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(existing, nil)
+		kv.On("Update", mock.Anything, testSummaryIndexKey, merged, uint64(1)).Return(uint64(2), nil)
+
+		require.NoError(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
+		kv.AssertExpectations(t)
+	})
+
+	t.Run("does not rewrite a set that already holds the summary", func(t *testing.T) {
+		kv := &mockKeyValue{}
+		kv.On("Get", mock.Anything, testSummaryIndexKey).Return(mockKeyValueEntry{key: testSummaryIndexKey, value: []byte(`["` + testSummaryID + `"]`)}, nil)
+
+		require.NoError(t, recordPastMeetingSummary(context.Background(), kv, testSummaryMeetOcc, testSummaryID))
+		kv.AssertNotCalled(t, "Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
 }

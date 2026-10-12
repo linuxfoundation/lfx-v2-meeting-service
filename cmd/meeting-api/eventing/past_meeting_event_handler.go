@@ -307,6 +307,10 @@ func (h *EventHandlers) republishArtifactRecord(ctx context.Context, key string,
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return false
 		}
+		if errors.Is(err, jetstream.ErrInvalidKey) {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "invalid past meeting artifact key, skipping republish", "artifact_key", key)
+			return false
+		}
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "transient error fetching past meeting artifact for republish, will retry", "artifact_key", key)
 		return true
 	}
