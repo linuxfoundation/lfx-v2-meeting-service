@@ -31,9 +31,10 @@ type MeetingService struct {
 //
 // committeeAuthz may be nil (e.g. when NATS is not configured), in which case
 // the per-committee FGA write-access check is skipped on UpdateMeeting and
-// Heimdall's organizer check is the sole gate. When non-nil, this service-layer
-// check is the sole committee guard (no Heimdall committee rule); RPC errors
-// fail closed (503) to prevent bypass during fga-sync outages.
+// CreateMeeting rejects requests that carry committees (503). When non-nil, UpdateMeeting
+// checks every newly attached committee and CreateMeeting checks every committee
+// plus the project (see authorizeCreateScope); RPC errors fail closed (503) to
+// prevent bypass during fga-sync outages.
 func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
 	return &MeetingService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
@@ -50,8 +51,20 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 		return nil, err
 	}
 
+	// Capture v2 UIDs before mapping overwrites them with v1 SFIDs; FGA object
+	// IDs are v2 UIDs (docs/fga-contract.md).
+	v2ProjectUID := req.ProjectUID
+	v2CommitteeUIDs := make([]string, len(req.Committees))
+	for i, c := range req.Committees {
+		v2CommitteeUIDs[i] = c.UID
+	}
+
 	// Map v2 UIDs to v1 SFIDs before sending to ITX
 	if err := s.mapRequestV2ToV1(ctx, req); err != nil {
+		return nil, err
+	}
+
+	if err := s.authorizeCreateScope(ctx, req, v2ProjectUID, v2CommitteeUIDs); err != nil {
 		return nil, err
 	}
 
@@ -287,22 +300,119 @@ func (s *MeetingService) authorizeNewCommittees(ctx context.Context, req *models
 			continue // no new permission needed for an existing committee
 		}
 		// Use the v2 UID for the FGA check; FGA object IDs are v2 UIDs.
-		v2UID := v1ToV2Committee[c.UID]
-		ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
+		if err := s.requireCommitteeWriteAccess(ctx, principal, v1ToV2Committee[c.UID]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// authorizeCreateScope authorizes every object a create request binds the new
+// meeting to. Heimdall authorizes POST /itx/meetings with an OR check —
+// meetings_creator on project:{project_uid} OR writer on
+// committee:{committees[0].uid} — so it never checks committees[1..n], and when
+// the committee branch grants it never checks project_uid. This closes both gaps:
+//
+//   - the principal must hold writer on every committee in the request (the
+//     same check UpdateMeeting applies to newly attached committees), and
+//   - the principal must hold meetings_creator on the project, or else every
+//     committee must be owned by the requested project, so a committee writer
+//     can only create meetings under their committee's own project.
+//
+// req must already be in v1 SFID space; v2ProjectUID and v2CommitteeUIDs are the
+// pre-mapping IDs, which FGA uses as object IDs. A request without committees
+// is left to Heimdall, whose only branch in that case is meetings_creator on the
+// project. With committees, the request fails closed (503) when committeeAuthz
+// is nil (NATS not configured) or an RPC errors.
+func (s *MeetingService) authorizeCreateScope(ctx context.Context, req *models.CreateITXMeetingRequest, v2ProjectUID string, v2CommitteeUIDs []string) error {
+	if len(req.Committees) == 0 {
+		return nil
+	}
+	if s.committeeAuthz == nil {
+		slog.WarnContext(ctx, "committee authorizer not configured; rejecting meeting create with committees")
+		return domain.NewUnavailableError("cannot verify committee access; please retry")
+	}
+
+	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
+	if principal == "" {
+		return domain.NewForbiddenError("must be authenticated to create a meeting with committees")
+	}
+
+	// Check each distinct committee once so repeated UIDs cannot multiply the
+	// per-committee RPCs below.
+	v2CommitteeUIDs = uniqueStrings(v2CommitteeUIDs)
+
+	for _, v2UID := range v2CommitteeUIDs {
+		if err := s.requireCommitteeWriteAccess(ctx, principal, v2UID); err != nil {
+			return err
+		}
+	}
+
+	ok, err := s.committeeAuthz.HasMeetingsCreatorAccess(ctx, principal, v2ProjectUID)
+	if err != nil {
+		slog.WarnContext(ctx, "project FGA meetings_creator check failed; rejecting request",
+			"project_uid", v2ProjectUID, "error", err)
+		return domain.NewUnavailableError("cannot verify project access; please retry")
+	}
+	if ok {
+		return nil
+	}
+
+	// Authorized only through committees: bind each committee to the requested
+	// project so the committee branch cannot be used to create meetings under a
+	// project the principal has no relation to.
+	resolver, canResolve := s.idMapper.(domain.CommitteeProjectResolver)
+	if !canResolve {
+		slog.WarnContext(ctx, "cannot verify committee project ownership without project meetings_creator access; rejecting request",
+			"principal", redaction.Redact(principal), "project_uid", v2ProjectUID)
+		return domain.NewForbiddenError("not authorized to create a meeting in this project")
+	}
+	for _, v2UID := range v2CommitteeUIDs {
+		ownerProject, err := resolver.MapCommitteeV2ToV1Project(ctx, v2UID)
 		if err != nil {
-			// fga-sync is unreachable — fail closed to prevent the authorization
-			// bypass window that fail-open would create during outages. Use
-			// Unavailable (503) rather than Forbidden (403) so callers know the
-			// denial is transient and can retry.
-			slog.WarnContext(ctx, "committee FGA write-access check failed; rejecting update",
-				"committee_id", v2UID, "error", err)
-			return domain.NewUnavailableError("cannot verify committee write access; please retry")
+			return err
 		}
-		if !ok {
-			slog.WarnContext(ctx, "committee FGA write-access denied; rejecting update",
-				"principal", redaction.Redact(principal), "committee_id", v2UID)
-			return domain.NewForbiddenError("not authorized to add committee to this meeting")
+		if ownerProject == "" || ownerProject != req.ProjectUID {
+			slog.WarnContext(ctx, "committee does not belong to the requested project; rejecting request",
+				"principal", redaction.Redact(principal), "project_uid", v2ProjectUID, "committee_id", v2UID)
+			return domain.NewForbiddenError("committee does not belong to the meeting's project")
 		}
+	}
+	return nil
+}
+
+// uniqueStrings returns values with duplicates removed, keeping first-seen order.
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		if _, dup := seen[v]; dup {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
+}
+
+// requireCommitteeWriteAccess returns nil when principal holds FGA "writer" on
+// committee:{v2UID}, Forbidden when access is denied, and Unavailable when the
+// check cannot be completed (fail closed).
+func (s *MeetingService) requireCommitteeWriteAccess(ctx context.Context, principal, v2UID string) error {
+	ok, err := s.committeeAuthz.HasWriteAccess(ctx, principal, v2UID)
+	if err != nil {
+		// fga-sync is unreachable — fail closed to prevent the authorization
+		// bypass window that fail-open would create during outages. Use
+		// Unavailable (503) rather than Forbidden (403) so callers know the
+		// denial is transient and can retry.
+		slog.WarnContext(ctx, "committee FGA write-access check failed; rejecting request",
+			"committee_id", v2UID, "error", err)
+		return domain.NewUnavailableError("cannot verify committee write access; please retry")
+	}
+	if !ok {
+		slog.WarnContext(ctx, "committee FGA write-access denied; rejecting request",
+			"principal", redaction.Redact(principal), "committee_id", v2UID)
+		return domain.NewForbiddenError("not authorized to add committee to this meeting")
 	}
 	return nil
 }

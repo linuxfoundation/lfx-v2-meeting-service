@@ -88,6 +88,9 @@ func (m *NATSMapper) MapProjectV1ToV2(ctx context.Context, v1SFID string) (strin
 	return m.lookup(ctx, key)
 }
 
+// Verify optional interface compliance at compile time.
+var _ domain.CommitteeProjectResolver = (*NATSMapper)(nil)
+
 // MapCommitteeV2ToV1 maps a v2 committee UID to v1 committee SFID
 // The NATS response format is {project_sfid}:{committee_sfid}, but we only return the committee SFID
 func (m *NATSMapper) MapCommitteeV2ToV1(ctx context.Context, v2UID string) (string, error) {
@@ -95,31 +98,60 @@ func (m *NATSMapper) MapCommitteeV2ToV1(ctx context.Context, v2UID string) (stri
 		return "", domain.NewValidationError("v2 committee UID is required")
 	}
 
+	_, committeeSFID, err := m.lookupCommittee(ctx, v2UID)
+	if err != nil {
+		return "", err
+	}
+	return committeeSFID, nil
+}
+
+// MapCommitteeV2ToV1Project returns the v1 project SFID that owns the committee
+// identified by v2UID, taken from the {project_sfid}:{committee_sfid} mapping
+// reply. It returns "" with a nil error when the reply carries no project SFID.
+func (m *NATSMapper) MapCommitteeV2ToV1Project(ctx context.Context, v2UID string) (string, error) {
+	if v2UID == "" {
+		return "", domain.NewValidationError("v2 committee UID is required")
+	}
+
+	projectSFID, _, err := m.lookupCommittee(ctx, v2UID)
+	if err != nil {
+		return "", err
+	}
+	return projectSFID, nil
+}
+
+// lookupCommittee resolves a v2 committee UID to its owning v1 project SFID and
+// v1 committee SFID.
+func (m *NATSMapper) lookupCommittee(ctx context.Context, v2UID string) (string, string, error) {
 	// Request format: committee.uid.{v2_uuid} returns {project_sfid}:{committee_sfid}
 	key := fmt.Sprintf("committee.uid.%s", v2UID)
 	response, err := m.lookup(ctx, key)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
+	return parseCommitteeMapping(response)
+}
 
-	// Parse the response to extract only the committee SFID
-	// Format: "projectSFID:committeeSFID" -> we want "committeeSFID"
-	// If no colon present, assume the response is already just the committee SFID
+// parseCommitteeMapping splits a committee mapping reply into its project SFID
+// and committee SFID.
+// Format: "projectSFID:committeeSFID". If no colon is present, the response is
+// assumed to be just the committee SFID and the project SFID is returned empty.
+func parseCommitteeMapping(response string) (string, string, error) {
 	parts := strings.Split(response, ":")
 	if len(parts) == 1 {
-		return response, nil
+		return "", response, nil
 	}
 
 	if len(parts) != 2 {
-		return "", domain.NewUnavailableError(fmt.Sprintf("unexpected committee mapping format: %s", response))
+		return "", "", domain.NewUnavailableError(fmt.Sprintf("unexpected committee mapping format: %s", response))
 	}
 
 	committeeSFID := parts[1]
 	if committeeSFID == "" {
-		return "", domain.NewUnavailableError("committee SFID is empty in mapping response")
+		return "", "", domain.NewUnavailableError("committee SFID is empty in mapping response")
 	}
 
-	return committeeSFID, nil
+	return parts[0], committeeSFID, nil
 }
 
 // MapCommitteeV1ToV2 maps a v1 committee SFID to v2 committee UID

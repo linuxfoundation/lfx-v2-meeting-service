@@ -51,6 +51,17 @@ func CommitteesAttribute() {
 	Attribute("committees", ArrayOf(Committee), "The committees associated with the meeting")
 }
 
+// MaxCreateMeetingCommittees caps the committees on a create request; each one
+// costs per-committee mapping and authorization lookups before ITX is called.
+const MaxCreateMeetingCommittees = 50
+
+// CreateCommitteesAttribute is CommitteesAttribute with the create-request cap.
+func CreateCommitteesAttribute() {
+	Attribute("committees", ArrayOf(Committee), "The committees associated with the meeting", func() {
+		MaxLength(MaxCreateMeetingCommittees)
+	})
+}
+
 func MeetingTypeAttribute() {
 	Attribute("meeting_type", String, "The type of meeting", func() {
 		Enum("Board", "Maintainers", "Marketing", "Technical", "Legal", "Other", "None")
