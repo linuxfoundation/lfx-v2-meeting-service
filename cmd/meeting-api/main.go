@@ -152,10 +152,6 @@ func run() int {
 	}
 	itxClient := itxclient.NewClient(itxProxyConfig)
 	// Committee authorizer: checks FGA write access on newly added committees
-	// during UpdateMeeting. Uses its own NATS connection. When nil (NATS not
-	// configured), the per-committee check is skipped entirely. When non-nil,
-	// fga-sync RPC errors fail closed (503) rather than open.
-	// Committee authorizer: checks FGA write access on newly added committees
 	// during UpdateMeeting, and on every committee plus project meetings_creator
 	// access during CreateMeeting. Uses its own NATS connection. When nil (NATS_URL not
 	// configured), the per-committee check is skipped on UpdateMeeting and
