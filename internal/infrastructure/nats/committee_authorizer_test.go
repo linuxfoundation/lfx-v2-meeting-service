@@ -123,3 +123,32 @@ func TestNATSCommitteeAuthorizer_HasWriteAccess(t *testing.T) {
 		assert.True(t, ok)
 	})
 }
+
+func TestNATSCommitteeAuthorizer_HasMeetingsCreatorAccess(t *testing.T) {
+	const principal = "alice"
+	const projectID = "00000000-0000-0000-0000-0000000000a1"
+	expectedTuple := fmt.Sprintf("project:%s#meetings_creator@user:%s", projectID, principal)
+
+	t.Run("sends the project meetings_creator tuple and returns the result", func(t *testing.T) {
+		nc := &MockRequester{}
+		nc.On("RequestWithContext", mock.Anything, fgaconstants.AccessCheckSubject, []byte(expectedTuple)).
+			Return(&natsgo.Msg{Data: []byte(expectedTuple + "\ttrue")}, nil)
+
+		authz := NewNATSCommitteeAuthorizer(nc)
+		ok, err := authz.HasMeetingsCreatorAccess(context.Background(), principal, projectID)
+		require.NoError(t, err)
+		assert.True(t, ok)
+		nc.AssertExpectations(t)
+	})
+
+	t.Run("denies without an RPC when the project ID carries tuple delimiters", func(t *testing.T) {
+		nc := &MockRequester{}
+		authz := NewNATSCommitteeAuthorizer(nc)
+		for _, id := range []string{"", "p#meetings_creator@user:bob", "p\nproject:q"} {
+			ok, err := authz.HasMeetingsCreatorAccess(context.Background(), principal, id)
+			require.NoError(t, err)
+			assert.False(t, ok)
+		}
+		nc.AssertNotCalled(t, "RequestWithContext", mock.Anything, mock.Anything, mock.Anything)
+	})
+}

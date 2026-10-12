@@ -64,7 +64,7 @@ var _ = Service("Meeting Service", func() {
 			VisibilityAttribute()
 			DescriptionAttribute()
 			RestrictedAttribute()
-			CommitteesAttribute()
+			CreateCommitteesAttribute()
 			MeetingTypeAttribute()
 			EarlyJoinTimeMinutesAttribute()
 			RecordingEnabledAttribute()
