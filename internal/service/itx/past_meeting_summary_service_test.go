@@ -19,10 +19,11 @@ type fakePastMeetingSummaryClient struct {
 	domain.ITXPastMeetingSummaryClient
 	lastUpdateReq *itx.UpdatePastMeetingSummaryRequest
 	getResp       *itx.PastMeetingSummaryResponse
+	getErr        error
 }
 
 func (f *fakePastMeetingSummaryClient) GetPastMeetingSummary(_ context.Context, _, _ string) (*itx.PastMeetingSummaryResponse, error) {
-	return f.getResp, nil
+	return f.getResp, f.getErr
 }
 
 type fakePastMeetingAuthorizer struct {
@@ -77,7 +78,7 @@ func TestPastMeetingSummaryService_Update_StampsModifiedBy(t *testing.T) {
 
 func TestPastMeetingSummaryService_GetPastMeetingSummary(t *testing.T) {
 	awaiting := func() *itx.PastMeetingSummaryResponse {
-		return &itx.PastMeetingSummaryResponse{ID: "sum-1", SummaryOverview: "draft", RequiresApproval: true, Approved: false}
+		return &itx.PastMeetingSummaryResponse{ID: "sum-1", MeetingAndOccurrenceID: "pm-1", SummaryOverview: "draft", RequiresApproval: true, Approved: false}
 	}
 
 	t.Run("awaiting approval is returned to an organizer", func(t *testing.T) {
@@ -133,6 +134,31 @@ func TestPastMeetingSummaryService_GetPastMeetingSummary(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 		assert.NotContains(t, err.Error(), "nats")
+	})
+
+	t.Run("awaiting approval is forbidden when the summary belongs to another past meeting", func(t *testing.T) {
+		// An organizer of pm-2 must not satisfy the gate for pm-1's pending summary.
+		client := &fakePastMeetingSummaryClient{getResp: awaiting()}
+		authz := &fakePastMeetingAuthorizer{organizer: true}
+		svc := NewPastMeetingSummaryService(client, nil, authz)
+
+		resp, err := svc.GetPastMeetingSummary(ctxWithPrincipal("alice", ""), "pm-2", "sum-1")
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Zero(t, authz.calls)
+	})
+
+	t.Run("ITX error is returned without an organizer check", func(t *testing.T) {
+		client := &fakePastMeetingSummaryClient{getErr: domain.NewNotFoundError("summary not found")}
+		authz := &fakePastMeetingAuthorizer{organizer: true}
+		svc := NewPastMeetingSummaryService(client, nil, authz)
+
+		resp, err := svc.GetPastMeetingSummary(ctxWithPrincipal("alice", ""), "pm-1", "sum-1")
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+		assert.Zero(t, authz.calls)
 	})
 
 	t.Run("approved summary is returned without an organizer check", func(t *testing.T) {

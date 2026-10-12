@@ -46,7 +46,7 @@ func (s *PastMeetingSummaryService) GetPastMeetingSummary(ctx context.Context, p
 		return nil, err
 	}
 	if resp != nil && resp.RequiresApproval && !resp.Approved {
-		if err := s.authorizeAwaitingApprovalRead(ctx, pastMeetingID); err != nil {
+		if err := s.authorizeAwaitingApprovalRead(ctx, pastMeetingID, resp.MeetingAndOccurrenceID); err != nil {
 			return nil, err
 		}
 	}
@@ -54,10 +54,18 @@ func (s *PastMeetingSummaryService) GetPastMeetingSummary(ctx context.Context, p
 }
 
 // authorizeAwaitingApprovalRead requires the requesting principal to hold
-// organizer on v1_past_meeting:{pastMeetingID}. It fails closed: no principal or
-// no authorizer is a 403, and an authorizer error is a 503.
-func (s *PastMeetingSummaryService) authorizeAwaitingApprovalRead(ctx context.Context, pastMeetingID string) error {
+// organizer on v1_past_meeting:{pastMeetingID}, and the summary to belong to
+// that past meeting, so the check cannot be satisfied by organizing a different
+// one. It fails closed: no principal, no authorizer or a parent mismatch is a
+// 403, and an authorizer error is a 503.
+func (s *PastMeetingSummaryService) authorizeAwaitingApprovalRead(ctx context.Context, pastMeetingID, summaryParentID string) error {
 	const denied = "summary is awaiting approval and is visible to meeting organizers only"
+
+	if summaryParentID != pastMeetingID {
+		slog.WarnContext(ctx, "summary awaiting approval does not belong to the requested past meeting; rejecting read",
+			"past_meeting_id", pastMeetingID)
+		return domain.NewForbiddenError(denied)
+	}
 
 	principal, _ := ctx.Value(constants.PrincipalContextID).(string)
 	if principal == "" || s.pastMeetingAuthz == nil {
