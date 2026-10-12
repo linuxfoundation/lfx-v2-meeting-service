@@ -6,6 +6,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
@@ -24,7 +25,7 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 			ctx = logging.AppendCtx(ctx, slog.String("component", "api"))
 			ctx = logging.AppendCtx(ctx, slog.String("method", r.Method))
 			ctx = logging.AppendCtx(ctx, slog.String("path", r.URL.Path))
-			ctx = logging.AppendCtx(ctx, slog.String("query", r.URL.RawQuery))
+			ctx = logging.AppendCtx(ctx, slog.String("query", queryForLog(r.URL.RawQuery)))
 			ctx = logging.AppendCtx(ctx, slog.String("host", r.Host))
 			ctx = logging.AppendCtx(ctx, slog.String("user_agent", r.UserAgent()))
 			ctx = logging.AppendCtx(ctx, slog.String("remote_addr", r.RemoteAddr))
@@ -48,6 +49,39 @@ func RequestLoggerMiddleware() func(http.Handler) http.Handler {
 			}
 		})
 	}
+}
+
+// loggableQueryParams lists the inbound query parameters whose values carry no
+// personal data and may be logged verbatim. Every other parameter keeps its
+// name but has its value replaced, so identifiers such as the join-link
+// email/name/user_id never reach logs unredacted.
+var loggableQueryParams = map[string]bool{
+	"v":         true,
+	"use_email": true,
+	"register":  true,
+}
+
+// queryForLog returns rawQuery with the value of every parameter not listed in
+// loggableQueryParams replaced with "REDACTED", for safe use in log output.
+func queryForLog(rawQuery string) string {
+	if rawQuery == "" {
+		return ""
+	}
+	q, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		// Fail closed: a query that doesn't parse can't be checked for
+		// sensitive values, and rawQuery may still carry them.
+		return "REDACTED (unparseable query)"
+	}
+	for k, vs := range q {
+		if loggableQueryParams[k] {
+			continue
+		}
+		for i := range vs {
+			vs[i] = "REDACTED"
+		}
+	}
+	return q.Encode()
 }
 
 // responseWriter wraps http.ResponseWriter to capture status code.
