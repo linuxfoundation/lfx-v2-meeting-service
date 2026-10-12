@@ -52,7 +52,7 @@ Unlike the stamped audit fields, `owner` is **client-suppliable**: clients may s
 
 **Method**: `POST /itx/meetings?v=1`
 
-**Authorization**: Requires `writer` permission on the project. The following additional constraints apply when the request body includes committees:
+**Authorization**: Requires `meetings_creator` permission on the project, or `writer` permission on a committee in the request. The following additional constraints apply when the request body includes committees:
 
 - **Every committee requires `writer` permission**: the caller must have `writer` permission on each committee in the request. Requests that fail this check return `403 Forbidden`.
 - **Committees must belong to the project unless the caller is a project meetings creator**: a caller without `meetings_creator` permission on the project may only create the meeting under the project that owns each requested committee. Requests that fail this check return `403 Forbidden`.
