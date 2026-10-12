@@ -28,7 +28,9 @@
 // Registrant entries are reported as "unresolved" and left unchanged, for manual review of
 // the meeting's FGA tuples, when the principal cannot be determined: the object is gone
 // behind a mapping with no recorded username, its user_id does not resolve, or a username
-// recorded in a pipe-delimited value differs from the one the current object resolves to.
+// recorded in a pipe-delimited value differs from the one the current object resolves to, or
+// a revision of the object still retained in v1-objects resolves to a different principal
+// (the handlers trust a non-empty mapping username and stop resolving history).
 // "unresolved" does not change the exit code.
 //
 // Usage:
@@ -433,6 +435,13 @@ func processEntry(
 		)
 		return resultUnresolved, false
 	}
+	if cfg.userIDField != "" && username != "" {
+		// The handlers trust a non-empty mapping username and stop resolving history, so
+		// only record one when no retained revision names a different principal.
+		if result := checkRetainedPrincipals(ctx, objectsKV, cfg, objectKey, e.mappingKey, username); result != resultUpdated {
+			return result, false
+		}
+	}
 	newValue := buildMappingValue(e.uid, username, meetingID)
 	if newValue == e.currentValue {
 		return resultUnchanged, username != ""
@@ -497,6 +506,66 @@ func lookupUsername(ctx context.Context, objectsKV jetstream.KeyValue, mappingKe
 		return "", resultUnresolved
 	}
 	return getString(userData, "lf_sso"), resultUpdated
+}
+
+// checkRetainedPrincipals resolves the principal of every revision of objectKey the v1-objects
+// bucket retains, the same way as the current object. It returns resultUpdated when none
+// resolves to a principal other than username, resultUnresolved when one does or cannot be
+// resolved, and resultFailed on a KV error.
+func checkRetainedPrincipals(
+	ctx context.Context,
+	objectsKV jetstream.KeyValue,
+	cfg mappingConfig,
+	objectKey, mappingKey, username string,
+) entryResult {
+	entries, err := objectsKV.History(ctx, objectKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return resultUpdated
+		}
+		slog.ErrorContext(ctx, "failed to read v1 object history",
+			"mapping_key", mappingKey,
+			"object_key", objectKey,
+			"error", err,
+		)
+		return resultFailed
+	}
+	resolvedUserIDs := map[string]string{}
+	for _, entry := range entries {
+		if entry.Operation() != jetstream.KeyValuePut {
+			continue
+		}
+		data, decErr := decodeData(entry.Value())
+		if decErr != nil {
+			slog.WarnContext(ctx, "unresolved: failed to decode a retained v1 object revision",
+				"mapping_key", mappingKey,
+			)
+			return resultUnresolved
+		}
+		principal := getString(data, cfg.usernameField)
+		if principal == "" {
+			userID := getString(data, cfg.userIDField)
+			if userID == "" {
+				continue
+			}
+			resolved, ok := resolvedUserIDs[userID]
+			if !ok {
+				var result entryResult
+				if resolved, result = lookupUsername(ctx, objectsKV, mappingKey, userID); result != resultUpdated {
+					return result
+				}
+				resolvedUserIDs[userID] = resolved
+			}
+			principal = resolved
+		}
+		if principal != "" && principal != username {
+			slog.WarnContext(ctx, "unresolved: a retained v1 object revision names a different principal",
+				"mapping_key", mappingKey,
+			)
+			return resultUnresolved
+		}
+	}
+	return resultUpdated
 }
 
 // registrantMappingData is the JSON structure written to v1-mappings.
