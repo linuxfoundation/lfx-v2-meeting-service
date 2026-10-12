@@ -94,6 +94,10 @@ func NewForbiddenError(message string, err ...error) *DomainError {
 // ErrUserNotFound is returned by UserReader when no registered user matches the lookup.
 var ErrUserNotFound = errors.New("user not found")
 
+// ErrInviteNotFound is returned by InviteLookup when the invite service has no record
+// for the requested invite UID.
+var ErrInviteNotFound = errors.New("invite not found")
+
 // ErrEmailNotSynced marks a preferred-email selection that matched a known address on the
 // user's profile but has not yet synced from Auth0 to SFDC. It is wrapped inside a
 // NewUnavailableError so callers can detect this specific retryable case with errors.Is
