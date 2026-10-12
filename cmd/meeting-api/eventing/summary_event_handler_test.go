@@ -25,6 +25,7 @@ const (
 	testSummaryMapping  = "v1_past_meeting_summaries." + testSummaryID
 	testPastMeetingKey  = "itx-zoom-past-meetings." + testSummaryMeetOcc
 	testPastMeetingRefs = "v1-mappings.past-meeting-mappings." + testSummaryMeetOcc
+	testSummaryIndexKey = pastMeetingSummaryIndexKeyPrefix + testSummaryMeetOcc + "." + testSummaryID
 )
 
 // publishedSummary is one captured PublishPastMeetingSummaryEvent call.
@@ -84,6 +85,7 @@ func newSummaryTestHandlers(t *testing.T, aiSummaryAccess string) (*EventHandler
 	mappingsKV.On("Get", mock.Anything, testSummaryMapping).Return(mockKeyValueEntry{key: testSummaryMapping, value: []byte("1")}, nil)
 	mappingsKV.On("Get", mock.Anything, testPastMeetingRefs).Return(nil, jetstream.ErrKeyNotFound)
 	mappingsKV.On("Put", mock.Anything, testSummaryMapping, mock.Anything).Return(uint64(1), nil)
+	mappingsKV.On("Put", mock.Anything, testSummaryIndexKey, mock.Anything).Return(uint64(1), nil)
 
 	publisher := &summaryRecordingPublisher{}
 	return &EventHandlers{

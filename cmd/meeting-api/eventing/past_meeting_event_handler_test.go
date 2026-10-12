@@ -6,6 +6,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
@@ -14,6 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 )
 
 // The past meeting index document no longer carries the obsolete recording_password,
@@ -49,4 +53,123 @@ func TestConvertMapToPastMeetingDataOmitsRecordingPassword(t *testing.T) {
 	zoomConfig, ok := doc["zoom_config"].(map[string]any)
 	require.True(t, ok, "zoom_config must be present")
 	assert.Equal(t, true, zoomConfig["ai_companion_enabled"])
+}
+
+// stubKeyLister is a jetstream.KeyLister over a fixed set of keys.
+type stubKeyLister struct{ keys chan string }
+
+func newStubKeyLister(keys ...string) stubKeyLister {
+	ch := make(chan string, len(keys))
+	for _, k := range keys {
+		ch <- k
+	}
+	close(ch)
+	return stubKeyLister{keys: ch}
+}
+
+func (l stubKeyLister) Keys() <-chan string { return l.keys }
+func (l stubKeyLister) Stop() error         { return nil }
+
+// artifactRepublishPublisher records past meeting, recording and summary publishes and
+// no-ops everything else.
+type artifactRepublishPublisher struct {
+	mockParticipantPublisher
+	pastMeetings []*models.PastMeetingEventData
+	recordings   []*models.RecordingEventData
+	summaries    []publishedSummary
+}
+
+func (p *artifactRepublishPublisher) PublishPastMeetingEvent(_ context.Context, _ string, data *models.PastMeetingEventData) error {
+	p.pastMeetings = append(p.pastMeetings, data)
+	return nil
+}
+
+func (p *artifactRepublishPublisher) PublishPastMeetingRecordingEvent(_ context.Context, _ string, data *models.RecordingEventData) error {
+	p.recordings = append(p.recordings, data)
+	return nil
+}
+
+func (p *artifactRepublishPublisher) PublishPastMeetingSummaryEvent(_ context.Context, action string, data *models.SummaryEventData, access string) error {
+	p.summaries = append(p.summaries, publishedSummary{action: action, data: data, access: access})
+	return nil
+}
+
+// TestHandlePastMeetingUpdate_RepublishesArtifacts verifies that a past meeting update
+// republishes the recording and summary documents from the access settings now on the past
+// meeting, so tightening a setting revokes their public flag in the index.
+func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
+	const recordingKey = "itx-zoom-past-meetings-recordings." + testSummaryMeetOcc
+	summaryIndexFilter := []string{pastMeetingSummaryIndexKeyPrefix + testSummaryMeetOcc + ".*"}
+
+	// The past meeting as v1 now stores it, after the host restricted every artifact.
+	parent := map[string]any{
+		"meeting_and_occurrence_id": testSummaryMeetOcc,
+		"meeting_id":                "12345678901",
+		"proj_id":                   "proj-sfid",
+		"recording_access":          "meeting_hosts",
+		"transcript_access":         "meeting_hosts",
+		"ai_summary_access":         "meeting_hosts",
+	}
+
+	newHandlers := func(t *testing.T, lister jetstream.KeyLister, listErr error) (*EventHandlers, *artifactRepublishPublisher) {
+		t.Helper()
+		objectsKV := &mockKeyValue{}
+		objectsKV.On("Get", mock.Anything, testPastMeetingKey).Return(mockKeyValueEntry{key: testPastMeetingKey, value: mustMarshalJSON(t, parent)}, nil)
+		// The recording record still carries the public snapshot from when it was indexed.
+		objectsKV.On("Get", mock.Anything, recordingKey).Return(mockKeyValueEntry{key: recordingKey, value: mustMarshalJSON(t, map[string]any{
+			"meeting_and_occurrence_id": testSummaryMeetOcc,
+			"proj_id":                   "proj-sfid",
+			"recording_access":          "public",
+		})}, nil)
+		objectsKV.On("Get", mock.Anything, testSummaryKVKey).Return(mockKeyValueEntry{key: testSummaryKVKey, value: mustMarshalJSON(t, map[string]any{
+			"id":                        testSummaryID,
+			"meeting_and_occurrence_id": testSummaryMeetOcc,
+			"approved":                  true,
+		})}, nil)
+
+		mappingsKV := &mockKeyValue{}
+		mappingsKV.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+		mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+		if lister != nil {
+			mappingsKV.On("ListKeysFiltered", mock.Anything, summaryIndexFilter).Return(lister, nil)
+		} else {
+			mappingsKV.On("ListKeysFiltered", mock.Anything, summaryIndexFilter).Return(nil, listErr)
+		}
+
+		publisher := &artifactRepublishPublisher{}
+		return &EventHandlers{
+			publisher:    publisher,
+			idMapper:     participantTestIDMapper{},
+			v1ObjectsKV:  objectsKV,
+			v1MappingsKV: mappingsKV,
+			logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
+		}, publisher
+	}
+
+	t.Run("tightened access republishes recording and summary as non-public", func(t *testing.T) {
+		h, publisher := newHandlers(t, newStubKeyLister(testSummaryIndexKey), nil)
+
+		retry := handleKVPut(context.Background(), testPastMeetingKey, parent, h)
+		require.False(t, retry)
+		require.Len(t, publisher.pastMeetings, 1)
+
+		require.Len(t, publisher.recordings, 1)
+		assert.Equal(t, "meeting_hosts", publisher.recordings[0].RecordingAccess)
+
+		require.Len(t, publisher.summaries, 1)
+		got := publisher.summaries[0]
+		assert.Equal(t, testSummaryID, got.data.ID)
+		assert.Equal(t, "meeting_hosts", got.access)
+		cfg := eventing.PastMeetingSummaryIndexingConfig(got.data, got.access)
+		require.NotNil(t, cfg.Public)
+		assert.False(t, *cfg.Public, "summary must be republished as non-public")
+	})
+
+	t.Run("summary listing failure retries the past meeting event", func(t *testing.T) {
+		h, publisher := newHandlers(t, nil, errors.New("kv unavailable"))
+
+		retry := handleKVPut(context.Background(), testPastMeetingKey, parent, h)
+		assert.True(t, retry)
+		assert.Empty(t, publisher.summaries)
+	})
 }
