@@ -26,6 +26,7 @@ type recordingTestPublisher struct {
 	recordingAction string
 	recordingData   *models.RecordingEventData
 	transcriptData  *models.TranscriptEventData
+	indexerDeletes  []string // "subject:id"
 }
 
 func (p *recordingTestPublisher) PublishPastMeetingRecordingEvent(_ context.Context, action string, data *models.RecordingEventData) error {
@@ -67,7 +68,8 @@ func (p *recordingTestPublisher) PublishPastMeetingAttachmentEvent(_ context.Con
 func (p *recordingTestPublisher) PublishAccessDelete(_ context.Context, _ string, _ []byte) error {
 	return nil
 }
-func (p *recordingTestPublisher) PublishIndexerDelete(_ context.Context, _ string, _ string) error {
+func (p *recordingTestPublisher) PublishIndexerDelete(_ context.Context, subject string, id string) error {
+	p.indexerDeletes = append(p.indexerDeletes, subject+":"+id)
 	return nil
 }
 func (p *recordingTestPublisher) Close() error { return nil }
@@ -264,5 +266,68 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 		require.NotNil(t, pub.transcriptData, "transcript file present means transcript document is published")
 		assert.Equal(t, "meeting_hosts", pub.transcriptData.TranscriptAccess,
 			"transcript doc TranscriptAccess must also use parent value")
+	})
+}
+
+// TestHandlePastMeetingRecordingUpdate_StaleTranscriptDelete verifies that a recording update
+// with no transcript files deletes the transcript document, so a transcript indexed as public
+// cannot outlive its files and keep that flag.
+func TestHandlePastMeetingRecordingUpdate_StaleTranscriptDelete(t *testing.T) {
+	const (
+		meetingAndOccID  = "99000000002-1700000000000"
+		recordingKey     = "itx-zoom-past-meetings-recordings." + meetingAndOccID
+		parentKey        = "itx-zoom-past-meetings." + meetingAndOccID
+		mappingKey       = "v1_past_meeting_recordings." + meetingAndOccID
+		transcriptDelete = "lfx.index.v1_past_meeting_transcript:" + meetingAndOccID
+	)
+
+	recordingMap := func(fileTypes ...string) map[string]any {
+		files := []any{}
+		for _, ft := range fileTypes {
+			files = append(files, map[string]any{"file_type": ft})
+		}
+		return map[string]any{
+			"meeting_and_occurrence_id": meetingAndOccID,
+			"proj_id":                   "proj-sfid",
+			"recording_files":           files,
+		}
+	}
+
+	run := func(t *testing.T, previouslyIndexed bool, data map[string]any) *recordingTestPublisher {
+		t.Helper()
+		v1Objects := &mockKeyValue{}
+		v1Objects.On("Get", mock.Anything, parentKey).Return(mockKeyValueEntry{key: parentKey, value: mustMsgpackKV(t, map[string]any{
+			"meeting_and_occurrence_id": meetingAndOccID,
+			"proj_id":                   "proj-sfid",
+			"transcript_access":         "meeting_hosts",
+		})}, nil)
+		v1Mappings := &mockKeyValue{}
+		if previouslyIndexed {
+			v1Mappings.On("Get", mock.Anything, mappingKey).Return(mockKeyValueEntry{key: mappingKey, value: []byte("1")}, nil)
+		}
+		v1Mappings.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+		v1Mappings.On("Put", mock.Anything, mappingKey, mock.Anything).Return(uint64(1), nil)
+
+		pub := &recordingTestPublisher{}
+		h := buildRecordingHandler(pub, v1Objects, v1Mappings)
+		require.False(t, h.handlePastMeetingRecordingUpdate(context.Background(), recordingKey, data))
+		return pub
+	}
+
+	t.Run("recording without transcript files deletes the transcript document", func(t *testing.T) {
+		pub := run(t, true, recordingMap("MP4"))
+		assert.Nil(t, pub.transcriptData)
+		assert.Equal(t, []string{transcriptDelete}, pub.indexerDeletes)
+	})
+
+	t.Run("recording without transcript files deletes the transcript document even without a mapping", func(t *testing.T) {
+		pub := run(t, false, recordingMap("MP4"))
+		assert.Equal(t, []string{transcriptDelete}, pub.indexerDeletes)
+	})
+
+	t.Run("recording with transcript files publishes the transcript and sends no delete", func(t *testing.T) {
+		pub := run(t, true, recordingMap("MP4", "TRANSCRIPT"))
+		require.NotNil(t, pub.transcriptData)
+		assert.Empty(t, pub.indexerDeletes)
 	})
 }
