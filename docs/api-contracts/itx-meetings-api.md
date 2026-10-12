@@ -52,7 +52,12 @@ Unlike the stamped audit fields, `owner` is **client-suppliable**: clients may s
 
 **Method**: `POST /itx/meetings?v=1`
 
-**Authorization**: Requires `writer` permission on the project
+**Authorization**: Requires `meetings_creator` permission on the project, or `writer` permission on a committee in the request. The following additional constraints apply when the request body includes committees:
+
+- **At most 50 committees**: requests with more than 50 entries in `committees` are rejected with `400 Bad Request`.
+- **Every committee requires `writer` permission**: the caller must have `writer` permission on each committee in the request. Requests that fail this check return `403 Forbidden`.
+- **Committees must belong to the project unless the caller is a project meetings creator**: a caller without `meetings_creator` permission on the project may only create the meeting under the project that owns each requested committee. Requests that fail this check return `403 Forbidden`.
+- **Incomplete permission checks return `503 Service Unavailable`**: if a committee or project permission check cannot be completed (e.g. the fga-sync service is temporarily unreachable), the request is rejected with `503 Service Unavailable`. Clients should treat `503` on this endpoint as a transient error and retry.
 
 **Request Headers**:
 

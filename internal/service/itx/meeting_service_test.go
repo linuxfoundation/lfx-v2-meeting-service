@@ -116,6 +116,20 @@ type fakeCommitteeAuthorizer struct {
 	err error
 	// calls records each (principal, committeeID) pair received, for assertions.
 	calls [][2]string
+	// creatorProjects maps project ID → meetings_creator granted.
+	creatorProjects map[string]bool
+	// creatorErr, when non-nil, is returned by HasMeetingsCreatorAccess.
+	creatorErr error
+	// creatorCalls records each (principal, projectID) pair received.
+	creatorCalls [][2]string
+}
+
+func (f *fakeCommitteeAuthorizer) HasMeetingsCreatorAccess(_ context.Context, principal, projectID string) (bool, error) {
+	f.creatorCalls = append(f.creatorCalls, [2]string{principal, projectID})
+	if f.creatorErr != nil {
+		return false, f.creatorErr
+	}
+	return f.creatorProjects[projectID], nil
 }
 
 func (f *fakeCommitteeAuthorizer) HasWriteAccess(_ context.Context, principal, committeeID string) (bool, error) {
@@ -818,6 +832,233 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
 		assert.Nil(t, client.lastUpdateReq)
 	})
+}
+
+func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
+	const projV2 = "00000000-0000-0000-0000-0000000000a1"
+	const projV1 = "a0P000000PROJSFID1EAC"
+	const otherProjV1 = "a0P000000OTHERSFID1AC"
+	const comm1V2 = "00000000-0000-0000-0000-000000000001"
+	const comm1V1 = "a0C000000COMMSFID01AC"
+	const comm2V2 = "00000000-0000-0000-0000-000000000002"
+	const comm2V1 = "a0C000000COMMSFID02AC"
+
+	// mapper resolves project and committees, and reports comm1 as owned by
+	// projV1 and comm2 as owned by otherProjV1.
+	mapper := ownershipIDMapper{
+		fullIDMapper: fullIDMapper{
+			projectV2: projV2, projectV1: projV1,
+			committeeV2ToV1: map[string]string{comm1V2: comm1V1, comm2V2: comm2V1},
+		},
+		committeeProject: map[string]string{comm1V2: projV1, comm2V2: otherProjV1},
+	}
+	baseReq := func(committees ...string) *models.CreateITXMeetingRequest {
+		req := &models.CreateITXMeetingRequest{
+			ProjectUID: projV2,
+			Title:      "Test Meeting",
+			StartTime:  "2026-01-01T00:00:00Z",
+			Duration:   30,
+			Visibility: itx.MeetingVisibilityPublic,
+		}
+		for _, uid := range committees {
+			req.Committees = append(req.Committees, models.Committee{UID: uid})
+		}
+		return req
+	}
+
+	t.Run("rejects an unauthorized second committee before calling ITX", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{
+			allowedIDs:      map[string]bool{comm1V2: true},
+			creatorProjects: map[string]bool{projV2: true},
+		}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq, "ITX must not be called when a committee is not writable")
+		assert.Equal(t, [][2]string{{"alice", comm1V2}, {"alice", comm2V2}}, authz.calls,
+			"every committee must be checked with its v2 UID")
+	})
+
+	t.Run("checks a repeated committee only once", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm1V2: true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm1V2, comm1V2))
+		require.NoError(t, err)
+		assert.Equal(t, [][2]string{{"alice", comm1V2}}, authz.calls,
+			"duplicate committee UIDs must not multiply access-check RPCs")
+	})
+
+	t.Run("fails closed when the committee check errors", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{err: errors.New("nats: no servers available")}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("allows a project meetings_creator to attach writable committees from any project", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{
+			allowedIDs:      map[string]bool{"*": true},
+			creatorProjects: map[string]bool{projV2: true},
+		}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		assert.Equal(t, [][2]string{{"alice", projV2}}, authz.creatorCalls,
+			"meetings_creator must be checked on the v2 project UID")
+	})
+
+	t.Run("allows a committee writer to create under the committee's own project", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm1V2: true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.NoError(t, err)
+		require.NotNil(t, client.lastCreateReq)
+		assert.Equal(t, projV1, client.lastCreateReq.Project)
+	})
+
+	t.Run("rejects a committee writer creating under a project that does not own the committee", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm2V2: true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm2V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("rejects a committee writer when any committee belongs to another project", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("rejects a committee-only caller when the mapper cannot report ownership", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("rejects a committee-only caller when the mapping reply has no owning project", func(t *testing.T) {
+		noOwner := mapper
+		noOwner.committeeProject = map[string]string{}
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, noOwner, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("fails closed when the ownership lookup errors", func(t *testing.T) {
+		failing := mapper
+		failing.ownershipErr = domain.NewUnavailableError("v1-sync-helper lookup timed out")
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, failing, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("fails closed when the meetings_creator check errors", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{
+			allowedIDs: map[string]bool{"*": true},
+			creatorErr: errors.New("nats: timeout"),
+		}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("fails closed when the committee authorizer is not configured", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, nil, mapper, nil, nil)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq, "ITX must not be called when committees cannot be authorized")
+	})
+
+	t.Run("allows a create without committees when the authorizer is not configured", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		svc := NewMeetingService(client, nil, mapper, nil, nil)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq())
+		require.NoError(t, err)
+		assert.NotNil(t, client.lastCreateReq)
+	})
+
+	t.Run("rejects committees without an authenticated principal", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("leaves a create without committees to Heimdall's project check", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq())
+		require.NoError(t, err)
+		assert.Empty(t, authz.calls)
+		assert.Empty(t, authz.creatorCalls)
+	})
+}
+
+// ownershipIDMapper extends fullIDMapper with committee → owning v1 project
+// lookups (domain.CommitteeProjectResolver).
+type ownershipIDMapper struct {
+	fullIDMapper
+	committeeProject map[string]string
+	// ownershipErr, when non-nil, is returned by MapCommitteeV2ToV1Project.
+	ownershipErr error
+}
+
+func (m ownershipIDMapper) MapCommitteeV2ToV1Project(_ context.Context, v2UID string) (string, error) {
+	if m.ownershipErr != nil {
+		return "", m.ownershipErr
+	}
+	return m.committeeProject[v2UID], nil
 }
 
 // committeeV2ToV1Mapper translates one specific v2 UID to a v1 SFID; all other

@@ -151,6 +151,11 @@ paths:
                                     - none
                                     - none
                                   uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                                - allowed_voting_statuses:
+                                    - none
+                                    - none
+                                    - none
+                                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                             description: t39
                             duration: 120
                             early_join_time_minutes: 15
@@ -5186,6 +5191,12 @@ components:
                             - none
                             - none
                           uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                        - allowed_voting_statuses:
+                            - none
+                            - none
+                            - none
+                          uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    maxItems: 50
                 description:
                     type: string
                     description: The description of the meeting
@@ -5276,6 +5287,11 @@ components:
                 auto_email_reminder_enabled: true
                 auto_email_reminder_time: 1093
                 committees:
+                    - allowed_voting_statuses:
+                        - none
+                        - none
+                        - none
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                     - allowed_voting_statuses:
                         - none
                         - none
