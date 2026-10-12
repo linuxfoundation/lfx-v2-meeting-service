@@ -4884,6 +4884,12 @@ definitions:
                         - none
                         - none
                       uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                    - allowed_voting_statuses:
+                        - none
+                        - none
+                        - none
+                      uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
+                maxItems: 50
             description:
                 type: string
                 description: The description of the meeting
@@ -4973,6 +4979,11 @@ definitions:
             auto_email_reminder_enabled: true
             auto_email_reminder_time: 1093
             committees:
+                - allowed_voting_statuses:
+                    - none
+                    - none
+                    - none
+                  uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
                 - allowed_voting_statuses:
                     - none
                     - none

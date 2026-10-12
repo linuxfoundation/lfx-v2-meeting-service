@@ -882,6 +882,17 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 			"every committee must be checked with its v2 UID")
 	})
 
+	t.Run("checks a repeated committee only once", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm1V2: true}}
+		svc := NewMeetingService(client, nil, mapper, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm1V2, comm1V2))
+		require.NoError(t, err)
+		assert.Equal(t, [][2]string{{"alice", comm1V2}}, authz.calls,
+			"duplicate committee UIDs must not multiply access-check RPCs")
+	})
+
 	t.Run("fails closed when the committee check errors", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{err: errors.New("nats: no servers available")}

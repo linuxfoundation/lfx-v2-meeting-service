@@ -338,6 +338,10 @@ func (s *MeetingService) authorizeCreateScope(ctx context.Context, req *models.C
 		return domain.NewForbiddenError("must be authenticated to create a meeting with committees")
 	}
 
+	// Check each distinct committee once so repeated UIDs cannot multiply the
+	// per-committee RPCs below.
+	v2CommitteeUIDs = uniqueStrings(v2CommitteeUIDs)
+
 	for _, v2UID := range v2CommitteeUIDs {
 		if err := s.requireCommitteeWriteAccess(ctx, principal, v2UID); err != nil {
 			return err
@@ -375,6 +379,20 @@ func (s *MeetingService) authorizeCreateScope(ctx context.Context, req *models.C
 		}
 	}
 	return nil
+}
+
+// uniqueStrings returns values with duplicates removed, keeping first-seen order.
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		if _, dup := seen[v]; dup {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
 }
 
 // requireCommitteeWriteAccess returns nil when principal holds FGA "writer" on

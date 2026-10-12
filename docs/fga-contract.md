@@ -47,13 +47,16 @@ committee:{v2 uid}#writer@user:{jwt username}
 project:{v2 uid}#meetings_creator@user:{jwt username}
 ```
 
-`v2 uid` is the committee's v2 UID (FGA object IDs are always v2 UIDs, even though the downstream ITX request carries v1 SFIDs after ID mapping).
+`v2 uid` is the committee's or project's v2 UID (FGA object IDs are always v2 UIDs, even though the downstream ITX request carries v1 SFIDs after ID mapping).
 
 **Reply payload** — newline-delimited lines, each tab-separated:
 
 ```
 committee:{v2 uid}#writer@user:{jwt username}\t{true|false}
+project:{v2 uid}#meetings_creator@user:{jwt username}\t{true|false}
 ```
+
+The reply must echo the exact requested tuple; a reply without it fails closed.
 
 A plain-text message starting with a space in the first 20 bytes indicates an error response from fga-sync rather than a result line.
 
