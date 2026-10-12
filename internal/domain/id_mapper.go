@@ -31,3 +31,14 @@ type IDMapper interface {
 	// MapParticipantV2ToAttendeeID maps a V2 participant ID to ITX attendee ID
 	MapParticipantV2ToAttendeeID(ctx context.Context, v2ParticipantID string) (string, error)
 }
+
+// CommitteeProjectResolver is implemented by IDMappers that can report which v1
+// project owns a committee. It is optional: mappers without ownership data
+// (e.g. the no-op mapper) do not implement it, and callers that need ownership
+// must treat its absence as "cannot verify".
+type CommitteeProjectResolver interface {
+	// MapCommitteeV2ToV1Project returns the v1 project SFID that owns the
+	// committee identified by v2UID. An empty result with a nil error means the
+	// mapping did not include the owning project.
+	MapCommitteeV2ToV1Project(ctx context.Context, v2UID string) (string, error)
+}

@@ -26,6 +26,9 @@ const committeeAuthorizerTimeout = 10 * time.Second
 //
 //	request:  "committee:{id}#writer@user:{principal}"
 //	response: "committee:{id}#writer@user:{principal}\t{true|false}"
+//
+// The project meetings_creator check uses the same format with
+// "project:{id}#meetings_creator@user:{principal}".
 type NATSCommitteeAuthorizer struct {
 	nc Requester
 }
@@ -42,7 +45,27 @@ func NewNATSCommitteeAuthorizer(nc Requester) *NATSCommitteeAuthorizer {
 // committee:{committeeID}. It returns (false, nil) when access is explicitly
 // denied, (true, nil) when granted, and (false, err) when the RPC fails.
 func (a *NATSCommitteeAuthorizer) HasWriteAccess(ctx context.Context, principal, committeeID string) (bool, error) {
-	tuple := fmt.Sprintf("committee:%s#writer@user:%s", committeeID, principal)
+	return a.check(ctx, "committee", committeeID, "writer", principal)
+}
+
+// HasMeetingsCreatorAccess asks fga-sync whether principal has the
+// "meetings_creator" relation on project:{projectID}. Result and error
+// semantics match HasWriteAccess.
+func (a *NATSCommitteeAuthorizer) HasMeetingsCreatorAccess(ctx context.Context, principal, projectID string) (bool, error) {
+	return a.check(ctx, "project", projectID, "meetings_creator", principal)
+}
+
+// check sends one "{objectType}:{objectID}#{relation}@user:{principal}" tuple to
+// the fga-sync access-check RPC and returns its result.
+func (a *NATSCommitteeAuthorizer) check(ctx context.Context, objectType, objectID, relation, principal string) (bool, error) {
+	// Object IDs come from request bodies. An empty ID or one carrying tuple
+	// delimiters cannot name a real object, so deny instead of letting it
+	// reshape the tuple sent to fga-sync.
+	if objectID == "" || strings.ContainsAny(objectID, "#@: \t\r\n") {
+		return false, nil
+	}
+
+	tuple := fmt.Sprintf("%s:%s#%s@user:%s", objectType, objectID, relation, principal)
 
 	// Always cap at committeeAuthorizerTimeout. context.WithTimeout takes the sooner
 	// of the parent deadline and the specified duration, so this never extends a
