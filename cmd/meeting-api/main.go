@@ -159,7 +159,11 @@ func run() int {
 	// fga-sync RPC errors fail closed (503) rather than open.
 	// If NATS_URL is set but the connection fails, the service refuses to start —
 	// a degraded pod that skips committee checks would reopen the authorization bypass.
+	// The same connection backs the past meeting authorizer, which gates reads of
+	// AI summaries awaiting approval to organizers. When it is nil, those reads
+	// are denied rather than allowed.
 	var committeeAuthz domain.CommitteeAuthorizer
+	var pastMeetingAuthz domain.PastMeetingAuthorizer
 	var committeeAuthzNatsConn *natsgo.Conn
 	if natsURL != "" {
 		nc, err := natsgo.Connect(natsURL)
@@ -170,6 +174,7 @@ func run() int {
 		}
 		committeeAuthzNatsConn = nc
 		committeeAuthz = natsinfra.NewNATSCommitteeAuthorizer(nc)
+		pastMeetingAuthz = natsinfra.NewNATSPastMeetingAuthorizer(nc)
 	}
 	if committeeAuthzNatsConn != nil {
 		defer committeeAuthzNatsConn.Close()
@@ -178,7 +183,7 @@ func run() int {
 	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
-	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader)
+	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader, pastMeetingAuthz)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)
 	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments(), userMetadataReader)
 	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments(), userMetadataReader)
