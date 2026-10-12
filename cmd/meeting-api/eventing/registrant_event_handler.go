@@ -202,12 +202,28 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	mappingKey := fmt.Sprintf("v1_meeting_registrants.%s", registrantData.UID)
 	indexerAction := indexerConstants.ActionCreated
 	oldUsername := ""
+	legacyMapping := false
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
-		_, oldUsername, _ = parseRegistrantMappingValue(string(entry.Value()))
+		mapping := decodeRegistrantMapping(string(entry.Value()))
+		oldUsername = mapping.Username
+		legacyMapping = oldUsername == "" && !mapping.PrincipalAuthoritative && !entryIsTombstoned(entry)
 	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping, will retry")
 		return true
+	}
+
+	// A legacy mapping with no username may still front a tuple the create path granted to
+	// the principal resolved from user_id. Recover that principal the same way so it can be
+	// revoked below; if it cannot be determined, keep the legacy mapping rather than
+	// overwriting it with an empty username, so a later update or delete can try again.
+	oldPrincipalKnown := true
+	if legacyMapping {
+		var retry bool
+		oldUsername, oldPrincipalKnown, retry = h.resolveRegistrantPrincipal(ctx, funcLogger, v1Data)
+		if retry {
+			return true
+		}
 	}
 
 	// For updates, use the raw source username to honour explicit clears.
@@ -248,11 +264,16 @@ func (h *EventHandlers) handleRegistrantUpdate(
 	// Store uid, username, and meetingID in the mapping so future updates and deletes
 	// can recover them without an extra lookup. Retry transient write failures: the mapping
 	// is the only durable record of the current username, so losing it prevents future
-	// username-change detection.
-	mappingValue := buildRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
-	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
-		return isTransientError(err)
+	// username-change detection. registrantData.Username is now exactly the principal
+	// granted on the meeting (the old one, if different, was revoked above).
+	if oldPrincipalKnown {
+		mappingValue := buildAuthoritativeRegistrantMappingValue(registrantData.UID, registrantData.Username, registrantData.MeetingID)
+		if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte(mappingValue)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant mapping")
+			return isTransientError(err)
+		}
+	} else {
+		funcLogger.WarnContext(ctx, "cannot determine the principal previously granted access for this legacy registrant mapping; keeping the mapping for a later update or delete to resolve")
 	}
 
 	// Best-effort LFID invite: send an invite when a new registrant has no LFID yet.
@@ -278,45 +299,83 @@ func (h *EventHandlers) handleRegistrantDelete(ctx context.Context, key string, 
 	// Fetch the mapping once: check for tombstone and extract username/meetingID in one round-trip.
 	// Retry transient errors: if this fails and we fall through with empty username, we skip
 	// FGA removal and tombstone the mapping, making stale access unrecoverable.
-	username := ""
-	meetingID := ""
+	var mapping registrantMappingData
+	mappingFound := false
 	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		if entryIsTombstoned(entry) {
 			funcLogger.DebugContext(ctx, "registrant delete already processed, skipping")
 			return false
 		}
-		_, username, meetingID = parseRegistrantMappingValue(string(entry.Value()))
+		mapping = decodeRegistrantMapping(string(entry.Value()))
+		mappingFound = true
 	} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading registrant mapping on delete, will retry")
 		return true
 	}
-	if username == "" {
-		username = utils.GetString(v1Data["username"])
+	username := mapping.Username
+	meetingID := mapping.MeetingID
+
+	// A legacy mapping (the "1" sentinel, or JSON/pipe values written before the principal was
+	// tracked) can carry no username for a registrant whose tuple the create path granted from
+	// user_id. A hard KV DEL/PURGE carries no payload, so fall back to the last revision of the
+	// v1 object to recover the fields the create path used.
+	legacyMapping := mappingFound && username == "" && !mapping.PrincipalAuthoritative
+	record := v1Data
+	if record == nil && mappingFound && (legacyMapping || meetingID == "") {
+		var err error
+		if record, err = h.lastKnownV1Record(ctx, key); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "transient error reading v1 registrant history on delete, will retry")
+			return true
+		}
 	}
 	if meetingID == "" {
-		meetingID = utils.GetString(v1Data["meeting_id"])
+		meetingID = utils.GetString(record["meeting_id"])
+	}
+
+	// principalKnown is false when a tuple may exist but its principal cannot be named.
+	principalKnown := true
+	if username == "" && !mapping.PrincipalAuthoritative {
+		var retry bool
+		username, principalKnown, retry = h.resolveRegistrantPrincipal(ctx, funcLogger, record)
+		if retry {
+			return true
+		}
+		// Without a mapping, no create was ever recorded for this registrant: nothing is
+		// known to have been granted beyond what the payload names.
+		principalKnown = principalKnown || !mappingFound
+	}
+	if username != "" && meetingID == "" {
+		// The tuple lives on v1_meeting:<meeting_id>; it cannot be addressed without it.
+		username = ""
+		principalKnown = false
 	}
 	funcLogger.InfoContext(ctx, "processing registrant delete")
 
+	cfg := meetingDeleteConfig{
+		indexerSubject:   "lfx.index.v1_meeting_registrant",
+		tombstoneKeyFmts: []string{"v1_meeting_registrants.%s"},
+	}
 	var accessPayload []byte
-	var deleteAccessSubject string
 
-	if username != "" {
+	switch {
+	case username != "":
 		var err error
 		if accessPayload, err = buildGenericMemberRemovePayload("v1_meeting", meetingID, username); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build member remove payload")
 			return false
 		}
-		deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
-	} else {
-		funcLogger.DebugContext(ctx, "no username in mapping or v1Data, skipping access control message for registrant delete")
+		cfg.deleteAccessSubject = fgaconstants.GenericMemberRemoveSubject
+	case !principalKnown:
+		// Do not tombstone: the mapping is the only record that a grant may still exist, and
+		// tombstoning would make this delete look complete. Leave it for reconciliation.
+		funcLogger.ErrorContext(ctx, "cannot determine the principal granted access for deleted registrant; leaving its mapping in place for reconciliation",
+			"meeting_id", meetingID)
+		cfg.tombstoneKeyFmts = nil
+	default:
+		funcLogger.DebugContext(ctx, "registrant was granted no access, skipping access control message for registrant delete")
 	}
 
-	return h.handleMeetingTypeDelete(ctx, key, registrantUID, accessPayload, meetingDeleteConfig{
-		indexerSubject:      "lfx.index.v1_meeting_registrant",
-		deleteAccessSubject: deleteAccessSubject,
-		tombstoneKeyFmts:    []string{"v1_meeting_registrants.%s"},
-	})
+	return h.handleMeetingTypeDelete(ctx, key, registrantUID, accessPayload, cfg)
 }
 
 // registrantLFIDInviteSentKeyFmt tracks that an LFID invite was already sent for a registrant,
@@ -665,6 +724,12 @@ type registrantMappingData struct {
 	UID       string `json:"uid"`
 	Username  string `json:"username"`
 	MeetingID string `json:"meeting_id"`
+	// PrincipalAuthoritative is true when Username is exactly the principal the registrant
+	// handlers hold an FGA member tuple for on the meeting ("" meaning none was granted).
+	// Mappings without it — the legacy "1" sentinel, pipe-delimited values, and JSON written
+	// before this field existed — may carry an empty username for a registrant whose access
+	// was granted from user_id, so an empty username there does not mean "nothing to revoke".
+	PrincipalAuthoritative bool `json:"principal_authoritative,omitempty"`
 }
 
 // buildRegistrantMappingValue encodes uid, username, and meetingID as JSON
@@ -675,22 +740,97 @@ func buildRegistrantMappingValue(uid, username, meetingID string) string {
 	return string(b)
 }
 
-// parseRegistrantMappingValue decodes a value written by buildRegistrantMappingValue.
-// Supports JSON (primary) and legacy pipe-delimited format (uid|username|meetingID) for
-// backward compatibility. Returns empty strings for all fields when the value is in an
-// unrecognised format (e.g. the old "1" sentinel written before username tracking was added).
-func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
+// buildAuthoritativeRegistrantMappingValue is buildRegistrantMappingValue for a username that
+// is exactly the principal granted on the meeting, so delete can trust an empty one.
+func buildAuthoritativeRegistrantMappingValue(uid, username, meetingID string) string {
+	b, _ := json.Marshal(registrantMappingData{UID: uid, Username: username, MeetingID: meetingID, PrincipalAuthoritative: true})
+	return string(b)
+}
+
+// decodeRegistrantMapping decodes a value written by buildRegistrantMappingValue or
+// buildAuthoritativeRegistrantMappingValue. Supports JSON (primary) and legacy pipe-delimited
+// format (uid|username|meetingID) for backward compatibility. Returns the zero value when the
+// value is in an unrecognised format (e.g. the old "1" sentinel written before username
+// tracking was added).
+func decodeRegistrantMapping(value string) registrantMappingData {
 	// Try JSON format first
 	if strings.HasPrefix(value, "{") {
 		var d registrantMappingData
 		if err := json.Unmarshal([]byte(value), &d); err == nil {
-			return d.UID, d.Username, d.MeetingID
+			return d
 		}
 	}
 	// Legacy pipe-delimited: uid|username|meetingID
 	parts := strings.SplitN(value, "|", 3)
 	if len(parts) == 3 {
-		return parts[0], parts[1], parts[2]
+		return registrantMappingData{UID: parts[0], Username: parts[1], MeetingID: parts[2]}
 	}
-	return "", "", ""
+	return registrantMappingData{}
+}
+
+// parseRegistrantMappingValue is decodeRegistrantMapping returning only uid, username and meetingID.
+func parseRegistrantMappingValue(value string) (uid, username, meetingID string) {
+	d := decodeRegistrantMapping(value)
+	return d.UID, d.Username, d.MeetingID
+}
+
+// resolveRegistrantPrincipal returns the username the create path grants FGA access to for
+// the v1 registrant record: its username field or, when that is blank, the lf_sso of its
+// user_id via V1UserLookup — the same resolution convertMapToRegistrantData performs.
+//
+// known is false when the principal cannot be determined (no record, or a user_id that does
+// not resolve); "" with known=true means the record names no principal, so none was granted.
+// retry is true when the user lookup failed transiently.
+func (h *EventHandlers) resolveRegistrantPrincipal(
+	ctx context.Context,
+	logger *slog.Logger,
+	record map[string]any,
+) (username string, known, retry bool) {
+	if record == nil {
+		return "", false, false
+	}
+	if username := utils.GetString(record["username"]); username != "" {
+		return username, true, false
+	}
+	userID := utils.GetString(record["user_id"])
+	if userID == "" {
+		return "", true, false
+	}
+	v1User, err := h.userLookup.LookupUser(ctx, userID)
+	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) && isTransientError(err) {
+			logger.With(logging.ErrKey, err).WarnContext(ctx, "transient error resolving registrant principal from user_id, will retry")
+			return "", false, true
+		}
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to resolve registrant principal from user_id")
+		return "", false, false
+	}
+	if v1User == nil {
+		return "", false, false
+	}
+	return v1User.Username, true, false
+}
+
+// lastKnownV1Record returns the most recent non-deleted revision of key in the v1-objects
+// bucket, for hard KV DEL/PURGE events that carry no payload. It returns nil when the bucket
+// retains no such revision. A non-nil error is a KV read failure the caller should retry.
+func (h *EventHandlers) lastKnownV1Record(ctx context.Context, key string) (map[string]any, error) {
+	entries, err := h.v1ObjectsKV.History(ctx, key)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	for i := len(entries) - 1; i >= 0; i-- {
+		if entries[i].Operation() != jetstream.KeyValuePut {
+			continue
+		}
+		data, decErr := decodeData(entries[i].Value())
+		if decErr != nil {
+			return nil, nil
+		}
+		return data, nil
+	}
+	return nil, nil
 }

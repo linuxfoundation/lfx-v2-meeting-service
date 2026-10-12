@@ -124,6 +124,8 @@ Published to `lfx.fga-sync.member_remove` in two cases:
 | `username` | Old LFX username — on updates: from the stored mapping (pre-update value); on deletes: from the stored mapping if present, otherwise from the v1 `username` field on the delete payload |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
+**Legacy mappings.** The `v1_meeting_registrants.<uid>` mapping is the only durable record of which principal was granted. Mappings written by the current handlers set `principal_authoritative: true`, meaning `username` is exactly the granted principal (`""` = none). A mapping without that flag (the legacy `"1"` sentinel, pipe-delimited values, or older JSON) that carries no username may front a tuple granted from `user_id`. For those, update and delete resolve the principal the way create does: the v1 `username` field, else `LookupUser(user_id)`. A hard KV DEL/PURGE has no payload, so delete reads the last non-deleted revision of the v1 object from `v1-objects` history. If the principal still cannot be determined, delete publishes the indexer delete but **does not tombstone** the mapping, and logs an error for reconciliation. Update does not overwrite the legacy mapping either. `scripts/backfill_participant_mappings` rewrites legacy registrant mappings using the same `user_id` resolution and reports entries it cannot resolve as `unresolved`.
+
 ### Delete
 
 On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` with only the meeting `uid` — all FGA tuples for `v1_meeting:{uid}` are removed by the fga-sync service.
@@ -231,7 +233,7 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Create/update meeting | `v1_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete meeting | `v1_meeting` | `lfx.fga-sync.delete_access` | Always sent |
 | Create/update registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
-| Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty |
+| Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty after legacy-mapping resolution (mapping left untombstoned when the principal is unknown) |
 | Create/update meeting RSVP | _(none)_ | _(none)_ | Indexer only — no FGA message sent |
 | Create/update past meeting | `v1_past_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete past meeting | `v1_past_meeting` | `lfx.fga-sync.delete_access` | Always sent |
