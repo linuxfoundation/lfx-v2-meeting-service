@@ -18,6 +18,21 @@
 // the script looks up the corresponding object in the v1-objects KV bucket, extracts
 // uid / username / meetingID, and writes the JSON mapping value back.
 //
+// Registrant access is granted to the username the event handler resolves the same way
+// as here: the object's username field or, when that is blank, the lf_sso of its user_id
+// (v1-objects user.<user_id>). Registrant JSON mappings with an empty username and no
+// "principal_authoritative" flag are revisited too. The script never sets that flag: it
+// cannot prove the current object names every principal that was ever granted, so an
+// empty-username mapping stays eligible for the handler's own resolution on delete.
+//
+// Registrant entries are reported as "unresolved" and left unchanged, for manual review of
+// the meeting's FGA tuples, when the principal cannot be determined: the object is gone
+// behind a mapping with no recorded username, its user_id does not resolve, or a username
+// recorded in a pipe-delimited value differs from the one the current object resolves to, or
+// a revision of the object still retained in v1-objects resolves to a different principal
+// (the handlers trust a non-empty mapping username and stop resolving history).
+// "unresolved" does not change the exit code.
+//
 // Usage:
 //
 //	NATS_URL=nats://localhost:4222 go run ./scripts/backfill_participant_mappings/
@@ -51,6 +66,8 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/vmihailenco/msgpack/v5"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/msgpackutil"
 )
 
 const (
@@ -68,6 +85,11 @@ type mappingConfig struct {
 	usernameField string
 	// meetingIDField is the JSON field that holds the meeting / meeting-occurrence ID.
 	meetingIDField string
+	// userIDField, when set, is the JSON field holding the v1 user ID used to resolve the
+	// username (user.<id> -> lf_sso) when usernameField is blank. Mappings for this family
+	// are still written without principal_authoritative: resolving from the current object
+	// does not prove it names every principal ever granted.
+	userIDField string
 }
 
 var configs = []mappingConfig{
@@ -76,6 +98,7 @@ var configs = []mappingConfig{
 		objectPrefix:   "itx-zoom-meetings-registrants-v2.",
 		usernameField:  "username",
 		meetingIDField: "meeting_id",
+		userIDField:    "user_id",
 	},
 	{
 		mappingPrefix:  "v1_past_meeting_invitees",
@@ -156,10 +179,10 @@ func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 		return 1
 	}
 
-	var totalUpdated, totalSkipped, totalFailed, totalNotFound int
+	var totalUpdated, totalSkipped, totalFailed, totalNotFound, totalUnresolved int
 
 	for _, cfg := range configs {
-		updated, skipped, failed, notFound, err := backfillType(ctx, objectsKV, mappingsKV, cfg, apply, workers)
+		updated, skipped, failed, notFound, unresolved, err := backfillType(ctx, objectsKV, mappingsKV, cfg, apply, workers)
 		if err != nil {
 			slog.ErrorContext(ctx, "fatal error during backfill", "mapping_prefix", cfg.mappingPrefix, "error", err)
 			return 1
@@ -171,12 +194,14 @@ func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 			"skipped", skipped,
 			"failed", failed,
 			"not_found", notFound,
+			"unresolved", unresolved,
 		)
 
 		totalUpdated += updated
 		totalSkipped += skipped
 		totalFailed += failed
 		totalNotFound += notFound
+		totalUnresolved += unresolved
 	}
 
 	slog.InfoContext(ctx, "backfill_participant_mappings complete",
@@ -184,7 +209,13 @@ func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 		"skipped", totalSkipped,
 		"failed", totalFailed,
 		"not_found", totalNotFound,
+		"unresolved", totalUnresolved,
 	)
+	if totalUnresolved > 0 {
+		slog.WarnContext(ctx, "some registrant mappings could not be resolved; review the FGA tuples on the meetings behind the mapping keys logged as unresolved",
+			"unresolved", totalUnresolved,
+		)
+	}
 
 	if totalFailed > 0 {
 		return 1
@@ -203,7 +234,7 @@ func backfillType(
 	cfg mappingConfig,
 	apply bool,
 	workers int,
-) (updated, skipped, failed, notFound int, err error) {
+) (updated, skipped, failed, notFound, unresolved int, err error) {
 	// --- Phase 1: scan ---
 	// Give the Watch consumer creation and initial-value delivery a long deadline.
 	// The nats.go jetstream package applies an internal 5-second timeout when the
@@ -213,7 +244,7 @@ func backfillType(
 	defer watchCancel()
 	watcher, watchErr := mappingsKV.Watch(watchCtx, watchKey, jetstream.IgnoreDeletes())
 	if watchErr != nil {
-		return 0, 0, 0, 0, fmt.Errorf("watch %q: %w", watchKey, watchErr)
+		return 0, 0, 0, 0, 0, fmt.Errorf("watch %q: %w", watchKey, watchErr)
 	}
 
 	var legacy []legacyEntry
@@ -227,7 +258,7 @@ func backfillType(
 		// Skip already-JSON entries and tombstones. Tombstones are written as a
 		// regular Put with value "!del" (not a NATS-level delete), so IgnoreDeletes()
 		// alone does not filter them out.
-		if strings.HasPrefix(currentValue, "{") || currentValue == "!del" {
+		if currentValue == "!del" || (strings.HasPrefix(currentValue, "{") && !needsPrincipalResolution(cfg, currentValue)) {
 			skipped++
 			continue
 		}
@@ -248,7 +279,7 @@ func backfillType(
 		slog.WarnContext(ctx, "failed to stop watcher", "mapping_prefix", cfg.mappingPrefix, "error", stopErr)
 	}
 	if !nilSeen {
-		return 0, 0, 0, 0, fmt.Errorf("watcher for %q closed without delivering initial values (context may have expired or watcher failed)", watchKey)
+		return 0, 0, 0, 0, 0, fmt.Errorf("watcher for %q closed without delivering initial values (context may have expired or watcher failed)", watchKey)
 	}
 
 	slog.InfoContext(ctx, "scan complete",
@@ -258,7 +289,7 @@ func backfillType(
 	)
 
 	if len(legacy) == 0 {
-		return 0, skipped, 0, 0, nil
+		return 0, skipped, 0, 0, 0, nil
 	}
 
 	// --- Phase 2: concurrent processing ---
@@ -269,6 +300,8 @@ func backfillType(
 		atomicWithUsername atomic.Int64
 		atomicFailed       atomic.Int64
 		atomicNotFound     atomic.Int64
+		atomicUnresolved   atomic.Int64
+		atomicUnchanged    atomic.Int64
 	)
 
 	work := make(chan legacyEntry, total)
@@ -294,6 +327,10 @@ func backfillType(
 					atomicFailed.Add(1)
 				case resultNotFound:
 					atomicNotFound.Add(1)
+				case resultUnresolved:
+					atomicUnresolved.Add(1)
+				case resultUnchanged:
+					atomicUnchanged.Add(1)
 				}
 				done := atomicDone.Add(1)
 				if done%100 == 0 || done == int64(total) {
@@ -308,16 +345,32 @@ func backfillType(
 	}
 	wg.Wait()
 
-	return int(atomicUpdated.Load()), skipped, int(atomicFailed.Load()), int(atomicNotFound.Load()), nil
+	return int(atomicUpdated.Load()), skipped + int(atomicUnchanged.Load()), int(atomicFailed.Load()), int(atomicNotFound.Load()), int(atomicUnresolved.Load()), nil
 }
 
 type entryResult int
 
 const (
-	resultUpdated  entryResult = iota
-	resultFailed   entryResult = iota
-	resultNotFound entryResult = iota
+	resultUpdated    entryResult = iota
+	resultFailed     entryResult = iota
+	resultNotFound   entryResult = iota
+	resultUnresolved entryResult = iota
+	resultUnchanged  entryResult = iota
 )
+
+// needsPrincipalResolution reports whether an existing JSON mapping for a family with a
+// userIDField was written without a resolved principal: an empty username and no
+// principal_authoritative flag may hide access granted from user_id.
+func needsPrincipalResolution(cfg mappingConfig, value string) bool {
+	if cfg.userIDField == "" {
+		return false
+	}
+	var d registrantMappingData
+	if err := json.Unmarshal([]byte(value), &d); err != nil {
+		return false
+	}
+	return d.Username == "" && !d.PrincipalAuthoritative
+}
 
 // processEntry looks up the v1 object for e, builds the JSON mapping value, and
 // writes it (when apply=true). Returns the result and whether the username was non-empty.
@@ -332,6 +385,13 @@ func processEntry(
 	objectEntry, getErr := objectsKV.Get(ctx, objectKey)
 	if getErr != nil {
 		if errors.Is(getErr, jetstream.ErrKeyNotFound) {
+			if cfg.userIDField != "" && legacyUsername(e.currentValue) == "" {
+				slog.WarnContext(ctx, "unresolved: v1 registrant object not found behind a mapping with no recorded username; principal granted access cannot be determined",
+					"mapping_key", e.mappingKey,
+					"object_key", objectKey,
+				)
+				return resultUnresolved, false
+			}
 			slog.WarnContext(ctx, "v1 object not found for mapping key",
 				"mapping_key", e.mappingKey,
 				"object_key", objectKey,
@@ -358,7 +418,34 @@ func processEntry(
 
 	username := getString(objectData, cfg.usernameField)
 	meetingID := getString(objectData, cfg.meetingIDField)
+	if username == "" && cfg.userIDField != "" {
+		if userID := getString(objectData, cfg.userIDField); userID != "" {
+			resolved, result := lookupUsername(ctx, objectsKV, e.mappingKey, userID)
+			if result != resultUpdated {
+				return result, false
+			}
+			username = resolved
+		}
+	}
+	if recorded := legacyUsername(e.currentValue); cfg.userIDField != "" && recorded != "" && recorded != username {
+		// The recorded username is the principal that was granted; the current object
+		// resolving to someone else means either may hold access.
+		slog.WarnContext(ctx, "unresolved: recorded registrant username differs from the current v1 object",
+			"mapping_key", e.mappingKey,
+		)
+		return resultUnresolved, false
+	}
+	if cfg.userIDField != "" && username != "" {
+		// The handlers trust a non-empty mapping username and stop resolving history, so
+		// only record one when no retained revision names a different principal.
+		if result := checkRetainedPrincipals(ctx, objectsKV, cfg, objectKey, e.mappingKey, username); result != resultUpdated {
+			return result, false
+		}
+	}
 	newValue := buildMappingValue(e.uid, username, meetingID)
+	if newValue == e.currentValue {
+		return resultUnchanged, username != ""
+	}
 
 	if !apply {
 		slog.InfoContext(ctx, "[dry-run] would update mapping",
@@ -391,17 +478,124 @@ func processEntry(
 	return resultUpdated, username != ""
 }
 
+// lookupUsername resolves a v1 user ID to its LFX username (user.<id> -> lf_sso) the same
+// way the registrant event handler does. It returns resultUpdated on success,
+// resultUnresolved when the user record is missing or undecodable (the principal granted
+// access cannot be determined, so the mapping must be left for manual review), and
+// resultFailed on any other KV error.
+func lookupUsername(ctx context.Context, objectsKV jetstream.KeyValue, mappingKey, userID string) (string, entryResult) {
+	userEntry, err := objectsKV.Get(ctx, "user."+userID)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey) {
+			slog.WarnContext(ctx, "unresolved: v1 user record not found; principal granted access cannot be determined",
+				"mapping_key", mappingKey,
+			)
+			return "", resultUnresolved
+		}
+		slog.ErrorContext(ctx, "failed to get v1 user",
+			"mapping_key", mappingKey,
+			"error", err,
+		)
+		return "", resultFailed
+	}
+	userData, decErr := decodeData(userEntry.Value())
+	if decErr != nil {
+		slog.WarnContext(ctx, "unresolved: failed to decode v1 user record; principal granted access cannot be determined",
+			"mapping_key", mappingKey,
+		)
+		return "", resultUnresolved
+	}
+	return getString(userData, "lf_sso"), resultUpdated
+}
+
+// checkRetainedPrincipals resolves the principal of every revision of objectKey the v1-objects
+// bucket retains, the same way as the current object. It returns resultUpdated when none
+// resolves to a principal other than username, resultUnresolved when one does or cannot be
+// resolved, and resultFailed on a KV error.
+func checkRetainedPrincipals(
+	ctx context.Context,
+	objectsKV jetstream.KeyValue,
+	cfg mappingConfig,
+	objectKey, mappingKey, username string,
+) entryResult {
+	entries, err := objectsKV.History(ctx, objectKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return resultUpdated
+		}
+		slog.ErrorContext(ctx, "failed to read v1 object history",
+			"mapping_key", mappingKey,
+			"object_key", objectKey,
+			"error", err,
+		)
+		return resultFailed
+	}
+	resolvedUserIDs := map[string]string{}
+	for _, entry := range entries {
+		if entry.Operation() != jetstream.KeyValuePut {
+			continue
+		}
+		data, decErr := decodeData(entry.Value())
+		if decErr != nil {
+			slog.WarnContext(ctx, "unresolved: failed to decode a retained v1 object revision",
+				"mapping_key", mappingKey,
+			)
+			return resultUnresolved
+		}
+		principal := getString(data, cfg.usernameField)
+		if principal == "" {
+			userID := getString(data, cfg.userIDField)
+			if userID == "" {
+				continue
+			}
+			resolved, ok := resolvedUserIDs[userID]
+			if !ok {
+				var result entryResult
+				if resolved, result = lookupUsername(ctx, objectsKV, mappingKey, userID); result != resultUpdated {
+					return result
+				}
+				resolvedUserIDs[userID] = resolved
+			}
+			principal = resolved
+		}
+		if principal != "" && principal != username {
+			slog.WarnContext(ctx, "unresolved: a retained v1 object revision names a different principal",
+				"mapping_key", mappingKey,
+			)
+			return resultUnresolved
+		}
+	}
+	return resultUpdated
+}
+
 // registrantMappingData is the JSON structure written to v1-mappings.
 // Must stay in sync with the same type in cmd/meeting-api/eventing/registrant_event_handler.go.
 type registrantMappingData struct {
-	UID       string `json:"uid"`
-	Username  string `json:"username"`
-	MeetingID string `json:"meeting_id"`
+	UID                    string `json:"uid"`
+	Username               string `json:"username"`
+	MeetingID              string `json:"meeting_id"`
+	PrincipalAuthoritative bool   `json:"principal_authoritative,omitempty"`
 }
 
 func buildMappingValue(uid, username, meetingID string) string {
 	b, _ := json.Marshal(registrantMappingData{UID: uid, Username: username, MeetingID: meetingID})
 	return string(b)
+}
+
+// legacyUsername returns the username recorded in a mapping value: the username of a JSON
+// or pipe-delimited (uid|username|meetingID) value, or "" for the "1" sentinel.
+func legacyUsername(value string) string {
+	if strings.HasPrefix(value, "{") {
+		var d registrantMappingData
+		if err := json.Unmarshal([]byte(value), &d); err == nil {
+			return d.Username
+		}
+		return ""
+	}
+	if parts := strings.SplitN(value, "|", 3); len(parts) == 3 {
+		return parts[1]
+	}
+	return ""
 }
 
 // decodeData attempts to parse v1 object bytes as JSON, then as MessagePack.
@@ -410,6 +604,11 @@ func decodeData(data []byte) (map[string]any, error) {
 	var result map[string]any
 	if err := json.Unmarshal(data, &result); err == nil {
 		return result, nil
+	}
+	// Guard against deeply-nested msgpack payloads, which would overflow the stack in
+	// msgpack.Unmarshal; see cmd/meeting-api/eventing/kv_handler.go.
+	if err := msgpackutil.CheckNestingDepth(data); err != nil {
+		return nil, fmt.Errorf("msgpack depth check failed: %w", err)
 	}
 	if err := msgpack.Unmarshal(data, &result); err == nil {
 		return result, nil

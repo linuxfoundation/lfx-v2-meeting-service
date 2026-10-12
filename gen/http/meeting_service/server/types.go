@@ -8330,6 +8330,9 @@ func ValidateCreateItxMeetingRequestBody(body *CreateItxMeetingRequestBody) (err
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 2000, false))
 		}
 	}
+	if len(body.Committees) > 50 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("body.committees", body.Committees, len(body.Committees), 50, false))
+	}
 	for _, e := range body.Committees {
 		if e != nil {
 			if err2 := validateCommitteeRequestBody(e, "body.committees[*]"); err2 != nil {
