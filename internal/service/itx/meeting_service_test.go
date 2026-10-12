@@ -952,6 +952,32 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 		assert.Nil(t, client.lastCreateReq)
 	})
 
+	t.Run("rejects a committee-only caller when the mapping reply has no owning project", func(t *testing.T) {
+		noOwner := mapper
+		noOwner.committeeProject = map[string]string{}
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, noOwner, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
+	t.Run("fails closed when the ownership lookup errors", func(t *testing.T) {
+		failing := mapper
+		failing.ownershipErr = domain.NewUnavailableError("v1-sync-helper lookup timed out")
+		client := &fakeMeetingClient{}
+		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
+		svc := NewMeetingService(client, nil, failing, nil, authz)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Nil(t, client.lastCreateReq)
+	})
+
 	t.Run("fails closed when the meetings_creator check errors", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{
@@ -1013,9 +1039,14 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 type ownershipIDMapper struct {
 	fullIDMapper
 	committeeProject map[string]string
+	// ownershipErr, when non-nil, is returned by MapCommitteeV2ToV1Project.
+	ownershipErr error
 }
 
 func (m ownershipIDMapper) MapCommitteeV2ToV1Project(_ context.Context, v2UID string) (string, error) {
+	if m.ownershipErr != nil {
+		return "", m.ownershipErr
+	}
 	return m.committeeProject[v2UID], nil
 }
 
