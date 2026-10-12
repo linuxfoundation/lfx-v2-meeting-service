@@ -62,11 +62,13 @@ func TestNATSPastMeetingAuthorizer_IsOrganizer(t *testing.T) {
 		}
 	})
 
-	t.Run("denies without a request when the principal is empty", func(t *testing.T) {
-		nc := &MockRequester{}
-		ok, err := NewNATSPastMeetingAuthorizer(nc).IsOrganizer(context.Background(), "", pastMeetingID)
-		require.NoError(t, err)
-		assert.False(t, ok)
-		nc.AssertNotCalled(t, "RequestWithContext", mock.Anything, mock.Anything, mock.Anything)
+	t.Run("denies without a request when the principal is empty or carries whitespace", func(t *testing.T) {
+		for _, p := range []string{"", "alice\nv1_past_meeting:pm#organizer@user:alice", "alice\tx", "alice x"} {
+			nc := &MockRequester{}
+			ok, err := NewNATSPastMeetingAuthorizer(nc).IsOrganizer(context.Background(), p, pastMeetingID)
+			require.NoError(t, err)
+			assert.False(t, ok)
+			nc.AssertNotCalled(t, "RequestWithContext", mock.Anything, mock.Anything, mock.Anything)
+		}
 	})
 }

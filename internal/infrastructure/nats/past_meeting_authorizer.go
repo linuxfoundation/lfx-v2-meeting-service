@@ -42,7 +42,11 @@ func NewNATSPastMeetingAuthorizer(nc Requester) *NATSPastMeetingAuthorizer {
 func (a *NATSPastMeetingAuthorizer) IsOrganizer(ctx context.Context, principal, pastMeetingID string) (bool, error) {
 	// The past meeting ID comes from the request path. Refuse IDs carrying tuple
 	// delimiters or whitespace so a crafted ID cannot reshape the check request.
-	if pastMeetingID == "" || principal == "" || strings.ContainsAny(pastMeetingID, "#@ \t\r\n") {
+	// The principal comes from the Heimdall-signed JWT; refuse whitespace there
+	// too so it cannot add request lines. '@' and '#' stay allowed in the
+	// principal: fga-sync splits on the first '@', so they only name the user.
+	if pastMeetingID == "" || principal == "" ||
+		strings.ContainsAny(pastMeetingID, "#@ \t\r\n") || strings.ContainsAny(principal, " \t\r\n") {
 		return false, nil
 	}
 
