@@ -687,7 +687,7 @@ Used by `sessions` on both the recording and the transcript document. The sessio
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `recording_access` is `"public"`, `false` otherwise |
 
-The `public` flag is derived from `recording_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `recording_viewer` tuples that the access check resolves are also written from the parent past meeting record's `recording_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
+The `public` flag is derived from `recording_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `recording_viewer` tuples that the access check resolves are also written from the parent past meeting record's `recording_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `recording_access` re-indexes it with the matching `public` flag.
 
 ### Search Behavior
 
@@ -717,7 +717,7 @@ The `public` flag is derived from `recording_access`, which is sourced from the 
 
 **Built by:** the recording handler (`handlePastMeetingRecordingUpdate` / `convertMapToRecordingData` in `cmd/meeting-api/eventing/recording_event_handler.go`), from the same v1 `itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}` record as the [recording document](#v1-past-meeting-recording). There is no separate transcript record in v1.
 
-**Indexed on:** every create or update of the recording record that has at least one `TRANSCRIPT` or `TIMELINE` file; a record without such files publishes no transcript message. Deleting the recording record sends a `deleted` message for this document. A later update that no longer carries transcript files does not delete an already indexed transcript document.
+**Indexed on:** every create or update of the recording record that has at least one `TRANSCRIPT` or `TIMELINE` file. A create or update of a record without such files sends a `deleted` message for this document instead, as does deleting the recording record.
 
 ### Data Schema
 
@@ -768,7 +768,7 @@ The `public` flag is derived from `recording_access`, which is sourced from the 
 | `history_check_relation` | `auditor` |
 | `public` | `true` when the document's `transcript_access` is `"public"`, `false` otherwise |
 
-The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message.
+The `public` flag is derived from `transcript_access`, which is sourced from the **parent past meeting record** at index time (not the recording record's own snapshot). The `transcript_viewer` tuples that the access check resolves are also written from the parent past meeting record's `transcript_access` (see the [FGA contract](fga-contract.md#v1-past-meeting)); this document sends no FGA message. Every past meeting update republishes this document from the current recording record, so a change to the parent's `transcript_access` re-indexes it with the matching `public` flag. When the recording record has no `TRANSCRIPT` or `TIMELINE` files, the transcript document is deleted instead.
 
 ### Search Behavior
 
@@ -860,7 +860,7 @@ The access relation depends on the summary's approval state. A summary awaiting 
 
 The history check uses `organizer` while a summary awaits approval because `auditor` is broader than `organizer` in the platform model; the history audience never exceeds the access audience.
 
-Every summary publish carries the full config, so approving a summary (or revoking an approval) re-indexes the document with the matching relation. Documents indexed before this rule change keep their previous access fields until they are republished; run `go run ./scripts/reindex_meetings/ -types v1_past_meeting_summary -reindex` to apply it to all of them.
+Every summary publish carries the full config, so approving a summary (or revoking an approval) re-indexes the document with the matching relation. Every past meeting update also republishes the summaries recorded under that past meeting, so a change to its `ai_summary_access` re-indexes them with the matching `public` flag (see [Artifact visibility on the past meeting](event-processing.md#fga-sync-service)). Documents indexed before these rules keep their previous access fields until they are republished, and summaries last processed before the summary-to-past-meeting record existed are not republished by a past meeting update; run `go run ./scripts/reindex_meetings/ -types v1_past_meeting_summary -reindex` once to apply both to all of them.
 
 ### Search Behavior
 

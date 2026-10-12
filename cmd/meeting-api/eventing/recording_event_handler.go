@@ -13,6 +13,7 @@ import (
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
@@ -268,6 +269,16 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	if transcriptData != nil {
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
+			return isTransientError(err)
+		}
+	} else {
+		// The record has no transcript files. Remove any transcript document an earlier publish
+		// left behind: it would otherwise keep the public flag it was last indexed with, since
+		// no transcript event will republish it. This does not depend on the mapping lookup
+		// above, which reads "created" when an earlier mapping write failed; deleting a document
+		// that was never indexed is harmless, as on the recording delete path.
+		if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1PastMeetingTranscriptSubject, recordingData.ID); err != nil {
+			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to delete stale transcript document")
 			return isTransientError(err)
 		}
 	}

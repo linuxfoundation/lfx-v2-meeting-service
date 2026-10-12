@@ -633,6 +633,8 @@ The `v1_past_meeting` `update_access` message, sent from the past meeting record
 
 Summary index documents check `v1_past_meeting#organizer` instead of `ai_summary_viewer` while the summary awaits approval; see [Summary `ai_summary_access` Lookup](#summary-ai_summary_access-lookup) below and the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 
+The recording, transcript and summary index documents also carry an `indexing_config.public` flag derived from these access fields. Their own KV records do not change when the past meeting's access fields do, so after publishing the past meeting `handlePastMeetingUpdate` republishes them itself (`republishPastMeetingArtifacts`): it re-dispatches the current recording record (`itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}`) and every summary recorded under the past meeting (see [Summary `ai_summary_access` Lookup](#summary-ai_summary_access-lookup)) through the normal update handlers, which read the access fields from the past meeting again. Tightening a setting therefore revokes the documents' public flag as well as the FGA wildcard. A transient failure in any of these republishes retries the past meeting event.
+
 ### Actions
 
 Events use these action types:
@@ -659,7 +661,7 @@ A v1 recording record (`itx-zoom-past-meetings-recordings.{meeting_and_occurrenc
 1. **Recording document** (`lfx.index.v1_past_meeting_recording`): always, with the non-transcript files.
 2. **Transcript document** (`lfx.index.v1_past_meeting_transcript`): only when the record has at least one `TRANSCRIPT` or `TIMELINE` file, with those files only.
 
-Both documents use the record's `meeting_and_occurrence_id` as their ID and share one `created`/`updated` action, taken from the `v1_past_meeting_recordings.{id}` key in `v1-mappings`. Neither sends an FGA message. A recording delete sends a `deleted` indexer message on both subjects. An update whose record no longer has transcript files publishes only the recording document; it does not delete an already indexed transcript document.
+Both documents use the record's `meeting_and_occurrence_id` as their ID and share one `created`/`updated` action, taken from the `v1_past_meeting_recordings.{id}` key in `v1-mappings`. Neither sends an FGA message. A recording delete sends a `deleted` indexer message on both subjects. A create or update whose record has no transcript files publishes only the recording document and sends a `deleted` indexer message on the transcript subject, so a transcript document indexed earlier cannot outlive its files and keep the `public` flag it was last indexed with.
 
 #### Past Meeting FGA References
 
@@ -710,6 +712,8 @@ publisher.PublishPastMeetingSummaryEvent(ctx, action, summaryData, aiSummaryAcce
 ```
 
 If the parent past meeting record does not exist, the summary is skipped without retry; any other KV or decode error is retried, **except** structural msgpack decode failures (`errMsgpackStructural`) which are treated as permanent (ACK to skip). A missing `ai_summary_access` field defaults to `""` (which maps to the `"meeting_hosts"` visibility case).
+
+Because the summary record carries no access field, a later change to the parent's `ai_summary_access` produces no summary event. Before reading the parent, the summary handler therefore records the summary under its past meeting in the `v1-mappings` bucket: `v1-mappings.past-meeting-summaries.{meeting_and_occurrence_id}` holds a JSON array of summary IDs, updated with compare-and-swap so concurrent summary events cannot drop each other's entries. The past meeting handler reads this key to republish the summaries when the past meeting changes (see [Artifact visibility on the past meeting](#fga-sync-service)); a failure to read it retries the past meeting event. A failure to write it retries the summary event, and a summary whose key is invalid is skipped rather than published untracked. Entries are not removed when a summary is deleted; a deleted summary's record is simply not found on republish. Summaries last processed before this key existed are not recorded until they are processed again; run `go run ./scripts/reindex_meetings/ -types v1_past_meeting_summary -reindex` once to record them all.
 
 `ai_summary_access` only applies once the summary is approved or does not require approval. While a summary awaits approval (`requires_approval && !approved`), the publisher indexes it as non-public with `v1_past_meeting#organizer` for both the access and the history check, matching LFX Self Serve's organizer-only rule. Approving the summary changes the v1 summary record, the KV watcher republishes it as `updated`, and the document is re-indexed with `ai_summary_viewer`. See the [indexer contract](indexer-contract.md#v1-past-meeting-summary).
 

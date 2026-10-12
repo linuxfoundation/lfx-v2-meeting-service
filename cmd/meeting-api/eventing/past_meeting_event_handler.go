@@ -260,8 +260,66 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
+	// The recording, transcript and summary documents take their indexer public flag from this
+	// record's recording_access, transcript_access and ai_summary_access, but their own KV
+	// records do not change when those settings do. Republish them so that tightening a
+	// setting revokes public visibility in the index, not only in FGA.
+	if h.republishPastMeetingArtifacts(ctx, pastMeetingData.MeetingAndOccurrenceID, funcLogger) {
+		return true
+	}
+
 	funcLogger.InfoContext(ctx, "successfully processed past meeting", "action", string(indexerAction))
 	return false // Success, ACK
+}
+
+// republishPastMeetingArtifacts re-runs the recording and summary handlers on the past
+// meeting's current artifact records, so their index documents pick up the access settings
+// now on the past meeting. It returns true when a transient failure means the past meeting
+// event must be retried.
+func (h *EventHandlers) republishPastMeetingArtifacts(
+	ctx context.Context,
+	meetingAndOccurrenceID string,
+	logger *slog.Logger,
+) (retry bool) {
+	// The recording record, the source of both the recording and the transcript documents,
+	// is keyed by meeting_and_occurrence_id.
+	retry = h.republishArtifactRecord(ctx, "itx-zoom-past-meetings-recordings."+meetingAndOccurrenceID, logger)
+
+	summaryIDs, err := listPastMeetingSummaryIDs(ctx, meetingAndOccurrenceID, h.v1MappingsKV)
+	if err != nil {
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to list summaries of past meeting, will retry")
+		return true
+	}
+	for _, summaryID := range summaryIDs {
+		if h.republishArtifactRecord(ctx, "itx-zoom-past-meetings-summaries."+summaryID, logger) {
+			retry = true
+		}
+	}
+	return retry
+}
+
+// republishArtifactRecord dispatches the current v1-objects record at key through handleKVPut,
+// as if the record had just been written. A record that no longer exists has nothing to
+// republish.
+func (h *EventHandlers) republishArtifactRecord(ctx context.Context, key string, logger *slog.Logger) (retry bool) {
+	entry, err := h.v1ObjectsKV.Get(ctx, key)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return false
+		}
+		if errors.Is(err, jetstream.ErrInvalidKey) {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "invalid past meeting artifact key, skipping republish", "artifact_key", key)
+			return false
+		}
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "transient error fetching past meeting artifact for republish, will retry", "artifact_key", key)
+		return true
+	}
+	data, err := decodeData(entry.Value())
+	if err != nil {
+		logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode past meeting artifact for republish", "artifact_key", key)
+		return false
+	}
+	return handleKVPut(ctx, key, data, h)
 }
 
 // handlePastMeetingDelete processes past meeting deletions
