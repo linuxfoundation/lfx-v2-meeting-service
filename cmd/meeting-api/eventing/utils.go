@@ -86,6 +86,9 @@ func isTransientError(err error) bool {
 	if err == nil {
 		return false
 	}
+	if errors.Is(err, errOccurrenceExpansionTimeout) {
+		return true
+	}
 	errStr := err.Error()
 	return strings.Contains(errStr, "timeout") ||
 		strings.Contains(errStr, "connection") ||
