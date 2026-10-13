@@ -519,14 +519,15 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 		return false
 	}
 
-	// A deleted past meeting keeps its tombstones: do not rewrite its committee mappings
-	// or re-index it.
-	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID))
+	// The parent past meeting record decides: a deleted past meeting keeps its tombstones,
+	// so do not rewrite its committee mappings or re-index it. A live record being restored
+	// may still carry a stale tombstone; its mappings are stored for the restore to pick up.
+	parent, _, err := h.loadV1Parent(ctx, fmt.Sprintf("itx-zoom-past-meetings.%s", pastMeetingUUID), fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID))
 	if err != nil {
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting tombstone, will retry", "past_meeting_uuid", pastMeetingUUID)
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load parent past meeting, will retry", "past_meeting_uuid", pastMeetingUUID)
 		return true
 	}
-	if deleted {
+	if parent == parentGone {
 		funcLogger.InfoContext(ctx, "skipping past meeting mapping update for deleted past meeting", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
@@ -537,9 +538,9 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 		return isTransientError(err)
 	}
 
-	// Re-trigger past meeting indexing
-	shouldRetry := h.retriggerPastMeetingIndexing(ctx, pastMeetingUUID)
-	if shouldRetry {
+	// Re-trigger past meeting indexing; a past meeting not synced yet picks up the stored
+	// mappings when its own record arrives.
+	if parent == parentLive && h.retriggerPastMeetingIndexing(ctx, pastMeetingUUID) {
 		return true
 	}
 
@@ -763,34 +764,27 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingUUID string,
 ) (retry bool) {
 	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", pastMeetingUUID)
-	pastMeetingEntry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting not found during retrigger; it may have been deleted")
-			return false
-		}
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "transient error fetching past meeting during retrigger")
-		return true
-	}
-
-	pastMeetingData, err := decodeData(pastMeetingEntry.Value())
-	if err != nil {
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode past meeting data")
-		return false
-	}
+	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID)
 
 	// A soft-deleted or already-deleted past meeting must not be republished as live.
-	if _, softDeleted := softDeletedAt(pastMeetingData); softDeleted {
-		h.logger.InfoContext(ctx, "past meeting is soft-deleted, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
+	parent, pastMeetingData, err := h.loadV1Parent(ctx, pastMeetingKey, mappingKey)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting during retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
+		return true
+	}
+	if parent != parentLive {
+		h.logger.InfoContext(ctx, "past meeting is not live, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
-	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID))
+	// A live record with a tombstone is a restore whose own put has not been processed
+	// yet; that put re-indexes the past meeting.
+	deleted, err := h.tombstoneState(ctx, mappingKey)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting tombstone during retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
 		return true
 	}
 	if deleted {
-		h.logger.InfoContext(ctx, "past meeting is deleted, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
+		h.logger.InfoContext(ctx, "past meeting is tombstoned, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
 

@@ -55,10 +55,13 @@ type retriggerTestPublisher struct {
 	meetingEvents     int
 	hostCredsEvents   int
 	pastMeetingEvents int
+	lastMeeting       *models.MeetingEventData
+	lastPastMeeting   *models.PastMeetingEventData
 }
 
-func (p *retriggerTestPublisher) PublishMeetingEvent(_ context.Context, _ string, _ *models.MeetingEventData) error {
+func (p *retriggerTestPublisher) PublishMeetingEvent(_ context.Context, _ string, data *models.MeetingEventData) error {
 	p.meetingEvents++
+	p.lastMeeting = data
 	return nil
 }
 
@@ -67,8 +70,9 @@ func (p *retriggerTestPublisher) PublishMeetingHostCredentialsEvent(_ context.Co
 	return nil
 }
 
-func (p *retriggerTestPublisher) PublishPastMeetingEvent(_ context.Context, _ string, _ *models.PastMeetingEventData) error {
+func (p *retriggerTestPublisher) PublishPastMeetingEvent(_ context.Context, _ string, data *models.PastMeetingEventData) error {
 	p.pastMeetingEvents++
+	p.lastPastMeeting = data
 	return nil
 }
 
@@ -163,16 +167,26 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 			assert.NotContains(t, mappings.data, liveMarkerKey)
 		})
 
-		t.Run(name+" for tombstoned meeting with live record publishes nothing", func(t *testing.T) {
+		t.Run(name+" for hard-deleted meeting publishes nothing", func(t *testing.T) {
+			pub, mappings, h := setup(t, false, true)
+			delete(h.v1ObjectsKV.(*memKV).data, meetingKey)
+
+			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(mappingSoftDeleted), h)
+
+			assert.False(t, retry)
+			assert.Zero(t, pub.meetingEvents)
+			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+			assert.Equal(t, tombstoneMarker, string(mappings.data[committeesKey]))
+		})
+
+		t.Run(name+" during restore does not re-index before the meeting put", func(t *testing.T) {
 			pub, mappings, h := setup(t, false, true)
 
 			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(mappingSoftDeleted), h)
 
 			assert.False(t, retry)
 			assert.Zero(t, pub.meetingEvents)
-			assert.Zero(t, pub.hostCredsEvents)
 			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
-			assert.Equal(t, tombstoneMarker, string(mappings.data[committeesKey]))
 		})
 	}
 
@@ -185,6 +199,41 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 		assert.True(t, retry)
 		assert.Zero(t, pub.meetingEvents)
 		assert.Zero(t, pub.hostCredsEvents)
+	})
+
+	t.Run("parent read error retries without storing the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).getErrs[meetingKey] = errors.New("kv unavailable")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.True(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("mapping put before the meeting is synced is stored for later", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		delete(h.v1ObjectsKV.(*memKV).data, meetingKey)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+		assert.Contains(t, string(mappings.data[committeesKey]), "map-1")
+	})
+
+	t.Run("restore keeps committee links that arrive before the meeting put", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+
+		require.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		require.Zero(t, pub.meetingEvents)
+		require.False(t, handleKVPut(context.Background(), meetingKey, meetingRecord(false), h))
+
+		assert.Equal(t, 1, pub.meetingEvents)
+		require.NotNil(t, pub.lastMeeting)
+		assert.Len(t, pub.lastMeeting.Committees, 1)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned meeting", func(t *testing.T) {
@@ -290,8 +339,9 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 			assert.NotContains(t, mappings.data, liveMarkerKey)
 		})
 
-		t.Run(name+" for tombstoned past meeting with live record publishes nothing", func(t *testing.T) {
+		t.Run(name+" for hard-deleted past meeting publishes nothing", func(t *testing.T) {
 			pub, mappings, h := setup(t, false, true)
+			delete(h.v1ObjectsKV.(*memKV).data, pastMeetingKey)
 
 			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(mappingSoftDeleted), h)
 
@@ -299,6 +349,16 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 			assert.Zero(t, pub.pastMeetingEvents)
 			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
 			assert.Equal(t, tombstoneMarker, string(mappings.data[committeesKey]))
+		})
+
+		t.Run(name+" during restore does not re-index before the past meeting put", func(t *testing.T) {
+			pub, mappings, h := setup(t, false, true)
+
+			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(mappingSoftDeleted), h)
+
+			assert.False(t, retry)
+			assert.Zero(t, pub.pastMeetingEvents)
+			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
 		})
 	}
 
@@ -310,6 +370,41 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 
 		assert.True(t, retry)
 		assert.Zero(t, pub.pastMeetingEvents)
+	})
+
+	t.Run("parent read error retries without storing the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).getErrs[pastMeetingKey] = errors.New("kv unavailable")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.True(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("mapping put before the past meeting is synced is stored for later", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		delete(h.v1ObjectsKV.(*memKV).data, pastMeetingKey)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
+		assert.Contains(t, string(mappings.data[committeesKey]), "map-1")
+	})
+
+	t.Run("restore keeps committee links that arrive before the past meeting put", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+
+		require.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		require.Zero(t, pub.pastMeetingEvents)
+		require.False(t, handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h))
+
+		assert.Equal(t, 1, pub.pastMeetingEvents)
+		require.NotNil(t, pub.lastPastMeeting)
+		assert.Len(t, pub.lastPastMeeting.Committees, 1)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned past meeting", func(t *testing.T) {

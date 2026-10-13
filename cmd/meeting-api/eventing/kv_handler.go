@@ -105,6 +105,53 @@ func (h *EventHandlers) tombstoneState(ctx context.Context, mappingKey string) (
 	return entryIsTombstoned(entry), nil
 }
 
+// v1ParentState classifies the parent v1-objects record of a child event.
+type v1ParentState int
+
+const (
+	// parentAbsent: no record and no tombstone; the parent has not been synced yet.
+	parentAbsent v1ParentState = iota
+	// parentLive: the record exists and is not soft-deleted.
+	parentLive
+	// parentGone: the record is soft-deleted, hard-deleted (tombstoned) or unusable.
+	parentGone
+)
+
+// loadV1Parent reads and classifies the parent record at objectKey. The record is
+// authoritative; tombstoneKey is consulted only when the record is missing, to tell a
+// hard-deleted parent from one not synced yet. A non-nil error is transient and the
+// caller should retry.
+func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKey string) (v1ParentState, map[string]any, error) {
+	entry, err := h.v1ObjectsKV.Get(ctx, objectKey)
+	if err != nil {
+		switch {
+		case errors.Is(err, jetstream.ErrKeyNotFound):
+			deleted, tsErr := h.tombstoneState(ctx, tombstoneKey)
+			if tsErr != nil {
+				return parentAbsent, nil, tsErr
+			}
+			if deleted {
+				return parentGone, nil, nil
+			}
+			return parentAbsent, nil, nil
+		case errors.Is(err, jetstream.ErrInvalidKey):
+			h.logger.WarnContext(ctx, "invalid parent key, skipping", "parent_key", objectKey)
+			return parentGone, nil, nil
+		default:
+			return parentAbsent, nil, err
+		}
+	}
+	data, err := decodeData(entry.Value())
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode parent record", "parent_key", objectKey)
+		return parentGone, nil, nil
+	}
+	if _, deleted := softDeletedAt(data); deleted {
+		return parentGone, nil, nil
+	}
+	return parentLive, data, nil
+}
+
 // softDeletedAt returns the record's _sdc_deleted_at value and true when the record is a
 // soft delete (the field is present, non-nil and non-empty).
 func softDeletedAt(data map[string]any) (any, bool) {
