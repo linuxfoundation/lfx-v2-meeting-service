@@ -248,7 +248,7 @@ Content-Type: application/json
 
 **Behavior**:
 
-1. **Past meeting binding**: Before any invitee or attendee call, the service fetches the invitee and attendee IDs of `past_meeting_id` from ITX (`GET /v2/zoom/past-meetings/{past_meeting_id}`). Only records in those lists are read, updated or deleted. If that lookup fails, the request fails and nothing is written.
+1. **Past meeting binding**: Before any invitee or attendee call, the service fetches the invitee and attendee IDs of `past_meeting_id` from ITX (`GET /v2/zoom/past_meetings/{past_meeting_id}`). Only records in those lists are read, updated or deleted. If that lookup fails, the request fails and nothing is written.
 
 2. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
    - Uses the provided ID directly
@@ -278,7 +278,7 @@ Response body is identical to Create Past Meeting Participant response.
 
 Updates invitee and/or attendee records through the ITX API based on the provided fields. `POST` (create) bodies include a proxy-added `created_by` field; `PUT` (update) bodies include a proxy-added `updated_by` field. See [Audit stamping](#audit-stamping).
 
-**Method (Get Past Meeting)**: `GET /v2/zoom/past-meetings/{past_meeting_id}`: used internally to load the invitee and attendee IDs of the past meeting; only the IDs are read.
+**Method (Get Past Meeting)**: `GET /v2/zoom/past_meetings/{past_meeting_id}`: used internally to load the invitee and attendee IDs of the past meeting; only the IDs are read.
 
 **Method (Create Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
 
@@ -319,7 +319,7 @@ Authorization: Bearer <jwt_token>
 
 ### ITX API Endpoints
 
-Resolves `participant_id` to an invitee ID and an attendee ID (through NATS ID mapping, or the `participant_id` itself when no mapping exists), then deletes each record that is an invitee/attendee of `past_meeting_id`, as reported by `GET /v2/zoom/past-meetings/{past_meeting_id}`. Returns `404 Not Found` if neither is.
+Resolves `participant_id` to an invitee ID and an attendee ID (through NATS ID mapping, or the `participant_id` itself when no mapping exists), then deletes each record that is an invitee/attendee of `past_meeting_id`, as reported by `GET /v2/zoom/past_meetings/{past_meeting_id}`. Returns `404 Not Found` if neither is.
 
 **Method (Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
 
@@ -419,8 +419,7 @@ Sessions represent individual join/leave cycles within a meeting occurrence. An 
 4. **Optional ITX IDs**: The `invitee_id` and `attendee_id` fields in update requests are optional performance optimizations. When provided:
    - The service skips NATS ID mapping lookups
    - Reduces latency for clients that already have ITX IDs
-   - Still verifies existence by reverse mapping the ITX ID back to participant_id
-   - Falls back to standard participant_id mapping if ITX ID doesn't exist
+   - Returns `404 Not Found` if the ITX ID is not an invitee/attendee of `past_meeting_id`
 
 ### Data Quality
 

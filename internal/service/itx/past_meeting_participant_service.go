@@ -156,6 +156,24 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 		return nil, err
 	}
 
+	// Reject a body-supplied ID outside the past meeting before either operation
+	// writes, so a rejected request leaves no partial change behind. The checks
+	// mirror when handleInviteeOperation / handleAttendeeOperation use the ID.
+	if p.InviteeID != "" && p.IsInvited != nil && !children.hasInvitee(p.InviteeID) {
+		slog.WarnContext(ctx, "invitee does not belong to the past meeting; rejecting",
+			"participant_id", p.ParticipantID,
+			"invitee_id", p.InviteeID,
+			"past_meeting_id", p.PastMeetingID)
+		return nil, domain.NewNotFoundError("invitee not found in past meeting")
+	}
+	if p.AttendeeID != "" && (p.IsAttended != nil || attendeeReq != nil) && !children.hasAttendee(p.AttendeeID) {
+		slog.WarnContext(ctx, "attendee does not belong to the past meeting; rejecting",
+			"participant_id", p.ParticipantID,
+			"attendee_id", p.AttendeeID,
+			"past_meeting_id", p.PastMeetingID)
+		return nil, domain.NewNotFoundError("attendee not found in past meeting")
+	}
+
 	// Surface a failed ITX save as an error instead of silently returning a
 	// successful response that doesn't reflect what was actually persisted.
 	// Abort before the attendee operation if the invitee operation already
@@ -191,13 +209,8 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 	var inviteeExists bool
 
 	if inviteeID != "" {
-		if !children.hasInvitee(inviteeID) {
-			slog.WarnContext(ctx, "invitee does not belong to the past meeting; rejecting",
-				"participant_id", participantID,
-				"invitee_id", inviteeID,
-				"past_meeting_id", pastMeetingID)
-			return nil, false, domain.NewNotFoundError("invitee not found in past meeting")
-		}
+		// UpdateParticipant has already checked that inviteeID belongs to the
+		// past meeting.
 		actualInviteeID = inviteeID
 		inviteeExists = true
 	} else {
@@ -264,13 +277,8 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	var attendeeExists bool
 
 	if attendeeID != "" {
-		if !children.hasAttendee(attendeeID) {
-			slog.WarnContext(ctx, "attendee does not belong to the past meeting; rejecting",
-				"participant_id", participantID,
-				"attendee_id", attendeeID,
-				"past_meeting_id", pastMeetingID)
-			return nil, false, domain.NewNotFoundError("attendee not found in past meeting")
-		}
+		// UpdateParticipant has already checked that attendeeID belongs to the
+		// past meeting.
 		actualAttendeeID = attendeeID
 		attendeeExists = true
 	} else {

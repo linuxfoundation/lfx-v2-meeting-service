@@ -786,6 +786,25 @@ func TestPastMeetingParticipantService_UpdateParticipant_BindsChildrenToPastMeet
 		})
 	}
 
+	t.Run("foreign body attendee_id rejects before the invitee is deleted", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs([]string{"inv-1"}, nil)}
+		_, err := newSvc(client, participantIDMapper{}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+			&models.UpdatePastMeetingParticipant{
+				PastMeetingID: "pm-1",
+				ParticipantID: "p-1",
+				InviteeID:     "inv-1",
+				AttendeeID:    "foreign-attendee",
+				IsInvited:     &falseVal,
+				IsAttended:    &falseVal,
+			},
+			nil,
+			nil,
+		)
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+		assertNoChildCalls(t, client)
+	})
+
 	t.Run("member body ids are updated", func(t *testing.T) {
 		client := &fakeParticipantClient{children: pastMeetingParticipantIDs([]string{"inv-1"}, []string{"att-1", "att-2"})}
 		_, err := newSvc(client, participantIDMapper{}).UpdateParticipant(ctxWithPrincipal("lee", ""),
