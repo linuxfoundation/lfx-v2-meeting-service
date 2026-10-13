@@ -258,8 +258,8 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 // and routed to handleKVSoftDelete instead of the normal update handler.
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
 	// Check for soft delete (record written to KV with _sdc_deleted_at set).
-	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
-		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
+	if isSoftDeleted(data) {
+		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", data["_sdc_deleted_at"])
 		return routeDelete(ctx, key, data, handlers)
 	}
 
@@ -305,6 +305,13 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 		handlers.logger.DebugContext(ctx, "skipping non-meeting event", "key", key)
 		return false
 	}
+}
+
+// isSoftDeleted reports whether a v1 record carries a non-empty _sdc_deleted_at, the marker v1
+// writes onto a record that has been deleted but left in place.
+func isSoftDeleted(data map[string]any) bool {
+	deletedAt, exists := data["_sdc_deleted_at"]
+	return exists && deletedAt != nil && deletedAt != ""
 }
 
 // routeDelete routes a delete operation to the appropriate entity-specific delete handler.

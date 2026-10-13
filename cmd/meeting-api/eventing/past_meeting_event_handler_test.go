@@ -170,3 +170,145 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 		assert.Empty(t, publisher.summaries)
 	})
 }
+
+// TestPastMeetingMappingHandlers_DeletedPastMeeting verifies that a past meeting mapping change
+// arriving after the past meeting was deleted does not re-index the past meeting, re-grant its
+// access, or replace its tombstones.
+func TestPastMeetingMappingHandlers_DeletedPastMeeting(t *testing.T) {
+	const (
+		mappingKVKey      = "itx-zoom-past-meetings-mappings.map-1"
+		pastMeetingMapKey = "v1_past_meetings." + testSummaryMeetOcc
+		committeesMapKey  = "v1-mappings.past-meeting-mappings." + testSummaryMeetOcc
+	)
+
+	livePastMeeting := map[string]any{
+		"meeting_and_occurrence_id": testSummaryMeetOcc,
+		"meeting_id":                "12345678901",
+		"proj_id":                   "proj-sfid",
+	}
+	softDeletedPastMeeting := map[string]any{
+		"meeting_and_occurrence_id": testSummaryMeetOcc,
+		"meeting_id":                "12345678901",
+		"proj_id":                   "proj-sfid",
+		"_sdc_deleted_at":           "2026-09-01T00:00:00Z",
+	}
+	mappingPut := map[string]any{
+		"id":                "map-1",
+		"past_meeting_uuid": testSummaryMeetOcc,
+		"committee_id":      "committee-sfid",
+	}
+	mappingSoftDelete := map[string]any{
+		"id":                "map-1",
+		"past_meeting_uuid": testSummaryMeetOcc,
+		"committee_id":      "committee-sfid",
+		"_sdc_deleted_at":   "2026-09-01T00:00:00Z",
+	}
+	tombstone := func(key string) mockKeyValueEntry {
+		return mockKeyValueEntry{key: key, value: []byte(tombstoneMarker)}
+	}
+
+	// newHandlers builds handlers whose v1-objects KV holds pastMeeting (nil for absent) and whose
+	// mappings KV returns the given entries, with every other key absent.
+	newHandlers := func(t *testing.T, pastMeeting map[string]any, mappings map[string]mockKeyValueEntry, mappingsErr error) (*EventHandlers, *mockKeyValue, *artifactRepublishPublisher) {
+		t.Helper()
+		objectsKV := &mockKeyValue{}
+		if pastMeeting != nil {
+			objectsKV.On("Get", mock.Anything, testPastMeetingKey).Return(mockKeyValueEntry{key: testPastMeetingKey, value: mustMarshalJSON(t, pastMeeting)}, nil)
+		}
+		objectsKV.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+
+		mappingsKV := &mockKeyValue{}
+		if mappingsErr != nil {
+			mappingsKV.On("Get", mock.Anything, pastMeetingMapKey).Return(nil, mappingsErr)
+		}
+		for key, entry := range mappings {
+			mappingsKV.On("Get", mock.Anything, key).Return(entry, nil)
+		}
+		mappingsKV.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
+		mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+		mappingsKV.On("Delete", mock.Anything, mock.Anything).Return(nil)
+
+		publisher := &artifactRepublishPublisher{}
+		return &EventHandlers{
+			publisher:    publisher,
+			idMapper:     participantTestIDMapper{},
+			v1ObjectsKV:  objectsKV,
+			v1MappingsKV: mappingsKV,
+			logger:       slog.New(slog.NewTextHandler(io.Discard, nil)),
+		}, mappingsKV, publisher
+	}
+
+	assertTombstonesUntouched := func(t *testing.T, mappingsKV *mockKeyValue) {
+		t.Helper()
+		for _, key := range []string{pastMeetingMapKey, committeesMapKey} {
+			mappingsKV.AssertNotCalled(t, "Put", mock.Anything, key, mock.Anything)
+			mappingsKV.AssertNotCalled(t, "Delete", mock.Anything, key)
+		}
+	}
+
+	deletedMappings := map[string]mockKeyValueEntry{
+		pastMeetingMapKey: tombstone(pastMeetingMapKey),
+		committeesMapKey:  tombstone(committeesMapKey),
+	}
+
+	t.Run("mapping put after past meeting soft delete is skipped", func(t *testing.T) {
+		h, mappingsKV, publisher := newHandlers(t, softDeletedPastMeeting, deletedMappings, nil)
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingPut, h)
+		assert.False(t, retry)
+		assert.Empty(t, publisher.pastMeetings, "deleted past meeting must not be republished")
+		assertTombstonesUntouched(t, mappingsKV)
+	})
+
+	t.Run("mapping soft delete after past meeting soft delete is skipped", func(t *testing.T) {
+		h, mappingsKV, publisher := newHandlers(t, softDeletedPastMeeting, deletedMappings, nil)
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingSoftDelete, h)
+		assert.False(t, retry)
+		assert.Empty(t, publisher.pastMeetings, "deleted past meeting must not be republished")
+		assertTombstonesUntouched(t, mappingsKV)
+	})
+
+	t.Run("mapping put while past meeting delete is pending is skipped", func(t *testing.T) {
+		// The past meeting was indexed and then soft-deleted, but its delete event has not
+		// been processed yet, so v1_past_meetings is still live.
+		h, mappingsKV, publisher := newHandlers(t, softDeletedPastMeeting, map[string]mockKeyValueEntry{
+			pastMeetingMapKey: {key: pastMeetingMapKey, value: []byte("1")},
+		}, nil)
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingPut, h)
+		assert.False(t, retry)
+		assert.Empty(t, publisher.pastMeetings)
+		mappingsKV.AssertNotCalled(t, "Put", mock.Anything, pastMeetingMapKey, mock.Anything)
+		mappingsKV.AssertNotCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
+	})
+
+	t.Run("transient error reading past meeting tombstone retries", func(t *testing.T) {
+		h, mappingsKV, publisher := newHandlers(t, livePastMeeting, nil, errors.New("kv unavailable"))
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingPut, h)
+		assert.True(t, retry)
+		assert.Empty(t, publisher.pastMeetings)
+		mappingsKV.AssertNotCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
+	})
+
+	t.Run("mapping put before past meeting exists is recorded", func(t *testing.T) {
+		h, mappingsKV, publisher := newHandlers(t, nil, nil, nil)
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingPut, h)
+		assert.False(t, retry)
+		assert.Empty(t, publisher.pastMeetings)
+		mappingsKV.AssertCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
+	})
+
+	t.Run("mapping put for live past meeting republishes it", func(t *testing.T) {
+		h, mappingsKV, publisher := newHandlers(t, livePastMeeting, map[string]mockKeyValueEntry{
+			pastMeetingMapKey: {key: pastMeetingMapKey, value: []byte("1")},
+		}, nil)
+
+		retry := handleKVPut(context.Background(), mappingKVKey, mappingPut, h)
+		assert.False(t, retry)
+		require.Len(t, publisher.pastMeetings, 1)
+		mappingsKV.AssertCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
+	})
+}

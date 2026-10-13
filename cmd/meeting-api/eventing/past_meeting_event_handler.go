@@ -511,6 +511,10 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 		return false
 	}
 
+	if deleted, retry := h.pastMeetingDeleted(ctx, pastMeetingUUID, funcLogger); deleted || retry {
+		return retry
+	}
+
 	// Update committee mappings in KV bucket
 	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
@@ -548,6 +552,10 @@ func (h *EventHandlers) handlePastMeetingMappingDelete(
 
 	funcLogger := h.logger.With("past_meeting_uuid", pastMeetingUUID, "mapping_id", mappingID, "handler", "past_meeting_mapping_delete")
 	funcLogger.InfoContext(ctx, "processing past meeting mapping deletion")
+
+	if deleted, retry := h.pastMeetingDeleted(ctx, pastMeetingUUID, funcLogger); deleted || retry {
+		return retry
+	}
 
 	// Remove the mapping
 	if err := removePastMeetingCommitteeMapping(ctx, pastMeetingUUID, mappingID, h.v1MappingsKV, funcLogger); err != nil {
@@ -759,6 +767,68 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 		return false
 	}
 
+	// A deleted past meeting must not be republished: that would restore the access and index
+	// documents its delete revoked, and replace its tombstone.
+	if isSoftDeleted(pastMeetingData) {
+		h.logger.InfoContext(ctx, "past meeting is soft-deleted, skipping retrigger", "past_meeting_id", pastMeetingUUID)
+		return false
+	}
+	tombstoned, retry := h.pastMeetingTombstoned(ctx, pastMeetingUUID, h.logger)
+	if tombstoned || retry {
+		return retry
+	}
+
 	// Re-process the past meeting
 	return h.handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData)
+}
+
+// pastMeetingDeleted reports whether the past meeting has been deleted, either by a processed
+// delete (its v1_past_meetings tombstone) or by a soft delete still on its v1-objects record.
+// Mapping handlers call it before touching the past meeting's mappings, so a deleted past
+// meeting keeps its tombstones and is not re-indexed. A past meeting that does not exist yet
+// is not deleted. retry is true when a transient KV error prevents the check.
+func (h *EventHandlers) pastMeetingDeleted(ctx context.Context, pastMeetingUUID string, logger *slog.Logger) (deleted bool, retry bool) {
+	if tombstoned, retry := h.pastMeetingTombstoned(ctx, pastMeetingUUID, logger); tombstoned || retry {
+		return tombstoned, retry
+	}
+
+	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", pastMeetingUUID)
+	entry, err := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey) {
+			return false, false
+		}
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "transient error fetching past meeting, will retry", "past_meeting_id", pastMeetingUUID)
+		return false, true
+	}
+	data, err := decodeData(entry.Value())
+	if err != nil {
+		// Leave the decision to retriggerPastMeetingIndexing, which skips an undecodable record.
+		return false, false
+	}
+	if isSoftDeleted(data) {
+		logger.InfoContext(ctx, "past meeting is soft-deleted, skipping mapping change", "past_meeting_id", pastMeetingUUID)
+		return true, false
+	}
+	return false, false
+}
+
+// pastMeetingTombstoned reports whether the past meeting's delete has been processed, leaving a
+// tombstone on v1_past_meetings.<id>. Unlike isTombstoned it does not treat a transient KV
+// error as "not tombstoned": retry is true in that case.
+func (h *EventHandlers) pastMeetingTombstoned(ctx context.Context, pastMeetingUUID string, logger *slog.Logger) (tombstoned bool, retry bool) {
+	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID)
+	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey) {
+			return false, false
+		}
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "transient error fetching past meeting mapping, will retry", "mapping_key", mappingKey)
+		return false, true
+	}
+	if entryIsTombstoned(entry) {
+		logger.InfoContext(ctx, "past meeting is deleted, skipping", "past_meeting_id", pastMeetingUUID)
+		return true, false
+	}
+	return false, false
 }
