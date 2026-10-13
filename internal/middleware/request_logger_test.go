@@ -110,11 +110,14 @@ func captureServiceLogs(t *testing.T, fn func()) string {
 		os.Stdout = prevStdout
 		slog.SetDefault(prevLogger)
 		log.SetFlags(prevFlags)
+		_ = w.Close()
+		_ = r.Close()
 	})
 
 	// Drain the pipe concurrently so output larger than the pipe buffer
-	// can't block the writer.
-	done := make(chan []byte)
+	// can't block the writer. The channel is buffered so the reader can
+	// finish even if the test exits before receiving.
+	done := make(chan []byte, 1)
 	go func() {
 		b, _ := io.ReadAll(r)
 		done <- b
@@ -179,9 +182,14 @@ func TestQueryForLog(t *testing.T) {
 			want:     "email=REDACTED&name=REDACTED&register=true&use_email=true&user_id=REDACTED&v=1",
 		},
 		{
-			name:     "unknown params are redacted",
-			rawQuery: "foo=alice%40example.com",
-			want:     "foo=REDACTED",
+			name:     "unknown param names and values are redacted",
+			rawQuery: "foo=alice%40example.com&alice%40example.com=x&Alice+Example",
+			want:     "REDACTED=REDACTED&REDACTED=REDACTED&REDACTED=REDACTED",
+		},
+		{
+			name:     "case variant of a known param is treated as unknown",
+			rawQuery: "Email=alice%40example.com",
+			want:     "REDACTED=REDACTED",
 		},
 		{
 			name:     "allowlisted params with unexpected values are redacted",

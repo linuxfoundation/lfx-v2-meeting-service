@@ -63,13 +63,25 @@ var loggableQueryParams = map[string]func(string) bool{
 	"register":  isBoolString,
 }
 
+// redactedQueryParams lists the known inbound query parameters that carry
+// personal data. Their names are logged but their values never are. Any
+// parameter in neither list has its name redacted too, since the name is as
+// request-controlled as the value.
+var redactedQueryParams = map[string]bool{
+	"email":   true,
+	"name":    true,
+	"user_id": true,
+}
+
 func isBoolString(v string) bool {
 	_, err := strconv.ParseBool(v)
 	return err == nil
 }
 
 // queryForLog returns rawQuery with every parameter value not accepted by
-// loggableQueryParams replaced with "REDACTED", for safe use in log output.
+// loggableQueryParams replaced with "REDACTED", and the name of every
+// parameter not listed in loggableQueryParams or redactedQueryParams replaced
+// with "REDACTED", for safe use in log output.
 func queryForLog(rawQuery string) string {
 	if rawQuery == "" {
 		return ""
@@ -80,15 +92,20 @@ func queryForLog(rawQuery string) string {
 		// sensitive values, and rawQuery may still carry them.
 		return "REDACTED (unparseable query)"
 	}
+	out := make(url.Values, len(q))
 	for k, vs := range q {
 		loggable := loggableQueryParams[k]
-		for i, v := range vs {
+		if loggable == nil && !redactedQueryParams[k] {
+			k = "REDACTED"
+		}
+		for _, v := range vs {
 			if loggable == nil || !loggable(v) {
-				vs[i] = "REDACTED"
+				v = "REDACTED"
 			}
+			out.Add(k, v)
 		}
 	}
-	return q.Encode()
+	return out.Encode()
 }
 
 // responseWriter wraps http.ResponseWriter to capture status code.
