@@ -4,12 +4,19 @@
 package middleware
 
 import (
+	"io"
+	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequestLoggerMiddleware(t *testing.T) {
@@ -82,6 +89,138 @@ func TestRequestLoggerMiddleware(t *testing.T) {
 
 			// Verify duration is reasonable (should be at least 10ms due to sleep)
 			assertion.GreaterOrEqual(duration, 10*time.Millisecond)
+		})
+	}
+}
+
+// captureServiceLogs installs the production log handler chain (including the
+// context handler that stamps AppendCtx attributes on every record) at info
+// level, runs fn, and returns everything written to stdout.
+func captureServiceLogs(t *testing.T, fn func()) string {
+	t.Helper()
+	t.Setenv("LOG_LEVEL", "info")
+
+	prevLogger := slog.Default()
+	prevFlags := log.Flags()
+	prevStdout := os.Stdout
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdout = w
+	t.Cleanup(func() {
+		os.Stdout = prevStdout
+		slog.SetDefault(prevLogger)
+		log.SetFlags(prevFlags)
+		_ = w.Close()
+		_ = r.Close()
+	})
+
+	// Drain the pipe concurrently so output larger than the pipe buffer
+	// can't block the writer. The channel is buffered so the reader can
+	// finish even if the test exits before receiving.
+	done := make(chan []byte, 1)
+	go func() {
+		b, _ := io.ReadAll(r)
+		done <- b
+	}()
+
+	logging.InitStructureLogConfig()
+	fn()
+
+	os.Stdout = prevStdout
+	require.NoError(t, w.Close())
+	return string(<-done)
+}
+
+func TestRequestLoggerMiddleware_RedactsQueryPII(t *testing.T) {
+	const (
+		email  = "alice@example.com"
+		name   = "Alice Example"
+		userID = "00000000-0000-0000-0000-000000000001"
+	)
+
+	out := captureServiceLogs(t, func() {
+		handler := RequestLoggerMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Any other record written with the request context also
+			// carries the middleware's attributes.
+			slog.InfoContext(r.Context(), "handler log")
+			w.WriteHeader(http.StatusOK)
+		}))
+
+		req := httptest.NewRequest(http.MethodGet,
+			"/itx/meetings/m1/join_link?v=1&use_email=true&register=true"+
+				"&user_id="+userID+"&name=Alice%20Example&email=alice%40example.com", nil)
+		handler.ServeHTTP(httptest.NewRecorder(), req)
+	})
+
+	require.Contains(t, out, "HTTP request")
+	require.Contains(t, out, "HTTP response")
+	require.Contains(t, out, "handler log")
+	for _, secret := range []string{email, "alice%40example.com", name, "Alice", userID} {
+		assert.NotContains(t, out, secret)
+	}
+	assert.Contains(t, out, "email=REDACTED")
+	assert.Contains(t, out, "name=REDACTED")
+	assert.Contains(t, out, "user_id=REDACTED")
+	assert.Contains(t, out, "use_email=true")
+	assert.Equal(t, 3, strings.Count(out, "user_id=REDACTED"), "query attribute should be stamped on every request-scoped record")
+}
+
+func TestQueryForLog(t *testing.T) {
+	tests := []struct {
+		name     string
+		rawQuery string
+		want     string
+	}{
+		{
+			name:     "empty query",
+			rawQuery: "",
+			want:     "",
+		},
+		{
+			name:     "join link identifiers are redacted, allowlisted params kept",
+			rawQuery: "email=alice%40example.com&name=Alice+Example&user_id=u1&use_email=true&register=true&v=1",
+			want:     "email=REDACTED&name=REDACTED&register=true&use_email=true&user_id=REDACTED&v=1",
+		},
+		{
+			name:     "unknown param names and values are redacted",
+			rawQuery: "foo=alice%40example.com&alice%40example.com=x&Alice+Example",
+			want:     "REDACTED=REDACTED&REDACTED=REDACTED&REDACTED=REDACTED",
+		},
+		{
+			name:     "case variant of a known param is treated as unknown",
+			rawQuery: "Email=alice%40example.com",
+			want:     "REDACTED=REDACTED",
+		},
+		{
+			name:     "allowlisted params with unexpected values are redacted",
+			rawQuery: "v=1&v=alice%40example.com&use_email=Alice+Example&register=u1",
+			want:     "register=REDACTED&use_email=REDACTED&v=1&v=REDACTED",
+		},
+		{
+			name:     "percent-encoded key is matched after decoding",
+			rawQuery: "%65mail=alice%40example.com&%76=alice%40example.com",
+			want:     "email=REDACTED&v=REDACTED",
+		},
+		{
+			name:     "repeated values are all redacted",
+			rawQuery: "email=a%40example.com&email=b%40example.com",
+			want:     "email=REDACTED&email=REDACTED",
+		},
+		{
+			name:     "unparseable query fails closed",
+			rawQuery: "email=alice%zz",
+			want:     "REDACTED (unparseable query)",
+		},
+		{
+			name:     "semicolon separator fails closed",
+			rawQuery: "v=1;email=alice@example.com",
+			want:     "REDACTED (unparseable query)",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, queryForLog(tc.rawQuery))
 		})
 	}
 }
