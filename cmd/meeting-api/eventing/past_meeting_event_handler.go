@@ -223,6 +223,14 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting")
 	funcLogger.DebugContext(ctx, "processing past meeting update")
 
+	// Only a live record may be published, mark the past meeting mapping live, or
+	// republish its artifacts. handleKVPut already routes soft deletes elsewhere; this
+	// also covers the retrigger path.
+	if _, deleted := softDeletedAt(v1Data); deleted {
+		funcLogger.InfoContext(ctx, "skipping past meeting update for soft-deleted record")
+		return false
+	}
+
 	// Convert v1Data to past meeting event data
 	pastMeetingData, err := convertMapToPastMeetingData(ctx, v1Data, h.idMapper, h.v1ObjectsKV, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -511,6 +519,18 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 		return false
 	}
 
+	// A deleted past meeting keeps its tombstones: do not rewrite its committee mappings
+	// or re-index it.
+	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID))
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting tombstone, will retry", "past_meeting_uuid", pastMeetingUUID)
+		return true
+	}
+	if deleted {
+		funcLogger.InfoContext(ctx, "skipping past meeting mapping update for deleted past meeting", "past_meeting_uuid", pastMeetingUUID)
+		return false
+	}
+
 	// Update committee mappings in KV bucket
 	if err := updatePastMeetingCommitteeMappings(ctx, pastMeetingUUID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update past meeting committee mappings")
@@ -756,6 +776,21 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	pastMeetingData, err := decodeData(pastMeetingEntry.Value())
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode past meeting data")
+		return false
+	}
+
+	// A soft-deleted or already-deleted past meeting must not be republished as live.
+	if _, softDeleted := softDeletedAt(pastMeetingData); softDeleted {
+		h.logger.InfoContext(ctx, "past meeting is soft-deleted, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
+		return false
+	}
+	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_past_meetings.%s", pastMeetingUUID))
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting tombstone during retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
+		return true
+	}
+	if deleted {
+		h.logger.InfoContext(ctx, "past meeting is deleted, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
 

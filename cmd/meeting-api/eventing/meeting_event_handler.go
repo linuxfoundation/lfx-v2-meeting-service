@@ -624,6 +624,13 @@ func (h *EventHandlers) handleMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "meeting")
 	funcLogger.DebugContext(ctx, "processing meeting update")
 
+	// Only a live record may be published or mark the meeting mapping live. handleKVPut
+	// already routes soft deletes elsewhere; this also covers the retrigger path.
+	if _, deleted := softDeletedAt(v1Data); deleted {
+		funcLogger.InfoContext(ctx, "skipping meeting update for soft-deleted record")
+		return false
+	}
+
 	// Convert v1Data to meeting event data
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -728,6 +735,18 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 		return false
 	}
 	funcLogger.InfoContext(ctx, "processing meeting mapping update", "meeting_id", meetingID, "mapping_id", mappingID)
+
+	// A deleted meeting keeps its tombstones: do not rewrite its committee mappings or
+	// re-index it.
+	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_meetings.%s", meetingID))
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check meeting tombstone, will retry", "meeting_id", meetingID)
+		return true
+	}
+	if deleted {
+		funcLogger.InfoContext(ctx, "skipping meeting mapping update for deleted meeting", "meeting_id", meetingID)
+		return false
+	}
 
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
@@ -966,6 +985,21 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	meetingData, err := decodeData(meetingEntry.Value())
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode meeting data")
+		return false
+	}
+
+	// A soft-deleted or already-deleted meeting must not be republished as live.
+	if _, softDeleted := softDeletedAt(meetingData); softDeleted {
+		h.logger.InfoContext(ctx, "meeting is soft-deleted, skipping retrigger", "meeting_id", meetingID)
+		return false
+	}
+	deleted, err := h.tombstoneState(ctx, fmt.Sprintf("v1_meetings.%s", meetingID))
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check meeting tombstone during retrigger, will retry", "meeting_id", meetingID)
+		return true
+	}
+	if deleted {
+		h.logger.InfoContext(ctx, "meeting is deleted, skipping retrigger", "meeting_id", meetingID)
 		return false
 	}
 

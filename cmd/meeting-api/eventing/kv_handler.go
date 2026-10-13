@@ -91,6 +91,27 @@ func (h *EventHandlers) isTombstoned(ctx context.Context, mappingKey string) boo
 	return err == nil && string(entry.Value()) == tombstoneMarker
 }
 
+// tombstoneState reports whether mappingKey holds a tombstone marker. Unlike isTombstoned
+// it fails closed: a missing key is not tombstoned, but any other Get error is returned so
+// the caller can retry instead of treating the resource as live.
+func (h *EventHandlers) tombstoneState(ctx context.Context, mappingKey string) (bool, error) {
+	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return entryIsTombstoned(entry), nil
+}
+
+// softDeletedAt returns the record's _sdc_deleted_at value and true when the record is a
+// soft delete (the field is present, non-nil and non-empty).
+func softDeletedAt(data map[string]any) (any, bool) {
+	deletedAt, exists := data["_sdc_deleted_at"]
+	return deletedAt, exists && deletedAt != nil && deletedAt != ""
+}
+
 // entryIsTombstoned returns true if the already-fetched entry holds a tombstone marker.
 // Use this when you have already called Get to avoid a second KV round-trip.
 func entryIsTombstoned(entry jetstream.KeyValueEntry) bool {
@@ -258,7 +279,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 // and routed to handleKVSoftDelete instead of the normal update handler.
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
 	// Check for soft delete (record written to KV with _sdc_deleted_at set).
-	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
+	if deletedAt, deleted := softDeletedAt(data); deleted {
 		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
 		return routeDelete(ctx, key, data, handlers)
 	}
