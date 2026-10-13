@@ -292,6 +292,23 @@ func TestPastMeetingMappingHandlers_DeletedPastMeeting(t *testing.T) {
 		mappingsKV.AssertNotCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
 	})
 
+	t.Run("transient error reading past meeting record retries", func(t *testing.T) {
+		for name, event := range map[string]map[string]any{"mapping put": mappingPut, "mapping soft delete": mappingSoftDelete} {
+			t.Run(name, func(t *testing.T) {
+				h, mappingsKV, publisher := newHandlers(t, nil, nil, nil)
+				objectsKV := &mockKeyValue{}
+				objectsKV.On("Get", mock.Anything, testPastMeetingKey).Return(nil, errors.New("kv unavailable"))
+				h.v1ObjectsKV = objectsKV
+
+				retry := handleKVPut(context.Background(), mappingKVKey, event, h)
+				assert.True(t, retry, "an unfinished delete check must retry, not let the mapping event through")
+				assert.Empty(t, publisher.pastMeetings)
+				mappingsKV.AssertNotCalled(t, "Put", mock.Anything, committeesMapKey, mock.Anything)
+				mappingsKV.AssertNotCalled(t, "Delete", mock.Anything, committeesMapKey)
+			})
+		}
+	})
+
 	t.Run("mapping put before past meeting exists is recorded", func(t *testing.T) {
 		h, mappingsKV, publisher := newHandlers(t, nil, nil, nil)
 
