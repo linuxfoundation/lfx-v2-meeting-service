@@ -16,18 +16,19 @@ import (
 )
 
 // memKV is a map-backed jetstream.KeyValue covering the Get/Put/Delete calls the
-// meeting handlers make. getErrs injects a Get error for a specific key; a value in
+// meeting handlers make. getErrs and putErrs inject an error for a specific key; a value in
 // arriving is reported missing on the first Get and present from then on, simulating a
 // record written concurrently by another consumer.
 type memKV struct {
 	jetstream.KeyValue
 	data     map[string][]byte
 	getErrs  map[string]error
+	putErrs  map[string]error
 	arriving map[string][]byte
 }
 
 func newMemKV() *memKV {
-	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}, arriving: map[string][]byte{}}
+	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}, putErrs: map[string]error{}, arriving: map[string][]byte{}}
 }
 
 func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
@@ -46,6 +47,9 @@ func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, err
 }
 
 func (k *memKV) Put(_ context.Context, key string, value []byte) (uint64, error) {
+	if err, ok := k.putErrs[key]; ok {
+		return 0, err
+	}
 	k.data[key] = value
 	return 1, nil
 }
@@ -278,6 +282,23 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
+	t.Run("restore retries until the live marker replaces the tombstone", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+		mappings.putErrs[liveMarkerKey] = errors.New("kv unavailable")
+
+		require.True(t, handleKVPut(context.Background(), meetingKey, meetingRecord(false), h))
+		require.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+
+		delete(mappings.putErrs, liveMarkerKey)
+		require.False(t, handleKVPut(context.Background(), meetingKey, meetingRecord(false), h))
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
+
+		// Later mapping events now re-index the restored meeting.
+		before := pub.meetingEvents
+		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		assert.Equal(t, before+1, pub.meetingEvents)
+	})
+
 	t.Run("restore of a live record still re-indexes a tombstoned meeting", func(t *testing.T) {
 		pub, mappings, h := setup(t, false, true)
 
@@ -482,6 +503,23 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 		require.NotNil(t, pub.lastPastMeeting)
 		assert.Len(t, pub.lastPastMeeting.Committees, 1)
 		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
+	})
+
+	t.Run("restore retries until the live marker replaces the tombstone", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+		mappings.putErrs[liveMarkerKey] = errors.New("kv unavailable")
+
+		require.True(t, handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h))
+		require.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+
+		delete(mappings.putErrs, liveMarkerKey)
+		require.False(t, handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h))
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
+
+		// Later mapping events now re-index the restored past meeting.
+		before := pub.pastMeetingEvents
+		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		assert.Equal(t, before+1, pub.pastMeetingEvents)
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned past meeting", func(t *testing.T) {

@@ -678,8 +678,14 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return isTransientError(err)
 	}
 
-	// Store mapping
+	// Store mapping. On a restore this replaces the delete tombstone; if the write fails
+	// the tombstone would keep later mapping retriggers from re-indexing the meeting, so
+	// retry. An invalid key can never be written, so it is not retried.
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		if !errors.Is(err, jetstream.ErrInvalidKey) {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping, will retry")
+			return true
+		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
 	}
 
