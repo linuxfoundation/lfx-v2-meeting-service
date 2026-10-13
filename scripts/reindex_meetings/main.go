@@ -24,7 +24,9 @@
 //	           v1_past_meeting_summary
 //	           v1_past_meeting_attachment
 //	-reindex Actually re-put KV entries and trigger reindexing (default: false,
-//	         logs what would be re-put without making any changes)
+//	         logs what would be re-put without making any changes). Each re-put
+//	         is a compare-and-set on the revision that was read; keys a live
+//	         writer changed in between are skipped and counted as superseded.
 //
 // Environment variables:
 //
@@ -170,7 +172,7 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 
-	var totalProcessed, totalFailed, totalSkipped, totalNotFound int
+	var totalProcessed, totalFailed, totalSkipped, totalNotFound, totalSuperseded int
 
 	for _, objectType := range requestedTypes {
 		objectType = strings.TrimSpace(objectType)
@@ -178,7 +180,7 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 
 		slog.InfoContext(ctx, "processing object type", "object_type", objectType)
 
-		processed, failed, skipped, notFound, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, reindex)
+		processed, failed, skipped, notFound, superseded, err := reindexType(ctx, httpClient, kv, kvMappings, osURL, objectType, prefixes, reindex)
 		if err != nil {
 			slog.ErrorContext(ctx, "fatal error processing type", "object_type", objectType, "error", err)
 			return 1
@@ -190,12 +192,14 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 			"failed", failed,
 			"skipped", skipped,
 			"not_found", notFound,
+			"superseded", superseded,
 		)
 
 		totalProcessed += processed
 		totalFailed += failed
 		totalSkipped += skipped
 		totalNotFound += notFound
+		totalSuperseded += superseded
 	}
 
 	slog.InfoContext(ctx, "reindex_meetings complete",
@@ -203,6 +207,7 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 		"failed", totalFailed,
 		"skipped", totalSkipped,
 		"not_found", totalNotFound,
+		"superseded", totalSuperseded,
 	)
 
 	if totalFailed > 0 {
@@ -222,10 +227,10 @@ func reindexType(
 	osURL, objectType string,
 	kvPrefixes []string,
 	reindex bool,
-) (processed, failed, skipped, notFound int, err error) {
+) (processed, failed, skipped, notFound, superseded int, err error) {
 	scrollID, firstPage, err := openScroll(ctx, httpClient, osURL, objectType, scrollPageSize)
 	if err != nil {
-		return 0, 0, 0, 0, fmt.Errorf("open scroll: %w", err)
+		return 0, 0, 0, 0, 0, fmt.Errorf("open scroll: %w", err)
 	}
 	defer func() {
 		if err := deleteScroll(ctx, httpClient, osURL, scrollID); err != nil {
@@ -266,25 +271,16 @@ func reindexType(
 					continue
 				}
 
-				entry, getErr := kv.Get(ctx, kvKey)
-				if getErr != nil {
-					if errors.Is(getErr, jetstream.ErrKeyNotFound) {
-						slog.WarnContext(ctx, "key not found in KV bucket", "key", kvKey)
-						notFound++
-						continue
-					}
-					slog.ErrorContext(ctx, "failed to get KV entry", "key", kvKey, "error", getErr)
+				switch reputEntry(ctx, kv, kvKey) {
+				case reputProcessed:
+					processed++
+				case reputNotFound:
+					notFound++
+				case reputSuperseded:
+					superseded++
+				case reputFailed:
 					failed++
-					continue
 				}
-
-				if _, putErr := kv.Put(ctx, kvKey, entry.Value()); putErr != nil {
-					slog.ErrorContext(ctx, "failed to re-put KV entry", "key", kvKey, "error", putErr)
-					failed++
-					continue
-				}
-
-				processed++
 			}
 		}
 
@@ -294,15 +290,51 @@ func reindexType(
 			"failed", failed,
 			"skipped", skipped,
 			"not_found", notFound,
+			"superseded", superseded,
 		)
 
 		page, scrollID, err = nextScrollPage(ctx, httpClient, osURL, scrollID)
 		if err != nil {
-			return processed, failed, skipped, notFound, fmt.Errorf("scroll page: %w", err)
+			return processed, failed, skipped, notFound, superseded, fmt.Errorf("scroll page: %w", err)
 		}
 	}
 
-	return processed, failed, skipped, notFound, nil
+	return processed, failed, skipped, notFound, superseded, nil
+}
+
+type reputResult int
+
+const (
+	reputProcessed reputResult = iota
+	reputNotFound
+	reputSuperseded
+	reputFailed
+)
+
+// reputEntry re-writes the current value of kvKey so the consumer reprocesses it.
+// The write is a compare-and-set on the revision that was read: if a live writer
+// changed or deleted the key in between, the write is rejected and the key is
+// skipped, because that newer write already triggers the consumer with current data.
+func reputEntry(ctx context.Context, kv jetstream.KeyValue, kvKey string) reputResult {
+	entry, err := kv.Get(ctx, kvKey)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			slog.WarnContext(ctx, "key not found in KV bucket", "key", kvKey)
+			return reputNotFound
+		}
+		slog.ErrorContext(ctx, "failed to get KV entry", "key", kvKey, "error", err)
+		return reputFailed
+	}
+
+	if _, err := kv.Update(ctx, kvKey, entry.Value(), entry.Revision()); err != nil {
+		if errors.Is(err, jetstream.ErrKeyExists) {
+			slog.InfoContext(ctx, "skipping: key changed since read; live write wins", "key", kvKey)
+			return reputSuperseded
+		}
+		slog.ErrorContext(ctx, "failed to re-put KV entry", "key", kvKey, "error", err)
+		return reputFailed
+	}
+	return reputProcessed
 }
 
 // resolveParticipantKeys returns the KV key(s) to re-put for a v1_past_meeting_participant hit.

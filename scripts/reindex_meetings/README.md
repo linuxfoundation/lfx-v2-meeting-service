@@ -20,6 +20,8 @@ Run this when indexed meeting data is stale, missing, or incorrect and you need 
 
 By default the script runs in dry-run mode — it logs what it would do without making any changes. Pass `-reindex` to actually re-put the KV entries.
 
+Each re-put is a compare-and-set on the revision the script just read (`kv.Update` with that revision). If the v1 sync or any other writer changes or deletes the key between the read and the write, the script skips the key and does not overwrite the newer value. That newer write already triggers the consumer. Skipped keys are logged and counted as `superseded`, and they do not cause a non-zero exit.
+
 ```sh
 # Dry-run (default): log what would be reindexed
 NATS_URL=nats://localhost:4222 OPENSEARCH_URL=http://localhost:9200 \
