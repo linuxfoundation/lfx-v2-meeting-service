@@ -109,3 +109,19 @@ func (c *Client) DeleteAttendee(ctx context.Context, pastMeetingID, attendeeID s
 		debugFields: []any{"pastMeetingID", pastMeetingID, "attendeeID", attendeeID},
 	})
 }
+
+// GetPastMeetingParticipantIDs retrieves the IDs of the invitees and attendees
+// that belong to a past meeting via the ITX proxy, decoding only the IDs from
+// the full past meeting response.
+func (c *Client) GetPastMeetingParticipantIDs(ctx context.Context, pastMeetingID string) (*itx.PastMeetingParticipantIDs, error) {
+	return doJSONTyped[itx.PastMeetingParticipantIDs](c, ctx, apiRequest{
+		method:          http.MethodGet,
+		path:            "/v2/zoom/past_meetings/%s",
+		pathArgs:        []any{pastMeetingID},
+		accept:          acceptJSON,
+		parseError:      "failed to unmarshal response",
+		debugOp:         "GetPastMeetingParticipantIDs",
+		debugFields:     []any{"pastMeetingID", pastMeetingID},
+		skipResponseLog: true,
+	})
+}

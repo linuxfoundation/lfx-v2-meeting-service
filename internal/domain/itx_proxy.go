@@ -67,6 +67,9 @@ type ITXAttendeeClient interface {
 type ITXPastMeetingParticipantClient interface {
 	ITXInviteeClient
 	ITXAttendeeClient
+	// GetPastMeetingParticipantIDs returns the IDs of the invitees and attendees
+	// that belong to a past meeting, used to bind child IDs to their parent.
+	GetPastMeetingParticipantIDs(ctx context.Context, pastMeetingID string) (*itx.PastMeetingParticipantIDs, error)
 }
 
 // ITXMeetingAttachmentClient defines the interface for ITX meeting attachment operations

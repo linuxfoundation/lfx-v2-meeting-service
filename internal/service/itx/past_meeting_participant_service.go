@@ -148,18 +148,26 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 	// profile and the other times out. Matches CreateParticipant's approach.
 	updater := s.buildRequestingUser(ctx)
 
+	// Every invitee/attendee ID this request touches - whether supplied in the
+	// body or resolved through the (global) participant ID mapping - must belong
+	// to the authorized past meeting before any ITX call is made on it.
+	children, err := s.fetchPastMeetingChildren(ctx, p.PastMeetingID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Surface a failed ITX save as an error instead of silently returning a
 	// successful response that doesn't reflect what was actually persisted.
 	// Abort before the attendee operation if the invitee operation already
 	// failed, mirroring CreateParticipant's sequential-abort pattern - running
 	// the attendee write anyway would persist partial state and encourage a
 	// retry of an already-applied write.
-	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
+	inviteeResp, inviteeExists, inviteeErr := s.handleInviteeOperation(ctx, children, p.PastMeetingID, p.ParticipantID, p.InviteeID, p.IsInvited, inviteeReq, updater)
 	if inviteeErr != nil {
 		return nil, fmt.Errorf("failed to update invitee: %w", inviteeErr)
 	}
 
-	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
+	attendeeResp, attendeeExists, attendeeErr := s.handleAttendeeOperation(ctx, children, p.PastMeetingID, p.ParticipantID, p.AttendeeID, p.IsAttended, attendeeReq, updater)
 	if attendeeErr != nil {
 		return nil, fmt.Errorf("failed to update attendee: %w", attendeeErr)
 	}
@@ -169,6 +177,7 @@ func (s *PastMeetingParticipantService) UpdateParticipant(
 
 func (s *PastMeetingParticipantService) handleInviteeOperation(
 	ctx context.Context,
+	children *pastMeetingChildren,
 	pastMeetingID, participantID, inviteeID string,
 	isInvited *bool,
 	inviteeReq *itx.UpdateInviteeRequest,
@@ -182,15 +191,29 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 	var inviteeExists bool
 
 	if inviteeID != "" {
-		inviteeExists = s.checkInviteeExistsFromInviteeID(ctx, inviteeID)
-		if inviteeExists {
-			actualInviteeID = inviteeID
+		if !children.hasInvitee(inviteeID) {
+			slog.WarnContext(ctx, "invitee does not belong to the past meeting; rejecting",
+				"participant_id", participantID,
+				"invitee_id", inviteeID,
+				"past_meeting_id", pastMeetingID)
+			return nil, false, domain.NewNotFoundError("invitee not found in past meeting")
 		}
+		actualInviteeID = inviteeID
+		inviteeExists = true
 	} else {
 		var err error
 		actualInviteeID, inviteeExists, err = s.checkInviteeExists(ctx, participantID)
 		if err != nil {
 			return nil, false, err
+		}
+		if inviteeExists && !children.hasInvitee(actualInviteeID) {
+			// The mapping is global; an invitee of another past meeting is not
+			// an invitee of this one.
+			slog.DebugContext(ctx, "mapped invitee does not belong to the past meeting; treating as absent",
+				"participant_id", participantID,
+				"invitee_id", actualInviteeID,
+				"past_meeting_id", pastMeetingID)
+			inviteeExists = false
 		}
 	}
 
@@ -224,6 +247,7 @@ func (s *PastMeetingParticipantService) handleInviteeOperation(
 
 func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	ctx context.Context,
+	children *pastMeetingChildren,
 	pastMeetingID, participantID, attendeeID string,
 	isAttended *bool,
 	attendeeReq *itx.UpdateAttendeeRequest,
@@ -240,19 +264,29 @@ func (s *PastMeetingParticipantService) handleAttendeeOperation(
 	var attendeeExists bool
 
 	if attendeeID != "" {
-		var err error
-		attendeeExists, err = s.checkAttendeeExistsFromAttendeeID(ctx, attendeeID)
-		if err != nil {
-			return nil, false, err
+		if !children.hasAttendee(attendeeID) {
+			slog.WarnContext(ctx, "attendee does not belong to the past meeting; rejecting",
+				"participant_id", participantID,
+				"attendee_id", attendeeID,
+				"past_meeting_id", pastMeetingID)
+			return nil, false, domain.NewNotFoundError("attendee not found in past meeting")
 		}
-		if attendeeExists {
-			actualAttendeeID = attendeeID
-		}
+		actualAttendeeID = attendeeID
+		attendeeExists = true
 	} else {
 		var err error
 		actualAttendeeID, attendeeExists, err = s.checkAttendeeExists(ctx, participantID)
 		if err != nil {
 			return nil, false, err
+		}
+		if attendeeExists && !children.hasAttendee(actualAttendeeID) {
+			// The mapping is global; an attendee of another past meeting is not
+			// an attendee of this one.
+			slog.DebugContext(ctx, "mapped attendee does not belong to the past meeting; treating as absent",
+				"participant_id", participantID,
+				"attendee_id", actualAttendeeID,
+				"past_meeting_id", pastMeetingID)
+			attendeeExists = false
 		}
 	}
 
@@ -346,42 +380,53 @@ func (s *PastMeetingParticipantService) checkAttendeeExists(ctx context.Context,
 	return attendeeID, true, nil
 }
 
-func (s *PastMeetingParticipantService) checkInviteeExistsFromInviteeID(ctx context.Context, inviteeID string) bool {
-	inviteeID, err := s.idMapper.MapInviteeIDToParticipantV2(ctx, inviteeID)
-	exists := inviteeID != "" && err == nil
-	slog.DebugContext(ctx, "checked invitee existence from invitee ID",
-		"invitee_id", inviteeID,
-		"exists", exists,
-		logging.ErrKey, err)
-	return exists
+// pastMeetingChildren holds the IDs of the invitees and attendees that belong
+// to one past meeting, as reported by ITX.
+type pastMeetingChildren struct {
+	invitees  map[string]struct{}
+	attendees map[string]struct{}
 }
 
-// checkAttendeeExistsFromAttendeeID checks if an attendee exists given an
-// already-known attendee ID. See checkInviteeExists for the not-found vs
-// mapping-error distinction: a non-nil error here means the reverse-mapping
-// lookup itself failed (e.g. NATS timeout/unavailability), which must be
-// propagated rather than collapsed to "does not exist" - the latter would
-// let a reconciliation-only update (nil isAttended) silently no-op instead
-// of surfacing the outage.
-func (s *PastMeetingParticipantService) checkAttendeeExistsFromAttendeeID(ctx context.Context, attendeeID string) (bool, error) {
-	mappedID, err := s.idMapper.MapAttendeeIDToParticipantV2(ctx, attendeeID)
+func (c *pastMeetingChildren) hasInvitee(id string) bool {
+	_, ok := c.invitees[id]
+	return ok
+}
+
+func (c *pastMeetingChildren) hasAttendee(id string) bool {
+	_, ok := c.attendees[id]
+	return ok
+}
+
+// fetchPastMeetingChildren loads the invitee and attendee IDs of a past meeting.
+// Heimdall authorizes participant writes on the past meeting only, so this is
+// what binds a caller-chosen child ID to that authorization. A fetch error is
+// returned rather than skipping the check.
+func (s *PastMeetingParticipantService) fetchPastMeetingChildren(ctx context.Context, pastMeetingID string) (*pastMeetingChildren, error) {
+	ids, err := s.participantClient.GetPastMeetingParticipantIDs(ctx, pastMeetingID)
 	if err != nil {
-		if domain.GetErrorType(err) == domain.ErrorTypeValidation {
-			slog.DebugContext(ctx, "attendee does not exist (reverse mapping not found)",
-				"attendee_id", attendeeID,
-				logging.ErrKey, err)
-			return false, nil
-		}
-		slog.ErrorContext(ctx, "failed to check attendee existence via reverse ID mapping",
-			"attendee_id", attendeeID,
+		slog.ErrorContext(ctx, "failed to fetch past meeting participants",
+			"past_meeting_id", pastMeetingID,
 			logging.ErrKey, err)
-		return false, err
+		return nil, err
 	}
-	exists := mappedID != ""
-	slog.DebugContext(ctx, "checked attendee existence from attendee ID",
-		"attendee_id", attendeeID,
-		"exists", exists)
-	return exists, nil
+	children := &pastMeetingChildren{
+		invitees:  make(map[string]struct{}),
+		attendees: make(map[string]struct{}),
+	}
+	if ids == nil {
+		return children, nil
+	}
+	for _, invitee := range ids.Invitees {
+		if invitee.UUID != "" {
+			children.invitees[invitee.UUID] = struct{}{}
+		}
+	}
+	for _, attendee := range ids.Attendees {
+		if attendee.ID != "" {
+			children.attendees[attendee.ID] = struct{}{}
+		}
+	}
+	return children, nil
 }
 
 // deleteInvitee deletes invitee record
@@ -658,46 +703,62 @@ func synthesizeAttendeeResponse(attendeeID string, updateReq *itx.UpdateAttendee
 }
 
 // DeleteParticipant deletes a participant
-// Attempts to delete both invitee and attendee records
-// Returns an error if either deletion fails
+// Deletes the invitee and/or attendee record that the participant ID resolves
+// to, but only those that belong to the past meeting; returns not-found when
+// neither does. Returns an error if either deletion fails.
 func (s *PastMeetingParticipantService) DeleteParticipant(
 	ctx context.Context,
 	pastMeetingID, participantID string,
 ) error {
-	// Try to map V2 participant ID to invitee ID
-	inviteeID, inviteeMappingErr := s.idMapper.MapParticipantV2ToInviteeID(ctx, participantID)
+	children, err := s.fetchPastMeetingChildren(ctx, pastMeetingID)
+	if err != nil {
+		return err
+	}
 
-	// Try to delete as invitee
+	// Try to map V2 participant ID to invitee ID; the participant ID may also be
+	// the invitee ID itself
 	idToUseInvitee := participantID
-	if inviteeMappingErr == nil && inviteeID != "" {
+	if inviteeID, mappingErr := s.idMapper.MapParticipantV2ToInviteeID(ctx, participantID); mappingErr == nil && inviteeID != "" {
 		idToUseInvitee = inviteeID
 	}
 
-	inviteeErr := s.participantClient.DeleteInvitee(ctx, pastMeetingID, idToUseInvitee)
-	if inviteeErr != nil {
-		slog.WarnContext(ctx, "failed to delete invitee",
-			"participant_id", participantID,
-			"invitee_id", idToUseInvitee,
-			"past_meeting_id", pastMeetingID,
-			logging.ErrKey, inviteeErr)
-	}
-
-	// Try to map V2 participant ID to attendee ID
-	attendeeID, attendeeMappingErr := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID)
-
-	// Try to delete as attendee
+	// Try to map V2 participant ID to attendee ID; the participant ID may also be
+	// the attendee ID itself
 	idToUseAttendee := participantID
-	if attendeeMappingErr == nil && attendeeID != "" {
+	if attendeeID, mappingErr := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID); mappingErr == nil && attendeeID != "" {
 		idToUseAttendee = attendeeID
 	}
 
-	attendeeErr := s.participantClient.DeleteAttendee(ctx, pastMeetingID, idToUseAttendee)
-	if attendeeErr != nil {
-		slog.WarnContext(ctx, "failed to delete attendee",
+	deleteInvitee := children.hasInvitee(idToUseInvitee)
+	deleteAttendee := children.hasAttendee(idToUseAttendee)
+	if !deleteInvitee && !deleteAttendee {
+		slog.WarnContext(ctx, "participant does not belong to the past meeting; rejecting delete",
 			"participant_id", participantID,
-			"attendee_id", idToUseAttendee,
-			"past_meeting_id", pastMeetingID,
-			logging.ErrKey, attendeeErr)
+			"past_meeting_id", pastMeetingID)
+		return domain.NewNotFoundError("participant not found in past meeting")
+	}
+
+	var inviteeErr, attendeeErr error
+	if deleteInvitee {
+		inviteeErr = s.participantClient.DeleteInvitee(ctx, pastMeetingID, idToUseInvitee)
+		if inviteeErr != nil {
+			slog.WarnContext(ctx, "failed to delete invitee",
+				"participant_id", participantID,
+				"invitee_id", idToUseInvitee,
+				"past_meeting_id", pastMeetingID,
+				logging.ErrKey, inviteeErr)
+		}
+	}
+
+	if deleteAttendee {
+		attendeeErr = s.participantClient.DeleteAttendee(ctx, pastMeetingID, idToUseAttendee)
+		if attendeeErr != nil {
+			slog.WarnContext(ctx, "failed to delete attendee",
+				"participant_id", participantID,
+				"attendee_id", idToUseAttendee,
+				"past_meeting_id", pastMeetingID,
+				logging.ErrKey, attendeeErr)
+		}
 	}
 
 	// Return error if either deletion failed

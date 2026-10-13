@@ -6,6 +6,7 @@ package itx
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,45 @@ type fakeParticipantClient struct {
 	inviteeUpdateReq  *itx.UpdateInviteeRequest
 	attendeeCreateReq *itx.CreateAttendeeRequest
 	attendeeUpdateReq *itx.UpdateAttendeeRequest
+
+	// children is what GetPastMeetingParticipantIDs reports; nil means the past
+	// meeting owns invitee and attendee "p-1", the IDs participantIDMapper
+	// resolves participant "p-1" to. childrenErr fails the lookup instead.
+	children    *itx.PastMeetingParticipantIDs
+	childrenErr error
+
+	// Child IDs passed to the ITX calls that target an existing record.
+	inviteeUpdates  []string
+	inviteeDeletes  []string
+	attendeeGets    []string
+	attendeeUpdates []string
+	attendeeDeletes []string
+}
+
+func (f *fakeParticipantClient) GetPastMeetingParticipantIDs(_ context.Context, _ string) (*itx.PastMeetingParticipantIDs, error) {
+	if f.childrenErr != nil {
+		return nil, f.childrenErr
+	}
+	if f.children != nil {
+		return f.children, nil
+	}
+	return pastMeetingParticipantIDs([]string{"p-1"}, []string{"p-1"}), nil
+}
+
+// pastMeetingParticipantIDs builds the ITX past meeting child-ID view.
+func pastMeetingParticipantIDs(inviteeIDs, attendeeIDs []string) *itx.PastMeetingParticipantIDs {
+	ids := &itx.PastMeetingParticipantIDs{}
+	for _, id := range inviteeIDs {
+		ids.Invitees = append(ids.Invitees, struct {
+			UUID string `json:"uuid"`
+		}{UUID: id})
+	}
+	for _, id := range attendeeIDs {
+		ids.Attendees = append(ids.Attendees, struct {
+			ID string `json:"id"`
+		}{ID: id})
+	}
+	return ids
 }
 
 func (f *fakeParticipantClient) CreateInvitee(_ context.Context, _ string, req *itx.CreateInviteeRequest) (*itx.InviteeResponse, error) {
@@ -33,26 +73,35 @@ func (f *fakeParticipantClient) CreateInvitee(_ context.Context, _ string, req *
 	return &itx.InviteeResponse{UUID: "invitee-1"}, nil
 }
 
-func (f *fakeParticipantClient) UpdateInvitee(_ context.Context, _, _ string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
+func (f *fakeParticipantClient) UpdateInvitee(_ context.Context, _, inviteeID string, req *itx.UpdateInviteeRequest) (*itx.InviteeResponse, error) {
+	f.inviteeUpdates = append(f.inviteeUpdates, inviteeID)
 	f.inviteeUpdateReq = req
 	return &itx.InviteeResponse{UUID: "invitee-1"}, nil
 }
 
-func (f *fakeParticipantClient) DeleteInvitee(_ context.Context, _, _ string) error { return nil }
+func (f *fakeParticipantClient) DeleteInvitee(_ context.Context, _, inviteeID string) error {
+	f.inviteeDeletes = append(f.inviteeDeletes, inviteeID)
+	return nil
+}
 
 func (f *fakeParticipantClient) CreateAttendee(_ context.Context, _ string, req *itx.CreateAttendeeRequest) (*itx.AttendeeResponse, error) {
 	f.attendeeCreateReq = req
 	return &itx.AttendeeResponse{ID: "attendee-1"}, nil
 }
 
-func (f *fakeParticipantClient) UpdateAttendee(_ context.Context, _, _ string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+func (f *fakeParticipantClient) UpdateAttendee(_ context.Context, _, attendeeID string, req *itx.UpdateAttendeeRequest) (*itx.AttendeeResponse, error) {
+	f.attendeeUpdates = append(f.attendeeUpdates, attendeeID)
 	f.attendeeUpdateReq = req
 	return &itx.AttendeeResponse{ID: "attendee-1"}, nil
 }
 
-func (f *fakeParticipantClient) DeleteAttendee(_ context.Context, _, _ string) error { return nil }
+func (f *fakeParticipantClient) DeleteAttendee(_ context.Context, _, attendeeID string) error {
+	f.attendeeDeletes = append(f.attendeeDeletes, attendeeID)
+	return nil
+}
 
-func (f *fakeParticipantClient) GetAttendee(_ context.Context, _, _ string) (*itx.AttendeeResponse, error) {
+func (f *fakeParticipantClient) GetAttendee(_ context.Context, _, attendeeID string) (*itx.AttendeeResponse, error) {
+	f.attendeeGets = append(f.attendeeGets, attendeeID)
 	return nil, errors.New("fakeParticipantClient: GetAttendee not configured")
 }
 
@@ -675,48 +724,188 @@ func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeMappi
 	assert.Nil(t, client.attendeeUpdateReq, "must not update off a mapping error")
 }
 
-// reverseMappingErrorIDMapper simulates a transient failure on the reverse
-// (attendee ID -> participant ID) lookup used when the caller already knows
-// the attendee ID.
-type reverseMappingErrorIDMapper struct {
-	noOpIDMapper
+func TestPastMeetingParticipantService_UpdateParticipant_BindsChildrenToPastMeeting(t *testing.T) {
+	// Heimdall authorizes on the path past meeting only, so an invitee or
+	// attendee ID - from the body or from the global participant mapping - that
+	// belongs to another past meeting must never reach an ITX child call.
+	trueVal, falseVal := true, false
+
+	newSvc := func(client *fakeParticipantClient, mapper domain.IDMapper) *PastMeetingParticipantService {
+		return NewPastMeetingParticipantService(client, mapper, &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "lee"}})
+	}
+	assertNoChildCalls := func(t *testing.T, client *fakeParticipantClient) {
+		t.Helper()
+		assert.Empty(t, client.inviteeUpdates)
+		assert.Empty(t, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeGets)
+		assert.Empty(t, client.attendeeUpdates)
+		assert.Empty(t, client.attendeeDeletes)
+		assert.Nil(t, client.inviteeCreateReq)
+		assert.Nil(t, client.attendeeCreateReq)
+	}
+
+	for _, isInvited := range []bool{true, false} {
+		t.Run(fmt.Sprintf("foreign body invitee_id is not found (is_invited=%t)", isInvited), func(t *testing.T) {
+			client := &fakeParticipantClient{}
+			_, err := newSvc(client, participantIDMapper{}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+				&models.UpdatePastMeetingParticipant{
+					PastMeetingID: "pm-1",
+					ParticipantID: "p-1",
+					InviteeID:     "foreign-invitee",
+					IsInvited:     &isInvited,
+				},
+				&itx.UpdateInviteeRequest{FirstName: "Lee", LastName: "Test"},
+				nil,
+			)
+			require.Error(t, err)
+			assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+			assertNoChildCalls(t, client)
+		})
+	}
+
+	for _, isAttended := range []*bool{&trueVal, &falseVal, nil} {
+		label := "nil"
+		if isAttended != nil {
+			label = fmt.Sprint(*isAttended)
+		}
+		t.Run("foreign body attendee_id is not found (is_attended="+label+")", func(t *testing.T) {
+			client := &fakeParticipantClient{}
+			_, err := newSvc(client, participantIDMapper{}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+				&models.UpdatePastMeetingParticipant{
+					PastMeetingID: "pm-1",
+					ParticipantID: "p-1",
+					AttendeeID:    "foreign-attendee",
+					IsAttended:    isAttended,
+				},
+				nil,
+				&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
+			)
+			require.Error(t, err)
+			assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+			assertNoChildCalls(t, client)
+		})
+	}
+
+	t.Run("member body ids are updated", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs([]string{"inv-1"}, []string{"att-1", "att-2"})}
+		_, err := newSvc(client, participantIDMapper{}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+			&models.UpdatePastMeetingParticipant{
+				PastMeetingID: "pm-1",
+				ParticipantID: "p-1",
+				InviteeID:     "inv-1",
+				AttendeeID:    "att-2",
+				IsInvited:     &trueVal,
+				IsAttended:    &trueVal,
+			},
+			&itx.UpdateInviteeRequest{FirstName: "Lee", LastName: "Test"},
+			&itx.UpdateAttendeeRequest{Org: "Test Org"},
+		)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"inv-1"}, client.inviteeUpdates)
+		assert.Equal(t, []string{"att-2"}, client.attendeeUpdates)
+	})
+
+	t.Run("mapped children of another past meeting are not deleted", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs(nil, nil)}
+		_, err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+			&models.UpdatePastMeetingParticipant{
+				PastMeetingID: "pm-1",
+				ParticipantID: "p-1",
+				IsInvited:     &falseVal,
+				IsAttended:    &falseVal,
+			},
+			nil,
+			nil,
+		)
+		require.NoError(t, err)
+		assertNoChildCalls(t, client)
+	})
+
+	t.Run("mapped children of another past meeting are not updated", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs(nil, nil)}
+		_, err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+			&models.UpdatePastMeetingParticipant{
+				PastMeetingID: "pm-1",
+				ParticipantID: "p-1",
+				IsInvited:     &trueVal,
+				IsAttended:    &trueVal,
+			},
+			&itx.UpdateInviteeRequest{FirstName: "Lee", LastName: "Test"},
+			&itx.UpdateAttendeeRequest{Org: "Test Org"},
+		)
+		require.NoError(t, err)
+		assert.Empty(t, client.inviteeUpdates)
+		assert.Empty(t, client.attendeeGets)
+		assert.Empty(t, client.attendeeUpdates)
+		// Treated as absent from this past meeting, so the records are created
+		// under the authorized past meeting instead.
+		assert.NotNil(t, client.inviteeCreateReq)
+		assert.NotNil(t, client.attendeeCreateReq)
+	})
+
+	t.Run("past meeting lookup failure stops all writes", func(t *testing.T) {
+		client := &fakeParticipantClient{childrenErr: domain.NewUnavailableError("itx unavailable")}
+		_, err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).UpdateParticipant(ctxWithPrincipal("lee", ""),
+			&models.UpdatePastMeetingParticipant{
+				PastMeetingID: "pm-1",
+				ParticipantID: "p-1",
+				IsInvited:     &falseVal,
+				IsAttended:    &falseVal,
+			},
+			nil,
+			nil,
+		)
+		require.Error(t, err)
+		assertNoChildCalls(t, client)
+	})
 }
 
-func (m reverseMappingErrorIDMapper) MapAttendeeIDToParticipantV2(_ context.Context, _ string) (string, error) {
-	return "", domain.NewUnavailableError("v1-sync-helper reverse lookup timed out")
-}
+func TestPastMeetingParticipantService_DeleteParticipant(t *testing.T) {
+	newSvc := func(client *fakeParticipantClient, mapper domain.IDMapper) *PastMeetingParticipantService {
+		return NewPastMeetingParticipantService(client, mapper, nil)
+	}
 
-func TestPastMeetingParticipantService_UpdateParticipant_PropagatesAttendeeReverseMappingError(t *testing.T) {
-	// A reconciliation-only update (isAttended == nil) supplying an already-known
-	// attendee ID must not silently succeed when the reverse ID-mapper lookup
-	// fails transiently - collapsing that failure to "does not exist" would drop
-	// the write entirely since neither the create nor delete branch fires when
-	// isAttended is nil.
+	t.Run("deletes mapped invitee and attendee of the past meeting", func(t *testing.T) {
+		client := &fakeParticipantClient{}
+		err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).DeleteParticipant(context.Background(), "pm-1", "p-1")
+		require.NoError(t, err)
+		assert.Equal(t, []string{"p-1"}, client.inviteeDeletes)
+		assert.Equal(t, []string{"p-1"}, client.attendeeDeletes)
+	})
 
-	client := &fakeParticipantClient{}
-	reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "kate"}}
-	svc := NewPastMeetingParticipantService(
-		client,
-		reverseMappingErrorIDMapper{},
-		reader,
-	)
+	t.Run("deletes only the kind the past meeting has", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs([]string{"inv-1"}, nil)}
+		err := newSvc(client, participantIDMapper{}).DeleteParticipant(context.Background(), "pm-1", "inv-1")
+		require.NoError(t, err)
+		assert.Equal(t, []string{"inv-1"}, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeDeletes)
+	})
 
-	trueVal := true
-	resp, err := svc.UpdateParticipant(
-		ctxWithPrincipal("kate", ""),
-		&models.UpdatePastMeetingParticipant{
-			PastMeetingID: "pm-1",
-			ParticipantID: "p-1",
-			AttendeeID:    "att-1",
-		},
-		nil,
-		&itx.UpdateAttendeeRequest{IsAIReconciled: &trueVal},
-	)
+	t.Run("raw id of another past meeting is not found", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs([]string{"inv-1"}, []string{"att-1"})}
+		err := newSvc(client, participantIDMapper{}).DeleteParticipant(context.Background(), "pm-1", "foreign-child")
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+		assert.Empty(t, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeDeletes)
+	})
 
-	require.Error(t, err)
-	assert.Nil(t, resp)
-	assert.Nil(t, client.attendeeCreateReq, "must not create an attendee off a reverse mapping error")
-	assert.Nil(t, client.attendeeUpdateReq, "must not update off a reverse mapping error")
+	t.Run("mapped children of another past meeting are not found", func(t *testing.T) {
+		client := &fakeParticipantClient{children: pastMeetingParticipantIDs(nil, nil)}
+		err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).DeleteParticipant(context.Background(), "pm-1", "p-1")
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+		assert.Empty(t, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeDeletes)
+	})
+
+	t.Run("past meeting lookup failure stops all deletes", func(t *testing.T) {
+		client := &fakeParticipantClient{childrenErr: domain.NewUnavailableError("itx unavailable")}
+		err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).DeleteParticipant(context.Background(), "pm-1", "p-1")
+		require.Error(t, err)
+		assert.Empty(t, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeDeletes)
+	})
 }
 
 func TestMergeParticipantResponses_OmitsAttendeeFieldsWhenInviteeOnly(t *testing.T) {

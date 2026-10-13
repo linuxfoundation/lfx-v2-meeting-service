@@ -159,3 +159,15 @@ type UpdateAttendeeRequest struct {
 	// instead of preserving stale data.
 	UpdatedBy *User `json:"updated_by,omitempty"`
 }
+
+// PastMeetingParticipantIDs is the narrow, IDs-only view of a full ITX past
+// meeting GET (no basic=true), which embeds the meeting's invitee and attendee
+// records. Only the IDs are decoded so the records' personal data is never held.
+type PastMeetingParticipantIDs struct {
+	Invitees []struct {
+		UUID string `json:"uuid"`
+	} `json:"invitees"`
+	Attendees []struct {
+		ID string `json:"id"`
+	} `json:"attendees"`
+}
