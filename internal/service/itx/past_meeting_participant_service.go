@@ -715,18 +715,16 @@ func (s *PastMeetingParticipantService) DeleteParticipant(
 		return err
 	}
 
-	// Try to map V2 participant ID to invitee ID; the participant ID may also be
-	// the invitee ID itself
-	idToUseInvitee := participantID
-	if inviteeID, mappingErr := s.idMapper.MapParticipantV2ToInviteeID(ctx, participantID); mappingErr == nil && inviteeID != "" {
-		idToUseInvitee = inviteeID
+	// Map the V2 participant ID to invitee and attendee IDs; with no mapping the
+	// participant ID may be the invitee or attendee ID itself. A failed lookup
+	// is returned rather than reported as not found.
+	idToUseInvitee, _, err := s.checkInviteeExists(ctx, participantID)
+	if err != nil {
+		return err
 	}
-
-	// Try to map V2 participant ID to attendee ID; the participant ID may also be
-	// the attendee ID itself
-	idToUseAttendee := participantID
-	if attendeeID, mappingErr := s.idMapper.MapParticipantV2ToAttendeeID(ctx, participantID); mappingErr == nil && attendeeID != "" {
-		idToUseAttendee = attendeeID
+	idToUseAttendee, _, err := s.checkAttendeeExists(ctx, participantID)
+	if err != nil {
+		return err
 	}
 
 	deleteInvitee := children.hasInvitee(idToUseInvitee)

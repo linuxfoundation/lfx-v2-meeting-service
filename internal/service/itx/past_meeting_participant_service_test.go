@@ -899,6 +899,15 @@ func TestPastMeetingParticipantService_DeleteParticipant(t *testing.T) {
 		assert.Empty(t, client.attendeeDeletes)
 	})
 
+	t.Run("mapping failure stops all deletes", func(t *testing.T) {
+		client := &fakeParticipantClient{}
+		err := newSvc(client, mappingErrorIDMapper{}).DeleteParticipant(context.Background(), "pm-1", "p-1")
+		require.Error(t, err)
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.Empty(t, client.inviteeDeletes)
+		assert.Empty(t, client.attendeeDeletes)
+	})
+
 	t.Run("past meeting lookup failure stops all deletes", func(t *testing.T) {
 		client := &fakeParticipantClient{childrenErr: domain.NewUnavailableError("itx unavailable")}
 		err := newSvc(client, participantIDMapper{inviteeExists: true, attendeeExists: true}).DeleteParticipant(context.Background(), "pm-1", "p-1")

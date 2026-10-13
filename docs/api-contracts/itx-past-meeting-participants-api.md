@@ -278,6 +278,8 @@ Response body is identical to Create Past Meeting Participant response.
 
 Updates invitee and/or attendee records through the ITX API based on the provided fields. `POST` (create) bodies include a proxy-added `created_by` field; `PUT` (update) bodies include a proxy-added `updated_by` field. See [Audit stamping](#audit-stamping).
 
+**Method (Get Past Meeting)**: `GET /v2/zoom/past-meetings/{past_meeting_id}`: used internally to load the invitee and attendee IDs of the past meeting; only the IDs are read.
+
 **Method (Create Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
 
 **Method (Update Invitee)**: `PUT /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
