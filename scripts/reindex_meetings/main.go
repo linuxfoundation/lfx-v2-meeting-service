@@ -327,7 +327,9 @@ func reputEntry(ctx context.Context, kv jetstream.KeyValue, kvKey string) reputR
 	}
 
 	if _, err := kv.Update(ctx, kvKey, entry.Value(), entry.Revision()); err != nil {
-		if errors.Is(err, jetstream.ErrKeyExists) {
+		// Update reports a revision conflict as ErrKeyRevisionMismatch, which ErrKeyExists
+		// does not match on replicated streams.
+		if errors.Is(err, jetstream.ErrKeyRevisionMismatch) || errors.Is(err, jetstream.ErrKeyExists) {
 			slog.InfoContext(ctx, "skipping: key changed since read; live write wins", "key", kvKey)
 			return reputSuperseded
 		}

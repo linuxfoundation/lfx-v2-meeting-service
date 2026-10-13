@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -49,7 +50,8 @@ func (f *fakeKV) Update(_ context.Context, _ string, value []byte, revision uint
 		return 0, f.updateErr
 	}
 	if !f.exists || revision != f.revision {
-		return 0, jetstream.ErrKeyExists
+		// Shape returned by a replicated stream: wraps ErrKeyRevisionMismatch, not ErrKeyExists.
+		return 0, fmt.Errorf("%w: %w", errors.New("wrong last sequence"), jetstream.ErrKeyRevisionMismatch)
 	}
 	f.updates++
 	f.value = value
