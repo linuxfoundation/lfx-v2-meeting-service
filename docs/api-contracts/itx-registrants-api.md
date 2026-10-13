@@ -599,6 +599,8 @@ Authorization: Bearer <jwt_token>
 
 **Response**: `204 No Content`
 
+**Committee and other sourced registrants**: the delete sent to ITX is flagged `self_removal: true`, with `updated_by` set to the caller's username and email (the same ones used for the ownership check). ITX then also removes a registrant who was added through a committee, which an admin delete cannot, and records an exclusion so committee syncs do not add the user back to that meeting. They are invited again only after they leave the committee and rejoin it. ITX checks `updated_by` against the registrant itself and rejects a mismatch with `403`. The admin `Delete Registrant` endpoint never sends the flag.
+
 **Error Responses**:
 
 - `400 Bad Request` — M2M client token used; self-unregistration requires a user token

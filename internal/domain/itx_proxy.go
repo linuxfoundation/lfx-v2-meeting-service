@@ -29,7 +29,7 @@ type ITXRegistrantClient interface {
 	CreateRegistrant(ctx context.Context, meetingID string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error)
 	GetRegistrant(ctx context.Context, meetingID, registrantID string) (*itx.ZoomMeetingRegistrant, error)
 	UpdateRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.ZoomMeetingRegistrant) error
-	DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error
+	DeleteRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.DeleteRegistrantRequest) error
 	GetRegistrantICS(ctx context.Context, meetingID, registrantID string) (*itx.RegistrantICS, error)
 	ResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error
 }

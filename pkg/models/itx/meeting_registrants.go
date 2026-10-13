@@ -55,3 +55,12 @@ type ZoomMeetingRegistrant struct {
 type RegistrantICS struct {
 	Content []byte // ICS file content
 }
+
+// DeleteRegistrantRequest represents the optional body sent when deleting a meeting registrant.
+// It is omitted for an admin removal. A registrant removing themselves sets SelfRemoval, which
+// lets ITX delete a committee registrant and record an exclusion so committee syncs do not add
+// them back. ITX only honors it when UpdatedBy identifies the registrant (username or email).
+type DeleteRegistrantRequest struct {
+	UpdatedBy   *User `json:"updated_by,omitempty"`   // User removing the registrant (read-only, set by API)
+	SelfRemoval bool  `json:"self_removal,omitempty"` // True when the registrant is removing themselves
+}
