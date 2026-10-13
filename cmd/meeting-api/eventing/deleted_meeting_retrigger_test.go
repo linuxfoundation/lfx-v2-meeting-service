@@ -16,15 +16,18 @@ import (
 )
 
 // memKV is a map-backed jetstream.KeyValue covering the Get/Put/Delete calls the
-// meeting handlers make. getErrs injects a Get error for a specific key.
+// meeting handlers make. getErrs injects a Get error for a specific key; a value in
+// arriving is reported missing on the first Get and present from then on, simulating a
+// record written concurrently by another consumer.
 type memKV struct {
 	jetstream.KeyValue
-	data    map[string][]byte
-	getErrs map[string]error
+	data     map[string][]byte
+	getErrs  map[string]error
+	arriving map[string][]byte
 }
 
 func newMemKV() *memKV {
-	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}}
+	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}, arriving: map[string][]byte{}}
 }
 
 func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
@@ -33,6 +36,10 @@ func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, err
 	}
 	v, ok := k.data[key]
 	if !ok {
+		if pending, ok := k.arriving[key]; ok {
+			k.data[key] = pending
+			delete(k.arriving, key)
+		}
 		return nil, jetstream.ErrKeyNotFound
 	}
 	return mockKeyValueEntry{key: key, value: v}, nil
@@ -223,6 +230,41 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 		assert.Contains(t, string(mappings.data[committeesKey]), "map-1")
 	})
 
+	t.Run("non-structural parent decode error retries without storing the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[meetingKey] = mustMsgpackKV(t, "not a map")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.True(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("structurally corrupt parent is skipped without retry", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[meetingKey] = buildMapWrappedNestedFixarrays(msgpackMaxNestingDepth + 100)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("meeting arriving after the parent check is re-indexed with the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		objects := h.v1ObjectsKV.(*memKV)
+		objects.arriving[meetingKey] = objects.data[meetingKey]
+		delete(objects.data, meetingKey)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Equal(t, 1, pub.meetingEvents)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
+	})
+
 	t.Run("restore keeps committee links that arrive before the meeting put", func(t *testing.T) {
 		pub, mappings, h := setup(t, false, true)
 
@@ -392,6 +434,41 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 		assert.False(t, retry)
 		assert.Zero(t, pub.pastMeetingEvents)
 		assert.Contains(t, string(mappings.data[committeesKey]), "map-1")
+	})
+
+	t.Run("non-structural parent decode error retries without storing the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[pastMeetingKey] = mustMsgpackKV(t, "not a map")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.True(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("structurally corrupt parent is skipped without retry", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[pastMeetingKey] = buildMapWrappedNestedFixarrays(msgpackMaxNestingDepth + 100)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
+		assert.NotContains(t, mappings.data, committeesKey)
+	})
+
+	t.Run("past meeting arriving after the parent check is re-indexed with the mapping", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		objects := h.v1ObjectsKV.(*memKV)
+		objects.arriving[pastMeetingKey] = objects.data[pastMeetingKey]
+		delete(objects.data, pastMeetingKey)
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Equal(t, 1, pub.pastMeetingEvents)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore keeps committee links that arrive before the past meeting put", func(t *testing.T) {

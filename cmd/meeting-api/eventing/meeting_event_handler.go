@@ -755,9 +755,10 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 		return isTransientError(err)
 	}
 
-	// Re-trigger meeting indexing; a meeting not synced yet picks up the stored mappings
-	// when its own record arrives.
-	if parent == parentLive && h.retriggerMeetingIndexing(ctx, meetingID) {
+	// Re-trigger meeting indexing. This runs even when the parent was absent above: it may
+	// have been indexed since, and the retrigger re-reads it and skips missing or deleted
+	// meetings.
+	if h.retriggerMeetingIndexing(ctx, meetingID) {
 		return true
 	}
 

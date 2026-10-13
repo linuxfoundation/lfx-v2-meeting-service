@@ -143,8 +143,13 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 	}
 	data, err := decodeData(entry.Value())
 	if err != nil {
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode parent record", "parent_key", objectKey)
-		return parentGone, nil, nil
+		// Structural corruption is permanent; any other decode failure is retried, as with
+		// the other parent lookups (see kv_helpers.go).
+		if errors.Is(err, errMsgpackStructural) {
+			h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure for parent record, skipping", "parent_key", objectKey)
+			return parentGone, nil, nil
+		}
+		return parentAbsent, nil, fmt.Errorf("failed to decode parent record: %w", err)
 	}
 	if _, deleted := softDeletedAt(data); deleted {
 		return parentGone, nil, nil
