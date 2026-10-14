@@ -92,12 +92,13 @@ func (h *EventHandlers) isTombstoned(ctx context.Context, mappingKey string) boo
 }
 
 // tombstoneState reports whether mappingKey holds a tombstone marker. Unlike isTombstoned
-// it fails closed: a missing key is not tombstoned, but any other Get error is returned so
-// the caller can retry instead of treating the resource as live.
+// it fails closed: a key that does not or cannot exist (isKVAbsenceError) is not
+// tombstoned, but any other Get error is returned so the caller can retry instead of
+// treating the resource as live.
 func (h *EventHandlers) tombstoneState(ctx context.Context, mappingKey string) (bool, error) {
 	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
+		if isKVAbsenceError(err) {
 			return false, nil
 		}
 		return false, err

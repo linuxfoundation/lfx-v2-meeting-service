@@ -323,6 +323,17 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
+	t.Run("invalid tombstone key is treated as absent, not retried", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.idMapper = unmappedProjectIDMapper{}
+		mappings.getErrs[liveMarkerKey] = jetstream.ErrInvalidKey
+
+		retry := handleKVPut(context.Background(), meetingKey, meetingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+	})
+
 	t.Run("restore of a live record still re-indexes a tombstoned meeting", func(t *testing.T) {
 		pub, mappings, h := setup(t, false, true)
 
@@ -569,6 +580,17 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 
 		assert.True(t, retry)
 		assert.Contains(t, objects.gets, "itx-zoom-past-meetings-recordings."+pastMeetingID)
+	})
+
+	t.Run("invalid tombstone key is treated as absent, not retried", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.idMapper = unmappedProjectIDMapper{}
+		mappings.getErrs[liveMarkerKey] = jetstream.ErrInvalidKey
+
+		retry := handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned past meeting", func(t *testing.T) {
