@@ -245,6 +245,12 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	}
 	if pastMeetingData.ProjectUID == "" {
 		funcLogger.InfoContext(ctx, "skipping past meeting sync - parent project not found in mappings", "project_sfid", pastMeetingData.ProjectSFID)
+		// The record is live, so a tombstone from an earlier delete is stale; clear it so a
+		// later mapping retrigger can index the past meeting once its project is mapped.
+		if err := h.clearTombstone(ctx, fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to clear stale past meeting tombstone, will retry")
+			return true
+		}
 		return false
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
@@ -266,19 +272,25 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	// Store mapping. On a restore this replaces the delete tombstone; if the write fails
 	// the tombstone would keep later mapping retriggers from re-indexing the past meeting, so
 	// retry. An invalid key can never be written, so it is not retried.
+	retry = false
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		if !errors.Is(err, jetstream.ErrInvalidKey) {
 			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping, will retry")
-			return true
+			retry = true
+		} else {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 		}
-		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting mapping")
 	}
 
 	// The recording, transcript and summary documents take their indexer public flag from this
 	// record's recording_access, transcript_access and ai_summary_access, but their own KV
 	// records do not change when those settings do. Republish them so that tightening a
-	// setting revokes public visibility in the index, not only in FGA.
+	// setting revokes public visibility in the index, not only in FGA. This runs even when the
+	// marker write failed, so a retry never delays revoking public visibility.
 	if h.republishPastMeetingArtifacts(ctx, pastMeetingData.MeetingAndOccurrenceID, funcLogger) {
+		retry = true
+	}
+	if retry {
 		return true
 	}
 

@@ -648,6 +648,12 @@ func (h *EventHandlers) handleMeetingUpdate(
 	}
 	if meetingData.ProjectUID == "" {
 		funcLogger.InfoContext(ctx, "skipping meeting sync - parent project not found in mappings", "project_sfid", meetingData.ProjectSFID)
+		// The record is live, so a tombstone from an earlier delete is stale; clear it so a
+		// later mapping retrigger can index the meeting once its project is mapped.
+		if err := h.clearTombstone(ctx, fmt.Sprintf("v1_meetings.%s", meetingData.ID)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to clear stale meeting tombstone, will retry")
+			return true
+		}
 		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)

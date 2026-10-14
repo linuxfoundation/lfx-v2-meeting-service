@@ -157,6 +157,19 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 	return parentLive, data, nil
 }
 
+// clearTombstone removes mappingKey when it holds a tombstone marker. Update handlers call it
+// when a live record cannot be indexed yet (for example, its project is not mapped), so a
+// tombstone left by an earlier delete does not keep later mapping retriggers from indexing
+// the restored record. Deleting rather than writing the live marker keeps the eventual index
+// action "created".
+func (h *EventHandlers) clearTombstone(ctx context.Context, mappingKey string) error {
+	deleted, err := h.tombstoneState(ctx, mappingKey)
+	if err != nil || !deleted {
+		return err
+	}
+	return h.v1MappingsKV.Delete(ctx, mappingKey)
+}
+
 // softDeletedAt returns the record's _sdc_deleted_at value and true when the record is a
 // soft delete (the field is present, non-nil and non-empty).
 func softDeletedAt(data map[string]any) (any, bool) {

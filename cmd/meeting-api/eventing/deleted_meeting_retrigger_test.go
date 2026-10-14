@@ -25,6 +25,7 @@ type memKV struct {
 	getErrs  map[string]error
 	putErrs  map[string]error
 	arriving map[string][]byte
+	gets     []string
 }
 
 func newMemKV() *memKV {
@@ -32,6 +33,7 @@ func newMemKV() *memKV {
 }
 
 func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
+	k.gets = append(k.gets, key)
 	if err, ok := k.getErrs[key]; ok {
 		return nil, err
 	}
@@ -85,6 +87,14 @@ func (p *retriggerTestPublisher) PublishPastMeetingEvent(_ context.Context, _ st
 	p.pastMeetingEvents++
 	p.lastPastMeeting = data
 	return nil
+}
+
+// unmappedProjectIDMapper reports no v2 project for any v1 project, so update handlers take
+// their "project not mapped yet" path.
+type unmappedProjectIDMapper struct{ recordingTestIDMapper }
+
+func (unmappedProjectIDMapper) MapProjectV1ToV2(_ context.Context, _ string) (string, error) {
+	return "", nil
 }
 
 func newRetriggerHandler(pub *retriggerTestPublisher, objects, mappings *memKV) *EventHandlers {
@@ -297,6 +307,20 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 		before := pub.meetingEvents
 		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
 		assert.Equal(t, before+1, pub.meetingEvents)
+	})
+
+	t.Run("restore before the project is mapped clears the tombstone for later mapping events", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+		h.idMapper = unmappedProjectIDMapper{}
+
+		require.False(t, handleKVPut(context.Background(), meetingKey, meetingRecord(false), h))
+		require.Zero(t, pub.meetingEvents)
+		require.NotContains(t, mappings.data, liveMarkerKey)
+
+		h.idMapper = recordingTestIDMapper{}
+		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		assert.Equal(t, 1, pub.meetingEvents)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned meeting", func(t *testing.T) {
@@ -520,6 +544,31 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 		before := pub.pastMeetingEvents
 		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
 		assert.Equal(t, before+1, pub.pastMeetingEvents)
+	})
+
+	t.Run("restore before the project is mapped clears the tombstone for later mapping events", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, true)
+		h.idMapper = unmappedProjectIDMapper{}
+
+		require.False(t, handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h))
+		require.Zero(t, pub.pastMeetingEvents)
+		require.NotContains(t, mappings.data, liveMarkerKey)
+
+		h.idMapper = recordingTestIDMapper{}
+		assert.False(t, handleKVPut(context.Background(), mappingKey, mappingRecord(false), h))
+		assert.Equal(t, 1, pub.pastMeetingEvents)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
+	})
+
+	t.Run("artifacts are republished even when the live marker write fails", func(t *testing.T) {
+		_, mappings, h := setup(t, false, false)
+		mappings.putErrs[liveMarkerKey] = errors.New("kv unavailable")
+		objects := h.v1ObjectsKV.(*memKV)
+
+		retry := handleKVPut(context.Background(), pastMeetingKey, pastMeetingRecord(false), h)
+
+		assert.True(t, retry)
+		assert.Contains(t, objects.gets, "itx-zoom-past-meetings-recordings."+pastMeetingID)
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned past meeting", func(t *testing.T) {
