@@ -91,6 +91,110 @@ func (h *EventHandlers) isTombstoned(ctx context.Context, mappingKey string) boo
 	return err == nil && string(entry.Value()) == tombstoneMarker
 }
 
+// tombstoneState reports whether mappingKey holds a tombstone marker. Unlike isTombstoned
+// it fails closed: a key that does not or cannot exist (isKVAbsenceError) is not
+// tombstoned, but any other Get error is returned so the caller can retry instead of
+// treating the resource as live.
+func (h *EventHandlers) tombstoneState(ctx context.Context, mappingKey string) (bool, error) {
+	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
+	if err != nil {
+		if isKVAbsenceError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return entryIsTombstoned(entry), nil
+}
+
+// v1ParentState classifies the parent v1-objects record of a child event.
+type v1ParentState int
+
+const (
+	// parentAbsent: no record and no tombstone; the parent has not been synced yet.
+	parentAbsent v1ParentState = iota
+	// parentLive: the record exists and is not soft-deleted.
+	parentLive
+	// parentGone: the record is soft-deleted, or missing with a delete tombstone.
+	parentGone
+	// parentUnusable: the key is invalid or the record is structurally corrupt. Not a
+	// deletion, so it never triggers delete cleanup, but nothing can be indexed from it.
+	parentUnusable
+)
+
+// loadV1Parent reads and classifies the parent record at objectKey. The record is
+// authoritative; tombstoneKey is consulted only when the record is missing, to tell a
+// hard-deleted parent from one not synced yet. A non-nil error is transient and the
+// caller should retry.
+func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKey string) (v1ParentState, map[string]any, error) {
+	entry, err := h.v1ObjectsKV.Get(ctx, objectKey)
+	if err != nil {
+		switch {
+		case errors.Is(err, jetstream.ErrKeyNotFound):
+			deleted, tsErr := h.tombstoneState(ctx, tombstoneKey)
+			if tsErr != nil {
+				return parentAbsent, nil, tsErr
+			}
+			if deleted {
+				return parentGone, nil, nil
+			}
+			return parentAbsent, nil, nil
+		case errors.Is(err, jetstream.ErrInvalidKey):
+			h.logger.WarnContext(ctx, "invalid parent key, skipping", "parent_key", objectKey)
+			return parentUnusable, nil, nil
+		default:
+			return parentAbsent, nil, err
+		}
+	}
+	data, err := decodeData(entry.Value())
+	if err != nil {
+		// Structural corruption is permanent; any other decode failure is retried, as with
+		// the other parent lookups (see kv_helpers.go).
+		if errors.Is(err, errMsgpackStructural) {
+			h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure for parent record, skipping", "parent_key", objectKey)
+			return parentUnusable, nil, nil
+		}
+		return parentAbsent, nil, fmt.Errorf("failed to decode parent record: %w", err)
+	}
+	if _, deleted := softDeletedAt(data); deleted {
+		return parentGone, nil, nil
+	}
+	return parentLive, data, nil
+}
+
+// liveMarkerSet reports whether mappingKey holds the live marker ("1") that update handlers
+// write after indexing a record. A key that does not or cannot exist is not set; any other
+// Get error is returned for retry.
+func (h *EventHandlers) liveMarkerSet(ctx context.Context, mappingKey string) (bool, error) {
+	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
+	if err != nil {
+		if isKVAbsenceError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return string(entry.Value()) == "1", nil
+}
+
+// clearTombstone removes mappingKey when it holds a tombstone marker. Update handlers call it
+// when a live record cannot be indexed yet (for example, its project is not mapped), so a
+// tombstone left by an earlier delete does not keep later mapping retriggers from indexing
+// the restored record. Deleting rather than writing the live marker keeps the eventual index
+// action "created".
+func (h *EventHandlers) clearTombstone(ctx context.Context, mappingKey string) error {
+	deleted, err := h.tombstoneState(ctx, mappingKey)
+	if err != nil || !deleted {
+		return err
+	}
+	return h.v1MappingsKV.Delete(ctx, mappingKey)
+}
+
+// softDeletedAt returns the record's _sdc_deleted_at value and true when the record is a
+// soft delete (the field is present, non-nil and non-empty).
+func softDeletedAt(data map[string]any) (any, bool) {
+	deletedAt, exists := data["_sdc_deleted_at"]
+	return deletedAt, exists && deletedAt != nil && deletedAt != ""
+}
+
 // entryIsTombstoned returns true if the already-fetched entry holds a tombstone marker.
 // Use this when you have already called Get to avoid a second KV round-trip.
 func entryIsTombstoned(entry jetstream.KeyValueEntry) bool {
@@ -258,7 +362,7 @@ func kvHandler(ctx context.Context, msg jetstream.Msg, handlers *EventHandlers) 
 // and routed to handleKVSoftDelete instead of the normal update handler.
 func handleKVPut(ctx context.Context, key string, data map[string]any, handlers *EventHandlers) (retry bool) {
 	// Check for soft delete (record written to KV with _sdc_deleted_at set).
-	if deletedAt, exists := data["_sdc_deleted_at"]; exists && deletedAt != nil && deletedAt != "" {
+	if deletedAt, deleted := softDeletedAt(data); deleted {
 		handlers.logger.InfoContext(ctx, "processing soft delete", "key", key, "_sdc_deleted_at", deletedAt)
 		return routeDelete(ctx, key, data, handlers)
 	}
