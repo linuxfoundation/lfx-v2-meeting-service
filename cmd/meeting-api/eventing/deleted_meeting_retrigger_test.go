@@ -70,11 +70,17 @@ type retriggerTestPublisher struct {
 	pastMeetingEvents int
 	lastMeeting       *models.MeetingEventData
 	lastPastMeeting   *models.PastMeetingEventData
+	// onPublish runs after each meeting or past meeting publish, to simulate a delete that
+	// is processed concurrently with the republish.
+	onPublish func()
 }
 
 func (p *retriggerTestPublisher) PublishMeetingEvent(_ context.Context, _ string, data *models.MeetingEventData) error {
 	p.meetingEvents++
 	p.lastMeeting = data
+	if p.onPublish != nil {
+		p.onPublish()
+	}
 	return nil
 }
 
@@ -86,6 +92,9 @@ func (p *retriggerTestPublisher) PublishMeetingHostCredentialsEvent(_ context.Co
 func (p *retriggerTestPublisher) PublishPastMeetingEvent(_ context.Context, _ string, data *models.PastMeetingEventData) error {
 	p.pastMeetingEvents++
 	p.lastPastMeeting = data
+	if p.onPublish != nil {
+		p.onPublish()
+	}
 	return nil
 }
 
@@ -332,6 +341,56 @@ func TestMeetingMappingRetrigger_DeletedMeeting(t *testing.T) {
 
 		assert.False(t, retry)
 		assert.Zero(t, pub.meetingEvents)
+	})
+
+	for _, cleanupDone := range []bool{false, true} {
+		name := "delete racing the retrigger is replayed (delete not yet processed)"
+		if cleanupDone {
+			name = "delete racing the retrigger is replayed (delete already processed)"
+		}
+		t.Run(name, func(t *testing.T) {
+			pub, mappings, h := setup(t, false, false)
+			objects := h.v1ObjectsKV.(*memKV)
+			pub.onPublish = func() {
+				objects.data[meetingKey] = mustMsgpackKV(t, meetingRecord(true))
+				if cleanupDone {
+					mappings.data[liveMarkerKey] = []byte(tombstoneMarker)
+					mappings.data[committeesKey] = []byte(tombstoneMarker)
+				}
+			}
+
+			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+			assert.False(t, retry)
+			assert.Equal(t, 1, pub.meetingEvents)
+			assert.Contains(t, pub.indexerDeletes, "lfx.index.v1_meeting:"+meetingID)
+			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+			assert.Equal(t, tombstoneMarker, string(mappings.data[committeesKey]))
+		})
+	}
+
+	t.Run("deleted meeting still marked live replays the delete", func(t *testing.T) {
+		pub, mappings, h := setup(t, true, false)
+		mappings.data[liveMarkerKey] = []byte("1")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(true), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.meetingEvents)
+		assert.Contains(t, pub.indexerDeletes, "lfx.index.v1_meeting:"+meetingID)
+		assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+	})
+
+	t.Run("corrupt meeting record marked live is not treated as deleted", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[meetingKey] = buildMapWrappedNestedFixarrays(msgpackMaxNestingDepth + 100)
+		mappings.data[liveMarkerKey] = []byte("1")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(true), h)
+
+		assert.False(t, retry)
+		assert.Empty(t, pub.indexerDeletes)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned meeting", func(t *testing.T) {
@@ -591,6 +650,56 @@ func TestPastMeetingMappingRetrigger_DeletedPastMeeting(t *testing.T) {
 
 		assert.False(t, retry)
 		assert.Zero(t, pub.pastMeetingEvents)
+	})
+
+	for _, cleanupDone := range []bool{false, true} {
+		name := "delete racing the retrigger is replayed (delete not yet processed)"
+		if cleanupDone {
+			name = "delete racing the retrigger is replayed (delete already processed)"
+		}
+		t.Run(name, func(t *testing.T) {
+			pub, mappings, h := setup(t, false, false)
+			objects := h.v1ObjectsKV.(*memKV)
+			pub.onPublish = func() {
+				objects.data[pastMeetingKey] = mustMsgpackKV(t, pastMeetingRecord(true))
+				if cleanupDone {
+					mappings.data[liveMarkerKey] = []byte(tombstoneMarker)
+					mappings.data[committeesKey] = []byte(tombstoneMarker)
+				}
+			}
+
+			retry := handleKVPut(context.Background(), mappingKey, mappingRecord(false), h)
+
+			assert.False(t, retry)
+			assert.Equal(t, 1, pub.pastMeetingEvents)
+			assert.Contains(t, pub.indexerDeletes, "lfx.index.v1_past_meeting:"+pastMeetingID)
+			assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+			assert.Equal(t, tombstoneMarker, string(mappings.data[committeesKey]))
+		})
+	}
+
+	t.Run("deleted past meeting still marked live replays the delete", func(t *testing.T) {
+		pub, mappings, h := setup(t, true, false)
+		mappings.data[liveMarkerKey] = []byte("1")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(true), h)
+
+		assert.False(t, retry)
+		assert.Zero(t, pub.pastMeetingEvents)
+		assert.Contains(t, pub.indexerDeletes, "lfx.index.v1_past_meeting:"+pastMeetingID)
+		assert.Equal(t, tombstoneMarker, string(mappings.data[liveMarkerKey]))
+	})
+
+	t.Run("corrupt past meeting record marked live is not treated as deleted", func(t *testing.T) {
+		pub, mappings, h := setup(t, false, false)
+		h.v1ObjectsKV.(*memKV).data[pastMeetingKey] = buildMapWrappedNestedFixarrays(msgpackMaxNestingDepth + 100)
+		mappings.data[liveMarkerKey] = []byte("1")
+
+		retry := handleKVPut(context.Background(), mappingKey, mappingRecord(true), h)
+
+		assert.False(t, retry)
+		assert.Empty(t, pub.indexerDeletes)
+		assert.Equal(t, "1", string(mappings.data[liveMarkerKey]))
 	})
 
 	t.Run("restore of a live record still re-indexes a tombstoned past meeting", func(t *testing.T) {

@@ -114,8 +114,11 @@ const (
 	parentAbsent v1ParentState = iota
 	// parentLive: the record exists and is not soft-deleted.
 	parentLive
-	// parentGone: the record is soft-deleted, hard-deleted (tombstoned) or unusable.
+	// parentGone: the record is soft-deleted, or missing with a delete tombstone.
 	parentGone
+	// parentUnusable: the key is invalid or the record is structurally corrupt. Not a
+	// deletion, so it never triggers delete cleanup, but nothing can be indexed from it.
+	parentUnusable
 )
 
 // loadV1Parent reads and classifies the parent record at objectKey. The record is
@@ -137,7 +140,7 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 			return parentAbsent, nil, nil
 		case errors.Is(err, jetstream.ErrInvalidKey):
 			h.logger.WarnContext(ctx, "invalid parent key, skipping", "parent_key", objectKey)
-			return parentGone, nil, nil
+			return parentUnusable, nil, nil
 		default:
 			return parentAbsent, nil, err
 		}
@@ -148,7 +151,7 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 		// the other parent lookups (see kv_helpers.go).
 		if errors.Is(err, errMsgpackStructural) {
 			h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure for parent record, skipping", "parent_key", objectKey)
-			return parentGone, nil, nil
+			return parentUnusable, nil, nil
 		}
 		return parentAbsent, nil, fmt.Errorf("failed to decode parent record: %w", err)
 	}
@@ -156,6 +159,20 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 		return parentGone, nil, nil
 	}
 	return parentLive, data, nil
+}
+
+// liveMarkerSet reports whether mappingKey holds the live marker ("1") that update handlers
+// write after indexing a record. A key that does not or cannot exist is not set; any other
+// Get error is returned for retry.
+func (h *EventHandlers) liveMarkerSet(ctx context.Context, mappingKey string) (bool, error) {
+	entry, err := h.v1MappingsKV.Get(ctx, mappingKey)
+	if err != nil {
+		if isKVAbsenceError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return string(entry.Value()) == "1", nil
 }
 
 // clearTombstone removes mappingKey when it holds a tombstone marker. Update handlers call it

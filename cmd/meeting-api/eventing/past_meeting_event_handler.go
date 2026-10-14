@@ -357,6 +357,13 @@ func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string,
 		return false
 	}
 	h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
+	return h.publishPastMeetingDelete(ctx, key, pastMeetingID)
+}
+
+// publishPastMeetingDelete removes the past meeting from the indexer, revokes its access,
+// and tombstones its mappings. It does not check the tombstone first, so the retrigger can
+// replay it after a republish that raced a delete. Every step is idempotent.
+func (h *EventHandlers) publishPastMeetingDelete(ctx context.Context, key, pastMeetingID string) (retry bool) {
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
@@ -545,7 +552,7 @@ func (h *EventHandlers) handlePastMeetingMappingUpdate(
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load parent past meeting, will retry", "past_meeting_uuid", pastMeetingUUID)
 		return true
 	}
-	if parent == parentGone {
+	if parent == parentGone || parent == parentUnusable {
 		funcLogger.InfoContext(ctx, "skipping past meeting mapping update for deleted past meeting", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
@@ -791,8 +798,24 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting during retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
 		return true
 	}
-	if parent != parentLive {
+	switch parent {
+	case parentLive:
+	case parentGone, parentAbsent:
+		// A deleted past meeting whose mapping still carries the live marker was indexed
+		// after its delete cleanup (or before it ran): replay the cleanup.
+		indexed, err := h.liveMarkerSet(ctx, mappingKey)
+		if err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting marker during retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
+			return true
+		}
+		if indexed {
+			h.logger.InfoContext(ctx, "deleted past meeting is still marked live, replaying delete", "past_meeting_uuid", pastMeetingUUID)
+			return h.publishPastMeetingDelete(ctx, pastMeetingKey, pastMeetingUUID)
+		}
 		h.logger.InfoContext(ctx, "past meeting is not live, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
+		return false
+	default:
+		h.logger.InfoContext(ctx, "past meeting record is unusable, skipping retrigger", "past_meeting_uuid", pastMeetingUUID)
 		return false
 	}
 	// A live record with a tombstone is a restore whose own put has not been processed
@@ -808,5 +831,22 @@ func (h *EventHandlers) retriggerPastMeetingIndexing(
 	}
 
 	// Re-process the past meeting
-	return h.handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData)
+	if h.handlePastMeetingUpdate(ctx, pastMeetingKey, pastMeetingData) {
+		return true
+	}
+
+	// v1 rewrites (soft delete) or removes (hard delete) the past meeting record before its
+	// delete event is processed. If the record is no longer live, a delete ran concurrently
+	// and this republish may have landed after its cleanup; replay the cleanup so the delete
+	// wins.
+	after, _, err := h.loadV1Parent(ctx, pastMeetingKey, mappingKey)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to recheck past meeting after retrigger, will retry", "past_meeting_uuid", pastMeetingUUID)
+		return true
+	}
+	if after == parentGone || after == parentAbsent {
+		h.logger.InfoContext(ctx, "past meeting was deleted during retrigger, replaying delete", "past_meeting_uuid", pastMeetingUUID)
+		return h.publishPastMeetingDelete(ctx, pastMeetingKey, pastMeetingUUID)
+	}
+	return false
 }
