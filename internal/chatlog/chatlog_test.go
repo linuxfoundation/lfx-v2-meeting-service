@@ -57,6 +57,21 @@ func TestParse(t *testing.T) {
 		}, got)
 	})
 
+	t.Run("a timestamped line of an unknown layout starts its own message", func(t *testing.T) {
+		got := Parse(fixture(t, "drifted_timestamped_line.chat"), false)
+		require.Len(t, got, 3, "the drifted line must not be glued to its neighbours")
+		assert.Equal(t, []Message{
+			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "first"},
+			{Offset: "00:00:40", Text: "Alice Example:\tdrifted layout line"},
+			{Offset: "00:01:03", Sender: "Bob Fixture", Recipient: "Everyone", Text: "third"},
+		}, got)
+	})
+
+	t.Run("a bare timestamp line followed by continuation lines", func(t *testing.T) {
+		got := Parse([]byte("00:00:40\n\tbody line\n"), false)
+		assert.Equal(t, []Message{{Offset: "00:00:40", Text: "body line"}}, got)
+	})
+
 	t.Run("BOM, CRLF and trailing whitespace are tolerated", func(t *testing.T) {
 		got := Parse(fixture(t, "bom_crlf.chat"), false)
 		assert.Equal(t, []Message{

@@ -204,7 +204,7 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 			want domain.ErrorType
 		}{
 			{"unavailable", domain.NewUnavailableError("recording record could not be read"), domain.ErrorTypeUnavailable},
-			{"internal", domain.NewInternalError("recording record could not be decoded"), domain.ErrorTypeInternal},
+			{"internal", domain.NewInternalError("saved chat record could not be decoded"), domain.ErrorTypeInternal},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				reader := &fakeRecordingRecordReader{err: tc.err}

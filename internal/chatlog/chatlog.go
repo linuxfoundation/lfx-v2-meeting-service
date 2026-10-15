@@ -44,6 +44,12 @@ type Message struct {
 // introduced by a tab; the group is empty for the newer layout.
 var headerPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})[\t ]+From (.+?) to (.+?):(?:\t(.*))?$`)
 
+// timestampedPattern matches a line that starts with a timestamp but is not a
+// recognised header (a drifted or unknown layout). Such a line still starts a
+// new message: the offset is kept, sender and recipient are empty, and the text
+// is the remainder after the timestamp and the tab or space that follows it.
+var timestampedPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})(?:[\t ](.*))?$`)
+
 // Parse parses a saved-chat log. data is the whole file, or its first part when
 // the caller cut it at a byte cap; truncated says which. When truncated, the
 // last line is dropped unless it is terminated by a newline, so a message is
@@ -51,10 +57,13 @@ var headerPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})[\t ]+From (.+?) to 
 //
 // Lines are split on "\n"; a trailing "\r" and trailing spaces or tabs are
 // removed from every line, a UTF-8 byte-order mark is removed from the first
-// line, and blank lines are ignored. A line matching neither header layout is
-// appended to the previous message's text (after removing one leading tab, the
-// indentation of the newer layout); when there is no previous message it
-// becomes a message with an empty offset, sender and recipient.
+// line, and blank lines are ignored. A line that starts with a timestamp but
+// matches neither header layout still starts a new message, with an empty
+// sender and recipient, so a layout drift never glues separate messages
+// together. Any other unmatched line is appended to the previous message's text
+// (after removing one leading tab, the indentation of the newer layout); when
+// there is no previous message it becomes a message with an empty offset,
+// sender and recipient.
 func Parse(data []byte, truncated bool) []Message {
 	if truncated {
 		if i := bytes.LastIndexByte(data, '\n'); i >= 0 {
@@ -94,6 +103,15 @@ func Parse(data []byte, truncated bool) []Message {
 			})
 			if m[4] != "" {
 				fragments = append(fragments, m[4])
+			}
+			continue
+		}
+
+		if m := timestampedPattern.FindStringSubmatch(line); m != nil {
+			closeMessage()
+			messages = append(messages, Message{Offset: m[1]})
+			if rest := strings.TrimPrefix(m[2], "\t"); rest != "" {
+				fragments = append(fragments, rest)
 			}
 			continue
 		}

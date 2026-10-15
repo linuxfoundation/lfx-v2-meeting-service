@@ -67,7 +67,7 @@ func (r *RecordingRecordReader) GetRecordingRecord(ctx context.Context, meetingA
 	if err != nil {
 		r.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode recording record",
 			"meeting_and_occurrence_id", meetingAndOccurrenceID)
-		return nil, domain.NewInternalError("recording record could not be decoded")
+		return nil, domain.NewInternalError("saved chat record could not be decoded")
 	}
 
 	record := &models.RecordingRecord{

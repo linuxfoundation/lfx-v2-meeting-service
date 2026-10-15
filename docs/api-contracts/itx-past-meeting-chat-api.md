@@ -78,7 +78,7 @@ The provider's saved-chat text comes in two layouts, both recognised (`internal/
 - `HH:MM:SS<TAB>From <sender> to <recipient>:<TAB><text>` on one line (older);
 - `HH:MM:SS From <sender> to <recipient>:` followed by one or more tab-indented text lines (newer, multi-line).
 
-A line matching neither layout is appended to the previous message's text (a continuation); when there is no previous message it becomes a message with an empty `offset`, `sender` and `recipient`. A UTF-8 byte-order mark, Windows line endings, trailing whitespace and blank lines are tolerated. An empty file is a session with `message_count: 0` and `messages: []`.
+A line that starts with `HH:MM:SS` but matches neither layout still starts a new message, with an empty `sender` and `recipient` and the remainder of the line as `text`, so a layout the service does not know never glues separate messages together and `message_count` stays honest. Any other unmatched line is appended to the previous message's text (a continuation); when there is no previous message it becomes a message with an empty `offset`, `sender` and `recipient`. A UTF-8 byte-order mark, Windows line endings, trailing whitespace and blank lines are tolerated. An empty file is a session with `message_count: 0` and `messages: []`.
 
 ---
 
@@ -91,7 +91,7 @@ All errors use the service's standard `{ "code": "<status>", "message": "<text>"
 | `400 Bad Request` | `meeting_and_occurrence_id` outside `[0-9A-Za-z:_-]{1,128}`; `limit` outside `1..2000`; `offset` below `0` (Goa validates the query parameters first and may answer with its own validation body) | `invalid past meeting ID`, `limit must be between 1 and 2000`, `offset must be 0 or greater` |
 | `401 Unauthorized` / `403 Forbidden` | Heimdall: no valid token / no `recording_viewer` relation | Heimdall's |
 | `404 Not Found` | No recording record for the identifier, or a record with no `CHAT` file (including `recording_files: null`). The route never says whether the past meeting itself exists | `no saved chat for this past meeting` |
-| `500 Internal Server Error` | The recording record exists but cannot be decoded | `recording record could not be decoded` |
+| `500 Internal Server Error` | The recording record exists but cannot be decoded (logged at error level with the identifier only, never the record contents) | `saved chat record could not be decoded` |
 | `503 Service Unavailable` | NATS not configured at startup (no recording record reader); a KV read failure; any `CHAT` file that cannot be fetched as text: link not `https`, connection failure, timeout, non-2xx status, or a content type other than `text/*` (`text/html` included, since that is a sign-in or error page, not a chat). One failing file fails the whole request: no partial response that could read as "no chat in that session" | `chat retrieval unavailable`, `recording record could not be read`, `saved chat could not be retrieved; please retry` |
 
 ## Bounds

@@ -134,12 +134,13 @@ func TestRecordingRecordReader_GetRecordingRecord(t *testing.T) {
 		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 	})
 
-	t.Run("a record that does not decode is internal", func(t *testing.T) {
+	t.Run("a record that does not decode is internal with a fixed message", func(t *testing.T) {
 		kv := &fakeKV{values: map[string][]byte{"itx-zoom-past-meetings-recordings." + id: []byte("\xc1 not json nor msgpack")}}
 		r := NewRecordingRecordReader(kv, logger)
 		_, err := r.GetRecordingRecord(context.Background(), id)
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
+		assert.Equal(t, "saved chat record could not be decoded", err.Error())
 	})
 
 	t.Run("a record with a non-numeric file_size is internal", func(t *testing.T) {
