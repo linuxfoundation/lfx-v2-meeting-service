@@ -75,6 +75,10 @@ func NewFetcher(timeout time.Duration, transport http.RoundTripper) *Fetcher {
 				if req.URL.Scheme != "https" {
 					return ErrInvalidLink
 				}
+				// net/http sets Referer to the previous URL (path and query included)
+				// before calling this hook; the previous URL is the bearer link, so it
+				// must not reach the redirect destination or its logs.
+				req.Header.Del("Referer")
 				return nil
 			},
 		},
@@ -85,7 +89,8 @@ func NewFetcher(timeout time.Duration, transport http.RoundTripper) *Fetcher {
 // FetchText fetches downloadURL and returns at most maxBytes of its body.
 // truncated reports whether the body was longer than maxBytes.
 //
-// The link must be https; redirects to anything else are refused. The response
+// The link must be https; redirects to anything else are refused, and the Referer
+// header net/http would derive from the link is removed on every redirect. The response
 // must be 2xx with a text/* content type other than text/html (a sign-in page
 // served on a redirect is refused by that check). The body is streamed and counted,
 // so a missing or understated Content-Length cannot defeat the cap.

@@ -177,6 +177,53 @@ func TestFetcher_FetchText(t *testing.T) {
 		assert.Equal(t, body, string(data))
 	})
 
+	t.Run("sends no Referer to a cross-origin redirect destination", func(t *testing.T) {
+		var gotReferer, gotHeader string
+		var destinationHits int
+		destination := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			destinationHits++
+			gotReferer = r.Referer()
+			gotHeader = r.Header.Get("Referer")
+			w.Header().Set("Content-Type", "text/plain")
+			_, _ = w.Write([]byte(body))
+		}))
+		t.Cleanup(destination.Close)
+
+		origin := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, destination.URL+"/final", http.StatusFound)
+		}))
+		t.Cleanup(origin.Close)
+
+		// Trust both servers' certificates: they are distinct origins.
+		transport := origin.Client().Transport.(*http.Transport).Clone()
+		transport.TLSClientConfig.InsecureSkipVerify = true //nolint:gosec // test-only: two self-signed httptest origins
+		f := NewFetcher(time.Second, transport)
+
+		data, _, err := f.FetchText(context.Background(), origin.URL+"/download?access_token=synthetic-secret", 1024)
+		require.NoError(t, err)
+		assert.Equal(t, body, string(data))
+		assert.Equal(t, 1, destinationHits)
+		assert.Empty(t, gotReferer)
+		assert.Empty(t, gotHeader)
+	})
+
+	t.Run("sends no Referer on a same-origin redirect either", func(t *testing.T) {
+		var gotReferer string
+		mux := http.NewServeMux()
+		mux.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/final", http.StatusFound)
+		})
+		mux.HandleFunc("/final", func(w http.ResponseWriter, r *http.Request) {
+			gotReferer = r.Header.Get("Referer")
+			w.Header().Set("Content-Type", "text/plain")
+			_, _ = w.Write([]byte(body))
+		})
+		srv, f := newTLSServer(t, time.Second, mux)
+		_, _, err := f.FetchText(context.Background(), srv.URL+"/start?access_token=synthetic-secret", 1024)
+		require.NoError(t, err)
+		assert.Empty(t, gotReferer)
+	})
+
 	t.Run("refuses a redirect off https", func(t *testing.T) {
 		srv, f := newTLSServer(t, time.Second, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "http://example.test/chat.txt", http.StatusFound)

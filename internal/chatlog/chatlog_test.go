@@ -4,8 +4,10 @@
 package chatlog
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +23,7 @@ func fixture(t *testing.T, name string) []byte {
 
 func TestParse(t *testing.T) {
 	t.Run("older single-line layout", func(t *testing.T) {
-		got := Parse(fixture(t, "older_single_line.log"), false)
+		got := Parse(fixture(t, "older_single_line.chat"), false)
 		assert.Equal(t, []Message{
 			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "Hello everyone"},
 			{Offset: "00:01:03", Sender: "Bob Fixture", Recipient: "Everyone", Text: "Agenda: item one, item two"},
@@ -31,7 +33,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("newer multi-line layout", func(t *testing.T) {
-		got := Parse(fixture(t, "newer_multi_line.log"), false)
+		got := Parse(fixture(t, "newer_multi_line.chat"), false)
 		assert.Equal(t, []Message{
 			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "Hello everyone"},
 			{Offset: "00:01:03", Sender: "Bob Fixture", Recipient: "Everyone", Text: "Two points today:\n1. the release\n2. the roadmap"},
@@ -40,7 +42,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("continuation lines join the previous message", func(t *testing.T) {
-		got := Parse(fixture(t, "continuation.log"), false)
+		got := Parse(fixture(t, "continuation.chat"), false)
 		assert.Equal(t, []Message{
 			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "first line\nsecond line without a tab\nthird line with a tab"},
 			{Offset: "00:00:30", Sender: "Bob Fixture", Recipient: "Everyone", Text: "next message"},
@@ -48,7 +50,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("unrecognised first line becomes a message without sender", func(t *testing.T) {
-		got := Parse(fixture(t, "unrecognised_first_line.log"), false)
+		got := Parse(fixture(t, "unrecognised_first_line.chat"), false)
 		assert.Equal(t, []Message{
 			{Text: "Saved chat for Test Org weekly"},
 			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "Hello"},
@@ -56,7 +58,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("BOM, CRLF and trailing whitespace are tolerated", func(t *testing.T) {
-		got := Parse(fixture(t, "bom_crlf.log"), false)
+		got := Parse(fixture(t, "bom_crlf.chat"), false)
 		assert.Equal(t, []Message{
 			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "Hello"},
 			{Offset: "00:01:03", Sender: "Bob Fixture", Recipient: "Everyone", Text: "line one\nline two"},
@@ -64,7 +66,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("empty file yields no messages", func(t *testing.T) {
-		assert.Empty(t, Parse(fixture(t, "empty.log"), false))
+		assert.Empty(t, Parse(fixture(t, "empty.chat"), false))
 		assert.Empty(t, Parse(nil, false))
 	})
 
@@ -109,4 +111,39 @@ func TestParse_Truncated(t *testing.T) {
 	t.Run("truncated data without any newline yields nothing", func(t *testing.T) {
 		assert.Empty(t, Parse([]byte("00:00:01\tFrom Alice Example to Everyone:\tcut"), true))
 	})
+}
+
+// manyContinuations builds one header followed by n continuation lines.
+func manyContinuations(n int) []byte {
+	var b strings.Builder
+	b.WriteString("00:00:01\tFrom Alice Example to Everyone:\tstart\n")
+	for i := 0; i < n; i++ {
+		b.WriteString("\tcontinuation line\n")
+	}
+	return []byte(b.String())
+}
+
+func TestParse_ManyContinuationLines(t *testing.T) {
+	const n = 200000
+	got := Parse(manyContinuations(n), false)
+	require.Len(t, got, 1)
+	assert.Equal(t, n, strings.Count(got[0].Text, "\n"))
+	assert.True(t, strings.HasPrefix(got[0].Text, "start\ncontinuation line\n"))
+	assert.True(t, strings.HasSuffix(got[0].Text, "\ncontinuation line"))
+}
+
+// BenchmarkParse_ManyContinuationLines guards the linear bound on continuation
+// handling: bytes allocated per operation must stay within a small multiple of
+// the input size as n grows (a quadratic implementation blows up by n).
+func BenchmarkParse_ManyContinuationLines(b *testing.B) {
+	for _, n := range []int{1000, 10000, 100000} {
+		data := manyContinuations(n)
+		b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
+			b.SetBytes(int64(len(data)))
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				_ = Parse(data, false)
+			}
+		})
+	}
 }

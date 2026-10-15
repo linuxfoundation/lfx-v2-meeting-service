@@ -65,7 +65,20 @@ func Parse(data []byte, truncated bool) []Message {
 	}
 	data = bytes.TrimPrefix(data, []byte("\xEF\xBB\xBF"))
 
-	var messages []Message
+	// Text lines of the open message are collected and joined once when the
+	// message closes, so a long run of continuation lines costs linear work.
+	var (
+		messages  []Message
+		fragments []string
+	)
+	closeMessage := func() {
+		if len(messages) == 0 {
+			return
+		}
+		messages[len(messages)-1].Text = strings.Join(fragments, "\n")
+		fragments = fragments[:0]
+	}
+
 	for _, raw := range bytes.Split(data, []byte("\n")) {
 		line := strings.TrimRight(string(raw), " \t\r")
 		if line == "" {
@@ -73,26 +86,23 @@ func Parse(data []byte, truncated bool) []Message {
 		}
 
 		if m := headerPattern.FindStringSubmatch(line); m != nil {
+			closeMessage()
 			messages = append(messages, Message{
 				Offset:    m[1],
 				Sender:    strings.TrimSpace(m[2]),
 				Recipient: strings.TrimSpace(m[3]),
-				Text:      m[4],
 			})
+			if m[4] != "" {
+				fragments = append(fragments, m[4])
+			}
 			continue
 		}
 
-		text := strings.TrimPrefix(line, "\t")
 		if len(messages) == 0 {
-			messages = append(messages, Message{Text: text})
-			continue
+			messages = append(messages, Message{})
 		}
-		last := &messages[len(messages)-1]
-		if last.Text == "" {
-			last.Text = text
-		} else {
-			last.Text += "\n" + text
-		}
+		fragments = append(fragments, strings.TrimPrefix(line, "\t"))
 	}
+	closeMessage()
 	return messages
 }

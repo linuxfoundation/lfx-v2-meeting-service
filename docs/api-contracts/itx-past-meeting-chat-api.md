@@ -101,7 +101,7 @@ All errors use the service's standard `{ "code": "<status>", "message": "<text>"
 | Fetch timeout, per file, body included | 15 s | `constants.PastMeetingChatFetchTimeout` |
 | Bytes read per file | 5 MB (5 242 880 bytes), counted on the streamed body, so a missing or understated `Content-Length` cannot defeat it. A longer file is cut at the last complete line and the session is `truncated: true`; no partial line is ever returned | `constants.PastMeetingChatMaxBytes` |
 | `limit` | default 500, maximum 2000 | `constants.PastMeetingChatDefaultLimit`, `constants.PastMeetingChatMaxLimit` |
-| Redirects followed per fetch | at most 5, `https` only | `internal/infrastructure/chatfile` |
+| Redirects followed per fetch | at most 5, `https` only, with the `Referer` header removed so the link is not disclosed to the destination | `internal/infrastructure/chatfile` |
 | Files per request | every `CHAT` file of the record, fetched sequentially, each under its own timeout | `internal/service/itx/past_meeting_chat_service.go` |
 
 These fetch bounds match those LFX Self Serve applies when it reads a transcript file.
