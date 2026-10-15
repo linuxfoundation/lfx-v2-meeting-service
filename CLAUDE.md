@@ -139,6 +139,7 @@ The service follows a clean architecture pattern with:
 - **ITX Registrant Operations**: Complete registrant management via ITX API
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
+- **Past Meeting Chat**: Returns the chat saved with a past meeting's recording as parsed text. Not an ITX proxy: the service reads the recording record from the `v1-objects` KV bucket, fetches the `CHAT` file(s) from the provider server side (15 s, 5 MB, `text/*` only) and never returns or logs the provider link (see [Past Meeting Chat API contract](docs/api-contracts/itx-past-meeting-chat-api.md))
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
 - **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted. Every acceptance is re-verified against the invite service before any ITX write — this is defense in depth, not a complete origin control: it only becomes one once NATS subject authorization (or a signed acceptance) is in place. See [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control).
@@ -161,12 +162,12 @@ The service follows a clean architecture pattern with:
 
 - Core domain request/response models in `models/` (`CreateITXMeetingRequest`, `Committee`, `UpdatePastMeetingParticipant`)
 - ITX wire types (enums, meeting types, recurrence) in `pkg/models/itx/`
-- Domain interfaces: `ITXProxyClient`, `IDMapper`, `UserMetadataReader`, `UserServiceClient`, `InviteAcceptanceClient`, `InviteEmailSender`, `InviteLookup`, `ProjectLookup`, `V1UserLookup`
+- Domain interfaces: `ITXProxyClient`, `IDMapper`, `UserMetadataReader`, `UserServiceClient`, `InviteAcceptanceClient`, `InviteEmailSender`, `InviteLookup`, `ProjectLookup`, `V1UserLookup`, `RecordingRecordReader`, `RecordingFileFetcher`
 
 **Service Layer** (`internal/service/`)
 
 - Auth service for JWT validation
-- ITX services in `itx/` subdirectory: `meeting_service.go`, `registrant_service.go`, `past_meeting_service.go`, `past_meeting_summary_service.go`, `past_meeting_participant_service.go`, `meeting_attachment_service.go`, `past_meeting_attachment_service.go`
+- ITX services in `itx/` subdirectory: `meeting_service.go`, `registrant_service.go`, `past_meeting_service.go`, `past_meeting_summary_service.go`, `past_meeting_chat_service.go` (not a proxy: reads the recording record, fetches and parses the CHAT files), `past_meeting_participant_service.go`, `meeting_attachment_service.go`, `past_meeting_attachment_service.go`
 - `audit.go` — `auditStamper` embedded by each ITX service; resolves requesting principal to `*itx.User` for `created_by`/`updated_by` stamps
 - `id_mapping.go` — shared v1↔v2 project/committee mapping helpers (`mapProjectFieldV2ToV1`, `mapCommitteeFieldV1ToV2Graceful`, `mapMeetingCommitteesV1ToV2Graceful`, etc.) used by meeting, registrant, and past-meeting services
 - `preferred_email_service.go` — NATS RPC handler for preferred meeting-invite email
@@ -177,7 +178,9 @@ The service follows a clean architecture pattern with:
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing
-- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, invite lookup, interfaces
+- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, invite lookup, recording record reader (on-demand read of the `v1-objects` KV bucket), interfaces
+- Recording file fetcher (`chatfile/`) — bounded https fetch of a text recording file (saved chat) from the provider link in the recording record; the link is never logged, traced or returned
+- Shared v1 record shapes (`v1objects/`) — raw `v1-objects` recording record types and numeric/timestamp coercions, used by both the event pipeline and the recording record reader
 - User service HTTP client (`userservice/`) — calls v1 API gateway AS the user for preferred-email reads/writes
 
 **Event Processing Layer** (`cmd/meeting-api/eventing/`)
@@ -195,8 +198,8 @@ The service follows a clean architecture pattern with:
 
 **Shared Packages** (`pkg/`)
 
-- `pkg/constants/` — NATS subjects (`nats.go`), meeting role constants (`meeting.go`), HTTP context keys (`http.go`)
-- `pkg/models/itx/` — ITX wire types: `meetings.go`, `meeting_registrants.go`, `past_meetings.go`, `past_meeting_summaries.go`, `past_meeting_participants.go`, `attachments.go`, `common.go`. The `itx.User` and `itx.CreatedUpdatedBy` types implement `slog.LogValuer` for automatic PII redaction when logged as slog attributes.
+- `pkg/constants/` — NATS subjects (`nats.go`), meeting role constants (`meeting.go`), HTTP context keys (`http.go`), past-meeting chat bounds and the `v1-objects` bucket name (`past_meeting_chat.go`)
+- `pkg/models/itx/` — ITX wire types: `meetings.go`, `meeting_registrants.go`, `past_meetings.go`, `past_meeting_summaries.go`, `past_meeting_participants.go`, `attachments.go`, `common.go`; plus the proxy's own saved-chat response shape, `past_meeting_chat.go`. The `itx.User` and `itx.CreatedUpdatedBy` types implement `slog.LogValuer` for automatic PII redaction when logged as slog attributes.
 - `pkg/utils/` — pointer helpers (`ptr.go`), coalesce, map utilities, meeting utils, OTel span helpers
 - `pkg/redaction/` — `Redact(s string)` and `RedactEmail(email string)` for safe log output
 
@@ -555,6 +558,7 @@ Converters in `cmd/meeting-api/service/`:
 - `itx_past_meeting_converters.go`: Converts between Goa payloads and ITX past meeting requests/responses
 - `itx_past_meeting_participant_converters.go`: Converts between Goa payloads and ITX participant requests/responses
 - `itx_past_meeting_summary_converters.go`: Converts between Goa payloads and ITX summary requests/responses
+- `itx_past_meeting_chat_converters.go`: Converts the service's saved-chat response to the Goa type
 - `itx_attachment_converters.go`: Converts between Goa payloads and ITX attachment requests/responses (both meeting and past-meeting)
 
 **Important**: Pick the pointer conversion per field from the proxy response contract in `docs/api-contracts/itx-*.md`: an always-present pointer (`utils.BoolPtr`, or `&resp.Field` for a string or int) when the contract promises the field, an omit-zero helper from `pkg/utils/ptr.go` (`StringPtrOmitEmpty`, `IntPtrOmitZero`, `BoolPtrOmitFalse`) when zero/empty/false must be omitted — see `.claude/rules/itx-converters.md`. Always stamp `created_by`/`updated_by` on write requests using `auditStamper.buildRequestingUser(ctx)` or `buildRequestingCreatedUpdatedBy(ctx)`.
@@ -688,6 +692,10 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 - `GET /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}` - Get past meeting summary
 - `PUT /itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}` - Update past meeting summary
+
+### Past Meeting Chat Operations
+
+- `GET /itx/past_meetings/{meeting_and_occurrence_id}/chat` - Get the chat saved with the recording, parsed into messages per session (`limit`, `offset` per session; no provider links in the response). Authorized by Heimdall on `recording_viewer`; served from the recording record and the provider's CHAT file, not from ITX
 
 ### ITX Past Meeting Participant Operations
 
