@@ -47,6 +47,7 @@ type Server struct {
 	UpdateItxPastMeeting                  http.Handler
 	GetItxPastMeetingSummary              http.Handler
 	UpdateItxPastMeetingSummary           http.Handler
+	GetItxPastMeetingChat                 http.Handler
 	CreateItxPastMeetingParticipant       http.Handler
 	UpdateItxPastMeetingParticipant       http.Handler
 	DeleteItxPastMeetingParticipant       http.Handler
@@ -142,6 +143,7 @@ func New(
 			{"UpdateItxPastMeeting", "PUT", "/itx/past_meetings/{past_meeting_id}"},
 			{"GetItxPastMeetingSummary", "GET", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}"},
 			{"UpdateItxPastMeetingSummary", "PUT", "/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}"},
+			{"GetItxPastMeetingChat", "GET", "/itx/past_meetings/{meeting_and_occurrence_id}/chat"},
 			{"CreateItxPastMeetingParticipant", "POST", "/itx/past_meetings/{past_meeting_id}/participants"},
 			{"UpdateItxPastMeetingParticipant", "PUT", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
 			{"DeleteItxPastMeetingParticipant", "DELETE", "/itx/past_meetings/{past_meeting_id}/participants/{participant_id}"},
@@ -189,6 +191,7 @@ func New(
 		UpdateItxPastMeeting:                  NewUpdateItxPastMeetingHandler(e.UpdateItxPastMeeting, mux, decoder, encoder, errhandler, formatter),
 		GetItxPastMeetingSummary:              NewGetItxPastMeetingSummaryHandler(e.GetItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
 		UpdateItxPastMeetingSummary:           NewUpdateItxPastMeetingSummaryHandler(e.UpdateItxPastMeetingSummary, mux, decoder, encoder, errhandler, formatter),
+		GetItxPastMeetingChat:                 NewGetItxPastMeetingChatHandler(e.GetItxPastMeetingChat, mux, decoder, encoder, errhandler, formatter),
 		CreateItxPastMeetingParticipant:       NewCreateItxPastMeetingParticipantHandler(e.CreateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
 		UpdateItxPastMeetingParticipant:       NewUpdateItxPastMeetingParticipantHandler(e.UpdateItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
 		DeleteItxPastMeetingParticipant:       NewDeleteItxPastMeetingParticipantHandler(e.DeleteItxPastMeetingParticipant, mux, decoder, encoder, errhandler, formatter),
@@ -243,6 +246,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UpdateItxPastMeeting = m(s.UpdateItxPastMeeting)
 	s.GetItxPastMeetingSummary = m(s.GetItxPastMeetingSummary)
 	s.UpdateItxPastMeetingSummary = m(s.UpdateItxPastMeetingSummary)
+	s.GetItxPastMeetingChat = m(s.GetItxPastMeetingChat)
 	s.CreateItxPastMeetingParticipant = m(s.CreateItxPastMeetingParticipant)
 	s.UpdateItxPastMeetingParticipant = m(s.UpdateItxPastMeetingParticipant)
 	s.DeleteItxPastMeetingParticipant = m(s.DeleteItxPastMeetingParticipant)
@@ -292,6 +296,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUpdateItxPastMeetingHandler(mux, h.UpdateItxPastMeeting)
 	MountGetItxPastMeetingSummaryHandler(mux, h.GetItxPastMeetingSummary)
 	MountUpdateItxPastMeetingSummaryHandler(mux, h.UpdateItxPastMeetingSummary)
+	MountGetItxPastMeetingChatHandler(mux, h.GetItxPastMeetingChat)
 	MountCreateItxPastMeetingParticipantHandler(mux, h.CreateItxPastMeetingParticipant)
 	MountUpdateItxPastMeetingParticipantHandler(mux, h.UpdateItxPastMeetingParticipant)
 	MountDeleteItxPastMeetingParticipantHandler(mux, h.DeleteItxPastMeetingParticipant)
@@ -1736,6 +1741,60 @@ func NewUpdateItxPastMeetingSummaryHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "update-itx-past-meeting-summary")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountGetItxPastMeetingChatHandler configures the mux to serve the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint.
+func MountGetItxPastMeetingChatHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/itx/past_meetings/{meeting_and_occurrence_id}/chat", f)
+}
+
+// NewGetItxPastMeetingChatHandler creates a HTTP handler which loads the HTTP
+// request and calls the "Meeting Service" service "get-itx-past-meeting-chat"
+// endpoint.
+func NewGetItxPastMeetingChatHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetItxPastMeetingChatRequest(mux, decoder)
+		encodeResponse = EncodeGetItxPastMeetingChatResponse(encoder)
+		encodeError    = EncodeGetItxPastMeetingChatError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "get-itx-past-meeting-chat")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

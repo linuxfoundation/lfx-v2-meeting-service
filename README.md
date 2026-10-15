@@ -77,6 +77,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Registrant Operations**: Complete registrant management via ITX API
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
+- **Past Meeting Chat**: Read the chat saved with a past meeting's recording as parsed text, fetched server side from the recording record's CHAT file (not proxied from ITX)
 - **ITX Past Meeting Participant Operations**: Add, update, and delete past meeting participants
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (12 event families)
@@ -435,6 +436,12 @@ Access the live docs when the service is running:
 |----------|--------|-------------|
 | `/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}` | GET | Get AI-generated summary |
 | `/itx/past_meetings/{past_meeting_id}/summaries/{summary_uid}` | PUT | Update summary |
+
+#### ITX Past Meeting Chat Operations
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/itx/past_meetings/{meeting_and_occurrence_id}/chat` | GET | Get the chat saved with the recording, parsed into messages (no provider links) |
 
 #### ITX Past Meeting Participant Operations
 

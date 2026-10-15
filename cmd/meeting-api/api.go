@@ -26,6 +26,7 @@ type MeetingsAPI struct {
 	itxRegistrantService             *itxservice.RegistrantService
 	itxPastMeetingService            *itxservice.PastMeetingService
 	itxPastMeetingSummaryService     *itxservice.PastMeetingSummaryService
+	itxPastMeetingChatService        *itxservice.PastMeetingChatService
 	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService
 	itxMeetingAttachmentService      *itxservice.MeetingAttachmentService
 	itxPastMeetingAttachmentService  *itxservice.PastMeetingAttachmentService
@@ -38,6 +39,7 @@ func NewMeetingsAPI(
 	itxRegistrantService *itxservice.RegistrantService,
 	itxPastMeetingService *itxservice.PastMeetingService,
 	itxPastMeetingSummaryService *itxservice.PastMeetingSummaryService,
+	itxPastMeetingChatService *itxservice.PastMeetingChatService,
 	itxPastMeetingParticipantService *itxservice.PastMeetingParticipantService,
 	itxMeetingAttachmentService *itxservice.MeetingAttachmentService,
 	itxPastMeetingAttachmentService *itxservice.PastMeetingAttachmentService,
@@ -48,6 +50,7 @@ func NewMeetingsAPI(
 		itxRegistrantService:             itxRegistrantService,
 		itxPastMeetingService:            itxPastMeetingService,
 		itxPastMeetingSummaryService:     itxPastMeetingSummaryService,
+		itxPastMeetingChatService:        itxPastMeetingChatService,
 		itxPastMeetingParticipantService: itxPastMeetingParticipantService,
 		itxMeetingAttachmentService:      itxMeetingAttachmentService,
 		itxPastMeetingAttachmentService:  itxPastMeetingAttachmentService,

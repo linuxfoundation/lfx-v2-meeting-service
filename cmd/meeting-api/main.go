@@ -15,9 +15,11 @@ import (
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/chatfile"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
 	itxclient "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/itx"
@@ -26,6 +28,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -180,10 +183,25 @@ func run() int {
 		defer committeeAuthzNatsConn.Close()
 	}
 
+	// Recording record reader: the past-meeting chat route reads the recording record
+	// from the v1-objects KV bucket on demand (the bucket the event pipeline watches),
+	// over the same NATS connection as the authorizers. The bucket is bound lazily on
+	// the first read, so a bucket that is unreachable at startup does not leave the
+	// route unavailable until a restart. nil only when NATS is not configured; the
+	// route then answers 503.
+	var recordingRecords domain.RecordingRecordReader
+	if committeeAuthzNatsConn != nil {
+		recordingRecords = natsinfra.NewLazyRecordingRecordReader(v1ObjectsBucketBinder(committeeAuthzNatsConn), slog.Default())
+	} else {
+		slog.WarnContext(ctx, "NATS_URL not set; past meeting chat retrieval unavailable")
+	}
+	chatFileFetcher := chatfile.NewFetcher(constants.PastMeetingChatFetchTimeout, nil)
+
 	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader, pastMeetingAuthz)
+	itxPastMeetingChatService := itxservice.NewPastMeetingChatService(recordingRecords, chatFileFetcher, constants.PastMeetingChatMaxBytes)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)
 	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments(), userMetadataReader)
 	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments(), userMetadataReader)
@@ -275,6 +293,7 @@ func run() int {
 		itxRegistrantService,
 		itxPastMeetingService,
 		itxPastMeetingSummaryService,
+		itxPastMeetingChatService,
 		itxPastMeetingParticipantService,
 		itxMeetingAttachmentService,
 		itxPastMeetingAttachmentService,
@@ -359,6 +378,20 @@ func gracefulShutdown(
 
 	// Wait for the HTTP graceful shutdown
 	gracefulCloseWG.Wait()
+}
+
+// v1ObjectsBucketBinder returns the binder the lazy recording record reader uses to
+// open the v1-objects KV bucket over nc. The route is read-only and the rest of the
+// service does not depend on the bucket, so a failed bind is retried on a later
+// request rather than preventing startup.
+func v1ObjectsBucketBinder(nc *natsgo.Conn) natsinfra.KeyValueBinder {
+	return func(ctx context.Context) (natsinfra.KeyValueGetter, error) {
+		js, err := jetstream.New(nc)
+		if err != nil {
+			return nil, err
+		}
+		return js.KeyValue(ctx, constants.V1ObjectsBucket)
+	}
 }
 
 // startPreferredEmailResponder builds the user-service client and starts the preferred-email

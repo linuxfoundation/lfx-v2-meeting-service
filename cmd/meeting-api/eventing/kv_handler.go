@@ -21,6 +21,7 @@ import (
 	fgatypes "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/types"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/v1objects"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/msgpackutil"
 )
@@ -191,8 +192,7 @@ func (h *EventHandlers) clearTombstone(ctx context.Context, mappingKey string) e
 // softDeletedAt returns the record's _sdc_deleted_at value and true when the record is a
 // soft delete (the field is present, non-nil and non-empty).
 func softDeletedAt(data map[string]any) (any, bool) {
-	deletedAt, exists := data["_sdc_deleted_at"]
-	return deletedAt, exists && deletedAt != nil && deletedAt != ""
+	return v1objects.SoftDeletedAt(data)
 }
 
 // entryIsTombstoned returns true if the already-fetched entry holds a tombstone marker.

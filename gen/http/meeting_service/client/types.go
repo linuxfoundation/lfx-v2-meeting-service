@@ -1049,6 +1049,15 @@ type UpdateItxPastMeetingSummaryResponseBody struct {
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 }
 
+// GetItxPastMeetingChatResponseBody is the type of the "Meeting Service"
+// service "get-itx-past-meeting-chat" endpoint HTTP response body.
+type GetItxPastMeetingChatResponseBody struct {
+	// The past meeting identifier
+	MeetingAndOccurrenceID *string `form:"meeting_and_occurrence_id,omitempty" json:"meeting_and_occurrence_id,omitempty" xml:"meeting_and_occurrence_id,omitempty"`
+	// Recording sessions that saved a chat, ordered by recording_start
+	Sessions []*PastMeetingChatSessionResponseBody `form:"sessions,omitempty" json:"sessions,omitempty" xml:"sessions,omitempty"`
+}
+
 // CreateItxPastMeetingParticipantResponseBody is the type of the "Meeting
 // Service" service "create-itx-past-meeting-participant" endpoint HTTP
 // response body.
@@ -3022,6 +3031,66 @@ type UpdateItxPastMeetingSummaryUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// GetItxPastMeetingChatBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "BadRequest" error.
+type GetItxPastMeetingChatBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingChatForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "Forbidden" error.
+type GetItxPastMeetingChatForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingChatInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-chat" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetItxPastMeetingChatInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingChatNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "NotFound" error.
+type GetItxPastMeetingChatNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingChatServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-chat" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type GetItxPastMeetingChatServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxPastMeetingChatUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "Unauthorized" error.
+type GetItxPastMeetingChatUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // CreateItxPastMeetingParticipantBadRequestResponseBody is the type of the
 // "Meeting Service" service "create-itx-past-meeting-participant" endpoint
 // HTTP response body for the "BadRequest" error.
@@ -4008,6 +4077,41 @@ type SummaryDataResponseBody struct {
 	DocURL *string `form:"doc_url,omitempty" json:"doc_url,omitempty" xml:"doc_url,omitempty"`
 	// User-edited summary content
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
+}
+
+// PastMeetingChatSessionResponseBody is used to define fields on response body
+// types.
+type PastMeetingChatSessionResponseBody struct {
+	// Start of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingStart *string `form:"recording_start,omitempty" json:"recording_start,omitempty" xml:"recording_start,omitempty"`
+	// End of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingEnd *string `form:"recording_end,omitempty" json:"recording_end,omitempty" xml:"recording_end,omitempty"`
+	// Number of public (sent to everyone) messages parsed from the chat file,
+	// before limit and offset apply
+	MessageCount *int `form:"message_count,omitempty" json:"message_count,omitempty" xml:"message_count,omitempty"`
+	// True when the chat file exceeded the byte cap or the message window ends
+	// before the last message
+	Truncated *bool `form:"truncated,omitempty" json:"truncated,omitempty" xml:"truncated,omitempty"`
+	// The message window [offset, offset+limit); empty, not omitted, when there is
+	// none
+	Messages []*PastMeetingChatMessageResponseBody `form:"messages,omitempty" json:"messages,omitempty" xml:"messages,omitempty"`
+}
+
+// PastMeetingChatMessageResponseBody is used to define fields on response body
+// types.
+type PastMeetingChatMessageResponseBody struct {
+	// Elapsed time since the recording started, as written in the chat log
+	// (HH:MM:SS, possibly with fractional seconds)
+	Offset *string `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
+	// Display name of the sender as written in the chat log
+	Sender *string `form:"sender,omitempty" json:"sender,omitempty" xml:"sender,omitempty"`
+	// Recipient as written in the chat log; always Everyone, since only messages
+	// explicitly sent to everyone are returned
+	Recipient *string `form:"recipient,omitempty" json:"recipient,omitempty" xml:"recipient,omitempty"`
+	// Message text, verbatim; multi-line messages keep their line breaks
+	Text *string `form:"text,omitempty" json:"text,omitempty" xml:"text,omitempty"`
 }
 
 // ParticipantSessionResponseBody is used to define fields on response body
@@ -6635,6 +6739,90 @@ func NewUpdateItxPastMeetingSummaryUnauthorized(body *UpdateItxPastMeetingSummar
 	return v
 }
 
+// NewGetItxPastMeetingChatPastMeetingChatOK builds a "Meeting Service" service
+// "get-itx-past-meeting-chat" endpoint result from a HTTP "OK" response.
+func NewGetItxPastMeetingChatPastMeetingChatOK(body *GetItxPastMeetingChatResponseBody) *meetingservice.PastMeetingChat {
+	v := &meetingservice.PastMeetingChat{
+		MeetingAndOccurrenceID: *body.MeetingAndOccurrenceID,
+	}
+	v.Sessions = make([]*meetingservice.PastMeetingChatSession, len(body.Sessions))
+	for i, val := range body.Sessions {
+		if val == nil {
+			v.Sessions[i] = nil
+			continue
+		}
+		v.Sessions[i] = unmarshalPastMeetingChatSessionResponseBodyToMeetingservicePastMeetingChatSession(val)
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatBadRequest builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint BadRequest error.
+func NewGetItxPastMeetingChatBadRequest(body *GetItxPastMeetingChatBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatForbidden builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint Forbidden error.
+func NewGetItxPastMeetingChatForbidden(body *GetItxPastMeetingChatForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatInternalServerError builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint InternalServerError error.
+func NewGetItxPastMeetingChatInternalServerError(body *GetItxPastMeetingChatInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatNotFound builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint NotFound error.
+func NewGetItxPastMeetingChatNotFound(body *GetItxPastMeetingChatNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatServiceUnavailable builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint ServiceUnavailable error.
+func NewGetItxPastMeetingChatServiceUnavailable(body *GetItxPastMeetingChatServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxPastMeetingChatUnauthorized builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint Unauthorized error.
+func NewGetItxPastMeetingChatUnauthorized(body *GetItxPastMeetingChatUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewCreateItxPastMeetingParticipantITXPastMeetingParticipantCreated builds a
 // "Meeting Service" service "create-itx-past-meeting-participant" endpoint
 // result from a HTTP "Created" response.
@@ -8486,6 +8674,25 @@ func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingS
 	}
 	if body.UpdatedAt != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatResponseBody runs the validations defined on
+// GetItxPastMeetingChatResponseBody
+func ValidateGetItxPastMeetingChatResponseBody(body *GetItxPastMeetingChatResponseBody) (err error) {
+	if body.MeetingAndOccurrenceID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_and_occurrence_id", "body"))
+	}
+	if body.Sessions == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("sessions", "body"))
+	}
+	for _, e := range body.Sessions {
+		if e != nil {
+			if err2 := validatePastMeetingChatSessionResponseBody(e, "body.sessions[*]"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
 	}
 	return
 }
@@ -10801,6 +11008,78 @@ func ValidateUpdateItxPastMeetingSummaryUnauthorizedResponseBody(body *UpdateItx
 	return
 }
 
+// ValidateGetItxPastMeetingChatBadRequestResponseBody runs the validations
+// defined on GetItxPastMeetingChatBadRequestResponseBody
+func ValidateGetItxPastMeetingChatBadRequestResponseBody(body *GetItxPastMeetingChatBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatForbiddenResponseBody runs the validations
+// defined on GetItxPastMeetingChatForbiddenResponseBody
+func ValidateGetItxPastMeetingChatForbiddenResponseBody(body *GetItxPastMeetingChatForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatInternalServerErrorResponseBody runs the
+// validations defined on GetItxPastMeetingChatInternalServerErrorResponseBody
+func ValidateGetItxPastMeetingChatInternalServerErrorResponseBody(body *GetItxPastMeetingChatInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatNotFoundResponseBody runs the validations
+// defined on GetItxPastMeetingChatNotFoundResponseBody
+func ValidateGetItxPastMeetingChatNotFoundResponseBody(body *GetItxPastMeetingChatNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatServiceUnavailableResponseBody runs the
+// validations defined on GetItxPastMeetingChatServiceUnavailableResponseBody
+func ValidateGetItxPastMeetingChatServiceUnavailableResponseBody(body *GetItxPastMeetingChatServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxPastMeetingChatUnauthorizedResponseBody runs the validations
+// defined on GetItxPastMeetingChatUnauthorizedResponseBody
+func ValidateGetItxPastMeetingChatUnauthorizedResponseBody(body *GetItxPastMeetingChatUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
 // ValidateCreateItxPastMeetingParticipantBadRequestResponseBody runs the
 // validations defined on CreateItxPastMeetingParticipantBadRequestResponseBody
 func ValidateCreateItxPastMeetingParticipantBadRequestResponseBody(body *CreateItxPastMeetingParticipantBadRequestResponseBody) (err error) {
@@ -12059,6 +12338,108 @@ func validateSummaryDataResponseBody(body *SummaryDataResponseBody, path string)
 	}
 	if body.EndTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat(path+".end_time", *body.EndTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidatePastMeetingChatSessionResponseBody runs the validations defined on
+// PastMeetingChatSession
+func ValidatePastMeetingChatSessionResponseBody(body *PastMeetingChatSessionResponseBody) (err error) {
+	if body.MessageCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message_count", "body"))
+	}
+	if body.Truncated == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("truncated", "body"))
+	}
+	if body.Messages == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("messages", "body"))
+	}
+	if body.RecordingStart != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.recording_start", *body.RecordingStart, goa.FormatDateTime))
+	}
+	if body.RecordingEnd != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.recording_end", *body.RecordingEnd, goa.FormatDateTime))
+	}
+	if body.MessageCount != nil {
+		if *body.MessageCount < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.message_count", *body.MessageCount, 0, true))
+		}
+	}
+	for _, e := range body.Messages {
+		if e != nil {
+			if err2 := validatePastMeetingChatMessageResponseBody(e, "body.messages[*]"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// validatePastMeetingChatSessionResponseBody checks PastMeetingChatSession and
+// reports errors using the path supplied by its caller
+func validatePastMeetingChatSessionResponseBody(body *PastMeetingChatSessionResponseBody, path string) (err error) {
+	if body.MessageCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message_count", path))
+	}
+	if body.Truncated == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("truncated", path))
+	}
+	if body.Messages == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("messages", path))
+	}
+	if body.RecordingStart != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".recording_start", *body.RecordingStart, goa.FormatDateTime))
+	}
+	if body.RecordingEnd != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".recording_end", *body.RecordingEnd, goa.FormatDateTime))
+	}
+	if body.MessageCount != nil {
+		if *body.MessageCount < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError(path+".message_count", *body.MessageCount, 0, true))
+		}
+	}
+	for _, e := range body.Messages {
+		if e != nil {
+			if err2 := validatePastMeetingChatMessageResponseBody(e, path+".messages[*]"); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidatePastMeetingChatMessageResponseBody runs the validations defined on
+// PastMeetingChatMessage
+func ValidatePastMeetingChatMessageResponseBody(body *PastMeetingChatMessageResponseBody) (err error) {
+	if body.Offset == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("offset", "body"))
+	}
+	if body.Sender == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("sender", "body"))
+	}
+	if body.Recipient == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("recipient", "body"))
+	}
+	if body.Text == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("text", "body"))
+	}
+	return
+}
+
+// validatePastMeetingChatMessageResponseBody checks PastMeetingChatMessage and
+// reports errors using the path supplied by its caller
+func validatePastMeetingChatMessageResponseBody(body *PastMeetingChatMessageResponseBody, path string) (err error) {
+	if body.Offset == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("offset", path))
+	}
+	if body.Sender == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("sender", path))
+	}
+	if body.Recipient == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("recipient", path))
+	}
+	if body.Text == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("text", path))
 	}
 	return
 }

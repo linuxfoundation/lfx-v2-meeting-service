@@ -43,6 +43,7 @@ type Client struct {
 	UpdateItxPastMeetingEndpoint                  goa.Endpoint
 	GetItxPastMeetingSummaryEndpoint              goa.Endpoint
 	UpdateItxPastMeetingSummaryEndpoint           goa.Endpoint
+	GetItxPastMeetingChatEndpoint                 goa.Endpoint
 	CreateItxPastMeetingParticipantEndpoint       goa.Endpoint
 	UpdateItxPastMeetingParticipantEndpoint       goa.Endpoint
 	DeleteItxPastMeetingParticipantEndpoint       goa.Endpoint
@@ -61,7 +62,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, getItxPastMeetingChat, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                                readyz,
 		LivezEndpoint:                                 livez,
@@ -90,6 +91,7 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		UpdateItxPastMeetingEndpoint:                  updateItxPastMeeting,
 		GetItxPastMeetingSummaryEndpoint:              getItxPastMeetingSummary,
 		UpdateItxPastMeetingSummaryEndpoint:           updateItxPastMeetingSummary,
+		GetItxPastMeetingChatEndpoint:                 getItxPastMeetingChat,
 		CreateItxPastMeetingParticipantEndpoint:       createItxPastMeetingParticipant,
 		UpdateItxPastMeetingParticipantEndpoint:       updateItxPastMeetingParticipant,
 		DeleteItxPastMeetingParticipantEndpoint:       deleteItxPastMeetingParticipant,
@@ -560,6 +562,25 @@ func (c *Client) UpdateItxPastMeetingSummary(ctx context.Context, p *UpdateItxPa
 		return
 	}
 	return ires.(*PastMeetingSummary), nil
+}
+
+// GetItxPastMeetingChat calls the "get-itx-past-meeting-chat" endpoint of the
+// "Meeting Service" service.
+// GetItxPastMeetingChat may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): No saved chat for this past meeting
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxPastMeetingChat(ctx context.Context, p *GetItxPastMeetingChatPayload) (res *PastMeetingChat, err error) {
+	var ires any
+	ires, err = c.GetItxPastMeetingChatEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*PastMeetingChat), nil
 }
 
 // CreateItxPastMeetingParticipant calls the

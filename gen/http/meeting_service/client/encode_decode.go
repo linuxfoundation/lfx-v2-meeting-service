@@ -4939,6 +4939,200 @@ func DecodeUpdateItxPastMeetingSummaryResponse(decoder func(*http.Response) goah
 	}
 }
 
+// BuildGetItxPastMeetingChatRequest instantiates a HTTP request object with
+// method and path set to call the "Meeting Service" service
+// "get-itx-past-meeting-chat" endpoint
+func (c *Client) BuildGetItxPastMeetingChatRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingAndOccurrenceID string
+	)
+	{
+		p, ok := v.(*meetingservice.GetItxPastMeetingChatPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-chat", "*meetingservice.GetItxPastMeetingChatPayload", v)
+		}
+		meetingAndOccurrenceID = p.MeetingAndOccurrenceID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetItxPastMeetingChatMeetingServicePath(meetingAndOccurrenceID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "get-itx-past-meeting-chat", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetItxPastMeetingChatRequest returns an encoder for requests sent to
+// the Meeting Service get-itx-past-meeting-chat server.
+func EncodeGetItxPastMeetingChatRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.GetItxPastMeetingChatPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "get-itx-past-meeting-chat", "*meetingservice.GetItxPastMeetingChatPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		values.Add("limit", strconv.Itoa(p.Limit))
+		values.Add("offset", strconv.Itoa(p.Offset))
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeGetItxPastMeetingChatResponse returns a decoder for responses returned
+// by the Meeting Service get-itx-past-meeting-chat endpoint. restoreBody
+// controls whether the response body should be restored after having been read.
+// DecodeGetItxPastMeetingChatResponse may return the following errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeGetItxPastMeetingChatResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetItxPastMeetingChatResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			res := NewGetItxPastMeetingChatPastMeetingChatOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetItxPastMeetingChatBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body GetItxPastMeetingChatForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetItxPastMeetingChatInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body GetItxPastMeetingChatNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body GetItxPastMeetingChatServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body GetItxPastMeetingChatUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			err = ValidateGetItxPastMeetingChatUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, NewGetItxPastMeetingChatUnauthorized(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "get-itx-past-meeting-chat", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "get-itx-past-meeting-chat", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildCreateItxPastMeetingParticipantRequest instantiates a HTTP request
 // object with method and path set to call the "Meeting Service" service
 // "create-itx-past-meeting-participant" endpoint
@@ -8009,6 +8203,42 @@ func unmarshalSummaryDataResponseBodyToMeetingserviceSummaryData(v *SummaryDataR
 		Content:       v.Content,
 		DocURL:        v.DocURL,
 		EditedContent: v.EditedContent,
+	}
+
+	return res
+}
+
+// unmarshalPastMeetingChatSessionResponseBodyToMeetingservicePastMeetingChatSession
+// builds a value of type *meetingservice.PastMeetingChatSession from a value
+// of type *PastMeetingChatSessionResponseBody.
+func unmarshalPastMeetingChatSessionResponseBodyToMeetingservicePastMeetingChatSession(v *PastMeetingChatSessionResponseBody) *meetingservice.PastMeetingChatSession {
+	res := &meetingservice.PastMeetingChatSession{
+		RecordingStart: v.RecordingStart,
+		RecordingEnd:   v.RecordingEnd,
+		MessageCount:   *v.MessageCount,
+		Truncated:      *v.Truncated,
+	}
+	res.Messages = make([]*meetingservice.PastMeetingChatMessage, len(v.Messages))
+	for i, val := range v.Messages {
+		if val == nil {
+			res.Messages[i] = nil
+			continue
+		}
+		res.Messages[i] = unmarshalPastMeetingChatMessageResponseBodyToMeetingservicePastMeetingChatMessage(val)
+	}
+
+	return res
+}
+
+// unmarshalPastMeetingChatMessageResponseBodyToMeetingservicePastMeetingChatMessage
+// builds a value of type *meetingservice.PastMeetingChatMessage from a value
+// of type *PastMeetingChatMessageResponseBody.
+func unmarshalPastMeetingChatMessageResponseBodyToMeetingservicePastMeetingChatMessage(v *PastMeetingChatMessageResponseBody) *meetingservice.PastMeetingChatMessage {
+	res := &meetingservice.PastMeetingChatMessage{
+		Offset:    *v.Offset,
+		Sender:    *v.Sender,
+		Recipient: *v.Recipient,
+		Text:      *v.Text,
 	}
 
 	return res
