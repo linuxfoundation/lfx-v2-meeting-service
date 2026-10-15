@@ -46,13 +46,16 @@ func NewRecordingRecordReader(kv KeyValueGetter, logger *slog.Logger) *Recording
 }
 
 // GetRecordingRecord reads itx-zoom-past-meetings-recordings.{meetingAndOccurrenceID}.
-// Only jetstream.ErrKeyNotFound means absence (domain.ErrRecordingRecordNotFound);
-// every other read failure is reported as unavailable, and a record that does not
-// decode as internal, so that callers never mistake a failure for "no recording".
+// Absence (domain.ErrRecordingRecordNotFound) is jetstream.ErrKeyNotFound, or
+// jetstream.ErrInvalidKey for an ID that cannot be a KV key at all (NATS keys allow
+// only [-/_=.A-Za-z0-9], so such a record cannot exist; the event pipeline's
+// isKVAbsenceError makes the same call). Every other read failure is reported as
+// unavailable, and a record that does not decode as internal, so that callers never
+// mistake a failure for "no recording".
 func (r *RecordingRecordReader) GetRecordingRecord(ctx context.Context, meetingAndOccurrenceID string) (*models.RecordingRecord, error) {
 	entry, err := r.kv.Get(ctx, recordingRecordKeyPrefix+meetingAndOccurrenceID)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrKeyNotFound) {
+		if errors.Is(err, jetstream.ErrKeyNotFound) || errors.Is(err, jetstream.ErrInvalidKey) {
 			return nil, domain.ErrRecordingRecordNotFound
 		}
 		r.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to read recording record from KV",

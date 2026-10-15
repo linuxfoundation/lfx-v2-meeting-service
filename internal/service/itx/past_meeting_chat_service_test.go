@@ -56,7 +56,7 @@ func (f *fakeRecordingFileFetcher) FetchText(_ context.Context, link string, max
 }
 
 const (
-	chatID    = "93699735000:1700000000"
+	chatID    = "96365872728-1630560600000"
 	chatLinkA = "https://recordings.example.com/a/chat_file?token=secret-a"
 	chatLinkB = "https://recordings.example.com/b/chat_file?token=secret-b"
 )

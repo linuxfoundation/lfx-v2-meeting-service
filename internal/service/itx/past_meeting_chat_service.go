@@ -21,8 +21,10 @@ import (
 // chatFileType is the provider's file_type of a saved chat in a recording record.
 const chatFileType = "CHAT"
 
-// meetingAndOccurrenceIDPattern bounds the path parameter before any KV read. Both
-// delimiters in use ("93699735000:1700000000", "12343245463-1630560600000") pass.
+// meetingAndOccurrenceIDPattern bounds the path parameter before any KV read. The
+// record keys are hyphenated ("12343245463-1630560600000"); the colon form some
+// documents show as an example is admitted here and answered 404 by the reader,
+// since it cannot be a KV key.
 var meetingAndOccurrenceIDPattern = regexp.MustCompile(`^[0-9A-Za-z:_-]+$`)
 
 // Client-facing messages. They name no URL, host or file.

@@ -52,7 +52,7 @@ func (e fakeKVEntry) Delta() uint64                   { return 0 }
 func (e fakeKVEntry) Operation() jetstream.KeyValueOp { return jetstream.KeyValuePut }
 
 const recordingJSON = `{
-  "meeting_and_occurrence_id": "93699735000:1700000000",
+  "meeting_and_occurrence_id": "96365872728-1630560600000",
   "proj_id": "a0A000000000001",
   "recording_access": "meeting_participants",
   "recording_count": "3",
@@ -70,7 +70,7 @@ const recordingJSON = `{
 }`
 
 func TestRecordingRecordReader_GetRecordingRecord(t *testing.T) {
-	const id = "93699735000:1700000000"
+	const id = "96365872728-1630560600000"
 	logger := slog.New(slog.DiscardHandler)
 
 	t.Run("decodes a JSON record under the recording key prefix", func(t *testing.T) {
@@ -117,6 +117,12 @@ func TestRecordingRecordReader_GetRecordingRecord(t *testing.T) {
 	t.Run("missing key is ErrRecordingRecordNotFound", func(t *testing.T) {
 		r := NewRecordingRecordReader(&fakeKV{values: map[string][]byte{}}, logger)
 		_, err := r.GetRecordingRecord(context.Background(), id)
+		assert.ErrorIs(t, err, domain.ErrRecordingRecordNotFound)
+	})
+
+	t.Run("an ID that cannot be a KV key is not found", func(t *testing.T) {
+		r := NewRecordingRecordReader(&fakeKV{err: jetstream.ErrInvalidKey}, logger)
+		_, err := r.GetRecordingRecord(context.Background(), "93699735000:1700000000")
 		assert.ErrorIs(t, err, domain.ErrRecordingRecordNotFound)
 	})
 

@@ -22,7 +22,7 @@ func TestConvertPastMeetingChatToGoa(t *testing.T) {
 
 	t.Run("maps sessions and messages, timestamps as RFC3339 UTC", func(t *testing.T) {
 		got := ConvertPastMeetingChatToGoa(&itx.PastMeetingChatResponse{
-			MeetingAndOccurrenceID: "93699735000:1700000000",
+			MeetingAndOccurrenceID: "96365872728-1630560600000",
 			Sessions: []itx.PastMeetingChatSession{{
 				RecordingStart: start,
 				RecordingEnd:   end,
@@ -34,7 +34,7 @@ func TestConvertPastMeetingChatToGoa(t *testing.T) {
 			}},
 		})
 
-		assert.Equal(t, "93699735000:1700000000", got.MeetingAndOccurrenceID)
+		assert.Equal(t, "96365872728-1630560600000", got.MeetingAndOccurrenceID)
 		require.Len(t, got.Sessions, 1)
 		s := got.Sessions[0]
 		require.NotNil(t, s.RecordingStart)
@@ -52,7 +52,7 @@ func TestConvertPastMeetingChatToGoa(t *testing.T) {
 
 	t.Run("omits zero timestamps and keeps an empty session's messages as an array", func(t *testing.T) {
 		got := ConvertPastMeetingChatToGoa(&itx.PastMeetingChatResponse{
-			MeetingAndOccurrenceID: "93699735000:1700000000",
+			MeetingAndOccurrenceID: "96365872728-1630560600000",
 			Sessions:               []itx.PastMeetingChatSession{{Messages: []itx.PastMeetingChatMessage{}}},
 		})
 		require.Len(t, got.Sessions, 1)
@@ -64,12 +64,12 @@ func TestConvertPastMeetingChatToGoa(t *testing.T) {
 		// The wire body, as the generated server encodes it.
 		out, err := json.Marshal(genserver.NewGetItxPastMeetingChatResponseBody(got))
 		require.NoError(t, err)
-		assert.JSONEq(t, `{"meeting_and_occurrence_id":"93699735000:1700000000","sessions":[{"message_count":0,"truncated":false,"messages":[]}]}`, string(out))
+		assert.JSONEq(t, `{"meeting_and_occurrence_id":"96365872728-1630560600000","sessions":[{"message_count":0,"truncated":false,"messages":[]}]}`, string(out))
 	})
 
 	t.Run("wire body has snake_case keys and only the contract's fields", func(t *testing.T) {
 		got := ConvertPastMeetingChatToGoa(&itx.PastMeetingChatResponse{
-			MeetingAndOccurrenceID: "93699735000:1700000000",
+			MeetingAndOccurrenceID: "96365872728-1630560600000",
 			Sessions: []itx.PastMeetingChatSession{{
 				RecordingStart: end, RecordingEnd: end, MessageCount: 1,
 				Messages: []itx.PastMeetingChatMessage{{Offset: "00:00:01", Sender: "Alice Example", Recipient: "Everyone", Text: "hi"}},

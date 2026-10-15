@@ -1578,7 +1578,7 @@ func meetingServiceGetItxPastMeetingChatUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-chat --meeting-and-occurrence-id \"93699735000:1700000000\" --version \"1\" --limit 500 --offset 0 --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-chat --meeting-and-occurrence-id \"96365872728-1630560600000\" --version \"1\" --limit 500 --offset 0 --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingParticipantUsage() {

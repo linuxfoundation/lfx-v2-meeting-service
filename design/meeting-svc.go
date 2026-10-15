@@ -1179,7 +1179,7 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			Attribute("meeting_and_occurrence_id", String, "Past meeting ID (meeting_and_occurrence_id of the recording record)", func() {
-				Example("93699735000:1700000000")
+				Example("96365872728-1630560600000")
 			})
 			Attribute("limit", Int, "Maximum number of messages returned per session", func() {
 				Default(500)

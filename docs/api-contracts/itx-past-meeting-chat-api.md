@@ -15,7 +15,7 @@ The recording record lists a `CHAT` file for each recording session whose chat w
 **Upstream**: none from ITX. Data source: the v1 recording record `itx-zoom-past-meetings-recordings.{meeting_and_occurrence_id}` in the `v1-objects` JetStream KV bucket (the same record the indexer builds the [recording document](../indexer-contract.md#v1-past-meeting-recording) from), and the provider link of each of its `CHAT` files.
 
 **Path Parameters**:
-- `meeting_and_occurrence_id` (string, required): The past meeting identifier, which is also the key of the recording record. Accepted characters: `[0-9A-Za-z:_-]`, at most 128 characters (both `93699735000:1700000000` and `12343245463-1630560600000` forms pass). Anything else is `400`.
+- `meeting_and_occurrence_id` (string, required): The past meeting identifier (`meeting_id-occurrence_id`, for example `96365872728-1630560600000`), which is also the key of the recording record. Accepted characters: `[0-9A-Za-z:_-]`, at most 128 characters; anything else is `400`. An identifier that cannot be a KV key (NATS keys allow only `[-/_=.A-Za-z0-9]`, so one containing `:`) has no record and is `404`.
 
 **Query Parameters** (apply to the message list of **each** session):
 - `limit` (integer, optional): Maximum number of messages per session. Default `500`, minimum `1`, maximum `2000`.
@@ -31,7 +31,7 @@ The recording record lists a `CHAT` file for each recording session whose chat w
 
 ```json
 {
-  "meeting_and_occurrence_id": "93699735000:1700000000",
+  "meeting_and_occurrence_id": "96365872728-1630560600000",
   "sessions": [
     {
       "recording_start": "2026-10-01T15:00:00Z",

@@ -4000,8 +4000,8 @@ paths:
                   schema:
                     type: string
                     description: Past meeting ID (meeting_and_occurrence_id of the recording record)
-                    example: 93699735000:1700000000
-                  example: 93699735000:1700000000
+                    example: 96365872728-1630560600000
+                  example: 96365872728-1630560600000
             responses:
                 "200":
                     description: OK response.
@@ -4010,7 +4010,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/PastMeetingChat'
                             example:
-                                meeting_and_occurrence_id: 93699735000:1700000000
+                                meeting_and_occurrence_id: 96365872728-1630560600000
                                 sessions:
                                     - message_count: 42
                                       messages:
@@ -7424,7 +7424,7 @@ components:
                 meeting_and_occurrence_id:
                     type: string
                     description: The past meeting identifier
-                    example: 93699735000:1700000000
+                    example: 96365872728-1630560600000
                 sessions:
                     type: array
                     items:
@@ -7467,7 +7467,7 @@ components:
                           truncated: false
             description: The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start
             example:
-                meeting_and_occurrence_id: 93699735000:1700000000
+                meeting_and_occurrence_id: 96365872728-1630560600000
                 sessions:
                     - message_count: 42
                       messages:

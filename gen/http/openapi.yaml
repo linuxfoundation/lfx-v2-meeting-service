@@ -6434,7 +6434,7 @@ definitions:
             meeting_and_occurrence_id:
                 type: string
                 description: The past meeting identifier
-                example: 93699735000:1700000000
+                example: 96365872728-1630560600000
             sessions:
                 type: array
                 items:
@@ -6477,7 +6477,7 @@ definitions:
                       truncated: false
         description: The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start
         example:
-            meeting_and_occurrence_id: 93699735000:1700000000
+            meeting_and_occurrence_id: 96365872728-1630560600000
             sessions:
                 - message_count: 42
                   messages:

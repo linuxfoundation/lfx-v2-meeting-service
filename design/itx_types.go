@@ -615,7 +615,7 @@ var PastMeetingChatSession = Type("PastMeetingChatSession", func() {
 var PastMeetingChat = Type("PastMeetingChat", func() {
 	Description("The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start")
 	Attribute("meeting_and_occurrence_id", String, "The past meeting identifier", func() {
-		Example("93699735000:1700000000")
+		Example("96365872728-1630560600000")
 	})
 	Attribute("sessions", ArrayOf(PastMeetingChatSession), "Recording sessions that saved a chat, ordered by recording_start")
 	Required("meeting_and_occurrence_id", "sessions")
