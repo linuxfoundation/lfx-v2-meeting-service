@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/v1objects"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
@@ -34,36 +34,11 @@ func shouldSkipSync(lastModifiedByID string) bool {
 	return lastModifiedByID == "meeting-service" || lastModifiedByID == "lfx-v2-meeting-service"
 }
 
+// parseTime parses the timestamp layouts found in v1 records. The implementation lives in
+// internal/infrastructure/v1objects so readers outside this package decode timestamps the
+// same way.
 func parseTime(timeStr string) (time.Time, error) {
-	if timeStr == "" {
-		return time.Time{}, fmt.Errorf("empty time string")
-	}
-
-	// Try RFC3339 first
-	t, err := time.Parse(time.RFC3339, timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try ISO 8601
-	t, err = time.Parse("2006-01-02T15:04:05Z", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try with milliseconds
-	t, err = time.Parse("2006-01-02T15:04:05.000Z", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	// Try space-separated format
-	t, err = time.Parse("2006-01-02 15:04:05", timeStr)
-	if err == nil {
-		return t, nil
-	}
-
-	return time.Time{}, fmt.Errorf("unable to parse time: %s", timeStr)
+	return v1objects.ParseTime(timeStr)
 }
 
 func extractIDFromKey(key, prefix string) string {
@@ -113,54 +88,12 @@ func parseName(fullName string) (firstName, lastName string) {
 	return parts[0], strings.Join(parts[1:], " ")
 }
 
-// coerceInt decodes a JSON-decoded interface{} into *dest.
-// Accepts string (numeric or empty), float64, int, and nil; returns an error for any other type.
+// coerceInt and coerceInt64 decode a JSON-decoded interface{} into *dest. The implementations
+// live in internal/infrastructure/v1objects (see parseTime).
 func coerceInt(dest *int, v interface{}, field string) error {
-	switch val := v.(type) {
-	case string:
-		if val == "" {
-			return nil
-		}
-		n, err := strconv.Atoi(val)
-		if err != nil {
-			return fmt.Errorf("invalid value for %s: %w", field, err)
-		}
-		*dest = n
-	case float64:
-		*dest = int(val)
-	case int:
-		*dest = val
-	case nil:
-		// leave dest unchanged
-	default:
-		return fmt.Errorf("invalid type for %s: %T", field, v)
-	}
-	return nil
+	return v1objects.CoerceInt(dest, v, field)
 }
 
-// coerceInt64 decodes a JSON-decoded interface{} into *dest.
-// Accepts string (numeric or empty), float64, int64, int, and nil; returns an error for any other type.
 func coerceInt64(dest *int64, v interface{}, field string) error {
-	switch val := v.(type) {
-	case string:
-		if val == "" {
-			return nil
-		}
-		n, err := strconv.ParseInt(val, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid value for %s: %w", field, err)
-		}
-		*dest = n
-	case float64:
-		*dest = int64(val)
-	case int64:
-		*dest = val
-	case int:
-		*dest = int64(val)
-	case nil:
-		// leave dest unchanged
-	default:
-		return fmt.Errorf("invalid type for %s: %T", field, v)
-	}
-	return nil
+	return v1objects.CoerceInt64(dest, v, field)
 }
