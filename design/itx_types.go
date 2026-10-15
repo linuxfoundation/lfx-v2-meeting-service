@@ -573,7 +573,7 @@ var PastMeetingSummary = Type("PastMeetingSummary", func() {
 // provider wrote it; it is never interpreted by the service.
 var PastMeetingChatMessage = Type("PastMeetingChatMessage", func() {
 	Description("One message of the chat saved with a past meeting recording")
-	Attribute("offset", String, "Elapsed time since the recording started, as written in the chat log (HH:MM:SS)", func() {
+	Attribute("offset", String, "Elapsed time since the recording started, as written in the chat log (HH:MM:SS, possibly with fractional seconds)", func() {
 		Example("00:12:34")
 	})
 	Attribute("sender", String, "Display name of the sender as written in the chat log", func() {
@@ -599,7 +599,7 @@ var PastMeetingChatSession = Type("PastMeetingChatSession", func() {
 		Format(FormatDateTime)
 		Example("2026-10-01T16:02:11Z")
 	})
-	Attribute("message_count", Int, "Number of messages parsed from the chat file, before limit and offset apply", func() {
+	Attribute("message_count", Int, "Number of public (sent to everyone) messages parsed from the chat file, before limit and offset apply", func() {
 		Minimum(0)
 		Example(42)
 	})

@@ -4088,7 +4088,8 @@ type PastMeetingChatSessionResponseBody struct {
 	// End of the recording session (RFC3339); omitted when the recording record
 	// carries no parsable value
 	RecordingEnd *string `form:"recording_end,omitempty" json:"recording_end,omitempty" xml:"recording_end,omitempty"`
-	// Number of messages parsed from the chat file, before limit and offset apply
+	// Number of public (sent to everyone) messages parsed from the chat file,
+	// before limit and offset apply
 	MessageCount *int `form:"message_count,omitempty" json:"message_count,omitempty" xml:"message_count,omitempty"`
 	// True when the chat file exceeded the byte cap or the message window ends
 	// before the last message
@@ -4102,7 +4103,7 @@ type PastMeetingChatSessionResponseBody struct {
 // types.
 type PastMeetingChatMessageResponseBody struct {
 	// Elapsed time since the recording started, as written in the chat log
-	// (HH:MM:SS)
+	// (HH:MM:SS, possibly with fractional seconds)
 	Offset *string `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
 	// Display name of the sender as written in the chat log
 	Sender *string `form:"sender,omitempty" json:"sender,omitempty" xml:"sender,omitempty"`

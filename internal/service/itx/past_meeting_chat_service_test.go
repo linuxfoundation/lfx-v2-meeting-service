@@ -208,6 +208,31 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 			assert.NotContains(t, string(out), "preamble-text")
 		})
 
+		t.Run("a private message with an unrecognised timestamp form is never glued to a public one", func(t *testing.T) {
+			record := twoSessionRecord()
+			record.RecordingFiles = record.RecordingFiles[3:]
+			reader := &fakeRecordingRecordReader{record: record}
+			fetcher := &fakeRecordingFileFetcher{bodies: map[string]string{chatLinkA: "" +
+				"00:00:12\tFrom Alice Example to Everyone:\tpublic text\n" +
+				"00:00:40.123\tFrom Bob Fixture to Alice Example(Direct Message):\tprivate-secret\n" +
+				"00:00:41,500\tBob -> Alice: other-private-secret\n" +
+				"00:00:50\tFrom Bob Fixture to Everyone:\tpublic two\n"}}
+			svc := NewPastMeetingChatService(reader, fetcher, 1<<20)
+
+			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
+			require.NoError(t, err)
+			s := resp.Sessions[0]
+			assert.Equal(t, 2, s.MessageCount)
+			require.Len(t, s.Messages, 2)
+			assert.Equal(t, "public text", s.Messages[0].Text, "the public message's text is unchanged")
+			assert.Equal(t, "public two", s.Messages[1].Text)
+
+			out, err := json.Marshal(resp)
+			require.NoError(t, err)
+			assert.NotContains(t, string(out), "private-secret")
+			assert.NotContains(t, string(out), "other-private-secret")
+		})
+
 		t.Run("marshalled body carries no private text", func(t *testing.T) {
 			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
 			require.NoError(t, err)

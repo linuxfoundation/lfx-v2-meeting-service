@@ -814,7 +814,10 @@ spec:
     # The saved chat is read under the same relation that guards the recording
     # index document (recording_viewer): a caller sees the chat exactly when they
     # may see the recording. The route parameter is the recording record's key,
-    # so no further check is needed in the service.
+    # so no further check is needed in the service. Unlike the other rules this
+    # one has no anonymous_authenticator fallback: a public recording's wildcard
+    # tuple would otherwise admit an unsigned-in caller, and the chat is for
+    # signed-in users only.
     - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_chat:get"
       match:
         methods:
@@ -824,7 +827,6 @@ spec:
       allow_encoded_slashes: "off"
       execute:
         - authenticator: oidc
-        - authenticator: anonymous_authenticator
         {{- if .Values.app.use_oidc_contextualizer }}
         - contextualizer: oidc_contextualizer
         {{- end }}

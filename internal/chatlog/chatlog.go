@@ -38,17 +38,21 @@ type Message struct {
 //	HH:MM:SS<TAB>From <sender> to <recipient>:<TAB><text>   (older, text on the same line)
 //	HH:MM:SS From <sender> to <recipient>:                  (newer, text on following tab-indented lines)
 //
-// The sender is the shortest run before " to " so that a recipient containing
-// no " to " (the common case) is matched exactly; the recipient is the shortest
-// run before the ':' that ends the header. Any trailing text after ':' must be
+// The timestamp is H:MM:SS or HH:MM:SS with optional fractional seconds. The
+// sender is the shortest run before " to " so that a recipient containing no
+// " to " (the common case) is matched exactly; the recipient is the shortest run
+// before the ':' that ends the header. Any trailing text after ':' must be
 // introduced by a tab; the group is empty for the newer layout.
-var headerPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})[\t ]+From (.+?) to (.+?):(?:\t(.*))?$`)
+var headerPattern = regexp.MustCompile(`^(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)[\t ]+From (.+?) to (.+?):(?:\t(.*))?$`)
 
-// timestampedPattern matches a line that starts with a timestamp but is not a
-// recognised header (a drifted or unknown layout). Such a line still starts a
-// new message: the offset is kept, sender and recipient are empty, and the text
-// is the remainder after the timestamp and the tab or space that follows it.
-var timestampedPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})(?:[\t ](.*))?$`)
+// timestampedPattern matches any line that starts with a timestamp but is not a
+// recognised header (a drifted or unknown layout), whatever follows the
+// timestamp. Such a line always starts a new message of its own: the offset is
+// kept, sender and recipient are empty (so PublicOnly drops it), and the text is
+// the remainder. It is never appended to the message before it, which could be
+// public while this line is a private message in a layout the parser does not
+// know.
+var timestampedPattern = regexp.MustCompile(`^(\d{1,2}:\d{2}:\d{2}(?:\.\d+)?)(.*)$`)
 
 // Parse parses a saved-chat log. data is the whole file, or its first part when
 // the caller cut it at a byte cap; truncated says which. When truncated, the
@@ -59,11 +63,12 @@ var timestampedPattern = regexp.MustCompile(`^(\d{2}:\d{2}:\d{2})(?:[\t ](.*))?$
 // removed from every line, a UTF-8 byte-order mark is removed from the first
 // line, and blank lines are ignored. A line that starts with a timestamp but
 // matches neither header layout still starts a new message, with an empty
-// sender and recipient, so a layout drift never glues separate messages
-// together. Any other unmatched line is appended to the previous message's text
-// (after removing one leading tab, the indentation of the newer layout); when
-// there is no previous message it becomes a message with an empty offset,
-// sender and recipient.
+// sender and recipient. A line is a continuation of the message before it only
+// when it is tab-indented (the newer layout's indentation) and a message
+// precedes it; the tab is removed. Every other line starts a new message with
+// an empty offset, sender and recipient. The rule fails closed: text the parser
+// cannot attribute to a recipient is never glued onto a message that has one,
+// and PublicOnly drops it.
 func Parse(data []byte, truncated bool) []Message {
 	if truncated {
 		if i := bytes.LastIndexByte(data, '\n'); i >= 0 {
@@ -110,15 +115,20 @@ func Parse(data []byte, truncated bool) []Message {
 		if m := timestampedPattern.FindStringSubmatch(line); m != nil {
 			closeMessage()
 			messages = append(messages, Message{Offset: m[1]})
-			if rest := strings.TrimPrefix(m[2], "\t"); rest != "" {
+			if rest := strings.TrimLeft(m[2], "\t "); rest != "" {
 				fragments = append(fragments, rest)
 			}
 			continue
 		}
 
-		if len(messages) == 0 {
-			messages = append(messages, Message{})
+		if strings.HasPrefix(line, "\t") && len(messages) > 0 {
+			fragments = append(fragments, strings.TrimPrefix(line, "\t"))
+			continue
 		}
+
+		// Neither a header nor an indented continuation: an unattributed message.
+		closeMessage()
+		messages = append(messages, Message{})
 		fragments = append(fragments, strings.TrimPrefix(line, "\t"))
 	}
 	closeMessage()

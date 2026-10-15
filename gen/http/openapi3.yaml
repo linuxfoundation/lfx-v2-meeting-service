@@ -7508,7 +7508,7 @@ components:
             properties:
                 offset:
                     type: string
-                    description: Elapsed time since the recording started, as written in the chat log (HH:MM:SS)
+                    description: Elapsed time since the recording started, as written in the chat log (HH:MM:SS, possibly with fractional seconds)
                     example: "00:12:34"
                 recipient:
                     type: string
@@ -7538,7 +7538,7 @@ components:
             properties:
                 message_count:
                     type: integer
-                    description: Number of messages parsed from the chat file, before limit and offset apply
+                    description: Number of public (sent to everyone) messages parsed from the chat file, before limit and offset apply
                     example: 42
                     format: int64
                     minimum: 0

@@ -1248,7 +1248,7 @@ type PastMeetingChat struct {
 // One message of the chat saved with a past meeting recording
 type PastMeetingChatMessage struct {
 	// Elapsed time since the recording started, as written in the chat log
-	// (HH:MM:SS)
+	// (HH:MM:SS, possibly with fractional seconds)
 	Offset string
 	// Display name of the sender as written in the chat log
 	Sender string
@@ -1267,7 +1267,8 @@ type PastMeetingChatSession struct {
 	// End of the recording session (RFC3339); omitted when the recording record
 	// carries no parsable value
 	RecordingEnd *string
-	// Number of messages parsed from the chat file, before limit and offset apply
+	// Number of public (sent to everyone) messages parsed from the chat file,
+	// before limit and offset apply
 	MessageCount int
 	// True when the chat file exceeded the byte cap or the message window ends
 	// before the last message

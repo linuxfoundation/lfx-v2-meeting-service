@@ -41,12 +41,57 @@ func TestParse(t *testing.T) {
 		}, got)
 	})
 
-	t.Run("continuation lines join the previous message", func(t *testing.T) {
+	t.Run("only tab-indented lines continue the previous message", func(t *testing.T) {
+		// The fixture has, after a public header: a line without a tab, then a
+		// tab-indented line. The first is unattributed (its own message, dropped by
+		// PublicOnly); the second continues the message before it, which is that
+		// unattributed one, never the public one.
 		got := Parse(fixture(t, "continuation.chat"), false)
 		assert.Equal(t, []Message{
-			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "first line\nsecond line without a tab\nthird line with a tab"},
+			{Offset: "00:00:12", Sender: "Alice Example", Recipient: "Everyone", Text: "first line"},
+			{Text: "second line without a tab\nthird line with a tab"},
 			{Offset: "00:00:30", Sender: "Bob Fixture", Recipient: "Everyone", Text: "next message"},
 		}, got)
+		public := PublicOnly(got)
+		require.Len(t, public, 2)
+		assert.Equal(t, "first line", public[0].Text)
+	})
+
+	t.Run("a tab-indented line after a public message is a continuation", func(t *testing.T) {
+		got := Parse([]byte("00:00:12\tFrom Alice Example to Everyone:\tfirst\n\tmore\n"), false)
+		require.Len(t, got, 1)
+		assert.Equal(t, "first\nmore", got[0].Text)
+	})
+
+	t.Run("a non-indented, non-timestamped line after a public message is a new unattributed message", func(t *testing.T) {
+		got := Parse([]byte("00:00:12\tFrom Alice Example to Everyone:\tfirst\nloose line\n"), false)
+		require.Len(t, got, 2)
+		assert.Equal(t, "first", got[0].Text)
+		assert.Equal(t, Message{Text: "loose line"}, got[1])
+		assert.Len(t, PublicOnly(got), 1)
+	})
+
+	t.Run("a line with an unrecognised timestamp form never joins the previous message", func(t *testing.T) {
+		got := Parse([]byte(""+
+			"00:00:12\tFrom Alice Example to Everyone:\tpublic text\n"+
+			"00:00:40.123\tFrom Bob Fixture to Alice Example(Direct Message):\tprivate-secret\n"+
+			"0:00:50 \tBob Fixture -> Everyone: odd-layout-text\n"), false)
+		require.Len(t, got, 3)
+		assert.Equal(t, "public text", got[0].Text, "the public message's text is unchanged")
+		// Fractional seconds are a recognised header form: the private message is
+		// attributed and dropped by PublicOnly as any direct message.
+		assert.Equal(t, Message{Offset: "00:00:40.123", Sender: "Bob Fixture", Recipient: "Alice Example(Direct Message)", Text: "private-secret"}, got[1])
+		assert.Equal(t, Message{Offset: "0:00:50", Text: "Bob Fixture -> Everyone: odd-layout-text"}, got[2])
+
+		public := PublicOnly(got)
+		require.Len(t, public, 1)
+		assert.Equal(t, "public text", public[0].Text)
+	})
+
+	t.Run("a fractional-seconds public header parses", func(t *testing.T) {
+		got := Parse([]byte("01:02:03.456 From Alice Example to Everyone:\n\thello\n"), false)
+		assert.Equal(t, []Message{{Offset: "01:02:03.456", Sender: "Alice Example", Recipient: "Everyone", Text: "hello"}}, got)
+		assert.Len(t, PublicOnly(got), 1)
 	})
 
 	t.Run("unrecognised first line becomes a message without sender", func(t *testing.T) {
