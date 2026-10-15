@@ -23,7 +23,7 @@ import (
 //	command (subcommand1|subcommand2|...)
 func UsageCommands() []string {
 	return []string{
-		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|self-register-itx-meeting|self-unregister-itx-meeting|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
+		"meeting-service (readyz|livez|create-itx-meeting|get-itx-meeting|delete-itx-meeting|update-itx-meeting|get-itx-meeting-count|create-itx-registrant|self-register-itx-meeting|self-unregister-itx-meeting|get-itx-registrant|update-itx-registrant|delete-itx-registrant|get-itx-join-link|get-itx-registrant-ics|resend-itx-registrant-invitation|resend-itx-meeting-invitations|register-itx-committee-members|update-itx-occurrence|delete-itx-occurrence|submit-itx-meeting-response|create-itx-past-meeting|get-itx-past-meeting|delete-itx-past-meeting|update-itx-past-meeting|get-itx-past-meeting-summary|update-itx-past-meeting-summary|get-itx-past-meeting-chat|create-itx-past-meeting-participant|update-itx-past-meeting-participant|delete-itx-past-meeting-participant|create-itx-meeting-attachment|get-itx-meeting-attachment|update-itx-meeting-attachment|delete-itx-meeting-attachment|create-itx-meeting-attachment-presign|get-itx-meeting-attachment-download|create-itx-past-meeting-attachment|get-itx-past-meeting-attachment|update-itx-past-meeting-attachment|delete-itx-past-meeting-attachment|create-itx-past-meeting-attachment-presign|get-itx-past-meeting-attachment-download)",
 	}
 }
 
@@ -220,6 +220,13 @@ func ParseEndpoint(
 		meetingServiceUpdateItxPastMeetingSummaryVersionFlag       = new(cliStringFlag)
 		meetingServiceUpdateItxPastMeetingSummaryBearerTokenFlag   = new(cliStringFlag)
 
+		meetingServiceGetItxPastMeetingChatFlags                      = flag.NewFlagSet("get-itx-past-meeting-chat", flag.ExitOnError)
+		meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceIDFlag = new(cliStringFlag)
+		meetingServiceGetItxPastMeetingChatVersionFlag                = new(cliStringFlag)
+		meetingServiceGetItxPastMeetingChatLimitFlag                  = meetingServiceGetItxPastMeetingChatFlags.String("limit", "500", "")
+		meetingServiceGetItxPastMeetingChatOffsetFlag                 = meetingServiceGetItxPastMeetingChatFlags.String("offset", "0", "")
+		meetingServiceGetItxPastMeetingChatBearerTokenFlag            = new(cliStringFlag)
+
 		meetingServiceCreateItxPastMeetingParticipantFlags             = flag.NewFlagSet("create-itx-past-meeting-participant", flag.ExitOnError)
 		meetingServiceCreateItxPastMeetingParticipantBodyFlag          = new(cliStringFlag)
 		meetingServiceCreateItxPastMeetingParticipantPastMeetingIDFlag = new(cliStringFlag)
@@ -415,6 +422,9 @@ func ParseEndpoint(
 	meetingServiceUpdateItxPastMeetingSummaryFlags.Var(meetingServiceUpdateItxPastMeetingSummarySummaryUIDFlag, "summary-uid", "Summary UID")
 	meetingServiceUpdateItxPastMeetingSummaryFlags.Var(meetingServiceUpdateItxPastMeetingSummaryVersionFlag, "version", "")
 	meetingServiceUpdateItxPastMeetingSummaryFlags.Var(meetingServiceUpdateItxPastMeetingSummaryBearerTokenFlag, "bearer-token", "")
+	meetingServiceGetItxPastMeetingChatFlags.Var(meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceIDFlag, "meeting-and-occurrence-id", "Past meeting ID (meeting_and_occurrence_id of the recording record)")
+	meetingServiceGetItxPastMeetingChatFlags.Var(meetingServiceGetItxPastMeetingChatVersionFlag, "version", "")
+	meetingServiceGetItxPastMeetingChatFlags.Var(meetingServiceGetItxPastMeetingChatBearerTokenFlag, "bearer-token", "")
 	meetingServiceCreateItxPastMeetingParticipantFlags.Var(meetingServiceCreateItxPastMeetingParticipantBodyFlag, "body", "")
 	meetingServiceCreateItxPastMeetingParticipantFlags.Var(meetingServiceCreateItxPastMeetingParticipantPastMeetingIDFlag, "past-meeting-id", "Past meeting ID (meeting_id-occurrence_id format)")
 	meetingServiceCreateItxPastMeetingParticipantFlags.Var(meetingServiceCreateItxPastMeetingParticipantVersionFlag, "version", "")
@@ -507,6 +517,7 @@ func ParseEndpoint(
 	meetingServiceUpdateItxPastMeetingFlags.Usage = meetingServiceUpdateItxPastMeetingUsage
 	meetingServiceGetItxPastMeetingSummaryFlags.Usage = meetingServiceGetItxPastMeetingSummaryUsage
 	meetingServiceUpdateItxPastMeetingSummaryFlags.Usage = meetingServiceUpdateItxPastMeetingSummaryUsage
+	meetingServiceGetItxPastMeetingChatFlags.Usage = meetingServiceGetItxPastMeetingChatUsage
 	meetingServiceCreateItxPastMeetingParticipantFlags.Usage = meetingServiceCreateItxPastMeetingParticipantUsage
 	meetingServiceUpdateItxPastMeetingParticipantFlags.Usage = meetingServiceUpdateItxPastMeetingParticipantUsage
 	meetingServiceDeleteItxPastMeetingParticipantFlags.Usage = meetingServiceDeleteItxPastMeetingParticipantUsage
@@ -637,6 +648,9 @@ func ParseEndpoint(
 
 			case "update-itx-past-meeting-summary":
 				epf = meetingServiceUpdateItxPastMeetingSummaryFlags
+
+			case "get-itx-past-meeting-chat":
+				epf = meetingServiceGetItxPastMeetingChatFlags
 
 			case "create-itx-past-meeting-participant":
 				epf = meetingServiceCreateItxPastMeetingParticipantFlags
@@ -794,6 +808,9 @@ func ParseEndpoint(
 			case "update-itx-past-meeting-summary":
 				endpoint = c.UpdateItxPastMeetingSummary()
 				data, err = meetingservicec.BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingSummaryBodyFlag.value, meetingServiceUpdateItxPastMeetingSummaryPastMeetingIDFlag.value, meetingServiceUpdateItxPastMeetingSummarySummaryUIDFlag.value, meetingServiceUpdateItxPastMeetingSummaryVersionFlag.value, meetingServiceUpdateItxPastMeetingSummaryBearerTokenFlag.value)
+			case "get-itx-past-meeting-chat":
+				endpoint = c.GetItxPastMeetingChat()
+				data, err = meetingservicec.BuildGetItxPastMeetingChatPayload(meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceIDFlag.value, meetingServiceGetItxPastMeetingChatVersionFlag.value, *meetingServiceGetItxPastMeetingChatLimitFlag, *meetingServiceGetItxPastMeetingChatOffsetFlag, meetingServiceGetItxPastMeetingChatBearerTokenFlag.value)
 			case "create-itx-past-meeting-participant":
 				endpoint = c.CreateItxPastMeetingParticipant()
 				data, err = meetingservicec.BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeetingParticipantBodyFlag.value, meetingServiceCreateItxPastMeetingParticipantPastMeetingIDFlag.value, meetingServiceCreateItxPastMeetingParticipantVersionFlag.value, meetingServiceCreateItxPastMeetingParticipantBearerTokenFlag.value)
@@ -882,6 +899,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting: Update a past meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting-summary: Get a specific past meeting summary through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-summary: Update a past meeting summary through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    get-itx-past-meeting-chat: Get the chat saved with a past meeting's recording, parsed into messages. The response carries no provider link and no password. limit and offset apply to the messages of each session.`)
 	fmt.Fprintln(os.Stderr, `    create-itx-past-meeting-participant: Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags`)
 	fmt.Fprintln(os.Stderr, `    update-itx-past-meeting-participant: Update a past meeting participant through ITX API proxy - updates invitee and/or attendee records as needed`)
 	fmt.Fprintln(os.Stderr, `    delete-itx-past-meeting-participant: Delete a past meeting participant through ITX API proxy - deletes invitee and/or attendee records as needed`)
@@ -1535,6 +1553,32 @@ func meetingServiceUpdateItxPastMeetingSummaryUsage() {
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
 	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": true,\n      \"edited_content\": \"Dolores provident non qui repellendus rem id.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+}
+
+func meetingServiceGetItxPastMeetingChatUsage() {
+	// Header with flags
+	fmt.Fprintf(os.Stderr, "%s [flags] meeting-service get-itx-past-meeting-chat", os.Args[0])
+	fmt.Fprint(os.Stderr, " -meeting-and-occurrence-id STRING")
+	fmt.Fprint(os.Stderr, " -version STRING")
+	fmt.Fprint(os.Stderr, " -limit INT")
+	fmt.Fprint(os.Stderr, " -offset INT")
+	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprintln(os.Stderr)
+
+	// Description
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, `Get the chat saved with a past meeting's recording, parsed into messages. The response carries no provider link and no password. limit and offset apply to the messages of each session.`)
+
+	// Flags list
+	fmt.Fprintln(os.Stderr, `    -meeting-and-occurrence-id STRING: Past meeting ID (meeting_and_occurrence_id of the recording record)`)
+	fmt.Fprintln(os.Stderr, `    -version STRING: `)
+	fmt.Fprintln(os.Stderr, `    -limit INT: `)
+	fmt.Fprintln(os.Stderr, `    -offset INT: `)
+	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "Example:")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service get-itx-past-meeting-chat --meeting-and-occurrence-id \"93699735000:1700000000\" --version \"1\" --limit 500 --offset 0 --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceCreateItxPastMeetingParticipantUsage() {

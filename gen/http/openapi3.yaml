@@ -3948,6 +3948,159 @@ paths:
                                 message: The service is unavailable.
             security:
                 - jwt_header_Authorization: []
+    /itx/past_meetings/{meeting_and_occurrence_id}/chat:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-itx-past-meeting-chat Meeting Service
+            description: Get the chat saved with a past meeting's recording, parsed into messages. The response carries no provider link and no password. limit and offset apply to the messages of each session.
+            operationId: Meeting Service#get-itx-past-meeting-chat
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  allowEmptyValue: true
+                  schema:
+                    type: string
+                    description: Version of the API
+                    example: "1"
+                    enum:
+                        - "1"
+                  example: "1"
+                - name: limit
+                  in: query
+                  description: Maximum number of messages returned per session
+                  allowEmptyValue: true
+                  schema:
+                    type: integer
+                    description: Maximum number of messages returned per session
+                    default: 500
+                    example: 500
+                    format: int64
+                    minimum: 1
+                    maximum: 2000
+                  example: 500
+                - name: offset
+                  in: query
+                  description: Number of messages skipped per session before the window starts
+                  allowEmptyValue: true
+                  schema:
+                    type: integer
+                    description: Number of messages skipped per session before the window starts
+                    default: 0
+                    example: 0
+                    format: int64
+                    minimum: 0
+                  example: 0
+                - name: meeting_and_occurrence_id
+                  in: path
+                  description: Past meeting ID (meeting_and_occurrence_id of the recording record)
+                  required: true
+                  schema:
+                    type: string
+                    description: Past meeting ID (meeting_and_occurrence_id of the recording record)
+                    example: 93699735000:1700000000
+                  example: 93699735000:1700000000
+            responses:
+                "200":
+                    description: OK response.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PastMeetingChat'
+                            example:
+                                meeting_and_occurrence_id: 93699735000:1700000000
+                                sessions:
+                                    - message_count: 42
+                                      messages:
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                      recording_end: "2026-10-01T16:02:11Z"
+                                      recording_start: "2026-10-01T15:00:00Z"
+                                      truncated: false
+                                    - message_count: 42
+                                      messages:
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                        - offset: "00:12:34"
+                                          recipient: Everyone
+                                          sender: A. Person
+                                          text: Link to the agenda is in the invite
+                                      recording_end: "2026-10-01T16:02:11Z"
+                                      recording_start: "2026-10-01T15:00:00Z"
+                                      truncated: false
+                "400":
+                    description: 'BadRequest: Bad request'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BadRequestError'
+                            example:
+                                code: "400"
+                                message: The request was invalid.
+                "401":
+                    description: 'Unauthorized: Unauthorized'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnauthorizedError'
+                            example:
+                                code: "401"
+                                message: Unauthorized request.
+                "403":
+                    description: 'Forbidden: Forbidden'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ForbiddenError'
+                            example:
+                                code: "403"
+                                message: Access forbidden.
+                "404":
+                    description: 'NotFound: No saved chat for this past meeting'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/NotFoundError'
+                            example:
+                                code: "404"
+                                message: The resource was not found.
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InternalServerError'
+                            example:
+                                code: "500"
+                                message: An internal server error occurred.
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ServiceUnavailableError'
+                            example:
+                                code: "503"
+                                message: The service is unavailable.
+            security:
+                - jwt_header_Authorization: []
     /itx/past_meetings/{past_meeting_id}:
         delete:
             tags:
@@ -7262,6 +7415,188 @@ components:
                 leave_reason: Aut ipsa.
                 leave_time: "2021-06-27T05:59:12Z"
                 participant_uuid: Possimus magnam vel.
+        PastMeetingChat:
+            type: object
+            properties:
+                meeting_and_occurrence_id:
+                    type: string
+                    description: The past meeting identifier
+                    example: 93699735000:1700000000
+                sessions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PastMeetingChatSession'
+                    description: Recording sessions that saved a chat, ordered by recording_start
+                    example:
+                        - message_count: 42
+                          messages:
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                          recording_end: "2026-10-01T16:02:11Z"
+                          recording_start: "2026-10-01T15:00:00Z"
+                          truncated: false
+                        - message_count: 42
+                          messages:
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                            - offset: "00:12:34"
+                              recipient: Everyone
+                              sender: A. Person
+                              text: Link to the agenda is in the invite
+                          recording_end: "2026-10-01T16:02:11Z"
+                          recording_start: "2026-10-01T15:00:00Z"
+                          truncated: false
+            description: The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start
+            example:
+                meeting_and_occurrence_id: 93699735000:1700000000
+                sessions:
+                    - message_count: 42
+                      messages:
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                      recording_end: "2026-10-01T16:02:11Z"
+                      recording_start: "2026-10-01T15:00:00Z"
+                      truncated: false
+                    - message_count: 42
+                      messages:
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                      recording_end: "2026-10-01T16:02:11Z"
+                      recording_start: "2026-10-01T15:00:00Z"
+                      truncated: false
+            required:
+                - meeting_and_occurrence_id
+                - sessions
+        PastMeetingChatMessage:
+            type: object
+            properties:
+                offset:
+                    type: string
+                    description: Elapsed time since the recording started, as written in the chat log (HH:MM:SS); empty for text before the first message header
+                    example: "00:12:34"
+                recipient:
+                    type: string
+                    description: 'Recipient as written in the chat log: Everyone, a display name, or a form such as Name(Direct Message)'
+                    example: Everyone
+                sender:
+                    type: string
+                    description: Display name of the sender as written in the chat log
+                    example: A. Person
+                text:
+                    type: string
+                    description: Message text, verbatim; multi-line messages keep their line breaks
+                    example: Link to the agenda is in the invite
+            description: One message of the chat saved with a past meeting recording
+            example:
+                offset: "00:12:34"
+                recipient: Everyone
+                sender: A. Person
+                text: Link to the agenda is in the invite
+            required:
+                - offset
+                - sender
+                - recipient
+                - text
+        PastMeetingChatSession:
+            type: object
+            properties:
+                message_count:
+                    type: integer
+                    description: Number of messages parsed from the chat file, before limit and offset apply
+                    example: 42
+                    format: int64
+                    minimum: 0
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PastMeetingChatMessage'
+                    description: The message window [offset, offset+limit); empty, not omitted, when there is none
+                    example:
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                        - offset: "00:12:34"
+                          recipient: Everyone
+                          sender: A. Person
+                          text: Link to the agenda is in the invite
+                recording_end:
+                    type: string
+                    description: End of the recording session (RFC3339); omitted when the recording record carries no parsable value
+                    example: "2026-10-01T16:02:11Z"
+                    format: date-time
+                recording_start:
+                    type: string
+                    description: Start of the recording session (RFC3339); omitted when the recording record carries no parsable value
+                    example: "2026-10-01T15:00:00Z"
+                    format: date-time
+                truncated:
+                    type: boolean
+                    description: True when the chat file exceeded the byte cap or the message window ends before the last message
+                    example: false
+            description: The chat saved with one recording session of a past meeting
+            example:
+                message_count: 42
+                messages:
+                    - offset: "00:12:34"
+                      recipient: Everyone
+                      sender: A. Person
+                      text: Link to the agenda is in the invite
+                    - offset: "00:12:34"
+                      recipient: Everyone
+                      sender: A. Person
+                      text: Link to the agenda is in the invite
+                    - offset: "00:12:34"
+                      recipient: Everyone
+                      sender: A. Person
+                      text: Link to the agenda is in the invite
+                recording_end: "2026-10-01T16:02:11Z"
+                recording_start: "2026-10-01T15:00:00Z"
+                truncated: false
+            required:
+                - message_count
+                - truncated
+                - messages
         PastMeetingSummary:
             type: object
             properties:

@@ -811,6 +811,41 @@ spec:
             values:
               aud: {{ .Values.app.audience }}
 
+    # The saved chat is read under the same relation that guards the recording
+    # index document (recording_viewer): a caller sees the chat exactly when they
+    # may see the recording. The route parameter is the recording record's key,
+    # so no further check is needed in the service.
+    - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_chat:get"
+      match:
+        methods:
+          - GET
+        routes:
+          - path: /itx/past_meetings/:meeting_and_occurrence_id/chat
+      allow_encoded_slashes: "off"
+      execute:
+        - authenticator: oidc
+        - authenticator: anonymous_authenticator
+        {{- if .Values.app.use_oidc_contextualizer }}
+        - contextualizer: oidc_contextualizer
+        {{- end }}
+        {{- if .Values.openfga.enabled }}
+        - authorizer: openfga_check
+          config:
+            values:
+              relation: recording_viewer
+              object: "v1_past_meeting:{{ "{{- .Request.URL.Captures.meeting_and_occurrence_id -}}" }}"
+        {{- else }}
+        {{/*
+          When OpenFGA is disabled, allow all requests
+          (Only meant for *local development* because OpenFGA should be enabled when deployed)
+        */}}
+        - authorizer: allow_all
+        {{- end }}
+        - finalizer: create_jwt
+          config:
+            values:
+              aud: {{ .Values.app.audience }}
+
     - id: "rule:lfx:lfx-v2-meeting-service:itx:past_meeting_participants:create"
       match:
         methods:

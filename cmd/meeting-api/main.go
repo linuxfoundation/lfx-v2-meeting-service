@@ -15,9 +15,11 @@ import (
 	"time"
 
 	natsgo "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
 	apieventing "github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/chatfile"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/idmapper"
 	itxclient "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/itx"
@@ -26,6 +28,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/service"
 	itxservice "github.com/linuxfoundation/lfx-v2-meeting-service/internal/service/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
@@ -180,10 +183,23 @@ func run() int {
 		defer committeeAuthzNatsConn.Close()
 	}
 
+	// Recording record reader: the past-meeting chat route reads the recording record
+	// from the v1-objects KV bucket on demand (the bucket the event pipeline watches),
+	// over the same NATS connection as the authorizers. nil when NATS is not
+	// configured or the bucket cannot be opened; the route then answers 503.
+	var recordingRecords domain.RecordingRecordReader
+	if committeeAuthzNatsConn != nil {
+		recordingRecords = newRecordingRecordReader(ctx, committeeAuthzNatsConn)
+	} else {
+		slog.WarnContext(ctx, "NATS_URL not set; past meeting chat retrieval unavailable")
+	}
+	chatFileFetcher := chatfile.NewFetcher(constants.PastMeetingChatFetchTimeout, nil)
+
 	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader, pastMeetingAuthz)
+	itxPastMeetingChatService := itxservice.NewPastMeetingChatService(recordingRecords, chatFileFetcher, constants.PastMeetingChatMaxBytes)
 	itxPastMeetingParticipantService := itxservice.NewPastMeetingParticipantService(itxClient.Participants(), idMapper, userMetadataReader)
 	itxMeetingAttachmentService := itxservice.NewMeetingAttachmentService(itxClient.MeetingAttachments(), userMetadataReader)
 	itxPastMeetingAttachmentService := itxservice.NewPastMeetingAttachmentService(itxClient.PastMeetingAttachments(), userMetadataReader)
@@ -275,6 +291,7 @@ func run() int {
 		itxRegistrantService,
 		itxPastMeetingService,
 		itxPastMeetingSummaryService,
+		itxPastMeetingChatService,
 		itxPastMeetingParticipantService,
 		itxMeetingAttachmentService,
 		itxPastMeetingAttachmentService,
@@ -359,6 +376,24 @@ func gracefulShutdown(
 
 	// Wait for the HTTP graceful shutdown
 	gracefulCloseWG.Wait()
+}
+
+// newRecordingRecordReader opens the v1-objects KV bucket over nc and returns a reader
+// for it, or nil (with a warning) when the bucket cannot be opened. A nil reader makes
+// the past-meeting chat route answer 503 rather than start the service without it:
+// the route is read-only and the rest of the service does not depend on it.
+func newRecordingRecordReader(ctx context.Context, nc *natsgo.Conn) domain.RecordingRecordReader {
+	js, err := jetstream.New(nc)
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create JetStream context; past meeting chat retrieval unavailable")
+		return nil
+	}
+	kv, err := js.KeyValue(ctx, constants.V1ObjectsBucket)
+	if err != nil {
+		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to open v1-objects KV bucket; past meeting chat retrieval unavailable")
+		return nil
+	}
+	return natsinfra.NewRecordingRecordReader(kv, slog.Default())
 }
 
 // startPreferredEmailResponder builds the user-service client and starts the preferred-email

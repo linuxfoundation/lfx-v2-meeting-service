@@ -4126,6 +4126,190 @@ func EncodeUpdateItxPastMeetingSummaryError(encoder func(context.Context, http.R
 	}
 }
 
+// EncodeGetItxPastMeetingChatResponse returns an encoder for responses
+// returned by the Meeting Service get-itx-past-meeting-chat endpoint.
+func EncodeGetItxPastMeetingChatResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.(*meetingservice.PastMeetingChat)
+		enc := encoder(ctx, w)
+		body := NewGetItxPastMeetingChatResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetItxPastMeetingChatRequest returns a decoder for requests sent to
+// the Meeting Service get-itx-past-meeting-chat endpoint.
+func DecodeGetItxPastMeetingChatRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*meetingservice.GetItxPastMeetingChatPayload, error) {
+	return func(r *http.Request) (*meetingservice.GetItxPastMeetingChatPayload, error) {
+		var payload *meetingservice.GetItxPastMeetingChatPayload
+		var (
+			meetingAndOccurrenceID string
+			version                *string
+			limit                  int
+			offset                 int
+			bearerToken            *string
+			err                    error
+
+			params = mux.Vars(r)
+		)
+		meetingAndOccurrenceID = params["meeting_and_occurrence_id"]
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		{
+			limitRaw := qp.Get("limit")
+			if limitRaw == "" {
+				limit = 500
+			} else {
+				v, err2 := strconv.ParseInt(limitRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("limit", limitRaw, "integer"))
+				}
+				limit = int(v)
+			}
+		}
+		if limit < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 1, true))
+		}
+		if limit > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 2000, false))
+		}
+		{
+			offsetRaw := qp.Get("offset")
+			if offsetRaw != "" {
+				v, err2 := strconv.ParseInt(offsetRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("offset", offsetRaw, "integer"))
+				}
+				offset = int(v)
+			}
+		}
+		if offset < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("offset", offset, 0, true))
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewGetItxPastMeetingChatPayload(meetingAndOccurrenceID, version, limit, offset, bearerToken)
+		if payload.BearerToken != nil {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred = cred[index+1:]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetItxPastMeetingChatError returns an encoder for errors returned by
+// the get-itx-past-meeting-chat Meeting Service endpoint.
+func EncodeGetItxPastMeetingChatError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Forbidden":
+			var res *meetingservice.ForbiddenError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxPastMeetingChatUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeCreateItxPastMeetingParticipantResponse returns an encoder for
 // responses returned by the Meeting Service
 // create-itx-past-meeting-participant endpoint.
@@ -6689,6 +6873,46 @@ func marshalMeetingserviceSummaryDataToSummaryDataResponseBody(v *meetingservice
 		Content:       v.Content,
 		DocURL:        v.DocURL,
 		EditedContent: v.EditedContent,
+	}
+
+	return res
+}
+
+// marshalMeetingservicePastMeetingChatSessionToPastMeetingChatSessionResponseBody
+// builds a value of type *PastMeetingChatSessionResponseBody from a value of
+// type *meetingservice.PastMeetingChatSession.
+func marshalMeetingservicePastMeetingChatSessionToPastMeetingChatSessionResponseBody(v *meetingservice.PastMeetingChatSession) *PastMeetingChatSessionResponseBody {
+	res := &PastMeetingChatSessionResponseBody{
+		RecordingStart: v.RecordingStart,
+		RecordingEnd:   v.RecordingEnd,
+		MessageCount:   v.MessageCount,
+		Truncated:      v.Truncated,
+	}
+	if v.Messages != nil {
+		res.Messages = make([]*PastMeetingChatMessageResponseBody, len(v.Messages))
+		for i, val := range v.Messages {
+			if val == nil {
+				res.Messages[i] = nil
+				continue
+			}
+			res.Messages[i] = marshalMeetingservicePastMeetingChatMessageToPastMeetingChatMessageResponseBody(val)
+		}
+	} else {
+		res.Messages = []*PastMeetingChatMessageResponseBody{}
+	}
+
+	return res
+}
+
+// marshalMeetingservicePastMeetingChatMessageToPastMeetingChatMessageResponseBody
+// builds a value of type *PastMeetingChatMessageResponseBody from a value of
+// type *meetingservice.PastMeetingChatMessage.
+func marshalMeetingservicePastMeetingChatMessageToPastMeetingChatMessageResponseBody(v *meetingservice.PastMeetingChatMessage) *PastMeetingChatMessageResponseBody {
+	res := &PastMeetingChatMessageResponseBody{
+		Offset:    v.Offset,
+		Sender:    v.Sender,
+		Recipient: v.Recipient,
+		Text:      v.Text,
 	}
 
 	return res

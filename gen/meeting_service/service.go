@@ -79,6 +79,10 @@ type Service interface {
 	GetItxPastMeetingSummary(context.Context, *GetItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
 	// Update a past meeting summary through ITX API proxy
 	UpdateItxPastMeetingSummary(context.Context, *UpdateItxPastMeetingSummaryPayload) (res *PastMeetingSummary, err error)
+	// Get the chat saved with a past meeting's recording, parsed into messages.
+	// The response carries no provider link and no password. limit and offset
+	// apply to the messages of each session.
+	GetItxPastMeetingChat(context.Context, *GetItxPastMeetingChatPayload) (res *PastMeetingChat, err error)
 	// Create a past meeting participant through ITX API proxy - routes to invitee
 	// and/or attendee endpoints based on flags
 	CreateItxPastMeetingParticipant(context.Context, *CreateItxPastMeetingParticipantPayload) (res *ITXPastMeetingParticipant, err error)
@@ -136,7 +140,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [42]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "self-unregister-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
+var MethodNames = [43]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "self-unregister-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "get-itx-past-meeting-chat", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 // Voting status filter for committee members
 type AllowedVotingStatus string
@@ -645,6 +649,21 @@ type GetItxPastMeetingAttachmentPayload struct {
 	MeetingAndOccurrenceID string
 	// Attachment ID
 	AttachmentID string
+}
+
+// GetItxPastMeetingChatPayload is the payload type of the Meeting Service
+// service get-itx-past-meeting-chat method.
+type GetItxPastMeetingChatPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Past meeting ID (meeting_and_occurrence_id of the recording record)
+	MeetingAndOccurrenceID string
+	// Maximum number of messages returned per session
+	Limit int
+	// Number of messages skipped per session before the window starts
+	Offset int
 }
 
 // GetItxPastMeetingPayload is the payload type of the Meeting Service service
@@ -1215,6 +1234,47 @@ type ParticipantSession struct {
 	LeaveTime *string
 	// Reason for leaving
 	LeaveReason *string
+}
+
+// PastMeetingChat is the result type of the Meeting Service service
+// get-itx-past-meeting-chat method.
+type PastMeetingChat struct {
+	// The past meeting identifier
+	MeetingAndOccurrenceID string
+	// Recording sessions that saved a chat, ordered by recording_start
+	Sessions []*PastMeetingChatSession
+}
+
+// One message of the chat saved with a past meeting recording
+type PastMeetingChatMessage struct {
+	// Elapsed time since the recording started, as written in the chat log
+	// (HH:MM:SS); empty for text before the first message header
+	Offset string
+	// Display name of the sender as written in the chat log
+	Sender string
+	// Recipient as written in the chat log: Everyone, a display name, or a form
+	// such as Name(Direct Message)
+	Recipient string
+	// Message text, verbatim; multi-line messages keep their line breaks
+	Text string
+}
+
+// The chat saved with one recording session of a past meeting
+type PastMeetingChatSession struct {
+	// Start of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingStart *string
+	// End of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingEnd *string
+	// Number of messages parsed from the chat file, before limit and offset apply
+	MessageCount int
+	// True when the chat file exceeded the byte cap or the message window ends
+	// before the last message
+	Truncated bool
+	// The message window [offset, offset+limit); empty, not omitted, when there is
+	// none
+	Messages []*PastMeetingChatMessage
 }
 
 // PastMeetingSummary is the result type of the Meeting Service service

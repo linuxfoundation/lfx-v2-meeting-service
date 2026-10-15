@@ -569,6 +569,58 @@ var PastMeetingSummary = Type("PastMeetingSummary", func() {
 		"requires_approval", "approved", "email_sent", "created_at", "updated_at")
 })
 
+// PastMeetingChatMessage is one message of a saved chat. The text is data as the
+// provider wrote it; it is never interpreted by the service.
+var PastMeetingChatMessage = Type("PastMeetingChatMessage", func() {
+	Description("One message of the chat saved with a past meeting recording")
+	Attribute("offset", String, "Elapsed time since the recording started, as written in the chat log (HH:MM:SS); empty for text before the first message header", func() {
+		Example("00:12:34")
+	})
+	Attribute("sender", String, "Display name of the sender as written in the chat log", func() {
+		Example("A. Person")
+	})
+	Attribute("recipient", String, "Recipient as written in the chat log: Everyone, a display name, or a form such as Name(Direct Message)", func() {
+		Example("Everyone")
+	})
+	Attribute("text", String, "Message text, verbatim; multi-line messages keep their line breaks", func() {
+		Example("Link to the agenda is in the invite")
+	})
+	Required("offset", "sender", "recipient", "text")
+})
+
+// PastMeetingChatSession is the chat of one recording session.
+var PastMeetingChatSession = Type("PastMeetingChatSession", func() {
+	Description("The chat saved with one recording session of a past meeting")
+	Attribute("recording_start", String, "Start of the recording session (RFC3339); omitted when the recording record carries no parsable value", func() {
+		Format(FormatDateTime)
+		Example("2026-10-01T15:00:00Z")
+	})
+	Attribute("recording_end", String, "End of the recording session (RFC3339); omitted when the recording record carries no parsable value", func() {
+		Format(FormatDateTime)
+		Example("2026-10-01T16:02:11Z")
+	})
+	Attribute("message_count", Int, "Number of messages parsed from the chat file, before limit and offset apply", func() {
+		Minimum(0)
+		Example(42)
+	})
+	Attribute("truncated", Boolean, "True when the chat file exceeded the byte cap or the message window ends before the last message", func() {
+		Example(false)
+	})
+	Attribute("messages", ArrayOf(PastMeetingChatMessage), "The message window [offset, offset+limit); empty, not omitted, when there is none")
+	Required("message_count", "truncated", "messages")
+})
+
+// PastMeetingChat is the saved chat of a past meeting. By contract it carries no
+// link (download, play or share URL) and no password or passcode.
+var PastMeetingChat = Type("PastMeetingChat", func() {
+	Description("The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start")
+	Attribute("meeting_and_occurrence_id", String, "The past meeting identifier", func() {
+		Example("93699735000:1700000000")
+	})
+	Attribute("sessions", ArrayOf(PastMeetingChatSession), "Recording sessions that saved a chat, ordered by recording_start")
+	Required("meeting_and_occurrence_id", "sessions")
+})
+
 // ParticipantSession represents a single join/leave session
 var ParticipantSession = Type("ParticipantSession", func() {
 	Description("A single join/leave session of a participant in a meeting")

@@ -144,6 +144,11 @@ func UpdateItxPastMeetingSummaryMeetingServicePath(pastMeetingID string, summary
 	return fmt.Sprintf("/itx/past_meetings/%v/summaries/%v", pastMeetingID, summaryUID)
 }
 
+// GetItxPastMeetingChatMeetingServicePath returns the URL path to the Meeting Service service get-itx-past-meeting-chat HTTP endpoint.
+func GetItxPastMeetingChatMeetingServicePath(meetingAndOccurrenceID string) string {
+	return fmt.Sprintf("/itx/past_meetings/%v/chat", meetingAndOccurrenceID)
+}
+
 // CreateItxPastMeetingParticipantMeetingServicePath returns the URL path to the Meeting Service service create-itx-past-meeting-participant HTTP endpoint.
 func CreateItxPastMeetingParticipantMeetingServicePath(pastMeetingID string) string {
 	return fmt.Sprintf("/itx/past_meetings/%v/participants", pastMeetingID)
