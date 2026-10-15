@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -124,5 +125,59 @@ func TestClient_UpdatePastMeeting_NoContent(t *testing.T) {
 	}
 	if resp != nil {
 		t.Fatalf("resp = %#v, want nil on 204", resp)
+	}
+}
+
+func TestClient_GetPastMeetingParticipantIDs_HTTP(t *testing.T) {
+	t.Parallel()
+
+	// The decoded IDs decide which invitee/attendee records a participant
+	// update or delete may touch, so pin the route and the uuid/id keys.
+	const pastMeetingID = "12345678901-1700000000000"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v2/zoom/past_meetings/"+pastMeetingID {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		if r.URL.Query().Has("basic") {
+			t.Fatalf("basic query parameter set; the full response carries the participant lists")
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"past_meeting_id": "` + pastMeetingID + `",
+			"invitees": [
+				{"uuid": "00000000-0000-0000-0000-000000000001", "first_name": "Alice", "primary_email": "alice@example.com"},
+				{"uuid": "00000000-0000-0000-0000-000000000002", "first_name": "Bob", "primary_email": "bob@example.com"}
+			],
+			"invitee_count": 2,
+			"attendees": [
+				{"id": "00000000-0000-0000-0000-000000000003", "name": "Alice Example", "email": "alice@example.com", "meeting_and_occurrence_id": "` + pastMeetingID + `"}
+			],
+			"attendee_count": 1
+		}`))
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewClientWithHTTPClient(Config{BaseURL: server.URL}, server.Client())
+	resp, err := client.Participants().GetPastMeetingParticipantIDs(context.Background(), pastMeetingID)
+	if err != nil {
+		t.Fatalf("GetPastMeetingParticipantIDs() error = %v", err)
+	}
+
+	var inviteeIDs, attendeeIDs []string
+	for _, invitee := range resp.Invitees {
+		inviteeIDs = append(inviteeIDs, invitee.UUID)
+	}
+	for _, attendee := range resp.Attendees {
+		attendeeIDs = append(attendeeIDs, attendee.ID)
+	}
+	if want := []string{"00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000002"}; !slices.Equal(inviteeIDs, want) {
+		t.Fatalf("invitee IDs = %v, want %v", inviteeIDs, want)
+	}
+	if want := []string{"00000000-0000-0000-0000-000000000003"}; !slices.Equal(attendeeIDs, want) {
+		t.Fatalf("attendee IDs = %v, want %v", attendeeIDs, want)
 	}
 }

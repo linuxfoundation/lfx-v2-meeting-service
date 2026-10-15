@@ -248,23 +248,25 @@ Content-Type: application/json
 
 **Behavior**:
 
-1. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
-   - Uses the provided ID directly
-   - Verifies the ID exists by mapping it back to a participant_id via NATS
-   - Skips the participant_id → invitee_id/attendee_id lookup
-   - Falls back to participant_id mapping if the provided ID doesn't exist
+1. **Past meeting binding**: Before any invitee or attendee call, the service fetches the invitee and attendee IDs of `past_meeting_id` from ITX (`GET /v2/zoom/past_meetings/{past_meeting_id}`). Only records in those lists are read, updated or deleted. If that lookup fails, the request fails and nothing is written.
 
-2. **Without optional IDs**: If `invitee_id` or `attendee_id` are not provided, the service:
+2. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
+   - Uses the provided ID directly
+   - Skips the participant_id → invitee_id/attendee_id lookup
+   - Returns `404 Not Found` if the ID is not an invitee/attendee of `past_meeting_id`
+
+3. **Without optional IDs**: If `invitee_id` or `attendee_id` are not provided, the service:
    - Uses the `participant_id` from the path parameter
    - Performs NATS ID mapping to resolve invitee_id and/or attendee_id
+   - Treats a resolved record that is not an invitee/attendee of `past_meeting_id` as not existing
 
-3. **State transitions**:
+4. **State transitions**:
    - Setting `is_invited: true` creates or updates the invitee record
    - Setting `is_invited: false` deletes the invitee record if it exists
    - Setting `is_attended: true` creates or updates the attendee record
    - Setting `is_attended: false` deletes the attendee record if it exists
 
-4. **Attaching identity to an existing attendee**: `email`, `username`, `lf_user_id`, and `is_unknown` are no longer create-time-only. When `is_attended: true` targets an attendee record that already exists, these identity fields are forwarded to the attendee update as well, so an admin can attach a matched identity (or explicitly clear `is_unknown`) after the record was created. Fields omitted from the request are left unchanged on the existing record — they are not reset to empty/false. Because ITX returns `204 No Content` on a successful attendee update, the proxy refetches the attendee (`GET /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`) to build the synchronous response, ensuring omitted fields reflect their true persisted value rather than being echoed back as zero values.
+5. **Attaching identity to an existing attendee**: `email`, `username`, `lf_user_id`, and `is_unknown` are no longer create-time-only. When `is_attended: true` targets an attendee record that already exists, these identity fields are forwarded to the attendee update as well, so an admin can attach a matched identity (or explicitly clear `is_unknown`) after the record was created. Fields omitted from the request are left unchanged on the existing record — they are not reset to empty/false. Because ITX returns `204 No Content` on a successful attendee update, the proxy refetches the attendee (`GET /v2/zoom/past-meetings/{past_meeting_id}/attendees/{attendee_id}`) to build the synchronous response, ensuring omitted fields reflect their true persisted value rather than being echoed back as zero values.
 
    This refetch-for-ground-truth guarantee is best-effort, not absolute: the write to ITX has already succeeded by the time it runs (the `204` confirms it), but if the refetch itself fails, the proxy falls back to a synthesized response built from a snapshot taken *before* the update plus the fields the request explicitly set. Fields omitted from the request keep the pre-update snapshot's true value in this fallback. Only in the rare case where both the post-update refetch and the pre-update snapshot fail does an omitted boolean/string field collapse to its zero value (`false`/`""`) in the synchronous response — a state that is corrected on the next successful read, since the underlying persisted record was never affected by this degraded path.
 
@@ -275,6 +277,8 @@ Response body is identical to Create Past Meeting Participant response.
 ### ITX API Endpoints
 
 Updates invitee and/or attendee records through the ITX API based on the provided fields. `POST` (create) bodies include a proxy-added `created_by` field; `PUT` (update) bodies include a proxy-added `updated_by` field. See [Audit stamping](#audit-stamping).
+
+**Method (Get Past Meeting)**: `GET /v2/zoom/past_meetings/{past_meeting_id}`: used internally to load the invitee and attendee IDs of the past meeting; only the IDs are read.
 
 **Method (Create Invitee)**: `POST /v2/zoom/past-meetings/{past_meeting_id}/invitees`
 
@@ -315,7 +319,7 @@ Authorization: Bearer <jwt_token>
 
 ### ITX API Endpoints
 
-Deletes both invitee and attendee records if they exist.
+Resolves `participant_id` to an invitee ID and an attendee ID (through NATS ID mapping, or the `participant_id` itself when no mapping exists), then deletes each record that is an invitee/attendee of `past_meeting_id`, as reported by `GET /v2/zoom/past_meetings/{past_meeting_id}`. Returns `404 Not Found` if neither is.
 
 **Method (Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
 
@@ -415,8 +419,7 @@ Sessions represent individual join/leave cycles within a meeting occurrence. An 
 4. **Optional ITX IDs**: The `invitee_id` and `attendee_id` fields in update requests are optional performance optimizations. When provided:
    - The service skips NATS ID mapping lookups
    - Reduces latency for clients that already have ITX IDs
-   - Still verifies existence by reverse mapping the ITX ID back to participant_id
-   - Falls back to standard participant_id mapping if ITX ID doesn't exist
+   - Returns `404 Not Found` if the ITX ID is not an invitee/attendee of `past_meeting_id`
 
 ### Data Quality
 

@@ -912,17 +912,19 @@ Content-Type: application/json
 
 **Behavior**:
 
-1. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
-   - Uses the provided ID directly
-   - Verifies the ID exists by mapping it back to a participant_id via NATS
-   - Skips the participant_id → invitee_id/attendee_id lookup
-   - Falls back to participant_id mapping if the provided ID doesn't exist
+1. **Past meeting binding**: Before any invitee or attendee call, the service fetches the invitee and attendee IDs of `past_meeting_id` from ITX (`GET /v2/zoom/past_meetings/{past_meeting_id}`). Only records in those lists are read, updated or deleted. If that lookup fails, the request fails and nothing is written.
 
-2. **Without optional IDs**: If `invitee_id` or `attendee_id` are not provided, the service:
+2. **With optional IDs**: If `invitee_id` or `attendee_id` are provided, the service:
+   - Uses the provided ID directly
+   - Skips the participant_id → invitee_id/attendee_id lookup
+   - Returns `404 Not Found` if the ID is not an invitee/attendee of `past_meeting_id`
+
+3. **Without optional IDs**: If `invitee_id` or `attendee_id` are not provided, the service:
    - Uses the `participant_id` from the path parameter
    - Performs NATS ID mapping to resolve invitee_id and/or attendee_id
+   - Treats a resolved record that is not an invitee/attendee of `past_meeting_id` as not existing
 
-3. **State transitions**:
+4. **State transitions**:
    - Setting `is_invited: true` creates or updates the invitee record
    - Setting `is_invited: false` deletes the invitee record if it exists
    - Setting `is_attended: true` creates or updates the attendee record
@@ -969,7 +971,7 @@ Authorization: Bearer <jwt_token>
 
 ### ITX API Endpoints
 
-Deletes both invitee and attendee records if they exist.
+Resolves `participant_id` to an invitee ID and an attendee ID (through NATS ID mapping, or the `participant_id` itself when no mapping exists), then deletes each record that is an invitee/attendee of `past_meeting_id`, as reported by `GET /v2/zoom/past_meetings/{past_meeting_id}`. Returns `404 Not Found` if neither is.
 
 **Method (Invitee)**: `DELETE /v2/zoom/past-meetings/{past_meeting_id}/invitees/{invitee_id}`
 

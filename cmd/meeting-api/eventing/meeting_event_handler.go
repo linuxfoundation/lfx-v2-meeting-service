@@ -624,6 +624,13 @@ func (h *EventHandlers) handleMeetingUpdate(
 	funcLogger := h.logger.With("key", key, "handler", "meeting")
 	funcLogger.DebugContext(ctx, "processing meeting update")
 
+	// Only a live record may be published or mark the meeting mapping live. handleKVPut
+	// already routes soft deletes elsewhere; this also covers the retrigger path.
+	if _, deleted := softDeletedAt(v1Data); deleted {
+		funcLogger.InfoContext(ctx, "skipping meeting update for soft-deleted record")
+		return false
+	}
+
 	// Convert v1Data to meeting event data
 	meetingData, err := convertMapToMeetingData(ctx, v1Data, h.idMapper, h.v1MappingsKV, funcLogger)
 	if err != nil {
@@ -641,6 +648,12 @@ func (h *EventHandlers) handleMeetingUpdate(
 	}
 	if meetingData.ProjectUID == "" {
 		funcLogger.InfoContext(ctx, "skipping meeting sync - parent project not found in mappings", "project_sfid", meetingData.ProjectSFID)
+		// The record is live, so a tombstone from an earlier delete is stale; clear it so a
+		// later mapping retrigger can index the meeting once its project is mapped.
+		if err := h.clearTombstone(ctx, fmt.Sprintf("v1_meetings.%s", meetingData.ID)); err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to clear stale meeting tombstone, will retry")
+			return true
+		}
 		return false
 	}
 	funcLogger = funcLogger.With("meeting_id", meetingData.ID)
@@ -671,8 +684,14 @@ func (h *EventHandlers) handleMeetingUpdate(
 		return isTransientError(err)
 	}
 
-	// Store mapping
+	// Store mapping. On a restore this replaces the delete tombstone; if the write fails
+	// the tombstone would keep later mapping retriggers from re-indexing the meeting, so
+	// retry. An invalid key can never be written, so it is not retried.
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
+		if !errors.Is(err, jetstream.ErrInvalidKey) {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping, will retry")
+			return true
+		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting mapping")
 	}
 
@@ -689,6 +708,13 @@ func (h *EventHandlers) handleMeetingDelete(ctx context.Context, key string, _ m
 		return false
 	}
 	h.logger.InfoContext(ctx, "processing meeting delete", "meeting_id", meetingID)
+	return h.publishMeetingDelete(ctx, key, meetingID)
+}
+
+// publishMeetingDelete removes the meeting and its host credentials from the indexer, revokes
+// its access, and tombstones its mappings. It does not check the tombstone first, so the
+// retrigger can replay it after a republish that raced a delete. Every step is idempotent.
+func (h *EventHandlers) publishMeetingDelete(ctx context.Context, key, meetingID string) (retry bool) {
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_meeting", meetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "meeting_id", meetingID)
@@ -729,15 +755,29 @@ func (h *EventHandlers) handleMeetingMappingUpdate(
 	}
 	funcLogger.InfoContext(ctx, "processing meeting mapping update", "meeting_id", meetingID, "mapping_id", mappingID)
 
+	// The parent meeting record decides: a deleted meeting keeps its tombstones, so do not
+	// rewrite its committee mappings or re-index it. A live record being restored may still
+	// carry a stale tombstone; its mappings are stored for the restore to pick up.
+	parent, _, err := h.loadV1Parent(ctx, fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID), fmt.Sprintf("v1_meetings.%s", meetingID))
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load parent meeting, will retry", "meeting_id", meetingID)
+		return true
+	}
+	if parent == parentGone || parent == parentUnusable {
+		funcLogger.InfoContext(ctx, "skipping meeting mapping update for deleted meeting", "meeting_id", meetingID)
+		return false
+	}
+
 	// Update committee mappings in KV bucket
 	if err := updateCommitteeMappings(ctx, meetingID, mappingID, committeeID, v1Data, h.v1MappingsKV, funcLogger); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to update committee mappings")
 		return isTransientError(err)
 	}
 
-	// Re-trigger meeting indexing
-	shouldRetry := h.retriggerMeetingIndexing(ctx, meetingID)
-	if shouldRetry {
+	// Re-trigger meeting indexing. This runs even when the parent was absent above: it may
+	// have been indexed since, and the retrigger re-reads it and skips missing or deleted
+	// meetings.
+	if h.retriggerMeetingIndexing(ctx, meetingID) {
 		return true
 	}
 
@@ -957,18 +997,62 @@ func (h *EventHandlers) retriggerMeetingIndexing(
 	meetingID string,
 ) (retry bool) {
 	meetingKey := fmt.Sprintf("itx-zoom-meetings-v2.%s", meetingID)
-	meetingEntry, err := h.v1ObjectsKV.Get(ctx, meetingKey)
-	if err != nil {
-		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "meeting not found during retrigger")
-		return false // Meeting might be deleted
-	}
+	mappingKey := fmt.Sprintf("v1_meetings.%s", meetingID)
 
-	meetingData, err := decodeData(meetingEntry.Value())
+	// A soft-deleted or already-deleted meeting must not be republished as live.
+	parent, meetingData, err := h.loadV1Parent(ctx, meetingKey, mappingKey)
 	if err != nil {
-		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode meeting data")
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load meeting during retrigger, will retry", "meeting_id", meetingID)
+		return true
+	}
+	switch parent {
+	case parentLive:
+	case parentGone, parentAbsent:
+		// A deleted meeting whose mapping still carries the live marker was indexed after
+		// its delete cleanup (or before it ran): replay the cleanup.
+		indexed, err := h.liveMarkerSet(ctx, mappingKey)
+		if err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check meeting marker during retrigger, will retry", "meeting_id", meetingID)
+			return true
+		}
+		if indexed {
+			h.logger.InfoContext(ctx, "deleted meeting is still marked live, replaying delete", "meeting_id", meetingID)
+			return h.publishMeetingDelete(ctx, meetingKey, meetingID)
+		}
+		h.logger.InfoContext(ctx, "meeting is not live, skipping retrigger", "meeting_id", meetingID)
+		return false
+	default:
+		h.logger.InfoContext(ctx, "meeting record is unusable, skipping retrigger", "meeting_id", meetingID)
+		return false
+	}
+	// A live record with a tombstone is a restore whose own put has not been processed
+	// yet; that put re-indexes the meeting.
+	deleted, err := h.tombstoneState(ctx, mappingKey)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check meeting tombstone during retrigger, will retry", "meeting_id", meetingID)
+		return true
+	}
+	if deleted {
+		h.logger.InfoContext(ctx, "meeting is tombstoned, skipping retrigger", "meeting_id", meetingID)
 		return false
 	}
 
 	// Re-process the meeting
-	return h.handleMeetingUpdate(ctx, meetingKey, meetingData)
+	if h.handleMeetingUpdate(ctx, meetingKey, meetingData) {
+		return true
+	}
+
+	// v1 rewrites (soft delete) or removes (hard delete) the meeting record before its delete
+	// event is processed. If the record is no longer live, a delete ran concurrently and this
+	// republish may have landed after its cleanup; replay the cleanup so the delete wins.
+	after, _, err := h.loadV1Parent(ctx, meetingKey, mappingKey)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to recheck meeting after retrigger, will retry", "meeting_id", meetingID)
+		return true
+	}
+	if after == parentGone || after == parentAbsent {
+		h.logger.InfoContext(ctx, "meeting was deleted during retrigger, replaying delete", "meeting_id", meetingID)
+		return h.publishMeetingDelete(ctx, meetingKey, meetingID)
+	}
+	return false
 }
