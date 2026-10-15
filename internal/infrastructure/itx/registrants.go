@@ -51,15 +51,22 @@ func (c *Client) UpdateRegistrant(ctx context.Context, meetingID, registrantID s
 	})
 }
 
-// DeleteRegistrant deletes a meeting registrant via ITX proxy.
-func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
-	return c.doNoContent(ctx, apiRequest{
+// DeleteRegistrant deletes a meeting registrant via ITX proxy. req is optional: pass nil for an
+// admin removal, or a request with SelfRemoval set when the registrant is removing themselves.
+func (c *Client) DeleteRegistrant(ctx context.Context, meetingID, registrantID string, req *itx.DeleteRegistrantRequest) error {
+	apiReq := apiRequest{
 		method:      http.MethodDelete,
 		path:        "/v2/zoom/meetings/%s/registrants/%s",
 		pathArgs:    []any{meetingID, registrantID},
 		debugOp:     "DeleteRegistrant",
 		debugFields: []any{"meetingID", meetingID, "registrantID", registrantID},
-	})
+	}
+	// Leave the body unset for nil: a typed nil pointer in the interface field would be sent as "null".
+	if req != nil {
+		apiReq.body = req
+		apiReq.skipBodyLog = true
+	}
+	return c.doNoContent(ctx, apiReq)
 }
 
 // GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy.

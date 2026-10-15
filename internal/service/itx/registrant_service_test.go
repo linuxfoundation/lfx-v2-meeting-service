@@ -28,6 +28,7 @@ type fakeRegistrantClient struct {
 	getRegistrantCalled    bool
 	deleteRegistrantCalled bool
 	deleteRegistrantErr    error
+	lastDeleteReq          *itx.DeleteRegistrantRequest
 }
 
 func (f *fakeRegistrantClient) CreateRegistrant(_ context.Context, _ string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
@@ -45,8 +46,9 @@ func (f *fakeRegistrantClient) GetRegistrant(_ context.Context, _, _ string) (*i
 	return f.getRegistrantResp, f.getRegistrantErr
 }
 
-func (f *fakeRegistrantClient) DeleteRegistrant(_ context.Context, _, _ string) error {
+func (f *fakeRegistrantClient) DeleteRegistrant(_ context.Context, _, _ string, req *itx.DeleteRegistrantRequest) error {
 	f.deleteRegistrantCalled = true
+	f.lastDeleteReq = req
 	return f.deleteRegistrantErr
 }
 
@@ -425,6 +427,35 @@ func TestRegistrantService_SelfUnregisterFromMeeting(t *testing.T) {
 		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
 		require.NoError(t, err)
 		assert.True(t, client.deleteRegistrantCalled)
+	})
+
+	t.Run("flags the delete as a self removal with the caller identity", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "Alice@Example.com", Username: "alice"},
+		}
+		svc := newUnregisterSvc(client, nil)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		require.NotNil(t, client.lastDeleteReq, "self removal must send a body so ITX can tell it from an admin delete")
+		assert.True(t, client.lastDeleteReq.SelfRemoval)
+		require.NotNil(t, client.lastDeleteReq.UpdatedBy)
+		assert.Equal(t, "alice", client.lastDeleteReq.UpdatedBy.Username)
+		assert.Equal(t, "alice@example.com", client.lastDeleteReq.UpdatedBy.Email,
+			"must be the email the ownership check used, which ITX compares against the registrant")
+	})
+
+	t.Run("sends the profile email that matched when the JWT has none", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "alice@example.com"},
+		}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Email: "alice@example.com"}}
+		svc := newUnregisterSvc(client, reader)
+
+		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		require.NotNil(t, client.lastDeleteReq)
+		assert.Equal(t, "alice@example.com", client.lastDeleteReq.UpdatedBy.Email)
 	})
 
 	t.Run("deletes when username matches", func(t *testing.T) {
