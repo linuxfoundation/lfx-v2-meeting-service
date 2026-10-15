@@ -107,7 +107,7 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 		reader := &fakeRecordingRecordReader{record: twoSessionRecord()}
 		fetcher := &fakeRecordingFileFetcher{bodies: map[string]string{
 			chatLinkA: "00:00:12\tFrom Alice Example to Everyone:\tfirst session\n",
-			chatLinkB: "00:00:05 From Bob Fixture to Alice Example(Direct Message):\n\tsecond session\n\tline two\n",
+			chatLinkB: "00:00:05 From Bob Fixture to Everyone:\n\tsecond session\n\tline two\n",
 		}}
 		svc := NewPastMeetingChatService(reader, fetcher, 1024)
 
@@ -135,8 +135,62 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 		assert.Equal(t, sessionBStart, b.RecordingStart)
 		require.Len(t, b.Messages, 1)
 		assert.Equal(t, "Bob Fixture", b.Messages[0].Sender)
-		assert.Equal(t, "Alice Example(Direct Message)", b.Messages[0].Recipient)
+		assert.Equal(t, "Everyone", b.Messages[0].Recipient)
 		assert.Equal(t, "second session\nline two", b.Messages[0].Text)
+	})
+
+	t.Run("returns messages sent to everyone only, counted and windowed over the public list", func(t *testing.T) {
+		record := twoSessionRecord()
+		record.RecordingFiles = record.RecordingFiles[3:]
+		reader := &fakeRecordingRecordReader{record: record}
+		fetcher := &fakeRecordingFileFetcher{bodies: map[string]string{chatLinkA: "" +
+			"00:00:12\tFrom Alice Example to Everyone:\tpublic one\n" +
+			"00:00:20\tFrom Alice Example to Bob Fixture(Direct Message):\tprivate-dm-text\n" +
+			"00:00:31\tFrom Bob Fixture to everyone:\tpublic two\n" +
+			"00:00:45\tFrom Bob Fixture to Alice Example(Privately):\tprivate-pm-text\n" +
+			"00:00:50\tFrom Carol Example to Everyone:\tpublic three\n" +
+			"00:00:58\tFrom Carol Example to Bob Fixture:\tprivate-named-text\n"}}
+		svc := NewPastMeetingChatService(reader, fetcher, 1<<20)
+
+		t.Run("whole session", func(t *testing.T) {
+			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
+			require.NoError(t, err)
+			s := resp.Sessions[0]
+			assert.Equal(t, 3, s.MessageCount, "private messages are not counted")
+			assert.False(t, s.Truncated)
+			require.Len(t, s.Messages, 3)
+			assert.Equal(t, []string{"public one", "public two", "public three"},
+				[]string{s.Messages[0].Text, s.Messages[1].Text, s.Messages[2].Text})
+			for _, m := range s.Messages {
+				assert.True(t, m.Recipient == "Everyone" || m.Recipient == "everyone", m.Recipient)
+			}
+		})
+
+		t.Run("window indexes the public list", func(t *testing.T) {
+			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, PastMeetingChatWindow{Limit: 1, Offset: 1})
+			require.NoError(t, err)
+			s := resp.Sessions[0]
+			assert.Equal(t, 3, s.MessageCount)
+			assert.True(t, s.Truncated)
+			require.Len(t, s.Messages, 1)
+			assert.Equal(t, "public two", s.Messages[0].Text)
+
+			resp, err = svc.GetPastMeetingChat(context.Background(), chatID, PastMeetingChatWindow{Limit: 5, Offset: 2})
+			require.NoError(t, err)
+			assert.False(t, resp.Sessions[0].Truncated)
+			require.Len(t, resp.Sessions[0].Messages, 1)
+			assert.Equal(t, "public three", resp.Sessions[0].Messages[0].Text)
+		})
+
+		t.Run("marshalled body carries no private text", func(t *testing.T) {
+			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
+			require.NoError(t, err)
+			out, err := json.Marshal(resp)
+			require.NoError(t, err)
+			for _, private := range []string{"private-dm-text", "private-pm-text", "private-named-text", "Direct Message", "Privately"} {
+				assert.NotContains(t, string(out), private)
+			}
+		})
 	})
 
 	t.Run("empty chat file yields an empty session", func(t *testing.T) {

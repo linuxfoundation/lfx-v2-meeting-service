@@ -63,11 +63,18 @@ func (r *RecordingRecordReader) GetRecordingRecord(ctx context.Context, meetingA
 		return nil, domain.NewUnavailableError("recording record could not be read")
 	}
 
-	raw, err := decodeRecordingRecord(entry.Value())
+	raw, deleted, err := decodeRecordingRecord(entry.Value())
 	if err != nil {
-		r.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode recording record",
+		// The decoder error is deliberately not logged, at any level: strconv and
+		// json errors embed the rejected value, that is, record contents.
+		r.logger.ErrorContext(ctx, "failed to decode recording record",
 			"meeting_and_occurrence_id", meetingAndOccurrenceID)
 		return nil, domain.NewInternalError("saved chat record could not be decoded")
+	}
+	if deleted {
+		// A soft-deleted record (_sdc_deleted_at set, the event pipeline's rule) is
+		// gone for every reader of it.
+		return nil, domain.ErrRecordingRecordNotFound
 	}
 
 	record := &models.RecordingRecord{
@@ -105,26 +112,30 @@ func (r *RecordingRecordReader) GetRecordingRecord(ctx context.Context, meetingA
 }
 
 // decodeRecordingRecord decodes a KV value as JSON or, failing that, as msgpack behind
-// the depth guard, then into the shared raw recording shape by way of JSON so that the
-// numeric coercions of v1objects.Recording apply to both encodings, as in the event
-// pipeline's decodeV1.
-func decodeRecordingRecord(value []byte) (*v1objects.Recording, error) {
+// the depth guard, reports whether the record is soft-deleted, and otherwise decodes it
+// into the shared raw recording shape by way of JSON so that the numeric coercions of
+// v1objects.Recording apply to both encodings, as in the event pipeline's decodeV1.
+// The returned error may embed record contents and must not be logged.
+func decodeRecordingRecord(value []byte) (raw *v1objects.Recording, deleted bool, err error) {
 	var data map[string]any
 	if jsonErr := json.Unmarshal(value, &data); jsonErr != nil {
 		if depthErr := msgpackutil.CheckNestingDepth(value); depthErr != nil {
-			return nil, depthErr
+			return nil, false, depthErr
 		}
 		if err := msgpack.Unmarshal(value, &data); err != nil {
-			return nil, jsonErr
+			return nil, false, jsonErr
 		}
+	}
+	if _, deleted := v1objects.SoftDeletedAt(data); deleted {
+		return nil, true, nil
 	}
 	normalized, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	var raw v1objects.Recording
-	if err := json.Unmarshal(normalized, &raw); err != nil {
-		return nil, err
+	var rec v1objects.Recording
+	if err := json.Unmarshal(normalized, &rec); err != nil {
+		return nil, false, err
 	}
-	return &raw, nil
+	return &rec, false, nil
 }

@@ -124,3 +124,30 @@ func Parse(data []byte, truncated bool) []Message {
 	closeMessage()
 	return messages
 }
+
+// everyoneRecipient is the recipient the provider writes for a message sent to
+// the whole meeting.
+const everyoneRecipient = "Everyone"
+
+// IsPublicRecipient reports whether a message with this recipient was sent to the
+// whole meeting: the recipient is "Everyone" (case-insensitively, after trimming)
+// or empty (text before the first header, or a timestamped line whose layout is
+// unknown, neither of which the log addresses to anyone in particular). Every
+// other recipient, such as "Name(Direct Message)" or "Name(Privately)", is a
+// private message that a recording viewer must not see.
+func IsPublicRecipient(recipient string) bool {
+	recipient = strings.TrimSpace(recipient)
+	return recipient == "" || strings.EqualFold(recipient, everyoneRecipient)
+}
+
+// PublicOnly returns the messages of msgs whose recipient IsPublicRecipient, in
+// order. It never returns nil.
+func PublicOnly(msgs []Message) []Message {
+	public := make([]Message, 0, len(msgs))
+	for _, m := range msgs {
+		if IsPublicRecipient(m.Recipient) {
+			public = append(public, m)
+		}
+	}
+	return public
+}

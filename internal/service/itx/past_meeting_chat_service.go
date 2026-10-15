@@ -63,7 +63,9 @@ func NewPastMeetingChatService(records domain.RecordingRecordReader, fetcher dom
 }
 
 // GetPastMeetingChat returns the saved chat of a past meeting, one session per CHAT
-// file ordered by recording start, each session windowed by window.
+// file ordered by recording start, each session windowed by window. Only messages
+// sent to everyone are returned (chatlog.IsPublicRecipient); direct and private
+// messages are not, and are not counted.
 //
 // Outcomes: an ID outside [0-9A-Za-z:_-] or a window out of range is a validation
 // error (400); no recording record or no CHAT file is not found (404), and the
@@ -107,7 +109,11 @@ func (s *PastMeetingChatService) GetPastMeetingChat(ctx context.Context, meeting
 				"meeting_and_occurrence_id", meetingAndOccurrenceID, "session_index", i, "session_count", len(chatFiles))
 			return nil, domain.NewUnavailableError(msgChatFetchFailed)
 		}
-		resp.Sessions = append(resp.Sessions, buildChatSession(file, chatlog.Parse(data, capped), capped, window))
+		// Only messages sent to everyone are returned. Private messages are dropped
+		// before counting and windowing, so message_count, the window and truncated
+		// describe the public messages alone and the dropped ones leak nothing.
+		public := chatlog.PublicOnly(chatlog.Parse(data, capped))
+		resp.Sessions = append(resp.Sessions, buildChatSession(file, public, capped, window))
 	}
 	return resp, nil
 }
@@ -147,15 +153,15 @@ func selectChatFiles(files []models.RecordingFile) []models.RecordingFile {
 	return chat
 }
 
-// buildChatSession applies the window to the parsed messages of one file. The
+// buildChatSession applies the window to the public messages of one file. The
 // session copies only timestamps from the file entry: no link, size or identifier.
-func buildChatSession(file models.RecordingFile, parsed []chatlog.Message, capped bool, window PastMeetingChatWindow) itx.PastMeetingChatSession {
-	total := len(parsed)
+func buildChatSession(file models.RecordingFile, public []chatlog.Message, capped bool, window PastMeetingChatWindow) itx.PastMeetingChatSession {
+	total := len(public)
 	start := min(window.Offset, total)
 	end := min(start+window.Limit, total)
 
 	messages := make([]itx.PastMeetingChatMessage, 0, end-start)
-	for _, m := range parsed[start:end] {
+	for _, m := range public[start:end] {
 		messages = append(messages, itx.PastMeetingChatMessage{
 			Offset:    m.Offset,
 			Sender:    m.Sender,

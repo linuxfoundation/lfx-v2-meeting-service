@@ -270,3 +270,12 @@ func ParseTime(timeStr string) (time.Time, error) {
 
 	return time.Time{}, fmt.Errorf("unable to parse time: %s", timeStr)
 }
+
+// SoftDeletedAt returns a decoded record's _sdc_deleted_at value and true when the
+// record is a soft delete: the field is present, non-nil and non-empty. The event
+// pipeline and the on-demand readers apply this same rule, so a record the pipeline
+// treats as deleted is never served.
+func SoftDeletedAt(data map[string]any) (any, bool) {
+	deletedAt, exists := data["_sdc_deleted_at"]
+	return deletedAt, exists && deletedAt != nil && deletedAt != ""
+}

@@ -57,15 +57,19 @@ The recording record lists a `CHAT` file for each recording session whose chat w
 | `sessions` | array | One entry per `CHAT` file of the recording record, ordered by `recording_start` ascending (then `recording_end`; stable for ties). Never empty on `200`: a record without a `CHAT` file is `404` |
 | `sessions[].recording_start` | string (RFC3339, UTC), optional | From the `CHAT` file entry of the recording record; omitted when the record carries no parsable value |
 | `sessions[].recording_end` | string (RFC3339, UTC), optional | As above |
-| `sessions[].message_count` | int | Number of messages parsed from the file **before** `limit`/`offset` apply, so a client can page. When the byte cap cut the file it counts what was parsed |
+| `sessions[].message_count` | int | Number of **public** messages parsed from the file **before** `limit`/`offset` apply, so a client can page. When the byte cap cut the file it counts what was parsed |
 | `sessions[].truncated` | bool | `true` when the file exceeded the byte cap, or when the window `[offset, offset+limit)` ends before the last parsed message |
-| `sessions[].messages` | array | The window `[offset, offset+limit)` of the session's messages. Always present; an empty array, never `null` |
+| `sessions[].messages` | array | The window `[offset, offset+limit)` of the session's **public** messages. Always present; an empty array, never `null` |
 | `messages[].offset` | string | Elapsed time since the recording started, as written in the chat log (`HH:MM:SS`). Not a clock time. Empty for text that precedes the first message header |
 | `messages[].sender` | string | Sender display name as written, trimmed. Empty for text that precedes the first message header |
 | `messages[].recipient` | string | Recipient as written, trimmed: `Everyone`, a display name, or a form such as `Name(Direct Message)` / `Name(Privately)` |
 | `messages[].text` | string | The message text, verbatim apart from the layout's own framing. Multi-line messages keep their line breaks as `\n` |
 
 **Fields deliberately absent**: file `id`, `file_size`, `download_url`, `play_url`, session `uuid`, `share_url`, `password`, and any host identifier. A unit test marshals a response built from a record that has all of them set and asserts none appears (`internal/service/itx/past_meeting_chat_service_test.go`, `cmd/meeting-api/service/itx_past_meeting_chat_converters_test.go`).
+
+### Only messages sent to everyone are returned
+
+The saved chat also holds direct and private messages (recipient `Name(Direct Message)`, `Name(Privately)`, or a bare name). Those were exchanged between two people, not with the meeting, and a recording viewer is not entitled to them: the service drops every message whose recipient is not `Everyone` (case-insensitively, after trimming) **before** counting and windowing. A message with an empty recipient (text before the first header, or a timestamped line of an unknown layout) is kept: the log addresses it to nobody in particular. `message_count`, `offset`/`limit` and `truncated` therefore describe the public messages alone; the response reveals nothing about dropped messages, not even their number. Predicate: `chatlog.IsPublicRecipient`.
 
 ### Chat text is data
 
@@ -90,9 +94,9 @@ All errors use the service's standard `{ "code": "<status>", "message": "<text>"
 |---|---|---|
 | `400 Bad Request` | `meeting_and_occurrence_id` outside `[0-9A-Za-z:_-]{1,128}`; `limit` outside `1..2000`; `offset` below `0` (Goa validates the query parameters first and may answer with its own validation body) | `invalid past meeting ID`, `limit must be between 1 and 2000`, `offset must be 0 or greater` |
 | `401 Unauthorized` / `403 Forbidden` | Heimdall: no valid token / no `recording_viewer` relation | Heimdall's |
-| `404 Not Found` | No recording record for the identifier, or a record with no `CHAT` file (including `recording_files: null`). The route never says whether the past meeting itself exists | `no saved chat for this past meeting` |
+| `404 Not Found` | No recording record for the identifier, a soft-deleted record (`_sdc_deleted_at` present, non-null and non-empty: the event pipeline's rule), or a record with no `CHAT` file (including `recording_files: null`). The route never says whether the past meeting itself exists | `no saved chat for this past meeting` |
 | `500 Internal Server Error` | The recording record exists but cannot be decoded (logged at error level with the identifier only, never the record contents) | `saved chat record could not be decoded` |
-| `503 Service Unavailable` | NATS not configured at startup (no recording record reader); a KV read failure; any `CHAT` file that cannot be fetched as text: link not `https`, connection failure, timeout, non-2xx status, or a content type other than `text/*` (`text/html` included, since that is a sign-in or error page, not a chat). One failing file fails the whole request: no partial response that could read as "no chat in that session" | `chat retrieval unavailable`, `recording record could not be read`, `saved chat could not be retrieved; please retry` |
+| `503 Service Unavailable` | NATS not configured at startup (no recording record reader); the `v1-objects` bucket not yet bound (it is bound lazily on first use, with a 5 s bind timeout and a 10 s negative-cache window after a failed bind, so a bucket unreachable at startup recovers without a restart); a KV read failure; any `CHAT` file that cannot be fetched as text: link not `https`, connection failure, timeout, non-2xx status, or a content type other than `text/*` (`text/html` included, since that is a sign-in or error page, not a chat). One failing file fails the whole request: no partial response that could read as "no chat in that session" | `chat retrieval unavailable`, `recording record store unavailable`, `recording record could not be read`, `saved chat could not be retrieved; please retry` |
 
 ## Bounds
 

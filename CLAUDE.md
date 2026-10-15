@@ -139,7 +139,7 @@ The service follows a clean architecture pattern with:
 - **ITX Registrant Operations**: Complete registrant management via ITX API
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
-- **Past Meeting Chat**: Returns the chat saved with a past meeting's recording as parsed text. Not an ITX proxy: the service reads the recording record from the `v1-objects` KV bucket, fetches the `CHAT` file(s) from the provider server side (15 s, 5 MB, `text/*` only) and never returns or logs the provider link (see [Past Meeting Chat API contract](docs/api-contracts/itx-past-meeting-chat-api.md))
+- **Past Meeting Chat**: Returns the chat saved with a past meeting's recording as parsed text. Not an ITX proxy: the service reads the recording record from the `v1-objects` KV bucket, fetches the `CHAT` file(s) from the provider server side (15 s, 5 MB, `text/*` only), returns only messages sent to everyone, and never returns or logs the provider link (see [Past Meeting Chat API contract](docs/api-contracts/itx-past-meeting-chat-api.md))
 - **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
 - **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted. Every acceptance is re-verified against the invite service before any ITX write — this is defense in depth, not a complete origin control: it only becomes one once NATS subject authorization (or a signed acceptance) is in place. See [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control).
@@ -178,7 +178,7 @@ The service follows a clean architecture pattern with:
 - JWT authentication (`auth/`)
 - Optional NATS-based ID mapping (`idmapper/`)
 - Event publishing infrastructure (`eventing/`) for indexer and FGA-sync, with OpenTelemetry tracing
-- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, invite lookup, recording record reader (on-demand read of the `v1-objects` KV bucket), interfaces
+- NATS subsystem (`nats/`): preferred-email responder, user-metadata reader, invite sender, invite lookup, recording record reader (on-demand read of the `v1-objects` KV bucket, bound lazily on first use), interfaces
 - Recording file fetcher (`chatfile/`) — bounded https fetch of a text recording file (saved chat) from the provider link in the recording record; the link is never logged, traced or returned
 - Shared v1 record shapes (`v1objects/`) — raw `v1-objects` recording record types and numeric/timestamp coercions, used by both the event pipeline and the recording record reader
 - User service HTTP client (`userservice/`) — calls v1 API gateway AS the user for preferred-email reads/writes

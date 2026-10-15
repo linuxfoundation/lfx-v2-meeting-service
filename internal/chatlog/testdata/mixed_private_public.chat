@@ -1,0 +1,8 @@
+00:00:12	From Alice Example to Everyone:	public one
+00:00:20	From Alice Example to Bob Fixture(Direct Message):	private-dm-text
+00:00:31	From Bob Fixture to everyone:	public two
+00:00:45	From Bob Fixture to Alice Example(Privately):	private-pm-text
+00:00:50 From Carol Example to Everyone:
+	public three
+	second line
+00:00:58	From Carol Example to Bob Fixture:	private-named-text

@@ -162,3 +162,49 @@ func BenchmarkParse_ManyContinuationLines(b *testing.B) {
 		})
 	}
 }
+
+func TestIsPublicRecipient(t *testing.T) {
+	for _, tc := range []struct {
+		recipient string
+		public    bool
+	}{
+		{"Everyone", true},
+		{"everyone", true},
+		{"  EVERYONE ", true},
+		{"", true},
+		{"   ", true},
+		{"Bob Fixture(Direct Message)", false},
+		{"Bob Fixture(Privately)", false},
+		{"Bob Fixture", false},
+		{"Everyone(Direct Message)", false},
+		{"Everyone else", false},
+	} {
+		assert.Equal(t, tc.public, IsPublicRecipient(tc.recipient), "recipient %q", tc.recipient)
+	}
+}
+
+func TestPublicOnly(t *testing.T) {
+	t.Run("drops direct, private and named recipients, keeps order", func(t *testing.T) {
+		all := Parse(fixture(t, "mixed_private_public.chat"), false)
+		require.Len(t, all, 6)
+
+		public := PublicOnly(all)
+		require.Len(t, public, 3)
+		assert.Equal(t, "public one", public[0].Text)
+		assert.Equal(t, "public two", public[1].Text)
+		assert.Equal(t, "public three\nsecond line", public[2].Text)
+		for _, m := range public {
+			assert.NotContains(t, m.Text, "private-")
+		}
+	})
+
+	t.Run("keeps messages without a recipient", func(t *testing.T) {
+		public := PublicOnly([]Message{{Text: "preamble"}, {Offset: "00:00:01", Text: "drifted"}})
+		assert.Len(t, public, 2)
+	})
+
+	t.Run("never returns nil", func(t *testing.T) {
+		assert.NotNil(t, PublicOnly(nil))
+		assert.Empty(t, PublicOnly([]Message{{Recipient: "Bob Fixture(Privately)"}}))
+	})
+}

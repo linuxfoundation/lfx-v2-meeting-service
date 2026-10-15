@@ -4,10 +4,12 @@
 package nats
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,15 +21,19 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 )
 
-// fakeKV serves one value per key or an error.
+// fakeKV serves one value per key or an error. Safe for concurrent Get.
 type fakeKV struct {
 	values map[string][]byte
 	err    error
-	keys   []string
+
+	mu   sync.Mutex
+	keys []string
 }
 
 func (f *fakeKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
+	f.mu.Lock()
 	f.keys = append(f.keys, key)
+	f.mu.Unlock()
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -143,11 +149,51 @@ func TestRecordingRecordReader_GetRecordingRecord(t *testing.T) {
 		assert.Equal(t, "saved chat record could not be decoded", err.Error())
 	})
 
-	t.Run("a record with a non-numeric file_size is internal", func(t *testing.T) {
-		kv := &fakeKV{values: map[string][]byte{"itx-zoom-past-meetings-recordings." + id: []byte(`{"recording_files":[{"file_size":"many"}]}`)}}
-		r := NewRecordingRecordReader(kv, logger)
+	t.Run("a record with a non-numeric file_size is internal and its contents are not logged", func(t *testing.T) {
+		const sentinel = "SENTINEL-record-content-7f3a"
+		var logs bytes.Buffer
+		kv := &fakeKV{values: map[string][]byte{"itx-zoom-past-meetings-recordings." + id: []byte(`{"recording_files":[{"file_size":"` + sentinel + `"}]}`)}}
+		r := NewRecordingRecordReader(kv, slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug})))
 		_, err := r.GetRecordingRecord(context.Background(), id)
+		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
+		assert.Equal(t, "saved chat record could not be decoded", err.Error())
+		assert.Contains(t, logs.String(), "failed to decode recording record")
+		assert.Contains(t, logs.String(), id)
+		assert.NotContains(t, logs.String(), sentinel, "decoder errors embed the rejected value and must not be logged")
+		assert.NotContains(t, logs.String(), "file_size")
+	})
+
+	t.Run("a soft-deleted record is not found", func(t *testing.T) {
+		var asMap map[string]any
+		require.NoError(t, json.Unmarshal([]byte(recordingJSON), &asMap))
+		asMap["_sdc_deleted_at"] = "2026-10-02T10:00:00Z"
+		deletedJSON, err := json.Marshal(asMap)
+		require.NoError(t, err)
+		deletedMsgpack, err := msgpack.Marshal(asMap)
+		require.NoError(t, err)
+
+		for name, value := range map[string][]byte{"JSON": deletedJSON, "MessagePack": deletedMsgpack} {
+			t.Run(name, func(t *testing.T) {
+				kv := &fakeKV{values: map[string][]byte{"itx-zoom-past-meetings-recordings." + id: value}}
+				r := NewRecordingRecordReader(kv, logger)
+				_, err := r.GetRecordingRecord(context.Background(), id)
+				assert.ErrorIs(t, err, domain.ErrRecordingRecordNotFound)
+			})
+		}
+	})
+
+	t.Run("a null or empty _sdc_deleted_at is served", func(t *testing.T) {
+		for name, marker := range map[string]string{"null": "null", "empty": `""`} {
+			t.Run(name, func(t *testing.T) {
+				value := []byte(`{"meeting_and_occurrence_id":"` + id + `","_sdc_deleted_at":` + marker + `,"recording_files":[{"file_type":"CHAT","download_url":"https://recordings.example.com/c"}]}`)
+				kv := &fakeKV{values: map[string][]byte{"itx-zoom-past-meetings-recordings." + id: value}}
+				r := NewRecordingRecordReader(kv, logger)
+				rec, err := r.GetRecordingRecord(context.Background(), id)
+				require.NoError(t, err)
+				require.Len(t, rec.RecordingFiles, 1)
+			})
+		}
 	})
 
 	t.Run("null recording_files decodes to no files", func(t *testing.T) {

@@ -185,11 +185,13 @@ func run() int {
 
 	// Recording record reader: the past-meeting chat route reads the recording record
 	// from the v1-objects KV bucket on demand (the bucket the event pipeline watches),
-	// over the same NATS connection as the authorizers. nil when NATS is not
-	// configured or the bucket cannot be opened; the route then answers 503.
+	// over the same NATS connection as the authorizers. The bucket is bound lazily on
+	// the first read, so a bucket that is unreachable at startup does not leave the
+	// route unavailable until a restart. nil only when NATS is not configured; the
+	// route then answers 503.
 	var recordingRecords domain.RecordingRecordReader
 	if committeeAuthzNatsConn != nil {
-		recordingRecords = newRecordingRecordReader(ctx, committeeAuthzNatsConn)
+		recordingRecords = natsinfra.NewLazyRecordingRecordReader(v1ObjectsBucketBinder(committeeAuthzNatsConn), slog.Default())
 	} else {
 		slog.WarnContext(ctx, "NATS_URL not set; past meeting chat retrieval unavailable")
 	}
@@ -378,22 +380,18 @@ func gracefulShutdown(
 	gracefulCloseWG.Wait()
 }
 
-// newRecordingRecordReader opens the v1-objects KV bucket over nc and returns a reader
-// for it, or nil (with a warning) when the bucket cannot be opened. A nil reader makes
-// the past-meeting chat route answer 503 rather than start the service without it:
-// the route is read-only and the rest of the service does not depend on it.
-func newRecordingRecordReader(ctx context.Context, nc *natsgo.Conn) domain.RecordingRecordReader {
-	js, err := jetstream.New(nc)
-	if err != nil {
-		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to create JetStream context; past meeting chat retrieval unavailable")
-		return nil
+// v1ObjectsBucketBinder returns the binder the lazy recording record reader uses to
+// open the v1-objects KV bucket over nc. The route is read-only and the rest of the
+// service does not depend on the bucket, so a failed bind is retried on a later
+// request rather than preventing startup.
+func v1ObjectsBucketBinder(nc *natsgo.Conn) natsinfra.KeyValueBinder {
+	return func(ctx context.Context) (natsinfra.KeyValueGetter, error) {
+		js, err := jetstream.New(nc)
+		if err != nil {
+			return nil, err
+		}
+		return js.KeyValue(ctx, constants.V1ObjectsBucket)
 	}
-	kv, err := js.KeyValue(ctx, constants.V1ObjectsBucket)
-	if err != nil {
-		slog.With(logging.ErrKey, err).WarnContext(ctx, "failed to open v1-objects KV bucket; past meeting chat retrieval unavailable")
-		return nil
-	}
-	return natsinfra.NewRecordingRecordReader(kv, slog.Default())
 }
 
 // startPreferredEmailResponder builds the user-service client and starts the preferred-email
