@@ -60,16 +60,16 @@ The recording record lists a `CHAT` file for each recording session whose chat w
 | `sessions[].message_count` | int | Number of **public** messages parsed from the file **before** `limit`/`offset` apply, so a client can page. When the byte cap cut the file it counts what was parsed |
 | `sessions[].truncated` | bool | `true` when the file exceeded the byte cap, or when the window `[offset, offset+limit)` ends before the last parsed message |
 | `sessions[].messages` | array | The window `[offset, offset+limit)` of the session's **public** messages. Always present; an empty array, never `null` |
-| `messages[].offset` | string | Elapsed time since the recording started, as written in the chat log (`HH:MM:SS`). Not a clock time. Empty for text that precedes the first message header |
-| `messages[].sender` | string | Sender display name as written, trimmed. Empty for text that precedes the first message header |
-| `messages[].recipient` | string | Recipient as written, trimmed: `Everyone`, a display name, or a form such as `Name(Direct Message)` / `Name(Privately)` |
+| `messages[].offset` | string | Elapsed time since the recording started, as written in the chat log (`HH:MM:SS`). Not a clock time |
+| `messages[].sender` | string | Sender display name as written, trimmed |
+| `messages[].recipient` | string | Recipient as written, trimmed. Always `Everyone` (in the provider's casing), since only messages sent to everyone are returned |
 | `messages[].text` | string | The message text, verbatim apart from the layout's own framing. Multi-line messages keep their line breaks as `\n` |
 
 **Fields deliberately absent**: file `id`, `file_size`, `download_url`, `play_url`, session `uuid`, `share_url`, `password`, and any host identifier. A unit test marshals a response built from a record that has all of them set and asserts none appears (`internal/service/itx/past_meeting_chat_service_test.go`, `cmd/meeting-api/service/itx_past_meeting_chat_converters_test.go`).
 
 ### Only messages sent to everyone are returned
 
-The saved chat also holds direct and private messages (recipient `Name(Direct Message)`, `Name(Privately)`, or a bare name). Those were exchanged between two people, not with the meeting, and a recording viewer is not entitled to them: the service drops every message whose recipient is not `Everyone` (case-insensitively, after trimming) **before** counting and windowing. A message with an empty recipient (text before the first header, or a timestamped line of an unknown layout) is kept: the log addresses it to nobody in particular. `message_count`, `offset`/`limit` and `truncated` therefore describe the public messages alone; the response reveals nothing about dropped messages, not even their number. Predicate: `chatlog.IsPublicRecipient`.
+The saved chat also holds direct and private messages (recipient `Name(Direct Message)`, `Name(Privately)`, or a bare name). Those were exchanged between two people, not with the meeting, and a recording viewer is not entitled to them. **Only messages explicitly sent to everyone are returned**: the service keeps a message only when its recipient is `Everyone` (case-insensitively, after trimming) and drops every other message **before** counting and windowing. Text the parser cannot attribute to a recipient (text before the first header, or a timestamped line in a layout the parser does not know) is dropped, never returned: such a line may be a direct message in a drifted layout, so the route fails closed. Continuation lines are unaffected; they belong to the message above them and share its recipient. `message_count`, `offset`/`limit` and `truncated` therefore describe the public messages alone; the response reveals nothing about dropped messages, not even their number. Predicate: `chatlog.IsPublicRecipient`.
 
 ### Chat text is data
 
@@ -82,7 +82,7 @@ The provider's saved-chat text comes in two layouts, both recognised (`internal/
 - `HH:MM:SS<TAB>From <sender> to <recipient>:<TAB><text>` on one line (older);
 - `HH:MM:SS From <sender> to <recipient>:` followed by one or more tab-indented text lines (newer, multi-line).
 
-A line that starts with `HH:MM:SS` but matches neither layout still starts a new message, with an empty `sender` and `recipient` and the remainder of the line as `text`, so a layout the service does not know never glues separate messages together and `message_count` stays honest. Any other unmatched line is appended to the previous message's text (a continuation); when there is no previous message it becomes a message with an empty `offset`, `sender` and `recipient`. A UTF-8 byte-order mark, Windows line endings, trailing whitespace and blank lines are tolerated. An empty file is a session with `message_count: 0` and `messages: []`.
+A line that starts with `HH:MM:SS` but matches neither layout still starts a new message in the parser, with an empty `sender` and `recipient`, so a layout the service does not know never glues separate messages together; because its recipient is unknown it is then dropped from the response (see above). Any other unmatched line is appended to the previous message's text (a continuation); when there is no previous message it becomes a message with an empty `offset`, `sender` and `recipient`, likewise dropped from the response. A UTF-8 byte-order mark, Windows line endings, trailing whitespace and blank lines are tolerated. An empty file is a session with `message_count: 0` and `messages: []`.
 
 ---
 

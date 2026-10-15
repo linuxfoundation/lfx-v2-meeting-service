@@ -1248,12 +1248,12 @@ type PastMeetingChat struct {
 // One message of the chat saved with a past meeting recording
 type PastMeetingChatMessage struct {
 	// Elapsed time since the recording started, as written in the chat log
-	// (HH:MM:SS); empty for text before the first message header
+	// (HH:MM:SS)
 	Offset string
 	// Display name of the sender as written in the chat log
 	Sender string
-	// Recipient as written in the chat log: Everyone, a display name, or a form
-	// such as Name(Direct Message)
+	// Recipient as written in the chat log; always Everyone, since only messages
+	// explicitly sent to everyone are returned
 	Recipient string
 	// Message text, verbatim; multi-line messages keep their line breaks
 	Text string

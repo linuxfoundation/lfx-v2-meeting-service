@@ -171,8 +171,8 @@ func TestIsPublicRecipient(t *testing.T) {
 		{"Everyone", true},
 		{"everyone", true},
 		{"  EVERYONE ", true},
-		{"", true},
-		{"   ", true},
+		{"", false},
+		{"   ", false},
 		{"Bob Fixture(Direct Message)", false},
 		{"Bob Fixture(Privately)", false},
 		{"Bob Fixture", false},
@@ -198,9 +198,27 @@ func TestPublicOnly(t *testing.T) {
 		}
 	})
 
-	t.Run("keeps messages without a recipient", func(t *testing.T) {
+	t.Run("drops messages the parser could not attribute to a recipient", func(t *testing.T) {
+		// Pre-header text and a drifted timestamped line still parse (so they never
+		// glue onto a neighbour), but they are not returned: fail closed.
 		public := PublicOnly([]Message{{Text: "preamble"}, {Offset: "00:00:01", Text: "drifted"}})
-		assert.Len(t, public, 2)
+		assert.Empty(t, public)
+	})
+
+	t.Run("drops a drifted line that is a direct message in an unknown layout", func(t *testing.T) {
+		all := Parse([]byte(""+
+			"00:00:12\tFrom Alice Example to Everyone:\tpublic one\n"+
+			"00:00:40\tAlice Example to Bob Fixture (Direct Message):\tdrifted-private-text\n"+
+			"00:01:03\tFrom Bob Fixture to Everyone:\tpublic two\n"), false)
+		require.Len(t, all, 3, "the drifted line is its own message, not glued to a neighbour")
+
+		public := PublicOnly(all)
+		require.Len(t, public, 2)
+		assert.Equal(t, "public one", public[0].Text)
+		assert.Equal(t, "public two", public[1].Text)
+		for _, m := range public {
+			assert.NotContains(t, m.Text, "drifted-private-text")
+		}
 	})
 
 	t.Run("never returns nil", func(t *testing.T) {

@@ -6475,7 +6475,7 @@ definitions:
                       recording_end: "2026-10-01T16:02:11Z"
                       recording_start: "2026-10-01T15:00:00Z"
                       truncated: false
-        description: The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start
+        description: The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start; only messages explicitly sent to everyone are returned
         example:
             meeting_and_occurrence_id: 96365872728-1630560600000
             sessions:
@@ -6522,11 +6522,11 @@ definitions:
         properties:
             offset:
                 type: string
-                description: Elapsed time since the recording started, as written in the chat log (HH:MM:SS); empty for text before the first message header
+                description: Elapsed time since the recording started, as written in the chat log (HH:MM:SS)
                 example: "00:12:34"
             recipient:
                 type: string
-                description: 'Recipient as written in the chat log: Everyone, a display name, or a form such as Name(Direct Message)'
+                description: Recipient as written in the chat log; always Everyone, since only messages explicitly sent to everyone are returned
                 example: Everyone
             sender:
                 type: string

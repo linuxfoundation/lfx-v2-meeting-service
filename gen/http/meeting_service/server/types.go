@@ -4102,12 +4102,12 @@ type PastMeetingChatSessionResponseBody struct {
 // types.
 type PastMeetingChatMessageResponseBody struct {
 	// Elapsed time since the recording started, as written in the chat log
-	// (HH:MM:SS); empty for text before the first message header
+	// (HH:MM:SS)
 	Offset string `form:"offset" json:"offset" xml:"offset"`
 	// Display name of the sender as written in the chat log
 	Sender string `form:"sender" json:"sender" xml:"sender"`
-	// Recipient as written in the chat log: Everyone, a display name, or a form
-	// such as Name(Direct Message)
+	// Recipient as written in the chat log; always Everyone, since only messages
+	// explicitly sent to everyone are returned
 	Recipient string `form:"recipient" json:"recipient" xml:"recipient"`
 	// Message text, verbatim; multi-line messages keep their line breaks
 	Text string `form:"text" json:"text" xml:"text"`

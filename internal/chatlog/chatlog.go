@@ -129,19 +129,22 @@ func Parse(data []byte, truncated bool) []Message {
 // the whole meeting.
 const everyoneRecipient = "Everyone"
 
-// IsPublicRecipient reports whether a message with this recipient was sent to the
-// whole meeting: the recipient is "Everyone" (case-insensitively, after trimming)
-// or empty (text before the first header, or a timestamped line whose layout is
-// unknown, neither of which the log addresses to anyone in particular). Every
-// other recipient, such as "Name(Direct Message)" or "Name(Privately)", is a
-// private message that a recording viewer must not see.
+// IsPublicRecipient reports whether a message with this recipient was explicitly
+// sent to the whole meeting: the recipient is "Everyone" (case-insensitively,
+// after trimming). Nothing else is public. An empty recipient is not: it means the
+// parser could not attribute the line to a recipient (text before the first
+// header, or a timestamped line in a layout the header pattern does not know),
+// and such a line may well be a direct message in a drifted layout. Failing
+// closed on layout drift is what keeps a private message from reaching every
+// recording viewer; "Name(Direct Message)", "Name(Privately)" and bare names are
+// private for the same reason.
 func IsPublicRecipient(recipient string) bool {
-	recipient = strings.TrimSpace(recipient)
-	return recipient == "" || strings.EqualFold(recipient, everyoneRecipient)
+	return strings.EqualFold(strings.TrimSpace(recipient), everyoneRecipient)
 }
 
 // PublicOnly returns the messages of msgs whose recipient IsPublicRecipient, in
-// order. It never returns nil.
+// order. Messages the parser could not attribute to a recipient are dropped, never
+// returned. It never returns nil.
 func PublicOnly(msgs []Message) []Message {
 	public := make([]Message, 0, len(msgs))
 	for _, m := range msgs {

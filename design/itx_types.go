@@ -573,13 +573,13 @@ var PastMeetingSummary = Type("PastMeetingSummary", func() {
 // provider wrote it; it is never interpreted by the service.
 var PastMeetingChatMessage = Type("PastMeetingChatMessage", func() {
 	Description("One message of the chat saved with a past meeting recording")
-	Attribute("offset", String, "Elapsed time since the recording started, as written in the chat log (HH:MM:SS); empty for text before the first message header", func() {
+	Attribute("offset", String, "Elapsed time since the recording started, as written in the chat log (HH:MM:SS)", func() {
 		Example("00:12:34")
 	})
 	Attribute("sender", String, "Display name of the sender as written in the chat log", func() {
 		Example("A. Person")
 	})
-	Attribute("recipient", String, "Recipient as written in the chat log: Everyone, a display name, or a form such as Name(Direct Message)", func() {
+	Attribute("recipient", String, "Recipient as written in the chat log; always Everyone, since only messages explicitly sent to everyone are returned", func() {
 		Example("Everyone")
 	})
 	Attribute("text", String, "Message text, verbatim; multi-line messages keep their line breaks", func() {
@@ -613,7 +613,7 @@ var PastMeetingChatSession = Type("PastMeetingChatSession", func() {
 // PastMeetingChat is the saved chat of a past meeting. By contract it carries no
 // link (download, play or share URL) and no password or passcode.
 var PastMeetingChat = Type("PastMeetingChat", func() {
-	Description("The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start")
+	Description("The chat saved with the recording of a past meeting, one session per CHAT file, ordered by recording start; only messages explicitly sent to everyone are returned")
 	Attribute("meeting_and_occurrence_id", String, "The past meeting identifier", func() {
 		Example("96365872728-1630560600000")
 	})

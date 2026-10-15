@@ -182,6 +182,32 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 			assert.Equal(t, "public three", resp.Sessions[0].Messages[0].Text)
 		})
 
+		t.Run("text the parser cannot attribute to a recipient is dropped, not counted", func(t *testing.T) {
+			record := twoSessionRecord()
+			record.RecordingFiles = record.RecordingFiles[3:]
+			reader := &fakeRecordingRecordReader{record: record}
+			fetcher := &fakeRecordingFileFetcher{bodies: map[string]string{chatLinkA: "" +
+				"Saved chat preamble-text\n" +
+				"00:00:12\tFrom Alice Example to Everyone:\tpublic one\n" +
+				"00:00:40\tAlice Example to Bob Fixture (Direct Message):\tdrifted-private-text\n" +
+				"00:01:03\tFrom Bob Fixture to Everyone:\tpublic two\n" +
+				"\tcontinuation of public two\n"}}
+			svc := NewPastMeetingChatService(reader, fetcher, 1<<20)
+
+			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
+			require.NoError(t, err)
+			s := resp.Sessions[0]
+			assert.Equal(t, 2, s.MessageCount)
+			require.Len(t, s.Messages, 2)
+			assert.Equal(t, "public one", s.Messages[0].Text)
+			assert.Equal(t, "public two\ncontinuation of public two", s.Messages[1].Text, "continuation lines keep their message's recipient")
+
+			out, err := json.Marshal(resp)
+			require.NoError(t, err)
+			assert.NotContains(t, string(out), "drifted-private-text")
+			assert.NotContains(t, string(out), "preamble-text")
+		})
+
 		t.Run("marshalled body carries no private text", func(t *testing.T) {
 			resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
 			require.NoError(t, err)
