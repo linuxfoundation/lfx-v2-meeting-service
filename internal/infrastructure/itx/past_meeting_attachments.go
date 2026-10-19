@@ -13,27 +13,29 @@ import (
 // CreatePastMeetingAttachmentPresignURL generates a presigned URL for past meeting attachment upload.
 func (c *Client) CreatePastMeetingAttachmentPresignURL(ctx context.Context, meetingAndOccurrenceID string, req *itx.CreateAttachmentPresignRequest) (*itx.PastMeetingAttachmentPresignResponse, error) {
 	return doJSONTyped[itx.PastMeetingAttachmentPresignResponse](c, ctx, apiRequest{
-		method:      http.MethodPost,
-		path:        "/v2/zoom/past_meetings/%s/attachments/presign",
-		pathArgs:    []any{meetingAndOccurrenceID},
-		body:        req,
-		accept:      acceptJSON,
-		debugOp:     "CreatePastMeetingAttachmentPresignURL",
-		debugFields: []any{"meetingAndOccurrenceID", meetingAndOccurrenceID},
-		parseError:  "failed to parse ITX response",
+		method:          http.MethodPost,
+		path:            "/v2/zoom/past_meetings/%s/attachments/presign",
+		pathArgs:        []any{meetingAndOccurrenceID},
+		body:            req,
+		accept:          acceptJSON,
+		debugOp:         "CreatePastMeetingAttachmentPresignURL",
+		debugFields:     []any{"meetingAndOccurrenceID", meetingAndOccurrenceID},
+		skipResponseLog: true,
+		parseError:      "failed to parse ITX response",
 	})
 }
 
 // GetPastMeetingAttachmentDownloadURL generates a presigned URL for past meeting attachment download.
 func (c *Client) GetPastMeetingAttachmentDownloadURL(ctx context.Context, meetingAndOccurrenceID, attachmentID string) (*itx.AttachmentDownloadResponse, error) {
 	return doJSONTyped[itx.AttachmentDownloadResponse](c, ctx, apiRequest{
-		method:      http.MethodGet,
-		path:        "/v2/zoom/past_meetings/%s/attachments/%s/download",
-		pathArgs:    []any{meetingAndOccurrenceID, attachmentID},
-		accept:      acceptJSON,
-		debugOp:     "GetPastMeetingAttachmentDownloadURL",
-		debugFields: []any{"meetingAndOccurrenceID", meetingAndOccurrenceID, "attachmentID", attachmentID},
-		parseError:  "failed to parse ITX response",
+		method:          http.MethodGet,
+		path:            "/v2/zoom/past_meetings/%s/attachments/%s/download",
+		pathArgs:        []any{meetingAndOccurrenceID, attachmentID},
+		accept:          acceptJSON,
+		debugOp:         "GetPastMeetingAttachmentDownloadURL",
+		debugFields:     []any{"meetingAndOccurrenceID", meetingAndOccurrenceID, "attachmentID", attachmentID},
+		skipResponseLog: true,
+		parseError:      "failed to parse ITX response",
 	})
 }
 
