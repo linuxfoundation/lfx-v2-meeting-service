@@ -342,7 +342,11 @@ type UpdateItxPastMeetingRequestBody struct {
 // UpdateItxPastMeetingSummaryRequestBody is the type of the "Meeting Service"
 // service "update-itx-past-meeting-summary" endpoint HTTP request body.
 type UpdateItxPastMeetingSummaryRequestBody struct {
-	// User-edited summary content
+	// User-edited summary content. Summary markdown: `## Overview`, `## Key
+	// Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines;
+	// the same text the search index carries in `content`/`edited_content`.
+	// Replaces the whole edited summary in ITX when present and non-empty; absent
+	// or empty leaves the edits untouched (approval-only update)
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 	// Approval status
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
@@ -4071,11 +4075,15 @@ type SummaryDataResponseBody struct {
 	EndTime *string `form:"end_time,omitempty" json:"end_time,omitempty" xml:"end_time,omitempty"`
 	// Summary title
 	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
-	// The main AI-generated summary content
+	// The main AI-generated summary content. Summary markdown: `## Overview`, `##
+	// Key Topics` with `### <label>` sections, `## Next Steps` with `- <step>`
+	// lines; the same text the search index carries in `content`/`edited_content`
 	Content *string `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 	// URL to the full summary document
 	DocURL *string `form:"doc_url,omitempty" json:"doc_url,omitempty" xml:"doc_url,omitempty"`
-	// User-edited summary content
+	// User-edited summary content. Summary markdown: `## Overview`, `## Key
+	// Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines;
+	// the same text the search index carries in `content`/`edited_content`
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 }
 

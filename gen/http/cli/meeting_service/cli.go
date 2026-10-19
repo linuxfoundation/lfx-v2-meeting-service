@@ -1552,7 +1552,7 @@ func meetingServiceUpdateItxPastMeetingSummaryUsage() {
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": true,\n      \"edited_content\": \"Dolores provident non qui repellendus rem id.\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service update-itx-past-meeting-summary --body '{\n      \"approved\": true,\n      \"edited_content\": \"## Overview\\nTeam discussed Q1 roadmap.\\n\\n## Key Topics\\n### Feature Planning\\nFocus on authentication improvements.\\n\\n## Next Steps\\n- Schedule design review\"\n   }' --past-meeting-id \"12343245463-1630560600000\" --summary-uid \"456e7890-e89b-12d3-a456-426614174000\" --version \"1\" --bearer-token \"eyJhbGci...\"")
 }
 
 func meetingServiceGetItxPastMeetingChatUsage() {

@@ -817,8 +817,8 @@ The `public` flag is derived from `transcript_access`, which is sourced from the
 | `summary_end_time` | string (optional) | Summary end time (RFC3339) |
 | `summary_created_time` | string (optional) | Time the summary was generated (RFC3339) |
 | `summary_last_modified_time` | string (optional) | Last modification time (RFC3339) |
-| `content` | string | Consolidated markdown content |
-| `edited_content` | string | Edited markdown content (may differ from `content`) |
+| `content` | string | Consolidated markdown content (format: `pkg/summaryformat`) |
+| `edited_content` | string | Edited markdown content (may differ from `content`; format: `pkg/summaryformat`) |
 | `requires_approval` | bool | Whether this summary requires human approval before publishing |
 | `approved` | bool | Whether this summary has been approved |
 | `platform` | string | Meeting platform (always `"Zoom"`) |

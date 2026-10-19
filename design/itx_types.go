@@ -496,6 +496,14 @@ var PastMeetingSummaryZoomConfig = Type("PastMeetingSummaryZoomConfig", func() {
 	})
 })
 
+// SummaryMarkdownFormat names the format of a summary's content/edited_content: the
+// markdown pkg/summaryformat renders and parses, the same text the search index carries.
+const SummaryMarkdownFormat = "Summary markdown: `## Overview`, `## Key Topics` with `### <label>` sections, " +
+	"`## Next Steps` with `- <step>` lines; the same text the search index carries in `content`/`edited_content`"
+
+// SummaryMarkdownExample is a short sample in that format.
+const SummaryMarkdownExample = "## Overview\nTeam discussed Q1 roadmap.\n\n## Key Topics\n### Feature Planning\nFocus on authentication improvements.\n\n## Next Steps\n- Schedule design review"
+
 // SummaryData represents the actual AI-generated summary content
 var SummaryData = Type("SummaryData", func() {
 	Description("AI-generated summary content for a past meeting")
@@ -511,14 +519,14 @@ var SummaryData = Type("SummaryData", func() {
 	Attribute("title", String, "Summary title", func() {
 		Example("Weekly Team Standup Meeting")
 	})
-	Attribute("content", String, "The main AI-generated summary content", func() {
-		Example("This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.")
+	Attribute("content", String, "The main AI-generated summary content. "+SummaryMarkdownFormat, func() {
+		Example(SummaryMarkdownExample)
 	})
 	Attribute("doc_url", String, "URL to the full summary document", func() {
 		Example("https://zoom.us/rec/summary/abc123")
 	})
-	Attribute("edited_content", String, "User-edited summary content", func() {
-		Example("Updated meeting summary with additional details and action items.")
+	Attribute("edited_content", String, "User-edited summary content. "+SummaryMarkdownFormat, func() {
+		Example(SummaryMarkdownExample)
 	})
 
 	Required("start_time", "end_time")

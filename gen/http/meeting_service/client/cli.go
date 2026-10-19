@@ -1619,7 +1619,7 @@ func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingS
 		}
 		err = json.Unmarshal([]byte(*meetingServiceUpdateItxPastMeetingSummaryBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_content\": \"Dolores provident non qui repellendus rem id.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"approved\": true,\n      \"edited_content\": \"## Overview\\nTeam discussed Q1 roadmap.\\n\\n## Key Topics\\n### Feature Planning\\nFocus on authentication improvements.\\n\\n## Next Steps\\n- Schedule design review\"\n   }'")
 		}
 	}
 	var pastMeetingID string
