@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
@@ -19,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 const testToken = "test-user-token"
@@ -389,4 +391,36 @@ func TestMapHTTPError(t *testing.T) {
 		err := mapHTTPError(tt.status, []byte(`{"Message":"boom"}`))
 		assert.Equal(t, tt.want, domain.GetErrorType(err))
 	}
+
+	// The caller keeps the upstream detail, but what a log attribute emits must not carry
+	// any upstream body text (it can echo the user's email addresses).
+	logOutput := func(err error) string {
+		var buf bytes.Buffer
+		slog.New(slog.NewJSONHandler(&buf, nil)).Warn("failed", logging.ErrKey, err)
+		return buf.String()
+	}
+	t.Run("structured message reaches the caller but not the log", func(t *testing.T) {
+		err := mapHTTPError(http.StatusConflict, []byte(`{"Message":"email alice@example.com already exists"}`))
+		assert.Contains(t, err.Error(), "alice@example.com")
+
+		out := logOutput(err)
+		assert.NotContains(t, out, "alice@example.com")
+		assert.Contains(t, out, "user-service returned HTTP 409 (conflict)")
+	})
+	t.Run("raw body snippet reaches the caller but not the log", func(t *testing.T) {
+		err := mapHTTPError(http.StatusBadGateway, []byte("upstream failed for alice@example.com"))
+		assert.Contains(t, err.Error(), "alice@example.com")
+
+		out := logOutput(err)
+		assert.NotContains(t, out, "alice@example.com")
+		assert.Contains(t, out, "user-service returned HTTP 502 (unavailable)")
+	})
+	t.Run("rejected token message is not logged either", func(t *testing.T) {
+		err := mapHTTPError(http.StatusForbidden, []byte(`{"error":"token for alice@example.com rejected"}`))
+		assert.Contains(t, err.Error(), "alice@example.com")
+
+		out := logOutput(err)
+		assert.NotContains(t, out, "alice@example.com")
+		assert.Contains(t, out, "user-service returned HTTP 403 (validation)")
+	})
 }

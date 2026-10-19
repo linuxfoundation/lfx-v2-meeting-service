@@ -3,7 +3,10 @@
 
 package domain
 
-import "errors"
+import (
+	"errors"
+	"log/slog"
+)
 
 // ErrorType represents the semantic category of an error
 type ErrorType int
@@ -22,6 +25,12 @@ type DomainError struct {
 	Type    ErrorType
 	Message string
 	Err     error // underlying error for wrapping
+
+	// LogMessage, when set, is a description of the failure that is safe to log. It is
+	// for errors whose Message carries upstream content that may hold identifiers (such
+	// as an email address echoed in a response body): the detailed Message still reaches
+	// the caller through Error(), but a log attribute shows only LogMessage.
+	LogMessage string
 }
 
 func (e *DomainError) Error() string {
@@ -33,6 +42,17 @@ func (e *DomainError) Error() string {
 
 func (e *DomainError) Unwrap() error {
 	return e.Err
+}
+
+// LogValue implements slog.LogValuer so that logging a DomainError as an attribute
+// (e.g. logging.ErrKey) emits LogMessage when one is set, and the full error text
+// otherwise. It only takes effect while the error is logged as-is: once the error is
+// wrapped or formatted into another message, that text is logged instead.
+func (e *DomainError) LogValue() slog.Value {
+	if e.LogMessage != "" {
+		return slog.StringValue(e.LogMessage)
+	}
+	return slog.StringValue(e.Error())
 }
 
 // GetErrorType returns the semantic type of an error
