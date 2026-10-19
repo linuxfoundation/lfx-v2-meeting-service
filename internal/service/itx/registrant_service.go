@@ -196,6 +196,8 @@ func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, reg
 // SelfUnregisterFromMeeting removes the authenticated user's own registrant record from a meeting.
 // The caller supplies their registrant_id; the service fetches the record, verifies the identity
 // matches the JWT principal (email or username), and only then deletes it. M2M tokens are rejected.
+// The delete is flagged as a self removal, so ITX also removes a committee registrant and records
+// an exclusion that keeps committee syncs from adding the user back.
 func (s *RegistrantService) SelfUnregisterFromMeeting(ctx context.Context, meetingID, registrantID string) error {
 	username, _ := ctx.Value(constants.PrincipalContextID).(string)
 	if username == "" {
@@ -226,12 +228,18 @@ func (s *RegistrantService) SelfUnregisterFromMeeting(ctx context.Context, meeti
 		return domain.NewForbiddenError("registrant does not belong to the authenticated user")
 	}
 
-	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID)
+	// Tell ITX this is the registrant removing themselves. ITX checks updated_by against the
+	// registrant again, so send the same username and email the ownership check above used rather
+	// than a re-resolved profile that could differ from it.
+	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID, &itx.DeleteRegistrantRequest{
+		SelfRemoval: true,
+		UpdatedBy:   &itx.User{Username: username, Email: email},
+	})
 }
 
 // DeleteRegistrant deletes a meeting registrant via ITX proxy
 func (s *RegistrantService) DeleteRegistrant(ctx context.Context, meetingID, registrantID string) error {
-	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID)
+	return s.registrantClient.DeleteRegistrant(ctx, meetingID, registrantID, nil)
 }
 
 // GetRegistrantICS retrieves an ICS calendar file for a meeting registrant via ITX proxy
