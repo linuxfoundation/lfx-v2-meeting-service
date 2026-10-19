@@ -4,6 +4,7 @@
 package summaryformat_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -88,6 +89,50 @@ func TestRoundTrip_ParseFormat(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.parts, summaryformat.Parse(summaryformat.Format(tt.parts)))
+		})
+	}
+}
+
+// TestRoundTrip_SectionCombinations proves the inverse for every combination of the three
+// sections present or absent, in both directions: Parse(Format(p)) == p and
+// Format(Parse(Format(p))) == Format(p). The all-absent case renders "" and parses back to
+// zero Parts.
+func TestRoundTrip_SectionCombinations(t *testing.T) {
+	const (
+		overview = "Team discussed Q1 roadmap."
+		step     = "Schedule design review"
+	)
+	detail := itx.ZoomMeetingSummaryDetails{Label: "Feature Planning", Summary: "Focus on authentication improvements."}
+
+	for mask := 0; mask < 8; mask++ {
+		var p summaryformat.Parts
+		name := ""
+		if mask&1 != 0 {
+			p.Overview = overview
+			name += "+overview"
+		}
+		if mask&2 != 0 {
+			p.Details = []itx.ZoomMeetingSummaryDetails{detail}
+			name += "+details"
+		}
+		if mask&4 != 0 {
+			p.NextSteps = []string{step}
+			name += "+steps"
+		}
+		if name == "" {
+			name = "all absent"
+		}
+
+		t.Run(name, func(t *testing.T) {
+			text := summaryformat.Format(p)
+			got := summaryformat.Parse(text)
+			assert.Equal(t, p, got, "Parse(Format(p)) == p")
+			assert.Equal(t, text, summaryformat.Format(got), "Format(Parse(t)) == t")
+
+			// Each present section is in the text, each absent one is not.
+			assert.Equal(t, p.Overview != "", strings.Contains(text, summaryformat.HeadingOverview))
+			assert.Equal(t, len(p.Details) > 0, strings.Contains(text, summaryformat.HeadingKeyTopics))
+			assert.Equal(t, len(p.NextSteps) > 0, strings.Contains(text, summaryformat.HeadingNextSteps))
 		})
 	}
 }

@@ -124,6 +124,61 @@ func TestConvertUpdatePastMeetingSummaryPayload(t *testing.T) {
 		assert.JSONEq(t, `["Only a step remains"]`, string(keys["edited_next_steps"]))
 	})
 
+	t.Run("edit without a ## Overview heading keeps its leading text as the overview", func(t *testing.T) {
+		// Text before the first heading is the overview: an edit whose "## Overview" line
+		// was deleted must not reach ITX as a cleared overview.
+		content := "Team discussed Q1 roadmap.\n\nBudget was approved.\n\n## Key Topics\n### Bug Review\nIdentified 3 critical bugs.\n\n## Next Steps\n- Assign bug fixes"
+		req := ConvertUpdatePastMeetingSummaryPayload(&meetingservice.UpdateItxPastMeetingSummaryPayload{
+			EditedContent: &content,
+		})
+
+		require.NotNil(t, req.EditedSummaryOverview)
+		assert.Equal(t, "Team discussed Q1 roadmap.\n\nBudget was approved.", *req.EditedSummaryOverview)
+
+		keys := marshalledKeys(t, req)
+		assert.JSONEq(t, `"Team discussed Q1 roadmap.\n\nBudget was approved."`, string(keys["edited_summary_overview"]))
+		assert.JSONEq(t, `[{"label":"Bug Review","summary":"Identified 3 critical bugs."}]`, string(keys["edited_summary_details"]))
+		assert.JSONEq(t, `["Assign bug fixes"]`, string(keys["edited_next_steps"]))
+	})
+
+	t.Run("every section combination of an edit marshals present parts and clears absent ones", func(t *testing.T) {
+		const (
+			overview = "Team discussed Q1 roadmap."
+			step     = "Schedule design review"
+		)
+		detail := itx.ZoomMeetingSummaryDetails{Label: "Feature Planning", Summary: "Focus on authentication improvements."}
+
+		// mask 0 (all absent) renders "" and is no edit; it is covered by the empty-string case.
+		for mask := 1; mask < 8; mask++ {
+			var p summaryformat.Parts
+			if mask&1 != 0 {
+				p.Overview = overview
+			}
+			if mask&2 != 0 {
+				p.Details = []itx.ZoomMeetingSummaryDetails{detail}
+			}
+			if mask&4 != 0 {
+				p.NextSteps = []string{step}
+			}
+			content := summaryformat.Format(p)
+			req := ConvertUpdatePastMeetingSummaryPayload(&meetingservice.UpdateItxPastMeetingSummaryPayload{EditedContent: &content})
+			keys := marshalledKeys(t, req)
+
+			wantOverview, _ := json.Marshal(p.Overview)
+			assert.JSONEq(t, string(wantOverview), string(keys["edited_summary_overview"]), "mask %d overview", mask)
+			if mask&2 != 0 {
+				assert.JSONEq(t, `[{"label":"Feature Planning","summary":"Focus on authentication improvements."}]`, string(keys["edited_summary_details"]), "mask %d details", mask)
+			} else {
+				assert.JSONEq(t, `[]`, string(keys["edited_summary_details"]), "mask %d details cleared", mask)
+			}
+			if mask&4 != 0 {
+				assert.JSONEq(t, `["Schedule design review"]`, string(keys["edited_next_steps"]), "mask %d steps", mask)
+			} else {
+				assert.JSONEq(t, `[]`, string(keys["edited_next_steps"]), "mask %d steps cleared", mask)
+			}
+		}
+	})
+
 	t.Run("approval-only payload marshals none of the edited keys", func(t *testing.T) {
 		req := ConvertUpdatePastMeetingSummaryPayload(&meetingservice.UpdateItxPastMeetingSummaryPayload{
 			Approved: utils.BoolPtr(true),
