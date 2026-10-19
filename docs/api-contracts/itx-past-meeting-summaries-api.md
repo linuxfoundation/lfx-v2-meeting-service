@@ -138,7 +138,7 @@ On an edit the proxy sends **all three** edited fields, with `""` for a removed 
 
 ### Summary Response
 
-**Proxy API**: the `PastMeetingSummary` shape of the OpenAPI spec (`uid`, `past_meeting_id`, `meeting_id`, `platform`, `zoom_config`, `summary_data`, `requires_approval`, `approved`, `email_sent`, `created_at`, `updated_at`). `summary_data.content` renders ITX's `summary_overview`, `summary_details` and `next_steps` in the [summary markdown](#summary-markdown); `summary_data.edited_content` renders the three `edited_*` fields the same way. Either is omitted when its parts are all empty.
+**Proxy API**: the `PastMeetingSummary` shape of the OpenAPI spec (`uid`, `past_meeting_id`, `meeting_id`, `platform`, `zoom_config`, `summary_data`, `requires_approval`, `approved`, `created_at`, `updated_at`, and `email_sent` when ITX provides it). `summary_data.content` renders ITX's `summary_overview`, `summary_details` and `next_steps` in the [summary markdown](#summary-markdown); `summary_data.edited_content` renders the three `edited_*` fields the same way. Either is omitted when its parts are all empty.
 
 ```json
 {
@@ -159,7 +159,6 @@ On an edit the proxy sends **all three** edited fields, with `""` for a removed 
   },
   "requires_approval": true,
   "approved": false,
-  "email_sent": false,
   "created_at": "2021-06-27T05:45:00Z",
   "updated_at": "2021-06-27T06:15:00Z"
 }
@@ -284,7 +283,7 @@ On an edit the proxy sends **all three** edited fields, with `""` for a removed 
 | `summary_data.content` | `summary_overview` + `summary_details` + `next_steps`, rendered as summary markdown |
 | `summary_data.edited_content` | `edited_summary_overview` + `edited_summary_details` + `edited_next_steps`, rendered as summary markdown |
 | `requires_approval`, `approved` | `requires_approval`, `approved` |
-| `email_sent` | not tracked by ITX; always `false` |
+| `email_sent` | carried from ITX when present; omitted otherwise (see "Proxy response: `email_sent`") |
 | `created_at`, `updated_at` | `created_at`, `modified_at` |
 
 ---
