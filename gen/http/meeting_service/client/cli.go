@@ -1670,6 +1670,78 @@ func BuildUpdateItxPastMeetingSummaryPayload(meetingServiceUpdateItxPastMeetingS
 	return v, nil
 }
 
+// BuildGetItxPastMeetingChatPayload builds the payload for the Meeting Service
+// get-itx-past-meeting-chat endpoint from CLI flags.
+func BuildGetItxPastMeetingChatPayload(meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceID *string, meetingServiceGetItxPastMeetingChatVersion *string, meetingServiceGetItxPastMeetingChatLimit string, meetingServiceGetItxPastMeetingChatOffset string, meetingServiceGetItxPastMeetingChatBearerToken *string) (*meetingservice.GetItxPastMeetingChatPayload, error) {
+	var err error
+	var meetingAndOccurrenceID string
+	{
+		if meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-and-occurrence-id")
+		}
+		meetingAndOccurrenceID = *meetingServiceGetItxPastMeetingChatMeetingAndOccurrenceID
+	}
+	var version *string
+	{
+		if meetingServiceGetItxPastMeetingChatVersion != nil {
+			version = meetingServiceGetItxPastMeetingChatVersion
+			if !(*meetingServiceGetItxPastMeetingChatVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxPastMeetingChatVersion, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var limit int
+	{
+		var v int64
+		v, err = strconv.ParseInt(meetingServiceGetItxPastMeetingChatLimit, 10, strconv.IntSize)
+		limit = int(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for limit, must be INT")
+		}
+		if limit < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 1, true))
+		}
+		if limit > 2000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 2000, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var offset int
+	{
+		var v int64
+		v, err = strconv.ParseInt(meetingServiceGetItxPastMeetingChatOffset, 10, strconv.IntSize)
+		offset = int(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for offset, must be INT")
+		}
+		if offset < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("offset", offset, 0, true))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetItxPastMeetingChatBearerToken != nil {
+			bearerToken = meetingServiceGetItxPastMeetingChatBearerToken
+		}
+	}
+	v := &meetingservice.GetItxPastMeetingChatPayload{}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.Version = version
+	v.Limit = limit
+	v.Offset = offset
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildCreateItxPastMeetingParticipantPayload builds the payload for the
 // Meeting Service create-itx-past-meeting-participant endpoint from CLI flags.
 func BuildCreateItxPastMeetingParticipantPayload(meetingServiceCreateItxPastMeetingParticipantBody *string, meetingServiceCreateItxPastMeetingParticipantPastMeetingID *string, meetingServiceCreateItxPastMeetingParticipantVersion *string, meetingServiceCreateItxPastMeetingParticipantBearerToken *string) (*meetingservice.CreateItxPastMeetingParticipantPayload, error) {

@@ -44,6 +44,7 @@ type Endpoints struct {
 	UpdateItxPastMeeting                  goa.Endpoint
 	GetItxPastMeetingSummary              goa.Endpoint
 	UpdateItxPastMeetingSummary           goa.Endpoint
+	GetItxPastMeetingChat                 goa.Endpoint
 	CreateItxPastMeetingParticipant       goa.Endpoint
 	UpdateItxPastMeetingParticipant       goa.Endpoint
 	DeleteItxPastMeetingParticipant       goa.Endpoint
@@ -103,6 +104,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UpdateItxPastMeeting:                  NewUpdateItxPastMeetingEndpoint(s, a.JWTAuth),
 		GetItxPastMeetingSummary:              NewGetItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
 		UpdateItxPastMeetingSummary:           NewUpdateItxPastMeetingSummaryEndpoint(s, a.JWTAuth),
+		GetItxPastMeetingChat:                 NewGetItxPastMeetingChatEndpoint(s, a.JWTAuth),
 		CreateItxPastMeetingParticipant:       NewCreateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
 		UpdateItxPastMeetingParticipant:       NewUpdateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
 		DeleteItxPastMeetingParticipant:       NewDeleteItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
@@ -151,6 +153,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UpdateItxPastMeeting = m(e.UpdateItxPastMeeting)
 	e.GetItxPastMeetingSummary = m(e.GetItxPastMeetingSummary)
 	e.UpdateItxPastMeetingSummary = m(e.UpdateItxPastMeetingSummary)
+	e.GetItxPastMeetingChat = m(e.GetItxPastMeetingChat)
 	e.CreateItxPastMeetingParticipant = m(e.CreateItxPastMeetingParticipant)
 	e.UpdateItxPastMeetingParticipant = m(e.UpdateItxPastMeetingParticipant)
 	e.DeleteItxPastMeetingParticipant = m(e.DeleteItxPastMeetingParticipant)
@@ -760,6 +763,29 @@ func NewUpdateItxPastMeetingSummaryEndpoint(s Service, authJWTFn security.AuthJW
 			return nil, err
 		}
 		return s.UpdateItxPastMeetingSummary(ctx, p)
+	}
+}
+
+// NewGetItxPastMeetingChatEndpoint returns an endpoint function that calls the
+// method "get-itx-past-meeting-chat" of service "Meeting Service".
+func NewGetItxPastMeetingChatEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxPastMeetingChatPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = string(*p.BearerToken)
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxPastMeetingChat(ctx, p)
 	}
 }
 

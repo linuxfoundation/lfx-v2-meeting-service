@@ -1049,6 +1049,15 @@ type UpdateItxPastMeetingSummaryResponseBody struct {
 	UpdatedAt string `form:"updated_at" json:"updated_at" xml:"updated_at"`
 }
 
+// GetItxPastMeetingChatResponseBody is the type of the "Meeting Service"
+// service "get-itx-past-meeting-chat" endpoint HTTP response body.
+type GetItxPastMeetingChatResponseBody struct {
+	// The past meeting identifier
+	MeetingAndOccurrenceID string `form:"meeting_and_occurrence_id" json:"meeting_and_occurrence_id" xml:"meeting_and_occurrence_id"`
+	// Recording sessions that saved a chat, ordered by recording_start
+	Sessions []*PastMeetingChatSessionResponseBody `form:"sessions" json:"sessions" xml:"sessions"`
+}
+
 // CreateItxPastMeetingParticipantResponseBody is the type of the "Meeting
 // Service" service "create-itx-past-meeting-participant" endpoint HTTP
 // response body.
@@ -3022,6 +3031,66 @@ type UpdateItxPastMeetingSummaryUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// GetItxPastMeetingChatBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "BadRequest" error.
+type GetItxPastMeetingChatBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingChatForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "Forbidden" error.
+type GetItxPastMeetingChatForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingChatInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-chat" endpoint HTTP response
+// body for the "InternalServerError" error.
+type GetItxPastMeetingChatInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingChatNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "NotFound" error.
+type GetItxPastMeetingChatNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingChatServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-past-meeting-chat" endpoint HTTP response
+// body for the "ServiceUnavailable" error.
+type GetItxPastMeetingChatServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// GetItxPastMeetingChatUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-past-meeting-chat" endpoint HTTP response body for
+// the "Unauthorized" error.
+type GetItxPastMeetingChatUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // CreateItxPastMeetingParticipantBadRequestResponseBody is the type of the
 // "Meeting Service" service "create-itx-past-meeting-participant" endpoint
 // HTTP response body for the "BadRequest" error.
@@ -4010,6 +4079,41 @@ type SummaryDataResponseBody struct {
 	EditedContent *string `form:"edited_content,omitempty" json:"edited_content,omitempty" xml:"edited_content,omitempty"`
 }
 
+// PastMeetingChatSessionResponseBody is used to define fields on response body
+// types.
+type PastMeetingChatSessionResponseBody struct {
+	// Start of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingStart *string `form:"recording_start,omitempty" json:"recording_start,omitempty" xml:"recording_start,omitempty"`
+	// End of the recording session (RFC3339); omitted when the recording record
+	// carries no parsable value
+	RecordingEnd *string `form:"recording_end,omitempty" json:"recording_end,omitempty" xml:"recording_end,omitempty"`
+	// Number of public (sent to everyone) messages parsed from the chat file,
+	// before limit and offset apply
+	MessageCount int `form:"message_count" json:"message_count" xml:"message_count"`
+	// True when the chat file exceeded the byte cap or the message window ends
+	// before the last message
+	Truncated bool `form:"truncated" json:"truncated" xml:"truncated"`
+	// The message window [offset, offset+limit); empty, not omitted, when there is
+	// none
+	Messages []*PastMeetingChatMessageResponseBody `form:"messages" json:"messages" xml:"messages"`
+}
+
+// PastMeetingChatMessageResponseBody is used to define fields on response body
+// types.
+type PastMeetingChatMessageResponseBody struct {
+	// Elapsed time since the recording started, as written in the chat log
+	// (HH:MM:SS, possibly with fractional seconds)
+	Offset string `form:"offset" json:"offset" xml:"offset"`
+	// Display name of the sender as written in the chat log
+	Sender string `form:"sender" json:"sender" xml:"sender"`
+	// Recipient as written in the chat log; always Everyone, since only messages
+	// explicitly sent to everyone are returned
+	Recipient string `form:"recipient" json:"recipient" xml:"recipient"`
+	// Message text, verbatim; multi-line messages keep their line breaks
+	Text string `form:"text" json:"text" xml:"text"`
+}
+
 // ParticipantSessionResponseBody is used to define fields on response body
 // types.
 type ParticipantSessionResponseBody struct {
@@ -4477,6 +4581,28 @@ func NewUpdateItxPastMeetingSummaryResponseBody(res *meetingservice.PastMeetingS
 	}
 	if res.SummaryData != nil {
 		body.SummaryData = marshalMeetingserviceSummaryDataToSummaryDataResponseBody(res.SummaryData)
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatResponseBody builds the HTTP response body from the
+// result of the "get-itx-past-meeting-chat" endpoint of the "Meeting Service"
+// service.
+func NewGetItxPastMeetingChatResponseBody(res *meetingservice.PastMeetingChat) *GetItxPastMeetingChatResponseBody {
+	body := &GetItxPastMeetingChatResponseBody{
+		MeetingAndOccurrenceID: res.MeetingAndOccurrenceID,
+	}
+	if res.Sessions != nil {
+		body.Sessions = make([]*PastMeetingChatSessionResponseBody, len(res.Sessions))
+		for i, val := range res.Sessions {
+			if val == nil {
+				body.Sessions[i] = nil
+				continue
+			}
+			body.Sessions[i] = marshalMeetingservicePastMeetingChatSessionToPastMeetingChatSessionResponseBody(val)
+		}
+	} else {
+		body.Sessions = []*PastMeetingChatSessionResponseBody{}
 	}
 	return body
 }
@@ -6512,6 +6638,72 @@ func NewUpdateItxPastMeetingSummaryUnauthorizedResponseBody(res *meetingservice.
 	return body
 }
 
+// NewGetItxPastMeetingChatBadRequestResponseBody builds the HTTP response body
+// from the result of the "get-itx-past-meeting-chat" endpoint of the "Meeting
+// Service" service.
+func NewGetItxPastMeetingChatBadRequestResponseBody(res *meetingservice.BadRequestError) *GetItxPastMeetingChatBadRequestResponseBody {
+	body := &GetItxPastMeetingChatBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatForbiddenResponseBody builds the HTTP response body
+// from the result of the "get-itx-past-meeting-chat" endpoint of the "Meeting
+// Service" service.
+func NewGetItxPastMeetingChatForbiddenResponseBody(res *meetingservice.ForbiddenError) *GetItxPastMeetingChatForbiddenResponseBody {
+	body := &GetItxPastMeetingChatForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatInternalServerErrorResponseBody builds the HTTP
+// response body from the result of the "get-itx-past-meeting-chat" endpoint of
+// the "Meeting Service" service.
+func NewGetItxPastMeetingChatInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *GetItxPastMeetingChatInternalServerErrorResponseBody {
+	body := &GetItxPastMeetingChatInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatNotFoundResponseBody builds the HTTP response body
+// from the result of the "get-itx-past-meeting-chat" endpoint of the "Meeting
+// Service" service.
+func NewGetItxPastMeetingChatNotFoundResponseBody(res *meetingservice.NotFoundError) *GetItxPastMeetingChatNotFoundResponseBody {
+	body := &GetItxPastMeetingChatNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatServiceUnavailableResponseBody builds the HTTP
+// response body from the result of the "get-itx-past-meeting-chat" endpoint of
+// the "Meeting Service" service.
+func NewGetItxPastMeetingChatServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *GetItxPastMeetingChatServiceUnavailableResponseBody {
+	body := &GetItxPastMeetingChatServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewGetItxPastMeetingChatUnauthorizedResponseBody builds the HTTP response
+// body from the result of the "get-itx-past-meeting-chat" endpoint of the
+// "Meeting Service" service.
+func NewGetItxPastMeetingChatUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *GetItxPastMeetingChatUnauthorizedResponseBody {
+	body := &GetItxPastMeetingChatUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewCreateItxPastMeetingParticipantBadRequestResponseBody builds the HTTP
 // response body from the result of the "create-itx-past-meeting-participant"
 // endpoint of the "Meeting Service" service.
@@ -8020,6 +8212,19 @@ func NewUpdateItxPastMeetingSummaryPayload(body *UpdateItxPastMeetingSummaryRequ
 	v.PastMeetingID = pastMeetingID
 	v.SummaryUID = summaryUID
 	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewGetItxPastMeetingChatPayload builds a Meeting Service service
+// get-itx-past-meeting-chat endpoint payload.
+func NewGetItxPastMeetingChatPayload(meetingAndOccurrenceID string, version *string, limit int, offset int, bearerToken *string) *meetingservice.GetItxPastMeetingChatPayload {
+	v := &meetingservice.GetItxPastMeetingChatPayload{}
+	v.MeetingAndOccurrenceID = meetingAndOccurrenceID
+	v.Version = version
+	v.Limit = limit
+	v.Offset = offset
 	v.BearerToken = bearerToken
 
 	return v

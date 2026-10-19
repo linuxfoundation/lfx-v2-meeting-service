@@ -123,6 +123,10 @@ type Client struct {
 	// the update-itx-past-meeting-summary endpoint.
 	UpdateItxPastMeetingSummaryDoer goahttp.Doer
 
+	// GetItxPastMeetingChat Doer is the HTTP client used to make requests to the
+	// get-itx-past-meeting-chat endpoint.
+	GetItxPastMeetingChatDoer goahttp.Doer
+
 	// CreateItxPastMeetingParticipant Doer is the HTTP client used to make
 	// requests to the create-itx-past-meeting-participant endpoint.
 	CreateItxPastMeetingParticipantDoer goahttp.Doer
@@ -231,6 +235,7 @@ func NewClient(
 		UpdateItxPastMeetingDoer:                  doer,
 		GetItxPastMeetingSummaryDoer:              doer,
 		UpdateItxPastMeetingSummaryDoer:           doer,
+		GetItxPastMeetingChatDoer:                 doer,
 		CreateItxPastMeetingParticipantDoer:       doer,
 		UpdateItxPastMeetingParticipantDoer:       doer,
 		DeleteItxPastMeetingParticipantDoer:       doer,
@@ -887,6 +892,30 @@ func (c *Client) UpdateItxPastMeetingSummary() goa.Endpoint {
 		resp, err := c.UpdateItxPastMeetingSummaryDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "update-itx-past-meeting-summary", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxPastMeetingChat returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-past-meeting-chat server.
+func (c *Client) GetItxPastMeetingChat() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxPastMeetingChatRequest(c.encoder)
+		decodeResponse = DecodeGetItxPastMeetingChatResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxPastMeetingChatRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxPastMeetingChatDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-past-meeting-chat", err)
 		}
 		return decodeResponse(resp)
 	}

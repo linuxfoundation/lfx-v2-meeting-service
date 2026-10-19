@@ -1165,6 +1165,61 @@ var _ = Service("Meeting Service", func() {
 		})
 	})
 
+	// Past Meeting Chat Endpoint. The chat is not proxied from ITX: the service reads
+	// the recording record, fetches the CHAT file(s) from the provider server side and
+	// returns the parsed text. Authorization is Heimdall's recording_viewer check on
+	// v1_past_meeting:{meeting_and_occurrence_id} (see the chart's ruleset).
+	Method("get-itx-past-meeting-chat", func() {
+		Description("Get the chat saved with a past meeting's recording, parsed into messages. " +
+			"The response carries no provider link and no password. limit and offset apply to the messages of each session.")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_and_occurrence_id", String, "Past meeting ID (meeting_and_occurrence_id of the recording record)", func() {
+				Example("96365872728-1630560600000")
+			})
+			Attribute("limit", Int, "Maximum number of messages returned per session", func() {
+				Default(500)
+				Minimum(1)
+				Maximum(2000)
+				Example(500)
+			})
+			Attribute("offset", Int, "Number of messages skipped per session before the window starts", func() {
+				Default(0)
+				Minimum(0)
+				Example(0)
+			})
+			Required("meeting_and_occurrence_id")
+		})
+
+		Result(PastMeetingChat)
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "No saved chat for this past meeting")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/past_meetings/{meeting_and_occurrence_id}/chat")
+			Param("version:v")
+			Param("limit")
+			Param("offset")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	// Past Meeting Participant Endpoints (unified invitee/attendee interface)
 	Method("create-itx-past-meeting-participant", func() {
 		Description("Create a past meeting participant through ITX API proxy - routes to invitee and/or attendee endpoints based on flags")
