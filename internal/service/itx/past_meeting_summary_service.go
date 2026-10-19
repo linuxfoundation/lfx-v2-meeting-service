@@ -87,8 +87,23 @@ func (s *PastMeetingSummaryService) authorizeAwaitingApprovalRead(ctx context.Co
 	return nil
 }
 
-// UpdatePastMeetingSummary updates a past meeting summary via ITX proxy
+// UpdatePastMeetingSummary updates a past meeting summary via ITX proxy.
+// Heimdall authorizes the past meeting ID in the path, not the summary ID, so
+// bind the summary to that meeting before forwarding any write to ITX.
 func (s *PastMeetingSummaryService) UpdatePastMeetingSummary(ctx context.Context, pastMeetingID, summaryID string, req *itx.UpdatePastMeetingSummaryRequest) (*itx.PastMeetingSummaryResponse, error) {
+	summary, err := s.summaryClient.GetPastMeetingSummary(ctx, pastMeetingID, summaryID)
+	if err != nil {
+		return nil, err
+	}
+	if summary == nil {
+		return nil, domain.NewNotFoundError("summary not found")
+	}
+	if summary.MeetingAndOccurrenceID != pastMeetingID {
+		slog.WarnContext(ctx, "summary does not belong to the requested past meeting; rejecting update",
+			"past_meeting_id", pastMeetingID)
+		return nil, domain.NewForbiddenError("summary does not belong to the requested past meeting")
+	}
+
 	// Stamp modified_by from the authenticated principal. ITX persists whatever the
 	// caller sends here; leaving it blank produces a null audit entry.
 	req.ModifiedBy = s.buildRequestingUser(ctx)
