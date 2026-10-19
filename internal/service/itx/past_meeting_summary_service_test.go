@@ -149,6 +149,37 @@ func TestPastMeetingSummaryService_GetPastMeetingSummary(t *testing.T) {
 		assert.Zero(t, authz.calls)
 	})
 
+	t.Run("summary is forbidden under a different past meeting regardless of approval", func(t *testing.T) {
+		for _, tc := range []struct {
+			name             string
+			requiresApproval bool
+			approved         bool
+			parentID         string
+		}{
+			{name: "approved", requiresApproval: true, approved: true, parentID: "pm-1"},
+			{name: "approval not required", parentID: "pm-1"},
+			{name: "missing parent", requiresApproval: true, approved: true},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{
+					MeetingAndOccurrenceID: tc.parentID,
+					SummaryOverview:        "private summary",
+					RequiresApproval:       tc.requiresApproval,
+					Approved:               tc.approved,
+				}}
+				authz := &fakePastMeetingAuthorizer{organizer: true}
+				svc := NewPastMeetingSummaryService(client, nil, authz)
+
+				resp, err := svc.GetPastMeetingSummary(ctxWithPrincipal("alice", ""), "pm-2", "sum-1")
+				require.Error(t, err)
+				assert.Nil(t, resp, "the mismatched ITX response must not reach the converter")
+				assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+				assert.NotContains(t, err.Error(), "private summary")
+				assert.Zero(t, authz.calls)
+			})
+		}
+	})
+
 	t.Run("ITX error is returned without an organizer check", func(t *testing.T) {
 		client := &fakePastMeetingSummaryClient{getErr: domain.NewNotFoundError("summary not found")}
 		authz := &fakePastMeetingAuthorizer{organizer: true}
@@ -162,7 +193,7 @@ func TestPastMeetingSummaryService_GetPastMeetingSummary(t *testing.T) {
 	})
 
 	t.Run("approved summary is returned without an organizer check", func(t *testing.T) {
-		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{RequiresApproval: true, Approved: true}}
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{MeetingAndOccurrenceID: "pm-1", RequiresApproval: true, Approved: true}}
 		authz := &fakePastMeetingAuthorizer{organizer: false}
 		svc := NewPastMeetingSummaryService(client, nil, authz)
 
@@ -173,7 +204,7 @@ func TestPastMeetingSummaryService_GetPastMeetingSummary(t *testing.T) {
 	})
 
 	t.Run("summary not requiring approval is returned without an organizer check", func(t *testing.T) {
-		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{RequiresApproval: false}}
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{MeetingAndOccurrenceID: "pm-1", RequiresApproval: false}}
 		authz := &fakePastMeetingAuthorizer{organizer: false}
 		svc := NewPastMeetingSummaryService(client, nil, authz)
 
