@@ -81,6 +81,7 @@ func newSummaryTestHandlers(t *testing.T, aiSummaryAccess string) (*EventHandler
 	}, nil)
 
 	mappingsKV := &mockKeyValue{}
+	mappingsKV.On("Get", mock.Anything, pastMeetingChildRepairPrefix+testSummaryKVKey).Return(nil, jetstream.ErrKeyNotFound)
 	mappingsKV.On("Get", mock.Anything, testSummaryMapping).Return(nil, jetstream.ErrKeyNotFound).Once()
 	mappingsKV.On("Get", mock.Anything, testSummaryMapping).Return(mockKeyValueEntry{key: testSummaryMapping, value: []byte("1")}, nil)
 	mappingsKV.On("Get", mock.Anything, testPastMeetingRefs).Return(nil, jetstream.ErrKeyNotFound)

@@ -82,30 +82,65 @@ func (h *EventHandlers) syncParticipantUpdate(
 	v1Data map[string]interface{},
 	cfg participantUpdateConfig,
 ) (retry bool) {
+	ctx, finish, blocked := h.startPastMeetingChildAttempt(ctx, key)
+	if blocked {
+		return true
+	}
+	defer func() {
+		retry = finish(retry)
+	}()
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_"+cfg.ownXrefPrefix)
 	funcLogger.DebugContext(ctx, "processing past meeting participant update")
 
-	// Decode own v1Data into a participant record.
+	// Extract IDs before project-dependent conversion. Late children without
+	// proj_id cannot resolve a deleted parent's project, but still need to be
+	// tracked for restore and to retry any previous index/FGA compensation.
+	participantID := utils.GetString(v1Data["id"])
+	parentID := utils.GetString(v1Data["meeting_and_occurrence_id"])
+	indexPrefix := pastMeetingInviteeIndexPrefix
+	if cfg.ownXrefPrefix == "invitee" {
+		participantID = utils.GetString(v1Data["invitee_id"])
+	} else {
+		indexPrefix = pastMeetingAttendeeIndexPrefix
+	}
+	if participantID == "" || parentID == "" {
+		funcLogger.ErrorContext(ctx, "missing required participant ID or past meeting ID")
+		return false
+	}
+	if err := recordPastMeetingParticipantID(ctx, h.v1MappingsKV, indexPrefix, parentID, participantID); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to track past meeting participant for deletion and restore, will retry")
+		return true
+	}
+	parentKey := pastMeetingObjectKeyPrefix + parentID
+	parentMappingKey := "v1_past_meetings." + parentID
+	// The v1-objects parent is authoritative. A restored live record can still
+	// have a stale delete tombstone while its own update publishes access and
+	// replaces the mapping; revoking on that tombstone would undo the restore.
+	parentState, _, err := h.loadV1Parent(ctx, parentKey, parentMappingKey)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check participant parent, will retry")
+		return true
+	}
+	if parentState == parentGone {
+		return h.retractDeletedPastMeetingParticipants(ctx, key, parentID)
+	}
+	if parentState == parentAbsent {
+		// The first parent put replays this tracked ID. Do not revoke a
+		// concurrently created live parent's access for an unsynced child.
+		return false
+	}
+	if parentState == parentUnusable {
+		return false
+	}
+
+	// Only live-parent publishes require project and user enrichment.
 	participantData, err := cfg.convert(ctx, v1Data, h.userLookup, h.idMapper, h.v1ObjectsKV, funcLogger)
 	if err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to convert v1Data to participant")
 		return isTransientError(err)
 	}
-
-	// Validate required fields.
-	if participantData.UID == "" || participantData.MeetingAndOccurrenceID == "" {
-		funcLogger.ErrorContext(ctx, "missing required fields in participant data")
-		return false
-	}
 	if participantData.ProjectUID == "" {
 		funcLogger.InfoContext(ctx, "skipping participant sync - parent project not found in mappings")
-		return false
-	}
-	// Guard against child events that arrive after the parent past meeting was soft-deleted.
-	// handlePastMeetingDelete tombstones "v1_past_meetings.<id>" with "!del"; publishing
-	// member_put on a deleted object re-creates FGA relations that delete_access removed.
-	if h.isTombstoned(ctx, fmt.Sprintf("v1_past_meetings.%s", participantData.MeetingAndOccurrenceID)) {
-		funcLogger.InfoContext(ctx, "parent past meeting is deleted, skipping participant")
 		return false
 	}
 	funcLogger = funcLogger.With("participant_uid", participantData.UID)
@@ -152,6 +187,11 @@ func (h *EventHandlers) syncParticipantUpdate(
 		return true
 	}
 
+	// Own the whole mutation before old-username cleanup, not just the later
+	// new-principal publication. Early errors must retain its repair evidence.
+	if h.protectParticipantDocuments(ctx, key, participantData.MeetingAndOccurrenceID, participantData.UID) {
+		return true
+	}
 	// Handle username change: revoke old access before publishing the new state.
 	if indexerAction == indexerConstants.ActionUpdated && oldUsername != "" && oldUsername != participantData.Username {
 		// Check if a sibling record still grants the old username access.
@@ -193,6 +233,9 @@ func (h *EventHandlers) syncParticipantUpdate(
 					return true
 				} else {
 					cfg.setSiblingFlags(siblingParticipant)
+					if h.protectParticipantDocuments(ctx, key, participantData.MeetingAndOccurrenceID, siblingParticipant.UID) {
+						return true
+					}
 					if pubErr := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), siblingParticipant); pubErr != nil {
 						funcLogger.With(logging.ErrKey, pubErr).WarnContext(ctx, "failed to publish partial member_put for old username")
 						return isTransientError(pubErr)
@@ -229,6 +272,9 @@ func (h *EventHandlers) syncParticipantUpdate(
 	}
 
 	// Publish to indexer and FGA-sync.
+	if h.protectParticipantDocuments(ctx, key, participantData.MeetingAndOccurrenceID, participantData.UID) {
+		return true
+	}
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerAction), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish participant event")
 		return isTransientError(err)
@@ -263,6 +309,13 @@ func (h *EventHandlers) syncParticipantUpdate(
 		}
 	}
 
+	parentState, _, err = h.loadV1Parent(ctx, parentKey, parentMappingKey)
+	if err != nil {
+		return true
+	}
+	if parentState == parentGone || parentState == parentAbsent {
+		return h.retractDeletedPastMeetingParticipants(ctx, key, participantData.MeetingAndOccurrenceID)
+	}
 	funcLogger.InfoContext(ctx, "successfully processed past meeting participant", "action", string(indexerAction))
 	return false
 }
@@ -276,6 +329,15 @@ func (h *EventHandlers) syncParticipantDelete(
 	id string,
 	cfg participantDeleteConfig,
 ) (retry bool) {
+	// Repair precedes even the tombstone short-circuit: a previous attempt may
+	// have finished this child's delete but failed to restore its live parent.
+	ctx, finish, blocked := h.startPastMeetingChildAttempt(ctx, key)
+	if blocked {
+		return true
+	}
+	defer func() {
+		retry = finish(retry)
+	}()
 	funcLogger := h.logger.With("key", key, cfg.ownXrefPrefix+"_id", id)
 
 	mappingKey := fmt.Sprintf("%s.%s", cfg.mappingKeyPrefix, id)
@@ -300,6 +362,40 @@ func (h *EventHandlers) syncParticipantDelete(
 	} else {
 		username = utils.GetString(v1Data["lf_sso"])
 		meetingAndOccurrenceID = utils.GetString(v1Data["meeting_and_occurrence_id"])
+	}
+	if meetingAndOccurrenceID != "" {
+		if h.protectParticipantDeletion(ctx, key, meetingAndOccurrenceID) {
+			return true
+		}
+		state, _, err := h.loadV1Parent(ctx, pastMeetingObjectKeyPrefix+meetingAndOccurrenceID, "v1_past_meetings."+meetingAndOccurrenceID)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check participant parent during delete, will retry")
+			return true
+		}
+		if state == parentGone {
+			// Never republish a sibling under a deleted parent. A restoration
+			// during compensation can change that decision, so check again.
+			if h.retractDeletedPastMeetingParticipants(ctx, key, meetingAndOccurrenceID) {
+				return true
+			}
+			state, _, err = h.loadV1Parent(ctx, pastMeetingObjectKeyPrefix+meetingAndOccurrenceID, "v1_past_meetings."+meetingAndOccurrenceID)
+			if err != nil {
+				return true
+			}
+			if state != parentLive {
+				return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
+			}
+			// Fall through to the normal sibling-preserving delete. Repair is
+			// deferred until after every write, with intent retained on failure.
+		}
+		if state == parentAbsent {
+			// Do not re-create a sibling before the parent's first put, but
+			// neither revoke that unsynced parent's entire access graph.
+			if h.beginPastMeetingChildRepair(ctx, key, meetingAndOccurrenceID) {
+				return true
+			}
+			return h.fullParticipantDelete(ctx, funcLogger, key, id, meetingAndOccurrenceID, username, cfg)
+		}
 	}
 
 	// Check if a sibling record still exists — if so, apply a partial delete that
@@ -338,6 +434,37 @@ func (h *EventHandlers) fullParticipantDelete(
 ) (retry bool) {
 	var accessPayload []byte
 	var deleteAccessSubject string
+	if meetingAndOccurrenceID != "" {
+		// Every full delete can race creation/restoration, even when its
+		// initial parent read was live. Keep protection through the final remove.
+		if h.claimPastMeetingChildRepair(ctx, key, meetingAndOccurrenceID, false) {
+			return true
+		}
+		if username != "" {
+			siblingKey := fmt.Sprintf("v1_participant_by_meeting_user.%s.%s.%s", cfg.siblingXrefPrefix, meetingAndOccurrenceID, username)
+			entry, err := h.v1MappingsKV.Get(ctx, siblingKey)
+			if err != nil && !isKVAbsenceError(err) {
+				return true
+			}
+			if err == nil && !entryIsTombstoned(entry) {
+				prefix := pastMeetingInviteeIndexPrefix
+				if cfg.siblingXrefPrefix == "attendee" {
+					prefix = pastMeetingAttendeeIndexPrefix
+				}
+				// A legacy sibling may have only its cross-reference. Track it
+				// before removal, without publishing under an absent parent.
+				if err := recordPastMeetingParticipantID(ctx, h.v1MappingsKV, prefix, meetingAndOccurrenceID, string(entry.Value())); err != nil {
+					return true
+				}
+				// The first lookup missed a sibling which is now present. A
+				// completed/in-flight restore may have created this grant without
+				// another source rewrite, so do not use the ordinary fast path.
+				if h.beginPastMeetingChildRepair(ctx, key, meetingAndOccurrenceID) {
+					return true
+				}
+			}
+		}
+	}
 	if username != "" {
 		var err error
 		if accessPayload, err = buildGenericMemberRemovePayload("v1_past_meeting", meetingAndOccurrenceID, username); err != nil {
@@ -408,6 +535,9 @@ func (h *EventHandlers) partialParticipantDelete(
 		return true
 	}
 	cfg.setSiblingFlags(participantData)
+	if h.protectParticipantDocuments(ctx, key, meetingAndOccurrenceID, id, participantData.UID) {
+		return true
+	}
 
 	if err := h.publisher.PublishIndexerDelete(ctx, "lfx.index.v1_past_meeting_participant", id); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send indexer delete for partial delete")
@@ -416,6 +546,15 @@ func (h *EventHandlers) partialParticipantDelete(
 	if err := h.publisher.PublishPastMeetingParticipantEvent(ctx, string(indexerConstants.ActionUpdated), participantData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to send partial delete indexer update")
 		return isTransientError(err)
+	}
+	parentState, _, err := h.loadV1Parent(ctx, pastMeetingObjectKeyPrefix+meetingAndOccurrenceID, "v1_past_meetings."+meetingAndOccurrenceID)
+	if err != nil {
+		return true
+	}
+	if parentState == parentGone || parentState == parentAbsent {
+		if h.retractDeletedPastMeetingParticipants(ctx, key, meetingAndOccurrenceID) {
+			return true
+		}
 	}
 
 	// Tombstone the own-side xref BEFORE the primary mapping (idempotency sentinel).

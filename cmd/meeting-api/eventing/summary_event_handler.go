@@ -14,6 +14,7 @@ import (
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
@@ -152,6 +153,13 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
+	ctx, finish, blocked := h.startPastMeetingChildAttempt(ctx, key)
+	if blocked {
+		return true
+	}
+	defer func() {
+		retry = finish(retry)
+	}()
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_summary")
 	funcLogger.DebugContext(ctx, "processing past meeting summary update")
 
@@ -170,10 +178,23 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	funcLogger = funcLogger.With("summary_id", summaryData.ID)
 	funcLogger.InfoContext(ctx, "processing past meeting summary update")
 
-	// Record the summary under its parent past meeting before reading the parent's
-	// ai_summary_access below, so that a parent access change processed from here on finds
-	// this summary and republishes it (see republishPastMeetingArtifacts). A summary that
-	// cannot be recorded is not published: its public flag could never be revoked.
+	// Read the authoritative parent before publishing or recording any child mapping.
+	// A deleted parent can retain a soft-deleted v1-objects value with public access.
+	pastMeetingKey := pastMeetingObjectKeyPrefix + summaryData.MeetingAndOccurrenceID
+	parentMappingKey := "v1_past_meetings." + summaryData.MeetingAndOccurrenceID
+	state, _, err := h.loadV1Parent(ctx, pastMeetingKey, parentMappingKey)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load summary parent, will retry")
+		return true
+	}
+	if state == parentUnusable {
+		funcLogger.InfoContext(ctx, "parent past meeting is unusable, skipping summary")
+		return false
+	}
+
+	// Register even for absent or deleted parents: first create or a later
+	// restore must discover this summary. Reload afterward in case the parent
+	// changed state while the ID was being recorded.
 	if err := recordPastMeetingSummary(ctx, h.v1MappingsKV, summaryData.MeetingAndOccurrenceID, summaryData.ID); err != nil {
 		if errors.Is(err, jetstream.ErrInvalidKey) {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "skipping summary: cannot record it under its past meeting")
@@ -181,6 +202,21 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		}
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to record summary under its past meeting, will retry")
 		return true
+	}
+	// An access change or deletion may have occurred between the initial lookup
+	// and registration. Re-read so neither the parent update nor this event can
+	// leave a summary indexed with a stale public setting.
+	state, pastMeetingData, err := h.loadV1Parent(ctx, pastMeetingKey, parentMappingKey)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to reload summary parent, will retry")
+		return true
+	}
+	if state == parentGone {
+		return h.deletePastMeetingSummaryDocument(ctx, key, summaryData.MeetingAndOccurrenceID, summaryData.ID)
+	}
+	if state != parentLive {
+		funcLogger.InfoContext(ctx, "parent past meeting not yet available, deferring summary")
+		return false
 	}
 
 	// Determine action (created vs updated)
@@ -190,32 +226,9 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
-	// Look up project info and ai_summary_access from the parent past meeting record.
 	// ai_summary_access only applies once the summary is approved or does not require
-	// approval; a summary awaiting approval is indexed for organizers only (see
-	// eventing.PastMeetingSummaryIndexingConfig).
-	// ErrKeyNotFound is a permanent miss — skip without retry.
-	// Any other KV or decode error is transient — retry.
+	// approval; a summary awaiting approval is indexed for organizers only.
 	aiSummaryAccess := ""
-	pastMeetingKey := fmt.Sprintf("itx-zoom-past-meetings.%s", summaryData.MeetingAndOccurrenceID)
-	entry, kvErr := h.v1ObjectsKV.Get(ctx, pastMeetingKey)
-	if kvErr != nil {
-		if errors.Is(kvErr, jetstream.ErrKeyNotFound) {
-			funcLogger.WarnContext(ctx, "skipping summary: parent past meeting not found")
-			return false
-		}
-		funcLogger.With(logging.ErrKey, kvErr).WarnContext(ctx, "transient error fetching parent past meeting, will retry")
-		return true
-	}
-	pastMeetingData, decErr := decodeData(entry.Value())
-	if decErr != nil {
-		if errors.Is(decErr, errMsgpackStructural) {
-			funcLogger.With(logging.ErrKey, decErr).ErrorContext(ctx, "permanent decode failure for parent past meeting, skipping summary")
-			return false
-		}
-		funcLogger.With(logging.ErrKey, decErr).WarnContext(ctx, "transient error decoding parent past meeting, will retry")
-		return true
-	}
 	if access, ok := pastMeetingData["ai_summary_access"].(string); ok {
 		aiSummaryAccess = access
 	}
@@ -256,6 +269,24 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting summary", "action", string(indexerAction))
+	state, _, err = h.loadV1Parent(ctx, pastMeetingKey, parentMappingKey)
+	if err != nil {
+		return true
+	}
+	if state == parentGone || state == parentAbsent {
+		return h.deletePastMeetingSummaryDocument(ctx, key, summaryData.MeetingAndOccurrenceID, summaryData.ID)
+	}
+	return false
+}
+
+func (h *EventHandlers) deletePastMeetingSummaryDocument(ctx context.Context, key, parentID, id string) (retry bool) {
+	if h.beginPastMeetingChildRepair(ctx, key, parentID) {
+		return true
+	}
+	if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1PastMeetingSummarySubject, id); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to retract summary of deleted past meeting, will retry")
+		return true
+	}
 	return false
 }
 
@@ -293,11 +324,15 @@ const maxSummaryIndexUpdateAttempts = 5
 // meeting. The set is updated with compare-and-swap so concurrent summary events for the same
 // past meeting cannot drop each other's entries.
 func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue, meetingAndOccurrenceID, summaryID string) error {
-	key := pastMeetingSummaryIndexKeyPrefix + meetingAndOccurrenceID
+	return recordPastMeetingChildID(ctx, mappingsKV, pastMeetingSummaryIndexKeyPrefix, meetingAndOccurrenceID, summaryID)
+}
+
+func recordPastMeetingChildID(ctx context.Context, mappingsKV jetstream.KeyValue, prefix, parentID, childID string) error {
+	key := prefix + parentID
 	for attempt := 0; attempt < maxSummaryIndexUpdateAttempts; attempt++ {
 		entry, err := mappingsKV.Get(ctx, key)
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
-			value, marshalErr := json.Marshal([]string{summaryID})
+			value, marshalErr := json.Marshal([]string{childID})
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -307,10 +342,10 @@ func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue
 			if unmarshalErr := json.Unmarshal(entry.Value(), &ids); unmarshalErr != nil {
 				return fmt.Errorf("failed to decode summaries of past meeting: %w", unmarshalErr)
 			}
-			if slices.Contains(ids, summaryID) {
+			if slices.Contains(ids, childID) {
 				return nil
 			}
-			value, marshalErr := json.Marshal(append(ids, summaryID))
+			value, marshalErr := json.Marshal(append(ids, childID))
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -329,7 +364,11 @@ func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue
 // by handlePastMeetingSummaryUpdate. Any KV or decode error is returned so the caller retries
 // rather than acting on an incomplete list.
 func listPastMeetingSummaryIDs(ctx context.Context, meetingAndOccurrenceID string, mappingsKV jetstream.KeyValue) ([]string, error) {
-	entry, err := mappingsKV.Get(ctx, pastMeetingSummaryIndexKeyPrefix+meetingAndOccurrenceID)
+	return listPastMeetingChildIDs(ctx, mappingsKV, pastMeetingSummaryIndexKeyPrefix, meetingAndOccurrenceID)
+}
+
+func listPastMeetingChildIDs(ctx context.Context, mappingsKV jetstream.KeyValue, prefix, parentID string) ([]string, error) {
+	entry, err := mappingsKV.Get(ctx, prefix+parentID)
 	if err != nil {
 		// An invalid key is permanent and recordPastMeetingSummary could never have written
 		// it, so it means no summaries are recorded, the same as a missing key.

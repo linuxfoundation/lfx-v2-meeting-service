@@ -12,6 +12,7 @@ import (
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
@@ -296,6 +297,13 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
+	ctx, finish, blocked := h.startPastMeetingChildAttempt(ctx, key)
+	if blocked {
+		return true
+	}
+	defer func() {
+		retry = finish(retry)
+	}()
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_attachment")
 	funcLogger.DebugContext(ctx, "processing past meeting attachment update")
 
@@ -311,6 +319,25 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	}
 	funcLogger = funcLogger.With("attachment_uid", attachmentData.UID, "meeting_and_occurrence_id", attachmentData.MeetingAndOccurrenceID)
 	funcLogger.InfoContext(ctx, "processing past meeting attachment update")
+	// Track before checking the parent: a child arriving while the parent is
+	// absent or deleted must be discoverable on first create or restore.
+	if err := recordPastMeetingChildID(ctx, h.v1MappingsKV, pastMeetingAttachmentIndexPrefix, attachmentData.MeetingAndOccurrenceID, attachmentData.UID); err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to track past meeting attachment for deletion and restore, will retry")
+		return true
+	}
+	parentKey := pastMeetingObjectKeyPrefix + attachmentData.MeetingAndOccurrenceID
+	parentMappingKey := "v1_past_meetings." + attachmentData.MeetingAndOccurrenceID
+	state, _, err := h.loadV1Parent(ctx, parentKey, parentMappingKey)
+	if err != nil {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check attachment parent, will retry")
+		return true
+	}
+	if state == parentGone {
+		return h.deletePastMeetingAttachmentDocument(ctx, key, attachmentData.MeetingAndOccurrenceID, attachmentData.UID)
+	}
+	if state != parentLive {
+		return false
+	}
 
 	// Look up project info and primary committee SFID from the parent past meeting record.
 	// lookupProjectFromPastMeeting returns ("","","",nil) for ErrKeyNotFound (permanent miss)
@@ -354,16 +381,42 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 		indexerAction = indexerConstants.ActionUpdated
 	}
 
+	if handled, retry := h.attachmentReplaySource(ctx, key, attachmentData.MeetingAndOccurrenceID, true); handled {
+		return retry
+	}
+	defer func() {
+		if _, failed := h.attachmentReplaySource(ctx, key, attachmentData.MeetingAndOccurrenceID, false); failed {
+			retry = true
+		}
+	}()
 	if err := h.publisher.PublishPastMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting attachment event")
-		return isTransientError(err)
+		return true
 	}
 
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting attachment mapping")
 	}
+	state, _, err = h.loadV1Parent(ctx, parentKey, parentMappingKey)
+	if err != nil {
+		return true
+	}
+	if state == parentGone || state == parentAbsent {
+		return h.deletePastMeetingAttachmentDocument(ctx, key, attachmentData.MeetingAndOccurrenceID, attachmentData.UID)
+	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment", "action", string(indexerAction))
+	return false
+}
+
+func (h *EventHandlers) deletePastMeetingAttachmentDocument(ctx context.Context, key, parentID, id string) (retry bool) {
+	if h.beginPastMeetingChildRepair(ctx, key, parentID) {
+		return true
+	}
+	if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1PastMeetingAttachmentSubject, id); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to retract attachment of deleted past meeting, will retry")
+		return true
+	}
 	return false
 }
 

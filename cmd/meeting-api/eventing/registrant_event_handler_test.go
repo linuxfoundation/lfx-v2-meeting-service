@@ -91,7 +91,8 @@ func (m *mockEventPublisher) PublishIndexerDelete(_ context.Context, _, _ string
 func (m *mockEventPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
 	return m.Called(ctx, subject, payload).Error(0)
 }
-func (m *mockEventPublisher) Close() error { return nil }
+func (m *mockEventPublisher) Close() error                { return nil }
+func (m *mockEventPublisher) Flush(context.Context) error { return nil }
 
 type stubUserReader struct {
 	username string
