@@ -18,11 +18,18 @@ import (
 type fakePastMeetingSummaryClient struct {
 	domain.ITXPastMeetingSummaryClient
 	lastUpdateReq *itx.UpdatePastMeetingSummaryRequest
+	updateCalls   int
+	getCalls      int
+	getParentID   string
+	getSummaryID  string
 	getResp       *itx.PastMeetingSummaryResponse
 	getErr        error
 }
 
-func (f *fakePastMeetingSummaryClient) GetPastMeetingSummary(_ context.Context, _, _ string) (*itx.PastMeetingSummaryResponse, error) {
+func (f *fakePastMeetingSummaryClient) GetPastMeetingSummary(_ context.Context, pastMeetingID, summaryID string) (*itx.PastMeetingSummaryResponse, error) {
+	f.getCalls++
+	f.getParentID = pastMeetingID
+	f.getSummaryID = summaryID
 	return f.getResp, f.getErr
 }
 
@@ -42,18 +49,19 @@ func (f *fakePastMeetingAuthorizer) IsOrganizer(_ context.Context, principal, pa
 }
 
 func (f *fakePastMeetingSummaryClient) UpdatePastMeetingSummary(_ context.Context, _, _ string, req *itx.UpdatePastMeetingSummaryRequest) (*itx.PastMeetingSummaryResponse, error) {
+	f.updateCalls++
 	f.lastUpdateReq = req
 	return &itx.PastMeetingSummaryResponse{}, nil
 }
 
-func TestPastMeetingSummaryService_Update_StampsModifiedBy(t *testing.T) {
+func TestPastMeetingSummaryService_UpdatePastMeetingSummary(t *testing.T) {
 	// The ticket flagged this call out explicitly because the ITX side uses the
 	// non-standard field name modified_by (not updated_by), and the previous
 	// converter comment claimed ITX would derive the value from the JWT — which
 	// isn't accurate for our M2M-token calls.
 
 	t.Run("stamps full profile", func(t *testing.T) {
-		client := &fakePastMeetingSummaryClient{}
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{MeetingAndOccurrenceID: "pm-1"}}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{
 			Username: "alice", Name: "Alice", Email: "alice@example.com",
 		}}
@@ -61,18 +69,70 @@ func TestPastMeetingSummaryService_Update_StampsModifiedBy(t *testing.T) {
 
 		_, err := svc.UpdatePastMeetingSummary(ctxWithPrincipal("alice", ""), "pm-1", "sum-1", &itx.UpdatePastMeetingSummaryRequest{})
 		require.NoError(t, err)
+		assert.Equal(t, 1, client.getCalls)
+		assert.Equal(t, "pm-1", client.getParentID)
+		assert.Equal(t, "sum-1", client.getSummaryID)
+		assert.Equal(t, 1, client.updateCalls)
 		require.NotNil(t, client.lastUpdateReq.ModifiedBy)
 		assert.Equal(t, "alice", client.lastUpdateReq.ModifiedBy.Username)
 		assert.Equal(t, "Alice", client.lastUpdateReq.ModifiedBy.Name)
 	})
 
 	t.Run("omits modified_by without principal", func(t *testing.T) {
-		client := &fakePastMeetingSummaryClient{}
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{MeetingAndOccurrenceID: "pm-1"}}
 		svc := NewPastMeetingSummaryService(client, nil, nil)
 
 		_, err := svc.UpdatePastMeetingSummary(context.Background(), "pm-1", "sum-1", &itx.UpdatePastMeetingSummaryRequest{})
 		require.NoError(t, err)
 		assert.Nil(t, client.lastUpdateReq.ModifiedBy)
+	})
+
+	t.Run("rejects a summary belonging to another past meeting before writing", func(t *testing.T) {
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{MeetingAndOccurrenceID: "pm-1"}}
+		svc := NewPastMeetingSummaryService(client, nil, nil)
+		approved := true
+
+		resp, err := svc.UpdatePastMeetingSummary(ctxWithPrincipal("alice", ""), "pm-2", "sum-1", &itx.UpdatePastMeetingSummaryRequest{Approved: &approved})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Equal(t, 1, client.getCalls)
+		assert.Equal(t, "pm-2", client.getParentID)
+		assert.Equal(t, "sum-1", client.getSummaryID)
+		assert.Zero(t, client.updateCalls)
+	})
+
+	t.Run("rejects a summary with no parent before writing", func(t *testing.T) {
+		client := &fakePastMeetingSummaryClient{getResp: &itx.PastMeetingSummaryResponse{}}
+		svc := NewPastMeetingSummaryService(client, nil, nil)
+
+		resp, err := svc.UpdatePastMeetingSummary(context.Background(), "pm-1", "sum-1", &itx.UpdatePastMeetingSummaryRequest{})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, domain.ErrorTypeForbidden, domain.GetErrorType(err))
+		assert.Zero(t, client.updateCalls)
+	})
+
+	t.Run("does not write when the summary is absent", func(t *testing.T) {
+		client := &fakePastMeetingSummaryClient{}
+		svc := NewPastMeetingSummaryService(client, nil, nil)
+
+		resp, err := svc.UpdatePastMeetingSummary(context.Background(), "pm-1", "sum-1", &itx.UpdatePastMeetingSummaryRequest{})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, domain.ErrorTypeNotFound, domain.GetErrorType(err))
+		assert.Zero(t, client.updateCalls)
+	})
+
+	t.Run("does not write when the lookup fails", func(t *testing.T) {
+		client := &fakePastMeetingSummaryClient{getErr: domain.NewUnavailableError("ITX unavailable")}
+		svc := NewPastMeetingSummaryService(client, nil, nil)
+
+		resp, err := svc.UpdatePastMeetingSummary(context.Background(), "pm-1", "sum-1", &itx.UpdatePastMeetingSummaryRequest{})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assert.ErrorIs(t, err, client.getErr)
+		assert.Zero(t, client.updateCalls)
 	})
 }
 
