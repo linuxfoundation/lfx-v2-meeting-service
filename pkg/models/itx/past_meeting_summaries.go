@@ -46,11 +46,15 @@ type ZoomMeetingSummaryDetails struct {
 	Summary string `json:"summary,omitempty"` // Section summary text
 }
 
-// UpdatePastMeetingSummaryRequest represents the request to update a past meeting summary
+// UpdatePastMeetingSummaryRequest represents the request to update a past meeting summary.
+//
+// The three edited fields are pointers so that an edit can send every one of them
+// explicitly, including an empty overview ("") and cleared lists ([]), while an
+// approval-only update omits all three (see .claude/rules/itx-converters.md).
 type UpdatePastMeetingSummaryRequest struct {
-	EditedSummaryOverview string                      `json:"edited_summary_overview,omitempty"` // Edited overview
-	EditedSummaryDetails  []ZoomMeetingSummaryDetails `json:"edited_summary_details,omitempty"`  // Edited details
-	EditedNextSteps       []string                    `json:"edited_next_steps,omitempty"`       // Edited next steps
-	Approved              *bool                       `json:"approved,omitempty"`                // Approval status
-	ModifiedBy            *User                       `json:"modified_by,omitempty"`             // User making the update
+	EditedSummaryOverview *string                      `json:"edited_summary_overview,omitempty"` // Edited overview
+	EditedSummaryDetails  *[]ZoomMeetingSummaryDetails `json:"edited_summary_details,omitempty"`  // Edited details
+	EditedNextSteps       *[]string                    `json:"edited_next_steps,omitempty"`       // Edited next steps
+	Approved              *bool                        `json:"approved,omitempty"`                // Approval status
+	ModifiedBy            *User                        `json:"modified_by,omitempty"`             // User making the update
 }
