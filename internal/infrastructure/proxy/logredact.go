@@ -130,8 +130,9 @@ func redactAuditForLog(req any) any {
 //
 // The redaction shape mirrors the itx.CreatedUpdatedBy LogValue: only the
 // username survives, so a debug operator can still see who touched what.
-// Non-audit response fields (id, name, description, timestamps, etc.) are
-// left intact so the log remains useful.
+// Presigned-URL fields (file_url, download_url) are bearer credentials and are
+// replaced wholesale with "REDACTED". Non-audit response fields (id, name,
+// description, timestamps, etc.) are left intact so the log remains useful.
 func responseJSONForLog(respBody []byte) string {
 	if len(respBody) == 0 {
 		return ""
