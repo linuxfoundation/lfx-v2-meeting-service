@@ -19,6 +19,10 @@ import (
 // JSON parsing occurs, preventing memory exhaustion from unbounded io.ReadAll.
 const maxCreateBodyBytes int64 = 1 << 20 // 1 MiB
 
+// maxJSONNestingDepth bounds the pre-auth JSON walk's goroutine stack usage.
+// Decoder.Token does not enforce encoding/json's Decode/Unmarshal depth limit.
+const maxJSONNestingDepth = 64
+
 // strictCreatePaths is the set of POST endpoints whose JSON bodies are
 // independently parsed by both Heimdall (case-sensitive key lookup) and
 // encoding/json (case-insensitive struct matching). Ambiguous bodies on these
@@ -89,6 +93,9 @@ func init() {
 //     authorization, while encoding/json decodes "Project_UID" → victim
 //     project (CWE-436 bypass via a single key rather than a collision pair).
 //
+//  4. Bodies nested more than maxJSONNestingDepth containers deep — rejected
+//     with 400 before the pre-auth JSON walker can grow its goroutine stack.
+//
 // Background: Heimdall authorizes these create endpoints by looking up
 // .Request.Body.project_uid in its case-sensitive generic JSON parse of the
 // forwarded body, while the service decodes the same bytes with
@@ -102,9 +109,9 @@ func init() {
 // Goa's decoder, ensuring the value Heimdall authorized is provably the
 // value the decoder will use.
 //
-// Non-targeted routes, bodies within the size cap that are not JSON, and
-// bodies within the size cap that have parse errors are passed through
-// unchanged so that Goa can produce its own validation error.
+// Non-targeted routes, bodies within the size and depth caps that are not
+// JSON, and bodies with ordinary parse errors are passed through unchanged
+// so that Goa can produce its own validation error.
 func StrictCreateBodyMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isStrictJSONTarget(r) {
@@ -204,7 +211,7 @@ func isStrictJSONTarget(r *http.Request) bool {
 func checkAmbiguousJSONKeys(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber() // preserve numbers exactly; we only care about structure
-	err := walkJSONValue(dec)
+	err := walkJSONValue(dec, 0)
 	if errors.Is(err, errBadJSON) {
 		return nil // malformed JSON — not our problem; let Goa produce the error
 	}
@@ -233,11 +240,12 @@ func foldKey(s string) string {
 	return b.String()
 }
 
-// walkJSONValue consumes exactly one JSON value from dec.
+// walkJSONValue consumes exactly one JSON value from dec. depth counts the
+// enclosing arrays and objects; scalars do not increase it.
 // It returns errBadJSON on any tokenizer failure so that callers can break
 // out of dec.More() loops — returning nil instead would leave the decoder
 // stuck at the same position and cause the loop to spin forever.
-func walkJSONValue(dec *json.Decoder) error {
+func walkJSONValue(dec *json.Decoder, depth int) error {
 	tok, err := dec.Token()
 	if err != nil {
 		return errBadJSON // signal to break loops; filtered to nil by checkAmbiguousJSONKeys
@@ -246,11 +254,17 @@ func walkJSONValue(dec *json.Decoder) error {
 	if !ok {
 		return nil // scalar — nothing to check
 	}
+	if delim == '{' || delim == '[' {
+		if depth >= maxJSONNestingDepth {
+			return fmt.Errorf("request body exceeds maximum JSON nesting depth of %d", maxJSONNestingDepth)
+		}
+		depth++
+	}
 	switch delim {
 	case '{':
-		return walkJSONObject(dec)
+		return walkJSONObject(dec, depth)
 	case '[':
-		return walkJSONArray(dec)
+		return walkJSONArray(dec, depth)
 	}
 	return nil
 }
@@ -263,7 +277,7 @@ func walkJSONValue(dec *json.Decoder) error {
 // representative — so that variants like "committees" and "committeeſ" (long s,
 // U+017F) are detected as collisions, matching encoding/json's field-matching
 // semantics exactly.
-func walkJSONObject(dec *json.Decoder) error {
+func walkJSONObject(dec *json.Decoder, depth int) error {
 	// seen maps foldKey(key) → first exact-case key observed.
 	seen := make(map[string]string)
 
@@ -309,7 +323,7 @@ func walkJSONObject(dec *json.Decoder) error {
 		}
 
 		// Recurse into the value regardless of whether the key was a duplicate.
-		if err := walkJSONValue(dec); err != nil {
+		if err := walkJSONValue(dec, depth); err != nil {
 			return err
 		}
 	}
@@ -323,9 +337,9 @@ func walkJSONObject(dec *json.Decoder) error {
 
 // walkJSONArray recurses into each element of the current array.
 // dec must be positioned immediately after the opening '['.
-func walkJSONArray(dec *json.Decoder) error {
+func walkJSONArray(dec *json.Decoder, depth int) error {
 	for dec.More() {
-		if err := walkJSONValue(dec); err != nil {
+		if err := walkJSONValue(dec, depth); err != nil {
 			return err
 		}
 	}

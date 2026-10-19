@@ -385,6 +385,44 @@ func TestCheckAmbiguousJSONKeys_InvalidJSONReturnsNil(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestStrictCreateBodyMiddleware_NestingDepth(t *testing.T) {
+	for _, path := range []string{"/itx/meetings", "/itx/past_meetings"} {
+		t.Run(path, func(t *testing.T) {
+			for _, tc := range []struct {
+				name string
+				body string
+				want int
+			}{
+				{"arrays at limit", strings.Repeat("[", maxJSONNestingDepth) + `0` + strings.Repeat("]", maxJSONNestingDepth), http.StatusOK},
+				{"arrays over limit", strings.Repeat("[", maxJSONNestingDepth+1) + `0` + strings.Repeat("]", maxJSONNestingDepth+1), http.StatusBadRequest},
+				{"objects at limit", strings.Repeat(`{"x":`, maxJSONNestingDepth) + `0` + strings.Repeat("}", maxJSONNestingDepth), http.StatusOK},
+				{"objects over limit", strings.Repeat(`{"x":`, maxJSONNestingDepth+1) + `0` + strings.Repeat("}", maxJSONNestingDepth+1), http.StatusBadRequest},
+				{"mixed containers over limit", strings.Repeat("[", maxJSONNestingDepth) + `{"x":0}` + strings.Repeat("]", maxJSONNestingDepth), http.StatusBadRequest},
+				{"max-sized truncated arrays", strings.Repeat("[", int(maxCreateBodyBytes)), http.StatusBadRequest},
+			} {
+				t.Run(tc.name, func(t *testing.T) {
+					rr := httptest.NewRecorder()
+					// No Authorization header: the walker runs before endpoint auth.
+					StrictCreateBodyMiddleware(okHandler()).ServeHTTP(rr, postJSON(path, tc.body))
+					assert.Equal(t, tc.want, rr.Code)
+					if tc.want == http.StatusBadRequest {
+						assert.Contains(t, rr.Body.String(), "maximum JSON nesting depth")
+						assert.NotContains(t, rr.Body.String(), okBody)
+					} else {
+						assert.Equal(t, okBody, rr.Body.String())
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestCheckAmbiguousJSONKeys_NestedSensitiveKeyRejectedWithinLimit(t *testing.T) {
+	body := strings.Repeat("[", maxJSONNestingDepth-1) + `{"Project_UID":"victim"}` + strings.Repeat("]", maxJSONNestingDepth-1)
+	err := checkAmbiguousJSONKeys([]byte(body))
+	require.ErrorContains(t, err, "non-canonical")
+}
+
 // ---- Infinite-loop regression tests ----
 // These guard against the DoS where walkJSONValue returned nil on Token()
 // failure, leaving dec.More() stuck at true and spinning the loop forever.
