@@ -62,7 +62,9 @@ func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meeti
 		}
 	}
 
-	// Create the V2-style response (required fields are non-pointer strings and bools)
+	// Create the V2-style response (required fields are non-pointer strings and bools).
+	// email_sent is optional: the ITX pointer is carried through unchanged, so the field
+	// is present only when ITX returned it and a `false` ITX sent is kept.
 	goaResp := &meetingservice.PastMeetingSummary{
 		UID:              resp.ID,
 		PastMeetingID:    resp.MeetingAndOccurrenceID,
@@ -73,7 +75,7 @@ func ConvertPastMeetingSummaryToGoa(resp *itx.PastMeetingSummaryResponse) *meeti
 		SummaryData:      summaryData,
 		RequiresApproval: resp.RequiresApproval,
 		Approved:         resp.Approved,
-		EmailSent:        false, // ITX doesn't track this
+		EmailSent:        resp.EmailSent,
 		CreatedAt:        resp.CreatedAt,
 		UpdatedAt:        resp.ModifiedAt,
 	}

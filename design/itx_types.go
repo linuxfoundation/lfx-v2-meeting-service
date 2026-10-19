@@ -553,7 +553,7 @@ var PastMeetingSummary = Type("PastMeetingSummary", func() {
 	Attribute("approved", Boolean, "Whether the summary has been approved", func() {
 		Example(true)
 	})
-	Attribute("email_sent", Boolean, "Whether summary email has been sent", func() {
+	Attribute("email_sent", Boolean, "Whether a summary notification e-mail has been sent; present only when the upstream provides it", func() {
 		Example(true)
 	})
 	Attribute("created_at", String, "Creation timestamp (RFC3339)", func() {
@@ -566,7 +566,7 @@ var PastMeetingSummary = Type("PastMeetingSummary", func() {
 	})
 
 	Required("uid", "past_meeting_id", "meeting_id", "platform", "summary_data",
-		"requires_approval", "approved", "email_sent", "created_at", "updated_at")
+		"requires_approval", "approved", "created_at", "updated_at")
 })
 
 // PastMeetingChatMessage is one message of a saved chat. The text is data as the

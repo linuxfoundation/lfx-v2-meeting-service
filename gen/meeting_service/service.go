@@ -1299,8 +1299,9 @@ type PastMeetingSummary struct {
 	RequiresApproval bool
 	// Whether the summary has been approved
 	Approved bool
-	// Whether summary email has been sent
-	EmailSent bool
+	// Whether a summary notification e-mail has been sent; present only when the
+	// upstream provides it
+	EmailSent *bool
 	// Creation timestamp (RFC3339)
 	CreatedAt string
 	// Update timestamp (RFC3339)
