@@ -4,15 +4,22 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/userservice"
 )
 
 const testToken = "test-user-token"
@@ -91,6 +98,42 @@ func TestGetPreferredEmail(t *testing.T) {
 		assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
 		client.AssertNotCalled(t, "GetMeetingEmailPreference", mock.Anything, mock.Anything, mock.Anything)
 	})
+
+	// The v1 user-service can echo the user's email addresses in an error body. The caller
+	// must still get that detail, but no emitted log record may contain it.
+	for _, tt := range []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{"4xx structured message", http.StatusConflict, `{"Message":"email alice@example.com already exists"}`},
+		{"5xx raw body", http.StatusBadGateway, "upstream failed for alice@example.com"},
+	} {
+		t.Run("upstream error body is not logged: "+tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasSuffix(r.URL.Path, "/me") {
+					_, _ = w.Write([]byte(`{"ID":"SFID1","Emails":[]}`))
+					return
+				}
+				w.WriteHeader(tt.status)
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer server.Close()
+			client, err := userservice.NewClient(userservice.Config{BaseURL: server.URL, Timeout: 5 * time.Second})
+			require.NoError(t, err)
+
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logs, nil))
+
+			_, err = NewPreferredEmailService(client, logger).GetPreferredEmail(ctx, testToken)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "alice@example.com")
+
+			require.NotEmpty(t, logs.String(), "expected the failure to be logged")
+			assert.NotContains(t, logs.String(), "alice@example.com")
+			assert.Contains(t, logs.String(), fmt.Sprintf("user-service returned HTTP %d", tt.status))
+		})
+	}
 }
 
 func TestSetPreferredEmail(t *testing.T) {
