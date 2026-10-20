@@ -104,6 +104,15 @@ func TestFetcher_FetchText(t *testing.T) {
 			"xml prolog then xhtml":        {"application/octet-stream", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0//EN\"><html>Sign in</html>"},
 			"bom, comment and whitespace":  {"application/octet-stream", "\xEF\xBB\xBF \n<!-- x -->\r\n\t<html>Sign in</html>"},
 			"unterminated leading comment": {"application/octet-stream", "<!-- the page never closes this Sign in"},
+			"head tag":                     {"application/octet-stream", "<head><title>Sign in</title></head>"},
+			"body tag":                     {"application/octet-stream", "<body>Sign in</body>"},
+			"script tag":                   {"text/plain", "<script>location='/login'</script>Sign in"},
+			"meta tag":                     {"application/octet-stream", "<meta http-equiv=\"refresh\" content=\"0\">Sign in"},
+			"div tag":                      {"application/octet-stream", "<div class=\"login\">Sign in</div>"},
+			"uppercase head tag":           {"application/octet-stream", "<HEAD><TITLE>Sign in</TITLE></HEAD>"},
+			"cdata section":                {"application/octet-stream", "<![CDATA[Sign in]]>"},
+			"truncated doctype":            {"application/octet-stream", "<!DOC"},
+			"other tag then chat":          {"application/octet-stream", "<meeting notes>\n" + body},
 		} {
 			t.Run(name, func(t *testing.T) {
 				srv, f := newTLSServer(t, time.Second, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -120,15 +129,17 @@ func TestFetcher_FetchText(t *testing.T) {
 		}
 	})
 
-	// The sniff refuses only an HTML document: a chat file that starts with a
-	// byte-order mark, with "<", or with fewer bytes than "<!DOCTYPE" is left to
-	// the parser.
+	// The sniff refuses only a body that opens like markup: a chat file that
+	// starts with a byte-order mark, a comment, or "<" followed by something
+	// other than a letter or "!" is left to the parser.
 	t.Run("the html sniff leaves non-html bodies alone", func(t *testing.T) {
 		for name, b := range map[string]string{
-			"bom then chat header": "\xEF\xBB\xBF" + body,
-			"starts with <":        "<meeting notes>\n" + body,
-			"shorter than doctype": "<!DOC",
-			"comment then chat":    "<!-- exported --> " + body,
+			"bom then chat header":  "\xEF\xBB\xBF" + body,
+			"comment then chat":     "<!-- exported --> " + body,
+			"< then space":          "< 3 people joined\n" + body,
+			"< then slash":          "</>\n" + body,
+			"< then digit":          "<3\n" + body,
+			"lone < at end of body": "<",
 		} {
 			t.Run(name, func(t *testing.T) {
 				srv, f := newTLSServer(t, time.Second, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -183,51 +194,34 @@ func TestFetcher_FetchText(t *testing.T) {
 		assert.NotContains(t, err.Error(), srv.URL)
 	})
 
-	// The two timeout cases are deterministic: the fetcher's own timeout is far
-	// away, and the test expires the caller's context itself, once the server has
-	// reached the point under test, with a deadline error the fetcher must map to
-	// ErrTimeout. No real deadline races the TLS handshake or the race detector.
+	// The two timeout cases are deterministic and socket-free: a fake transport
+	// stands in for the provider (no connection, so no race between the server
+	// finishing the response and the client observing the cancellation), the
+	// fetcher's own timeout is far away, and the test expires the caller's
+	// context itself, once the transport has reached the point under test, with
+	// a deadline error the fetcher must map to ErrTimeout.
 	t.Run("times out a slow server", func(t *testing.T) {
-		reached := make(chan struct{})
-		release := make(chan struct{})
-		t.Cleanup(func() { close(release) })
-		srv, f := newTLSServer(t, time.Minute, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			close(reached)
-			select {
-			case <-release:
-			case <-r.Context().Done():
-			}
-		}))
+		transport := &slowServerTransport{started: make(chan struct{})}
+		f := NewFetcher(time.Minute, transport)
 		ctx := newExpirableContext()
 		go func() {
-			<-reached
+			<-transport.started
 			ctx.expire()
 		}()
-		_, _, err := f.FetchText(ctx, srv.URL, 1024)
+		data, _, err := f.FetchText(ctx, "https://provider.invalid/chat.txt", 1024)
 		assert.ErrorIs(t, err, ErrTimeout)
+		assert.Nil(t, data)
 	})
 
 	t.Run("times out a slow body", func(t *testing.T) {
-		flushed := make(chan struct{})
-		release := make(chan struct{})
-		t.Cleanup(func() { close(release) })
-		srv, f := newTLSServer(t, time.Minute, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/plain")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("partial"))
-			w.(http.Flusher).Flush()
-			close(flushed)
-			select {
-			case <-release:
-			case <-r.Context().Done():
-			}
-		}))
+		transport := &slowBodyTransport{partial: "partial", delivered: make(chan struct{})}
+		f := NewFetcher(time.Minute, transport)
 		ctx := newExpirableContext()
 		go func() {
-			<-flushed
+			<-transport.delivered
 			ctx.expire()
 		}()
-		data, _, err := f.FetchText(ctx, srv.URL, 1024)
+		data, _, err := f.FetchText(ctx, "https://provider.invalid/chat.txt", 1024)
 		assert.ErrorIs(t, err, ErrTimeout)
 		assert.Nil(t, data)
 	})
@@ -395,3 +389,61 @@ func (c *expirableContext) Err() error {
 
 // expire ends the context as a passed deadline would.
 func (c *expirableContext) expire() { c.once.Do(func() { close(c.done) }) }
+
+// slowServerTransport is an http.RoundTripper standing in for a provider that
+// never answers: the round trip blocks until the request's context is done
+// and returns its error. started is closed once the round trip is under way.
+type slowServerTransport struct {
+	started chan struct{}
+}
+
+func (t *slowServerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	close(t.started)
+	<-req.Context().Done()
+	return nil, req.Context().Err()
+}
+
+// slowBodyTransport is an http.RoundTripper standing in for a provider that
+// answers 200 text/plain, delivers partial bytes of the body, then never sends
+// the rest: further reads block until the request's context is done and
+// return its error. delivered is closed once the partial bytes were read.
+type slowBodyTransport struct {
+	partial   string
+	delivered chan struct{}
+}
+
+func (t *slowBodyTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		Status:     "200 OK",
+		StatusCode: http.StatusOK,
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     http.Header{"Content-Type": {"text/plain"}},
+		Body:       &slowBody{ctx: req.Context(), rest: []byte(t.partial), delivered: t.delivered},
+		Request:    req,
+	}, nil
+}
+
+// slowBody is the body slowBodyTransport returns.
+type slowBody struct {
+	ctx       context.Context
+	rest      []byte
+	delivered chan struct{}
+	once      sync.Once
+}
+
+func (b *slowBody) Read(p []byte) (int, error) {
+	if len(b.rest) > 0 {
+		n := copy(p, b.rest)
+		b.rest = b.rest[n:]
+		if len(b.rest) == 0 {
+			b.once.Do(func() { close(b.delivered) })
+		}
+		return n, nil
+	}
+	<-b.ctx.Done()
+	return 0, b.ctx.Err()
+}
+
+func (b *slowBody) Close() error { return nil }

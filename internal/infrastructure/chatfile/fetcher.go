@@ -140,8 +140,8 @@ func (f *Fetcher) FetchText(ctx context.Context, downloadURL string, maxBytes in
 	if err != nil {
 		return nil, false, classifyTransportError(ctx, err)
 	}
-	// Fail closed on an HTML document whatever the label said. The error carries
-	// nothing of the body.
+	// Fail closed on a body that opens like HTML whatever the label said. The
+	// error carries nothing of the body.
 	if isHTMLDocument(data) {
 		return nil, false, ErrHTMLBody
 	}
@@ -175,16 +175,20 @@ func isAcceptableContentType(header string) bool {
 	return strings.HasPrefix(mediaType, "text/") && mediaType != "text/html"
 }
 
-// isHTMLDocument reports whether body is an HTML document: after an optional
-// UTF-8 byte-order mark, leading whitespace, and any leading HTML comments
-// ("<!-- -->") or XML prologs and processing instructions ("<? ?>", the start
-// of an XHTML page), which pages commonly open with, it starts,
-// case-insensitively, with "<!DOCTYPE" or "<html". A leading comment or prolog
-// left unterminated within the bytes read is taken as HTML too: no chat file
-// starts that way, and the route fails closed. An empty body is not HTML (an
-// empty chat file is a session with no messages), and a chat file that merely
-// starts with "<" is left to the parser. The body is already bounded by the
-// caller; the scan is linear in it.
+// isHTMLDocument reports whether body opens like an HTML document: after an
+// optional UTF-8 byte-order mark, leading whitespace, and any leading HTML
+// comments ("<!-- -->") or XML prologs and processing instructions ("<? ?>",
+// the start of an XHTML page), which pages commonly open with, it starts with
+// "<" followed by an ASCII letter or "!": a document declaration ("<!DOCTYPE",
+// even truncated), a CDATA section, or any tag ("<html", "<head", "<body",
+// "<script", "<div", in any case). A leading comment or prolog left
+// unterminated within the bytes read is taken as HTML too. A real chat line
+// opens with a timestamp, so nothing a chat file starts with is lost; the
+// route fails closed on everything else that opens like markup. An empty body
+// is not HTML (an empty chat file is a session with no messages), and "<"
+// followed by anything else (a digit, a space, "/", the end of the body) is
+// left to the parser. The body is already bounded by the caller; the scan is
+// linear in it.
 func isHTMLDocument(body []byte) bool {
 	body = bytes.TrimPrefix(body, []byte("\xEF\xBB\xBF"))
 	for {
@@ -196,12 +200,11 @@ func isHTMLDocument(body []byte) bool {
 		case bytes.HasPrefix(body, []byte("<?")):
 			closer = []byte("?>")
 		default:
-			const probe = 9 // len("<!DOCTYPE")
-			if len(body) > probe {
-				body = body[:probe]
+			if len(body) < 2 || body[0] != '<' {
+				return false
 			}
-			head := strings.ToLower(string(body))
-			return strings.HasPrefix(head, "<!doctype") || strings.HasPrefix(head, "<html")
+			c := body[1]
+			return c == '!' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 		}
 		end := bytes.Index(body[2:], closer)
 		if end < 0 {
