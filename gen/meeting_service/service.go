@@ -1442,11 +1442,15 @@ type SummaryData struct {
 	EndTime string
 	// Summary title
 	Title *string
-	// The main AI-generated summary content
+	// The main AI-generated summary content. Summary markdown: `## Overview`, `##
+	// Key Topics` with `### <label>` sections, `## Next Steps` with `- <step>`
+	// lines; the same text the search index carries in `content`/`edited_content`
 	Content *string
 	// URL to the full summary document
 	DocURL *string
-	// User-edited summary content
+	// User-edited summary content. Summary markdown: `## Overview`, `## Key
+	// Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines;
+	// the same text the search index carries in `content`/`edited_content`
 	EditedContent *string
 }
 
@@ -1696,7 +1700,11 @@ type UpdateItxPastMeetingSummaryPayload struct {
 	PastMeetingID string
 	// Summary UID
 	SummaryUID string
-	// User-edited summary content
+	// User-edited summary content. Summary markdown: `## Overview`, `## Key
+	// Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines;
+	// the same text the search index carries in `content`/`edited_content`.
+	// Replaces the whole edited summary in ITX when present and non-empty; absent
+	// or empty leaves the edits untouched (approval-only update)
 	EditedContent *string
 	// Approval status
 	Approved *bool

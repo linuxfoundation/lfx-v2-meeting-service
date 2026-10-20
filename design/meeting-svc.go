@@ -1137,7 +1137,10 @@ var _ = Service("Meeting Service", func() {
 				Example("456e7890-e89b-12d3-a456-426614174000")
 				Format(FormatUUID)
 			})
-			Attribute("edited_content", String, "User-edited summary content")
+			Attribute("edited_content", String, "User-edited summary content. "+SummaryMarkdownFormat+
+				". Replaces the whole edited summary in ITX when present and non-empty; absent or empty leaves the edits untouched (approval-only update)", func() {
+				Example(SummaryMarkdownExample)
+			})
 			Attribute("approved", Boolean, "Approval status")
 			Required("past_meeting_id", "summary_uid")
 		})

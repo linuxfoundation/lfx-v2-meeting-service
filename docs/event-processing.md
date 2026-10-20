@@ -739,7 +739,7 @@ In `PublishPastMeetingParticipantEvent`, if `MeetingAndOccurrenceID` is empty, a
 
 #### Summary Content Assembly
 
-Summaries consolidate sparse Zoom summary fields into structured markdown:
+Summaries consolidate sparse Zoom summary fields into structured markdown with `summaryformat.Format` (`pkg/summaryformat`), the same formatter the summary proxy uses for its responses and whose `Parse` reads an edit back into the ITX fields:
 
 ```go
 // Input v1 data

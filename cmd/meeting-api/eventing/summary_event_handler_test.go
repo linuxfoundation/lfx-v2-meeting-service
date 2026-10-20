@@ -181,6 +181,50 @@ func TestHandlePastMeetingSummaryUpdate_DropsWebhookPayload(t *testing.T) {
 	assert.Equal(t, "Example Foundation Board", fields["zoom_meeting_topic"])
 }
 
+// TestConvertMapToSummaryData_Content verifies that the index document's content and
+// edited_content are the shared summary markdown (pkg/summaryformat), byte for byte the
+// text documented in docs/event-processing.md ("Summary Content Assembly"). A change here
+// would make freshly indexed documents differ from the ones already in the index.
+func TestConvertMapToSummaryData_Content(t *testing.T) {
+	const documentedContent = "## Overview\nTeam discussed Q1 roadmap\n\n## Key Topics\n### Feature Planning\nPrioritized auth improvements\n\n### Bug Review\nIdentified 3 critical issues\n\n## Next Steps\n- Schedule design review\n- Update roadmap doc"
+
+	t.Run("documented sample renders the documented content", func(t *testing.T) {
+		data := map[string]any{
+			"id":                        testSummaryID,
+			"meeting_and_occurrence_id": testSummaryMeetOcc,
+			"summary_overview":          "Team discussed Q1 roadmap",
+			"summary_details": []any{
+				map[string]any{"label": "Feature Planning", "summary": "Prioritized auth improvements"},
+				map[string]any{"label": "Bug Review", "summary": "Identified 3 critical issues"},
+			},
+			"next_steps": []any{"Schedule design review", "Update roadmap doc"},
+		}
+
+		got, err := convertMapToSummaryData(context.Background(), data, slog.Default())
+		require.NoError(t, err)
+		assert.Equal(t, documentedContent, got.Content)
+		assert.Empty(t, got.EditedContent, "no edited parts: edited_content is empty")
+	})
+
+	t.Run("edited parts render the same way into edited_content", func(t *testing.T) {
+		data := map[string]any{
+			"id":                        testSummaryID,
+			"meeting_and_occurrence_id": testSummaryMeetOcc,
+			"edited_summary_overview":   "Team discussed Q1 roadmap",
+			"edited_summary_details": []any{
+				map[string]any{"label": "Feature Planning", "summary": "Prioritized auth improvements"},
+				map[string]any{"label": "Bug Review", "summary": "Identified 3 critical issues"},
+			},
+			"edited_next_steps": []any{"Schedule design review", "Update roadmap doc"},
+		}
+
+		got, err := convertMapToSummaryData(context.Background(), data, slog.Default())
+		require.NoError(t, err)
+		assert.Empty(t, got.Content)
+		assert.Equal(t, documentedContent, got.EditedContent)
+	})
+}
+
 // TestRecordPastMeetingSummary verifies that summaries are recorded under their past meeting
 // without losing entries to concurrent writers: a lost entry would leave that summary's public
 // flag unrevoked when the past meeting's ai_summary_access is tightened.

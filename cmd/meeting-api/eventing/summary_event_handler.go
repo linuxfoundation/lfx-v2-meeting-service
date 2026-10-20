@@ -10,11 +10,12 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
-	"strings"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/summaryformat"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -71,7 +72,7 @@ type summaryDBRaw struct {
 	SummaryOverview string `json:"summary_overview"`
 
 	// SummaryDetails is the details of the summary.
-	SummaryDetails []summaryDetailDBRaw `json:"summary_details"`
+	SummaryDetails []itx.ZoomMeetingSummaryDetails `json:"summary_details"`
 
 	// NextSteps is the next steps of the summary.
 	NextSteps []string `json:"next_steps"`
@@ -80,7 +81,7 @@ type summaryDBRaw struct {
 	EditedSummaryOverview string `json:"edited_summary_overview"`
 
 	// EditedSummaryDetails is the edited details of the summary.
-	EditedSummaryDetails []summaryDetailDBRaw `json:"edited_summary_details"`
+	EditedSummaryDetails []itx.ZoomMeetingSummaryDetails `json:"edited_summary_details"`
 
 	// EditedNextSteps is the edited next steps of the summary.
 	EditedNextSteps []string `json:"edited_next_steps"`
@@ -129,19 +130,6 @@ type summaryDBRaw struct {
 // UnmarshalJSON implements custom unmarshaling for summaryDBRaw.
 func (s *summaryDBRaw) UnmarshalJSON(data []byte) error {
 	type Alias summaryDBRaw
-	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
-	return json.Unmarshal(data, &tmp)
-}
-
-// summaryDetailDBRaw represents raw summary detail data from v1 DynamoDB/NATS KV bucket
-type summaryDetailDBRaw struct {
-	Label   string `json:"label"`
-	Summary string `json:"summary"`
-}
-
-// UnmarshalJSON implements custom unmarshaling for summaryDetailDBRaw.
-func (s *summaryDetailDBRaw) UnmarshalJSON(data []byte) error {
-	type Alias summaryDetailDBRaw
 	tmp := struct{ *Alias }{Alias: (*Alias)(s)}
 	return json.Unmarshal(data, &tmp)
 }
@@ -364,11 +352,18 @@ func convertMapToSummaryData(
 		return nil, fmt.Errorf("missing required fields: id or meeting_and_occurrence_id")
 	}
 
-	// Consolidate original summary fields into markdown content
-	content := buildSummaryMarkdown(rawSummary.SummaryOverview, rawSummary.SummaryDetails, rawSummary.NextSteps)
-
-	// Consolidate edited summary fields into markdown edited content
-	editedContent := buildSummaryMarkdown(rawSummary.EditedSummaryOverview, rawSummary.EditedSummaryDetails, rawSummary.EditedNextSteps)
+	// Consolidate the original and the edited summary parts into the shared markdown
+	// format (pkg/summaryformat), the same text the proxy returns and parses.
+	content := summaryformat.Format(summaryformat.Parts{
+		Overview:  rawSummary.SummaryOverview,
+		Details:   rawSummary.SummaryDetails,
+		NextSteps: rawSummary.NextSteps,
+	})
+	editedContent := summaryformat.Format(summaryformat.Parts{
+		Overview:  rawSummary.EditedSummaryOverview,
+		Details:   rawSummary.EditedSummaryDetails,
+		NextSteps: rawSummary.EditedNextSteps,
+	})
 
 	// Parse times
 	createdAt, _ := parseTime(rawSummary.CreatedAt)
@@ -403,47 +398,4 @@ func convertMapToSummaryData(
 		CreatedBy: models.CreatedBy(rawSummary.CreatedBy),
 		UpdatedBy: models.UpdatedBy(rawSummary.ModifiedBy),
 	}, nil
-}
-
-// buildSummaryMarkdown consolidates sparse summary fields into markdown format
-func buildSummaryMarkdown(overview string, details []summaryDetailDBRaw, nextSteps []string) string {
-	if overview == "" && len(details) == 0 && len(nextSteps) == 0 {
-		return ""
-	}
-
-	var sb strings.Builder
-
-	if overview != "" {
-		sb.WriteString("## Overview\n")
-		sb.WriteString(overview)
-		sb.WriteString("\n\n")
-	}
-
-	if len(details) > 0 {
-		sb.WriteString("## Key Topics\n")
-		for _, detail := range details {
-			if detail.Label != "" {
-				sb.WriteString("### ")
-				sb.WriteString(detail.Label)
-				sb.WriteString("\n")
-			}
-			if detail.Summary != "" {
-				sb.WriteString(detail.Summary)
-				sb.WriteString("\n\n")
-			}
-		}
-	}
-
-	if len(nextSteps) > 0 {
-		sb.WriteString("## Next Steps\n")
-		for _, step := range nextSteps {
-			if step != "" {
-				sb.WriteString("- ")
-				sb.WriteString(step)
-				sb.WriteString("\n")
-			}
-		}
-	}
-
-	return strings.TrimSpace(sb.String())
 }

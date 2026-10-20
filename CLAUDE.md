@@ -202,6 +202,7 @@ The service follows a clean architecture pattern with:
 - `pkg/models/itx/` — ITX wire types: `meetings.go`, `meeting_registrants.go`, `past_meetings.go`, `past_meeting_summaries.go`, `past_meeting_participants.go`, `attachments.go`, `common.go`; plus the proxy's own saved-chat response shape, `past_meeting_chat.go`. The `itx.User` and `itx.CreatedUpdatedBy` types implement `slog.LogValuer` for automatic PII redaction when logged as slog attributes.
 - `pkg/utils/` — pointer helpers (`ptr.go`), coalesce, map utilities, meeting utils, OTel span helpers
 - `pkg/redaction/` — `Redact(s string)` and `RedactEmail(email string)` for safe log output
+- `pkg/summaryformat/` — the one markdown format of a past meeting summary's parts (`Format`/`Parse`, inverses of each other), used by the index writer for `content`/`edited_content` and by the summary proxy converters for the response and for parsing `edited_content`
 
 ## Development Commands
 
