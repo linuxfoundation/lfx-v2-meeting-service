@@ -30,8 +30,9 @@ type PastMeetingSummaryResponse struct {
 	EditedNextSteps       []string                    `json:"edited_next_steps,omitempty"`       // Edited next steps
 
 	// Approval workflow
-	RequiresApproval bool `json:"requires_approval,omitempty"` // Whether approval is required
-	Approved         bool `json:"approved,omitempty"`          // Whether approved
+	RequiresApproval bool  `json:"requires_approval,omitempty"` // Whether approval is required
+	Approved         bool  `json:"approved,omitempty"`          // Whether approved
+	EmailSent        *bool `json:"email_sent,omitempty"`        // Whether the summary notification e-mail was sent; nil when ITX omits it
 
 	// Audit fields
 	CreatedAt  string `json:"created_at,omitempty"`  // Creation timestamp (RFC3339)

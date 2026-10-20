@@ -1012,7 +1012,8 @@ type GetItxPastMeetingSummaryResponseBody struct {
 	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
 	// Whether the summary has been approved
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
-	// Whether summary email has been sent
+	// Whether a summary notification e-mail has been sent; present only when the
+	// upstream provides it
 	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
@@ -1041,7 +1042,8 @@ type UpdateItxPastMeetingSummaryResponseBody struct {
 	RequiresApproval *bool `form:"requires_approval,omitempty" json:"requires_approval,omitempty" xml:"requires_approval,omitempty"`
 	// Whether the summary has been approved
 	Approved *bool `form:"approved,omitempty" json:"approved,omitempty" xml:"approved,omitempty"`
-	// Whether summary email has been sent
+	// Whether a summary notification e-mail has been sent; present only when the
+	// upstream provides it
 	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
@@ -6571,7 +6573,7 @@ func NewGetItxPastMeetingSummaryPastMeetingSummaryOK(body *GetItxPastMeetingSumm
 		Password:         body.Password,
 		RequiresApproval: *body.RequiresApproval,
 		Approved:         *body.Approved,
-		EmailSent:        *body.EmailSent,
+		EmailSent:        body.EmailSent,
 		CreatedAt:        *body.CreatedAt,
 		UpdatedAt:        *body.UpdatedAt,
 	}
@@ -6661,7 +6663,7 @@ func NewUpdateItxPastMeetingSummaryPastMeetingSummaryOK(body *UpdateItxPastMeeti
 		Password:         body.Password,
 		RequiresApproval: *body.RequiresApproval,
 		Approved:         *body.Approved,
-		EmailSent:        *body.EmailSent,
+		EmailSent:        body.EmailSent,
 		CreatedAt:        *body.CreatedAt,
 		UpdatedAt:        *body.UpdatedAt,
 	}
@@ -8592,9 +8594,6 @@ func ValidateGetItxPastMeetingSummaryResponseBody(body *GetItxPastMeetingSummary
 	if body.Approved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("approved", "body"))
 	}
-	if body.EmailSent == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("email_sent", "body"))
-	}
 	if body.CreatedAt == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("created_at", "body"))
 	}
@@ -8646,9 +8645,6 @@ func ValidateUpdateItxPastMeetingSummaryResponseBody(body *UpdateItxPastMeetingS
 	}
 	if body.Approved == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("approved", "body"))
-	}
-	if body.EmailSent == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("email_sent", "body"))
 	}
 	if body.CreatedAt == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("created_at", "body"))

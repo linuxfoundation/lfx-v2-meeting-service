@@ -117,6 +117,13 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
 
 ## Response Schemas
 
+### Proxy response: `email_sent`
+
+The proxy response field `email_sent` is present only when ITX returns `email_sent`, and
+then carries ITX's value (`true` or `false`) unchanged; when ITX omits it, the proxy omits
+it. Before this change the proxy reported `email_sent: false` on every response regardless
+of the upstream record.
+
 ### Summary Response
 
 **Proxy API & ITX API** (Identical):
