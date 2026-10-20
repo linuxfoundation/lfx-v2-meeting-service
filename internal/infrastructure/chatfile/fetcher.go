@@ -13,6 +13,7 @@
 package chatfile
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -36,8 +37,13 @@ var (
 	ErrTransport = errors.New("recording file fetch failed")
 	// ErrStatus means the provider answered with a non-2xx status.
 	ErrStatus = errors.New("recording file fetch returned a non-success status")
-	// ErrNotText means the provider answered with something other than text/*.
+	// ErrNotText means the provider answered with a content type the fetcher does
+	// not accept (see isAcceptableContentType), or with a body that is an HTML
+	// document (ErrHTMLBody wraps it).
 	ErrNotText = errors.New("recording file is not served as text")
+	// ErrHTMLBody means the body is an HTML document, whatever its content type: a
+	// sign-in or error page, not the file. It matches ErrNotText with errors.Is.
+	ErrHTMLBody = fmt.Errorf("%w: body is an html document", ErrNotText)
 )
 
 // maxRedirects bounds the redirect chain the provider may send the fetch through
@@ -91,9 +97,14 @@ func NewFetcher(timeout time.Duration, transport http.RoundTripper) *Fetcher {
 //
 // The link must be https; redirects to anything else are refused, and the Referer
 // header net/http would derive from the link is removed on every redirect. The response
-// must be 2xx with a text/* content type other than text/html (a sign-in page
-// served on a redirect is refused by that check). The body is streamed and counted,
-// so a missing or understated Content-Length cannot defeat the cap.
+// must be 2xx with a content type isAcceptableContentType admits: text/* other than
+// text/html, or application/octet-stream, which is what the recording provider
+// actually labels its recording files with (observed on production; a chat file
+// is text whatever its label). The label alone is not trusted: after the body is
+// read, isHTMLDocument refuses an HTML document under any label, since a sign-in
+// or error page served on a redirect can arrive as text/plain or octet-stream as
+// well as text/html. The body is streamed and counted, so a missing or understated
+// Content-Length cannot defeat the cap; the sniff reads only the bytes within it.
 func (f *Fetcher) FetchText(ctx context.Context, downloadURL string, maxBytes int64) ([]byte, bool, error) {
 	if !isHTTPSLink(downloadURL) {
 		return nil, false, ErrInvalidLink
@@ -108,7 +119,7 @@ func (f *Fetcher) FetchText(ctx context.Context, downloadURL string, maxBytes in
 	if err != nil {
 		return nil, false, ErrInvalidLink
 	}
-	req.Header.Set("Accept", "text/plain, text/*;q=0.9")
+	req.Header.Set("Accept", "text/plain, text/*;q=0.9, application/octet-stream;q=0.8")
 
 	resp, err := f.client.Do(req)
 	if err != nil {
@@ -120,7 +131,7 @@ func (f *Fetcher) FetchText(ctx context.Context, downloadURL string, maxBytes in
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return nil, false, fmt.Errorf("%w: HTTP %d", ErrStatus, resp.StatusCode)
 	}
-	if !isTextContentType(resp.Header.Get("Content-Type")) {
+	if !isAcceptableContentType(resp.Header.Get("Content-Type")) {
 		return nil, false, ErrNotText
 	}
 
@@ -128,6 +139,11 @@ func (f *Fetcher) FetchText(ctx context.Context, downloadURL string, maxBytes in
 	data, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes+1))
 	if err != nil {
 		return nil, false, classifyTransportError(ctx, err)
+	}
+	// Fail closed on an HTML document whatever the label said. The error carries
+	// nothing of the body.
+	if isHTMLDocument(data) {
+		return nil, false, ErrHTMLBody
 	}
 	if int64(len(data)) > maxBytes {
 		return data[:maxBytes], true, nil
@@ -141,16 +157,38 @@ func isHTTPSLink(s string) bool {
 	return err == nil && u.Scheme == "https" && u.Host != ""
 }
 
-// isTextContentType accepts text/* media types other than text/html: a chat file
-// is served as plain text, while an HTML body is a sign-in or error page even when
-// it comes with a 200 after a redirect. An absent or unparsable Content-Type is
-// not text.
-func isTextContentType(header string) bool {
+// isAcceptableContentType accepts the two labels a recording provider puts on a
+// chat file: a text/* media type other than text/html, and
+// application/octet-stream, the generic label the provider serves its recording
+// files with on production (parameters such as charset are ignored). text/html is
+// refused before the body is read: it is a sign-in or error page even when it
+// comes with a 200 after a redirect; isHTMLDocument catches the same page under
+// another label. An absent or unparsable Content-Type is not accepted.
+func isAcceptableContentType(header string) bool {
 	mediaType, _, err := mime.ParseMediaType(header)
 	if err != nil {
 		return false
 	}
+	if mediaType == "application/octet-stream" {
+		return true
+	}
 	return strings.HasPrefix(mediaType, "text/") && mediaType != "text/html"
+}
+
+// isHTMLDocument reports whether body is an HTML document: after an optional
+// UTF-8 byte-order mark and leading whitespace it starts, case-insensitively,
+// with "<!DOCTYPE" or "<html". An empty body is not HTML (an empty chat file is a
+// session with no messages), and a chat file that merely starts with "<" is left
+// to the parser.
+func isHTMLDocument(body []byte) bool {
+	body = bytes.TrimPrefix(body, []byte("\xEF\xBB\xBF"))
+	body = bytes.TrimLeft(body, " \t\r\n\f")
+	const probe = 9 // len("<!DOCTYPE")
+	if len(body) > probe {
+		body = body[:probe]
+	}
+	head := strings.ToLower(string(body))
+	return strings.HasPrefix(head, "<!doctype") || strings.HasPrefix(head, "<html")
 }
 
 // classifyTransportError maps a transport-level error to a sentinel. The
