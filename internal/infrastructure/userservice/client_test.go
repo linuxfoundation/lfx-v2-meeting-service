@@ -302,6 +302,10 @@ func TestDoJSON_ResponseBodyCap(t *testing.T) {
 			}
 		}
 	}
+	// io.ReadAll grows its buffer in steps, allocating a few times the cap in total
+	// while reading up to it. The bound still sits far below the 256 MiB streamed, so
+	// it fails if the whole body is ever buffered.
+	allocBound := uint64(8 * maxResponseBodyBytes)
 
 	t.Run("endless body fails with bounded memory", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -317,8 +321,8 @@ func TestDoJSON_ResponseBodyCap(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
-		assert.Contains(t, err.Error(), "exceeds")
-		assert.Less(t, after.TotalAlloc-before.TotalAlloc, uint64(32<<20),
+		assert.Contains(t, err.Error(), "get_self response exceeds")
+		assert.Less(t, after.TotalAlloc-before.TotalAlloc, allocBound,
 			"reading the response must not buffer the oversized body")
 	})
 
@@ -341,7 +345,7 @@ func TestDoJSON_ResponseBodyCap(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeInternal, domain.GetErrorType(err))
 		assert.Contains(t, err.Error(), "exceeds")
-		assert.Less(t, after.TotalAlloc-before.TotalAlloc, uint64(32<<20),
+		assert.Less(t, after.TotalAlloc-before.TotalAlloc, allocBound,
 			"reading the response must not buffer the decompressed body")
 	})
 
@@ -355,6 +359,35 @@ func TestDoJSON_ResponseBodyCap(t *testing.T) {
 		_, err := testClient(server).GetSelf(context.Background(), testToken)
 		require.Error(t, err)
 		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+	})
+
+	t.Run("large /me with a big Permissions list decodes", func(t *testing.T) {
+		// /me always carries the user's full Permissions list, which outgrew the old
+		// 256 KiB cap (lfx-self-serve-ops#881). Build a real-shaped body well past it.
+		perms := make([]map[string]string, 0, 8000)
+		for len(perms) < cap(perms) {
+			perms = append(perms, map[string]string{
+				"ObjectID": "00000000-0000-0000-0000-000000000001", "ObjectType": "project", "Role": "viewer",
+			})
+		}
+		body, err := json.Marshal(map[string]any{
+			"ID":          "SFID1",
+			"Emails":      []userEmail{{ID: "e-1", EmailAddress: "alice@example.com", Active: true, IsVerified: true}},
+			"Permissions": perms,
+		})
+		require.NoError(t, err)
+		require.Greater(t, len(body), 512<<10, "body must exceed the old cap to cover the regression")
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write(body)
+		}))
+		defer server.Close()
+
+		self, err := testClient(server).GetSelf(context.Background(), testToken)
+		require.NoError(t, err)
+		assert.Equal(t, "SFID1", self.SFID)
+		require.Len(t, self.Emails, 1)
+		assert.Equal(t, "alice@example.com", self.Emails[0].Address)
 	})
 
 	t.Run("body at the cap is accepted", func(t *testing.T) {

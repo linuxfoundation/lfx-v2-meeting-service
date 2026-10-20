@@ -39,9 +39,12 @@ const (
 	meetingFilter = "type eq meeting"
 
 	// maxResponseBodyBytes caps how much of a user-service response body is buffered.
-	// Expected payloads (a /me record, a filtered preference list) are a few KB; the cap
-	// keeps an oversized or decompression-amplified body from exhausting process memory.
-	maxResponseBodyBytes = 256 << 10
+	// A filtered preference list is a few hundred bytes, but /me always carries the
+	// user's full Permissions list, which cannot be filtered out and grows with their
+	// roles (about 530 KiB for one dev user, measured 2026-10-20). The cap leaves wide
+	// headroom for that and only keeps an endless or decompression-amplified body from
+	// exhausting process memory. It matches the ITX client's JSON response cap.
+	maxResponseBodyBytes = 8 << 20
 )
 
 // Config holds v1 user-service (API-gateway) client configuration.
@@ -127,7 +130,7 @@ func (c *Client) GetSelf(ctx context.Context, token string) (*domain.Self, error
 	reqURL := fmt.Sprintf("%s%s/me", c.baseURL, apiPath)
 
 	var me meResponse
-	if err := c.doJSON(ctx, token, http.MethodGet, reqURL, nil, &me); err != nil {
+	if err := c.doJSON(ctx, "get_self", token, http.MethodGet, reqURL, nil, &me); err != nil {
 		return nil, err
 	}
 	if me.ID == "" {
@@ -175,11 +178,11 @@ func (c *Client) SetMeetingEmailPreference(ctx context.Context, token, sfid, ema
 	if existing != nil {
 		reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails/%s", c.baseURL, apiPath, url.PathEscape(sfid), url.PathEscape(existing.ID))
 		body := updateEmailPreferenceRequest{EmailID: emailID, IsDefault: true}
-		writeErr = c.doJSON(ctx, token, http.MethodPatch, reqURL, body, &result)
+		writeErr = c.doJSON(ctx, "update_preference", token, http.MethodPatch, reqURL, body, &result)
 	} else {
 		reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails", c.baseURL, apiPath, url.PathEscape(sfid))
 		body := createEmailPreferenceRequest{EmailID: emailID, Type: meetingPreferenceType, IsDefault: true}
-		writeErr = c.doJSON(ctx, token, http.MethodPost, reqURL, body, &result)
+		writeErr = c.doJSON(ctx, "create_preference", token, http.MethodPost, reqURL, body, &result)
 	}
 
 	if writeErr != nil {
@@ -208,7 +211,7 @@ func (c *Client) ClearMeetingEmailPreference(ctx context.Context, token, sfid st
 	}
 
 	reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails/%s", c.baseURL, apiPath, url.PathEscape(sfid), url.PathEscape(existing.ID))
-	if delErr := c.doJSON(ctx, token, http.MethodDelete, reqURL, nil, nil); delErr != nil {
+	if delErr := c.doJSON(ctx, "delete_preference", token, http.MethodDelete, reqURL, nil, nil); delErr != nil {
 		// As with the upsert path, verify the delete actually landed despite an upstream error.
 		if pref, verifyErr := c.getMeetingPreference(ctx, token, sfid); verifyErr == nil && pref == nil {
 			slog.DebugContext(ctx, "user-service delete returned an error but the record is gone; treating as success",
@@ -232,7 +235,7 @@ func (c *Client) getMeetingPreference(ctx context.Context, token, sfid string) (
 	reqURL := fmt.Sprintf("%s%s/users/%s/preferences/emails?%s", c.baseURL, apiPath, url.PathEscape(sfid), q.Encode())
 
 	var result emailPreferenceListResponse
-	if err := c.doJSON(ctx, token, http.MethodGet, reqURL, nil, &result); err != nil {
+	if err := c.doJSON(ctx, "get_preference", token, http.MethodGet, reqURL, nil, &result); err != nil {
 		return nil, err
 	}
 
@@ -247,7 +250,7 @@ func (c *Client) getMeetingPreference(ctx context.Context, token, sfid string) (
 
 // doJSON performs an HTTP request as the user (bearer token) with an optional JSON body
 // and decodes a JSON response into out (out may be nil for no-content responses).
-func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body, out any) error {
+func (c *Client) doJSON(ctx context.Context, op, token, method, reqURL string, body, out any) error {
 	token = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(token), "Bearer "))
 	if token == "" {
 		return domain.NewValidationError("user token is required")
@@ -283,7 +286,7 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 		if errors.As(err, &urlErr) && urlErr.Err != nil {
 			cause = urlErr.Err
 		}
-		slog.DebugContext(ctx, "user-service request errored", "method", method, logging.ErrKey, cause)
+		slog.DebugContext(ctx, "user-service request errored", "op", op, "method", method, logging.ErrKey, cause)
 		return domain.NewUnavailableError("user-service request failed", cause)
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -300,7 +303,7 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 	}
 
 	slog.DebugContext(ctx, "user-service response",
-		"method", method, "status", resp.StatusCode, "body_len", len(respBody), "body_truncated", bodyTooLarge)
+		"op", op, "method", method, "status", resp.StatusCode, "body_len", len(respBody), "body_truncated", bodyTooLarge)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		domainErr := mapHTTPError(resp.StatusCode, respBody)
@@ -319,7 +322,7 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 	// Checked after the status gate so an oversized error body keeps its status-based
 	// classification (e.g. a retryable 502) and is mapped from the truncated prefix.
 	if bodyTooLarge {
-		return domain.NewInternalError(fmt.Sprintf("user-service response exceeds %d bytes", maxResponseBodyBytes))
+		return domain.NewInternalError(fmt.Sprintf("user-service %s response exceeds %d bytes", op, maxResponseBodyBytes))
 	}
 
 	if out == nil || len(respBody) == 0 {

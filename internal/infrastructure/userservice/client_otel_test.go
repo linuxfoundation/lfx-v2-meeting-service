@@ -68,7 +68,7 @@ func TestDoJSON_5xx_RecordsErrorOnSpan(t *testing.T) {
 	defer server.Close()
 
 	c := newClient(server.Client(), server.URL)
-	err := c.doJSON(ctx, testToken, http.MethodGet, server.URL+"/user-service/v1/me", nil, nil)
+	err := c.doJSON(ctx, "get_self", testToken, http.MethodGet, server.URL+"/user-service/v1/me", nil, nil)
 	span.End()
 
 	if err == nil {
@@ -97,7 +97,7 @@ func TestDoJSON_4xx_DoesNotRecordErrorOnSpan(t *testing.T) {
 	defer server.Close()
 
 	c := newClient(server.Client(), server.URL)
-	err := c.doJSON(ctx, testToken, http.MethodGet, server.URL+"/user-service/v1/me", nil, nil)
+	err := c.doJSON(ctx, "get_self", testToken, http.MethodGet, server.URL+"/user-service/v1/me", nil, nil)
 	span.End()
 
 	if err == nil {
