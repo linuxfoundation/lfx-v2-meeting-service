@@ -176,19 +176,39 @@ func isAcceptableContentType(header string) bool {
 }
 
 // isHTMLDocument reports whether body is an HTML document: after an optional
-// UTF-8 byte-order mark and leading whitespace it starts, case-insensitively,
-// with "<!DOCTYPE" or "<html". An empty body is not HTML (an empty chat file is a
-// session with no messages), and a chat file that merely starts with "<" is left
-// to the parser.
+// UTF-8 byte-order mark, leading whitespace, and any leading HTML comments
+// ("<!-- -->") or XML prologs and processing instructions ("<? ?>", the start
+// of an XHTML page), which pages commonly open with, it starts,
+// case-insensitively, with "<!DOCTYPE" or "<html". A leading comment or prolog
+// left unterminated within the bytes read is taken as HTML too: no chat file
+// starts that way, and the route fails closed. An empty body is not HTML (an
+// empty chat file is a session with no messages), and a chat file that merely
+// starts with "<" is left to the parser. The body is already bounded by the
+// caller; the scan is linear in it.
 func isHTMLDocument(body []byte) bool {
 	body = bytes.TrimPrefix(body, []byte("\xEF\xBB\xBF"))
-	body = bytes.TrimLeft(body, " \t\r\n\f")
-	const probe = 9 // len("<!DOCTYPE")
-	if len(body) > probe {
-		body = body[:probe]
+	for {
+		body = bytes.TrimLeft(body, " \t\r\n\f")
+		var closer []byte
+		switch {
+		case bytes.HasPrefix(body, []byte("<!--")):
+			closer = []byte("-->")
+		case bytes.HasPrefix(body, []byte("<?")):
+			closer = []byte("?>")
+		default:
+			const probe = 9 // len("<!DOCTYPE")
+			if len(body) > probe {
+				body = body[:probe]
+			}
+			head := strings.ToLower(string(body))
+			return strings.HasPrefix(head, "<!doctype") || strings.HasPrefix(head, "<html")
+		}
+		end := bytes.Index(body[2:], closer)
+		if end < 0 {
+			return true
+		}
+		body = body[2+end+len(closer):]
 	}
-	head := strings.ToLower(string(body))
-	return strings.HasPrefix(head, "<!doctype") || strings.HasPrefix(head, "<html")
 }
 
 // classifyTransportError maps a transport-level error to a sentinel. The

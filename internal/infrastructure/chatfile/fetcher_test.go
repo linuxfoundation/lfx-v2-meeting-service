@@ -99,6 +99,11 @@ func TestFetcher_FetchText(t *testing.T) {
 			"bom then lowercase doctype":   {"application/octet-stream", "\xEF\xBB\xBF<!doctype html><html></html>"},
 			"leading whitespace then html": {"text/plain", "\n\n  \t<html lang=\"en\"><head></head></html>"},
 			"uppercase html tag":           {"application/octet-stream", "<HTML><BODY>Error</BODY></HTML>"},
+			"leading comment then doctype": {"application/octet-stream", "<!-- provider page -->\n<!DOCTYPE html><html><body>Sign in</body></html>"},
+			"two comments then html tag":   {"text/plain", "<!--a-->\n<!-- b -- c -->  <html><body>Sign in</body></html>"},
+			"xml prolog then xhtml":        {"application/octet-stream", "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0//EN\"><html>Sign in</html>"},
+			"bom, comment and whitespace":  {"application/octet-stream", "\xEF\xBB\xBF \n<!-- x -->\r\n\t<html>Sign in</html>"},
+			"unterminated leading comment": {"application/octet-stream", "<!-- the page never closes this Sign in"},
 		} {
 			t.Run(name, func(t *testing.T) {
 				srv, f := newTLSServer(t, time.Second, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -123,6 +128,7 @@ func TestFetcher_FetchText(t *testing.T) {
 			"bom then chat header": "\xEF\xBB\xBF" + body,
 			"starts with <":        "<meeting notes>\n" + body,
 			"shorter than doctype": "<!DOC",
+			"comment then chat":    "<!-- exported --> " + body,
 		} {
 			t.Run(name, func(t *testing.T) {
 				srv, f := newTLSServer(t, time.Second, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
