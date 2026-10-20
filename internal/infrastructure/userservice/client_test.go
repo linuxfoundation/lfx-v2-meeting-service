@@ -352,7 +352,7 @@ func TestDoJSON_ResponseBodyCap(t *testing.T) {
 	t.Run("oversized error body keeps its status classification", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusBadGateway)
-			streamBytes(w, 'x', 4<<20)
+			streamBytes(w, 'x', 2*maxResponseBodyBytes)
 		}))
 		defer server.Close()
 
