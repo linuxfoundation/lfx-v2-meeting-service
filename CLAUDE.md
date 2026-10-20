@@ -468,7 +468,8 @@ Backs the preferred meeting-invite email NATS RPC (LFXV2-2599). The RPC calls th
 The service supports optional ID mapping between v1 and v2 systems:
 
 - `ID_MAPPING_DISABLED`: Set to `true` to disable ID mapping (default: `false`)
-- `NATS_URL`: NATS server URL. Required when ID mapping is enabled. Also enables the preferred-email responder, user-metadata resolution, and (when `INVITES_ENABLED=true`) the invite feature.
+- `NATS_URL`: NATS server URL. Required when ID mapping is enabled. Also enables the preferred-email responder (unless `NATS_RESPONDERS_ENABLED=false`), user-metadata resolution, and (when `INVITES_ENABLED=true`) the invite feature.
+- `NATS_RESPONDERS_ENABLED`: Start the service's NATS request/reply responders, today the preferred-email responder (default: `true`). Set `false` for a local run that shares a NATS server with a deployed instance, so the local process does not answer the cluster's requests.
 
 **Note**: If ID mapping is disabled, IDs are passed through unchanged. If enabled and NATS is unavailable, the service falls back to no-op mapping with a warning.
 

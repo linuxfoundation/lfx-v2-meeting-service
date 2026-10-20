@@ -159,6 +159,12 @@ app:
     # If ID_MAPPING_DISABLED=true, this is not used
     NATS_URL:
       value: nats://lfx-platform-nats.lfx.svc.cluster.local:4222
+    # NATS_RESPONDERS_ENABLED starts the service's NATS request/reply responders
+    # (today the preferred-email responder). A local run sharing a NATS server
+    # with a deployed instance sets it to "false" so the local process does not
+    # answer the cluster's requests (default: true)
+    NATS_RESPONDERS_ENABLED:
+      value: "true"
     # EVENT_PROCESSING_ENABLED enables/disables event processing for v1→v2 data synchronization
     # (default: true)
     EVENT_PROCESSING_ENABLED:

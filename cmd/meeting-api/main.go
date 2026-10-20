@@ -398,6 +398,14 @@ func v1ObjectsBucketBinder(nc *natsgo.Conn) natsinfra.KeyValueBinder {
 // NATS responder (LFXV2-2599). It is best-effort: any missing config or startup failure is
 // logged and the service continues without the responder (returns nil, nil).
 func startPreferredEmailResponder(ctx context.Context, env environment, natsURL string) (*natsinfra.PreferredEmailResponder, *natsgo.Conn) {
+	// Developer tooling: a local run sharing a NATS server with a deployed
+	// instance keeps the responder off, so it does not join the queue group and
+	// answer the cluster's requests with local code. Checked before any client
+	// is built or any connection dialled.
+	if !env.NATSRespondersEnabled {
+		slog.InfoContext(ctx, "NATS_RESPONDERS_ENABLED=false; preferred_email RPC responder will not start")
+		return nil, nil
+	}
 	if natsURL == "" {
 		slog.InfoContext(ctx, "NATS_URL not set; preferred_email RPC responder will not start")
 		return nil, nil

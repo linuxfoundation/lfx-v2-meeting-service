@@ -511,7 +511,8 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ID_MAPPING_DISABLED` | Set to `true` to disable v1/v2 ID mapping | `false` |
-| `NATS_URL` | NATS server URL. Required when ID mapping is enabled. Also enables the preferred-email responder, user-metadata resolution, and (when `INVITES_ENABLED=true`) the invite feature. | `""` |
+| `NATS_URL` | NATS server URL. Required when ID mapping is enabled. Also enables the preferred-email responder (unless `NATS_RESPONDERS_ENABLED=false`), user-metadata resolution, and (when `INVITES_ENABLED=true`) the invite feature. | `""` |
+| `NATS_RESPONDERS_ENABLED` | Start the service's NATS request/reply responders (today the preferred-email responder). Set `false` for a local run that shares a NATS server with a deployed instance, so the local process does not answer the cluster's requests | `true` |
 
 ### User Service Configuration (Optional)
 

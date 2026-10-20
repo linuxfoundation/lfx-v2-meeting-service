@@ -4,6 +4,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,3 +73,40 @@ func TestParseInviteConfig_InvalidURLDisablesOutboundOnly(t *testing.T) {
 	assert.True(t, got.Enabled, "invite_accepted subscriber should remain enabled")
 	assert.Empty(t, got.SelfServeBaseURL, "outbound invites disabled via empty return URL")
 }
+
+// TestParseNATSRespondersEnabled_SameRuleAsEventProcessingEnabled pins the
+// switch's semantics to EVENT_PROCESSING_ENABLED's: only the exact value
+// "false" disables; unset, "FALSE" and "0" keep the default of true.
+func TestParseNATSRespondersEnabled_SameRuleAsEventProcessingEnabled(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		value *string
+		want  bool
+	}{
+		{name: "unset defaults to true", value: nil, want: true},
+		{name: `"false" disables`, value: strPtr("false"), want: false},
+		{name: `"FALSE" is not the switch`, value: strPtr("FALSE"), want: true},
+		{name: `"0" is not the switch`, value: strPtr("0"), want: true},
+		{name: `"true" enables`, value: strPtr("true"), want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.value == nil {
+				t.Setenv("NATS_RESPONDERS_ENABLED", "")
+				_ = os.Unsetenv("NATS_RESPONDERS_ENABLED")
+			} else {
+				t.Setenv("NATS_RESPONDERS_ENABLED", *tc.value)
+			}
+			assert.Equal(t, tc.want, parseNATSRespondersEnabled())
+			// The same input gives the same answer for the switch this one mirrors.
+			if tc.value == nil {
+				t.Setenv("EVENT_PROCESSING_ENABLED", "")
+				_ = os.Unsetenv("EVENT_PROCESSING_ENABLED")
+			} else {
+				t.Setenv("EVENT_PROCESSING_ENABLED", *tc.value)
+			}
+			assert.Equal(t, tc.want, parseEventConfig().Enabled)
+		})
+	}
+}
+
+func strPtr(s string) *string { return &s }
