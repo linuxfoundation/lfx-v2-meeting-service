@@ -194,6 +194,7 @@ For external URL references (Google Docs, SharePoint, etc.):
 - `name` (string, required): Name/title of the attachment (1-255 chars)
 - `description` (string, optional): Optional description (max 500 chars)
 - `link` (string, required for type=link): URL to external resource (max 2048 chars)
+- `occurrence_id` (string, optional): Scope the attachment to one occurrence; omit for all occurrences (see [Occurrence scope](#occurrence-scope))
 
 ---
 
@@ -217,6 +218,7 @@ For file uploads using presigned URL flow:
 - `category` (string, required): Category of the attachment
 - `name` (string, required): Name/title of the attachment (1-255 chars)
 - `description` (string, optional): Optional description (max 500 chars)
+- `occurrence_id` (string, optional): Scope the attachment to one occurrence; omit for all occurrences (see [Occurrence scope](#occurrence-scope))
 
 **Note**: File uploads use a two-step process:
 1. Call `/attachments/presign` to get an upload URL
@@ -240,7 +242,7 @@ For file uploads using presigned URL flow:
 
 **ITX API**: Identical to the Proxy API request, plus a proxy-added `updated_by` field (same shape as `created_by` — see [Audit stamping](#audit-stamping)).
 
-All fields are optional - only include fields you want to update. The exception is `occurrence_id`, which is replaced on every update: omit it to make the attachment apply to all occurrences, or send it to scope the attachment to that occurrence (see [Occurrence scope](#occurrence-scope)).
+`type`, `category` and `name` are required on every update, and `type` must match the attachment's existing type. `link` is required for link-type attachments and `description` is optional. `occurrence_id` is replaced on every update: omit it to make the attachment apply to all occurrences, or send it to scope the attachment to that occurrence (see [Occurrence scope](#occurrence-scope)).
 
 **Returns**: 204 No Content (no response body)
 
@@ -267,6 +269,7 @@ All fields are optional - only include fields you want to update. The exception 
 - `file_type` (string, required): MIME type of the file
 - `description` (string, optional): Optional description
 - `category` (string, optional): Attachment category
+- `occurrence_id` (string, optional): Scope the attachment to one occurrence; omit for all occurrences. The presign step persists the attachment record, so the scope is set here (see [Occurrence scope](#occurrence-scope))
 
 ---
 
@@ -360,11 +363,14 @@ All fields are optional - only include fields you want to update. The exception 
 
 ### Presigned URL Response
 
+`occurrence_id` is echoed back when the attachment is scoped to a single occurrence and omitted otherwise.
+
 **Proxy API**:
 ```json
 {
   "uid": "ea1e8536-a985-4cf5-b981-a170927a1d11",
   "meeting_id": "96365872728",
+  "occurrence_id": "1788000000",
   "file_url": "https://storage.example.com/presigned-url?token=...",
   "type": "file",
   "category": "presentation",

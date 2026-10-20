@@ -79,7 +79,7 @@ The service is a stateless HTTP proxy built using a clean architecture pattern:
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **Past Meeting Chat**: Read the chat saved with a past meeting's recording as parsed text, fetched server side from the recording record's CHAT file (not proxied from ITX)
 - **ITX Past Meeting Participant Operations**: Add, update, and delete past meeting participants
-- **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
+- **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings, and list the attachments of an active meeting. A meeting attachment applies to all occurrences or, through an optional `occurrence_id`, to one single occurrence
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (12 event families)
 - **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted (acceptances are re-verified against the invite service before any ITX write — see [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control))
 - **JWT Authentication**: Secure API access via Heimdall integration

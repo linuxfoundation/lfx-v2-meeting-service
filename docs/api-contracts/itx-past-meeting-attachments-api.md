@@ -490,3 +490,5 @@ For file attachments, use this three-step process:
     - ITX API: `content_type`
 
 11. **Past Meeting Identification**: Attachments are always associated with a specific past meeting occurrence using the hyphenated `meeting_and_occurrence_id` format (e.g., "12343245463-1630560600000")
+
+12. **Copied From The Scheduled Meeting**: When a meeting starts, ITX copies the scheduled meeting's attachments onto the past meeting. Attachments that apply to all occurrences are copied, as are the ones scoped to the occurrence that ran. Attachments scoped to a different occurrence are not. See [Occurrence scope](itx-meeting-attachments-api.md#occurrence-scope)
