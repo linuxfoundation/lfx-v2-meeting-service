@@ -272,17 +272,40 @@ func TestResponseJSONForLog_UnexpectedAuditShape(t *testing.T) {
 	assert.Contains(t, out, `"created_by":null`)
 }
 
+// TestResponseJSONForLog_RedactsPresignedURLs confirms presigned S3 URLs (bearer
+// credentials) are masked wholesale so they never reach the log.
+func TestResponseJSONForLog_RedactsPresignedURLs(t *testing.T) {
+	const signed = "https://bucket.example.com/att-1?X-Amz-Signature=deadbeef"
+
+	tests := []struct {
+		name string
+		in   string
+		key  string
+	}{
+		{name: "download_url", in: `{"download_url":"` + signed + `"}`, key: "download_url"},
+		{name: "file_url on presign response", in: `{"id":"att-1","file_url":"` + signed + `"}`, key: "file_url"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := responseJSONForLog([]byte(tt.in))
+
+			assert.NotContains(t, out, "X-Amz-Signature")
+			assert.NotContains(t, out, "bucket.example.com")
+			assert.Contains(t, out, `"`+tt.key+`":"REDACTED"`)
+		})
+	}
+}
+
 // TestResponseJSONForLog_LeavesNonAuditFieldsAlone confirms the redaction is
-// scoped: unrelated response fields (id, name, description, timestamps, URLs)
+// scoped: unrelated response fields (id, name, description, timestamps)
 // pass through unchanged so the log stays useful for debugging.
 func TestResponseJSONForLog_LeavesNonAuditFieldsAlone(t *testing.T) {
-	in := `{"id":"att-1","name":"notes.pdf","description":"Q3 notes","file_url":"https://example.com/notes.pdf","file_size":1024,"created_at":"2026-01-01T00:00:00Z"}`
+	in := `{"id":"att-1","name":"notes.pdf","description":"Q3 notes","file_size":1024,"created_at":"2026-01-01T00:00:00Z"}`
 	out := responseJSONForLog([]byte(in))
 
 	assert.Contains(t, out, `"id":"att-1"`)
 	assert.Contains(t, out, `"name":"notes.pdf"`)
 	assert.Contains(t, out, `"description":"Q3 notes"`)
-	assert.Contains(t, out, `"file_url":"https://example.com/notes.pdf"`)
 	assert.Contains(t, out, `"file_size":1024`)
 	assert.Contains(t, out, `"created_at":"2026-01-01T00:00:00Z"`)
 }

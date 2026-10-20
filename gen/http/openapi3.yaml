@@ -7656,7 +7656,7 @@ components:
                     format: date-time
                 email_sent:
                     type: boolean
-                    description: Whether summary email has been sent
+                    description: Whether a summary notification e-mail has been sent; present only when the upstream provides it
                     example: true
                 meeting_id:
                     type: string
@@ -7745,7 +7745,6 @@ components:
                 - summary_data
                 - requires_approval
                 - approved
-                - email_sent
                 - created_at
                 - updated_at
         PastMeetingSummaryZoomConfig:

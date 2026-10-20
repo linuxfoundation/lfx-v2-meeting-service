@@ -136,6 +136,13 @@ On an edit the proxy sends **all three** edited fields, with `""` for a removed 
 
 ## Response Schemas
 
+### Proxy response: `email_sent`
+
+The proxy response field `email_sent` is present only when ITX returns `email_sent`, and
+then carries ITX's value (`true` or `false`) unchanged; when ITX omits it, the proxy omits
+it. Before this change the proxy reported `email_sent: false` on every response regardless
+of the upstream record.
+
 ### Summary Response
 
 **Proxy API**: the `PastMeetingSummary` shape of the OpenAPI spec (`uid`, `past_meeting_id`, `meeting_id`, `platform`, `zoom_config`, `summary_data`, `requires_approval`, `approved`, `created_at`, `updated_at`, and `email_sent` when ITX provides it). `summary_data.content` renders ITX's `summary_overview`, `summary_details` and `next_steps` in the [summary markdown](#summary-markdown); `summary_data.edited_content` renders the three `edited_*` fields the same way. Either is omitted when its parts are all empty.

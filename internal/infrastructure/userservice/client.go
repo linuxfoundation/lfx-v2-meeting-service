@@ -307,7 +307,8 @@ func (c *Client) doJSON(ctx context.Context, token, method, reqURL string, body,
 		if resp.StatusCode >= 500 {
 			// Record a status-only error for telemetry to avoid leaking PII
 			// (email addresses can appear in user-service error bodies).
-			// The full domain error with the original message is returned to the caller.
+			// The full domain error with the original message is returned to the caller;
+			// when it is logged, its LogMessage (status code and type only) is emitted.
 			span := trace.SpanFromContext(ctx)
 			span.RecordError(fmt.Errorf("HTTP %d", resp.StatusCode))
 			span.SetStatus(codes.Error, fmt.Sprintf("HTTP %d", resp.StatusCode))
@@ -351,23 +352,30 @@ func mapHTTPError(statusCode int, body []byte) error {
 		}
 	}
 
+	var domainErr *domain.DomainError
 	switch statusCode {
 	case http.StatusBadRequest:
-		return domain.NewValidationError(message)
+		domainErr = domain.NewValidationError(message)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		// The user's forwarded token is missing/expired/unauthorized — a caller-supplied
 		// credential problem, so surface it as a validation error.
-		return domain.NewValidationError(fmt.Sprintf("user token rejected by user-service: %s", message))
+		domainErr = domain.NewValidationError(fmt.Sprintf("user token rejected by user-service: %s", message))
 	case http.StatusNotFound:
-		return domain.NewNotFoundError(message)
+		domainErr = domain.NewNotFoundError(message)
 	case http.StatusConflict:
-		return domain.NewConflictError(message)
+		domainErr = domain.NewConflictError(message)
 	case http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
 		// Transient upstream failures — keep them retryable.
-		return domain.NewUnavailableError(message)
+		domainErr = domain.NewUnavailableError(message)
 	default:
-		return domain.NewInternalError(message)
+		domainErr = domain.NewInternalError(message)
 	}
+
+	// The message above carries upstream body text, which can echo the user's email
+	// addresses. The caller still gets it through Error(), but a log attribute must not,
+	// so give the error a fixed, content-free description for logging.
+	domainErr.LogMessage = fmt.Sprintf("user-service returned HTTP %d (%s)", statusCode, domainErr.Type)
+	return domainErr
 }
 
 // truncate shortens s to at most n runes, appending an ellipsis when truncated.

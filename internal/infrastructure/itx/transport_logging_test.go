@@ -217,3 +217,76 @@ func TestGetMeetingJoinLink_Success_DebugLogsRedactUpstreamURL(t *testing.T) {
 		t.Errorf("Debug response log leaked the join URL (skipResponseLog should suppress it):\n%s", out)
 	}
 }
+
+// TestAttachmentPresignedURLs_DebugLogsRedactCredential verifies that the
+// presign and download calls never write the presigned S3 URL (a bearer
+// credential) to the Debug response log.
+func TestAttachmentPresignedURLs_DebugLogsRedactCredential(t *testing.T) {
+	const signed = "https://bucket.example.com/att-1?X-Amz-Signature=deadbeef"
+
+	tests := []struct {
+		name string
+		body string
+		call func(c *Client) error
+	}{
+		{
+			name: "CreateMeetingAttachmentPresignURL",
+			body: `{"id":"att-1","file_url":"` + signed + `"}`,
+			call: func(c *Client) error {
+				_, err := c.CreateMeetingAttachmentPresignURL(context.Background(), "meeting-1", &itx.CreateAttachmentPresignRequest{})
+				return err
+			},
+		},
+		{
+			name: "GetMeetingAttachmentDownloadURL",
+			body: `{"download_url":"` + signed + `"}`,
+			call: func(c *Client) error {
+				_, err := c.GetMeetingAttachmentDownloadURL(context.Background(), "meeting-1", "att-1")
+				return err
+			},
+		},
+		{
+			name: "CreatePastMeetingAttachmentPresignURL",
+			body: `{"id":"att-1","file_url":"` + signed + `"}`,
+			call: func(c *Client) error {
+				_, err := c.CreatePastMeetingAttachmentPresignURL(context.Background(), "meeting-1-occ", &itx.CreateAttachmentPresignRequest{})
+				return err
+			},
+		},
+		{
+			name: "GetPastMeetingAttachmentDownloadURL",
+			body: `{"download_url":"` + signed + `"}`,
+			call: func(c *Client) error {
+				_, err := c.GetPastMeetingAttachmentDownloadURL(context.Background(), "meeting-1-occ", "att-1")
+				return err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			t.Cleanup(server.Close)
+
+			buf := withCapturedLogs(t)
+			client := NewClientWithHTTPClient(Config{BaseURL: server.URL}, server.Client())
+
+			if err := tt.call(client); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			out := buf.String()
+			if !strings.Contains(out, "ITX "+tt.name+" response") {
+				t.Fatalf("expected the Debug response line, got:\n%s", out)
+			}
+			for _, secret := range []string{"X-Amz-Signature", "deadbeef", "bucket.example.com"} {
+				if strings.Contains(out, secret) {
+					t.Errorf("Debug log leaked presigned URL fragment %q:\n%s", secret, out)
+				}
+			}
+		})
+	}
+}

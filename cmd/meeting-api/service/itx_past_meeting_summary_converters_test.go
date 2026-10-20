@@ -239,7 +239,32 @@ func TestConvertPastMeetingSummaryToGoa(t *testing.T) {
 		assert.False(t, g.Approved)
 		assert.Equal(t, "2026-06-01T09:00:00Z", g.CreatedAt)
 		assert.Equal(t, "2026-06-02T09:00:00Z", g.UpdatedAt)
-		assert.False(t, g.EmailSent, "ITX does not track email_sent; always false")
+	})
+
+	// email_sent is carried from ITX as a pointer: the proxy reports the upstream value
+	// when ITX provides it and omits the field otherwise. Nothing is invented.
+	t.Run("email_sent true from ITX is reported true", func(t *testing.T) {
+		g := ConvertPastMeetingSummaryToGoa(&itx.PastMeetingSummaryResponse{
+			EmailSent: utils.BoolPtr(true),
+		})
+
+		require.NotNil(t, g.EmailSent)
+		assert.True(t, *g.EmailSent)
+	})
+
+	t.Run("email_sent false from ITX is kept, not dropped", func(t *testing.T) {
+		g := ConvertPastMeetingSummaryToGoa(&itx.PastMeetingSummaryResponse{
+			EmailSent: utils.BoolPtr(false),
+		})
+
+		require.NotNil(t, g.EmailSent, "a false ITX sends is a value, not an absence")
+		assert.False(t, *g.EmailSent)
+	})
+
+	t.Run("email_sent absent from ITX is omitted", func(t *testing.T) {
+		g := ConvertPastMeetingSummaryToGoa(&itx.PastMeetingSummaryResponse{})
+
+		assert.Nil(t, g.EmailSent)
 	})
 
 	t.Run("zoom_config populated when only meeting_id is set", func(t *testing.T) {

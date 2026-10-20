@@ -1016,8 +1016,9 @@ type GetItxPastMeetingSummaryResponseBody struct {
 	RequiresApproval bool `form:"requires_approval" json:"requires_approval" xml:"requires_approval"`
 	// Whether the summary has been approved
 	Approved bool `form:"approved" json:"approved" xml:"approved"`
-	// Whether summary email has been sent
-	EmailSent bool `form:"email_sent" json:"email_sent" xml:"email_sent"`
+	// Whether a summary notification e-mail has been sent; present only when the
+	// upstream provides it
+	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt string `form:"created_at" json:"created_at" xml:"created_at"`
 	// Update timestamp (RFC3339)
@@ -1045,8 +1046,9 @@ type UpdateItxPastMeetingSummaryResponseBody struct {
 	RequiresApproval bool `form:"requires_approval" json:"requires_approval" xml:"requires_approval"`
 	// Whether the summary has been approved
 	Approved bool `form:"approved" json:"approved" xml:"approved"`
-	// Whether summary email has been sent
-	EmailSent bool `form:"email_sent" json:"email_sent" xml:"email_sent"`
+	// Whether a summary notification e-mail has been sent; present only when the
+	// upstream provides it
+	EmailSent *bool `form:"email_sent,omitempty" json:"email_sent,omitempty" xml:"email_sent,omitempty"`
 	// Creation timestamp (RFC3339)
 	CreatedAt string `form:"created_at" json:"created_at" xml:"created_at"`
 	// Update timestamp (RFC3339)

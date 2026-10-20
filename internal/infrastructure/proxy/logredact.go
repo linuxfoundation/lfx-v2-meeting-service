@@ -22,6 +22,16 @@ var auditFieldsForResponseRedaction = []string{
 	"file_uploaded_by",
 }
 
+// credentialFieldsForResponseRedaction lists the JSON keys on ITX response
+// bodies whose values are presigned S3 URLs (bearer credentials valid for
+// up to 60 minutes) and must never appear in logs. Their values are replaced
+// wholesale so a new endpoint returning one cannot leak it by omitting
+// skipResponseLog.
+var credentialFieldsForResponseRedaction = []string{
+	"file_url",
+	"download_url",
+}
+
 // RequestJSONForLog is the exported form of requestJSONForLog, for use by
 // packages that share the same PII-redaction requirement.
 func RequestJSONForLog(req any) string { return requestJSONForLog(req) }
@@ -120,8 +130,9 @@ func redactAuditForLog(req any) any {
 //
 // The redaction shape mirrors the itx.CreatedUpdatedBy LogValue: only the
 // username survives, so a debug operator can still see who touched what.
-// Non-audit response fields (id, name, description, timestamps, etc.) are
-// left intact so the log remains useful.
+// Presigned-URL fields (file_url, download_url) are bearer credentials and are
+// replaced wholesale with "REDACTED". Non-audit response fields (id, name,
+// description, timestamps, etc.) are left intact so the log remains useful.
 func responseJSONForLog(respBody []byte) string {
 	if len(respBody) == 0 {
 		return ""
@@ -142,6 +153,11 @@ func responseJSONForLog(respBody []byte) string {
 		} else {
 			// Unexpected shape — safest to strip the whole value.
 			parsed[key] = nil
+		}
+	}
+	for _, key := range credentialFieldsForResponseRedaction {
+		if raw, ok := parsed[key]; ok && raw != nil {
+			parsed[key] = "REDACTED"
 		}
 	}
 	b, err := json.Marshal(parsed)
