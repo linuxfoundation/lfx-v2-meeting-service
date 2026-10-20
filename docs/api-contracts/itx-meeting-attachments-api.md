@@ -517,12 +517,12 @@ For file attachments, use this three-step process:
 
 7. **Occurrence Scope**: `occurrence_id` is passed through to ITX unchanged and is replaced on every update. See [Occurrence scope](#occurrence-scope)
 
-7. **File Size Limits**: Check with ITX service for maximum file size limits
+8. **File Size Limits**: Check with ITX service for maximum file size limits
 
-8. **Presigned URL Expiration**: Presigned URLs are time-limited (typically 15-60 minutes)
+9. **Presigned URL Expiration**: Presigned URLs are time-limited (typically 15-60 minutes)
 
-9. **Download URLs**: Download URLs are also time-limited and expire after a short period
+10. **Download URLs**: Download URLs are also time-limited and expire after a short period
 
-10. **Content Type Field Name**:
+11. **Content Type Field Name**:
     - Proxy API: `file_content_type`
     - ITX API: `content_type`
