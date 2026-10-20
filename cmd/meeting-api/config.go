@@ -31,8 +31,14 @@ type environment struct {
 	ITXConfig          itxConfig
 	UserServiceConfig  userServiceConfig
 	IDMappingDisabled  bool
-	EventConfig        eventConfig
-	InviteConfig       apieventing.InviteFeatureConfig
+	// NATSRespondersEnabled starts the service's NATS request/reply responders
+	// (today the preferred-email responder). A local run that shares a NATS
+	// server with a deployed instance sets NATS_RESPONDERS_ENABLED=false so the
+	// local process does not join the responders' queue groups and answer the
+	// cluster's requests, while still using NATS for KV reads and publishing.
+	NATSRespondersEnabled bool
+	EventConfig           eventConfig
+	InviteConfig          apieventing.InviteFeatureConfig
 }
 
 // itxConfig holds ITX proxy configuration
@@ -119,16 +125,24 @@ func parseEnv() environment {
 	idMappingDisabled := os.Getenv("ID_MAPPING_DISABLED") == "true"
 
 	return environment{
-		Port:               port,
-		LFXEnvironment:     lfxEnvironment,
-		ProjectLogoBaseURL: projectLogoBaseURL,
-		LFXAppOrigin:       lfxAppOrigin,
-		ITXConfig:          parseITXConfig(),
-		UserServiceConfig:  parseUserServiceConfig(lfxEnvironment),
-		IDMappingDisabled:  idMappingDisabled,
-		EventConfig:        parseEventConfig(),
-		InviteConfig:       parseInviteConfig(lfxEnvironment),
+		Port:                  port,
+		LFXEnvironment:        lfxEnvironment,
+		ProjectLogoBaseURL:    projectLogoBaseURL,
+		LFXAppOrigin:          lfxAppOrigin,
+		ITXConfig:             parseITXConfig(),
+		UserServiceConfig:     parseUserServiceConfig(lfxEnvironment),
+		IDMappingDisabled:     idMappingDisabled,
+		NATSRespondersEnabled: parseNATSRespondersEnabled(),
+		EventConfig:           parseEventConfig(),
+		InviteConfig:          parseInviteConfig(lfxEnvironment),
 	}
+}
+
+// parseNATSRespondersEnabled parses NATS_RESPONDERS_ENABLED with the same rule
+// as EVENT_PROCESSING_ENABLED: only the exact value "false" disables, anything
+// else (unset, "FALSE", "0") keeps the default of true.
+func parseNATSRespondersEnabled() bool {
+	return os.Getenv("NATS_RESPONDERS_ENABLED") != "false" // Default: true
 }
 
 // normalizeLFXEnvironment maps raw LFX_ENVIRONMENT values to dev|staging|prod.
