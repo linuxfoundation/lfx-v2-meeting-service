@@ -4802,6 +4802,162 @@ func EncodeDeleteItxPastMeetingParticipantError(encoder func(context.Context, ht
 	}
 }
 
+// EncodeGetItxMeetingAttachmentsResponse returns an encoder for responses
+// returned by the Meeting Service get-itx-meeting-attachments endpoint.
+func EncodeGetItxMeetingAttachmentsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
+	return func(ctx context.Context, w http.ResponseWriter, v any) error {
+		res, _ := v.([]*meetingservice.ITXMeetingAttachment)
+		enc := encoder(ctx, w)
+		body := NewGetItxMeetingAttachmentsResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetItxMeetingAttachmentsRequest returns a decoder for requests sent to
+// the Meeting Service get-itx-meeting-attachments endpoint.
+func DecodeGetItxMeetingAttachmentsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (*meetingservice.GetItxMeetingAttachmentsPayload, error) {
+	return func(r *http.Request) (*meetingservice.GetItxMeetingAttachmentsPayload, error) {
+		var payload *meetingservice.GetItxMeetingAttachmentsPayload
+		var (
+			meetingID    string
+			version      *string
+			occurrenceID *string
+			bearerToken  *string
+			err          error
+
+			params = mux.Vars(r)
+		)
+		meetingID = params["meeting_id"]
+		qp := r.URL.Query()
+		versionRaw := qp.Get("v")
+		if versionRaw != "" {
+			version = &versionRaw
+		}
+		if version != nil {
+			if !(*version == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *version, []any{"1"}))
+			}
+		}
+		occurrenceIDRaw := qp.Get("occurrence_id")
+		if occurrenceIDRaw != "" {
+			occurrenceID = &occurrenceIDRaw
+		}
+		bearerTokenRaw := r.Header.Get("Authorization")
+		if bearerTokenRaw != "" {
+			bearerToken = &bearerTokenRaw
+		}
+		if err != nil {
+			return payload, err
+		}
+		payload = NewGetItxMeetingAttachmentsPayload(meetingID, version, occurrenceID, bearerToken)
+		if payload.BearerToken != nil {
+			cred := *payload.BearerToken
+			if index := strings.IndexByte(string(cred), ' '); index >= 0 {
+				// Remove authorization scheme prefix (e.g. "Bearer")
+				cred = cred[index+1:]
+				payload.BearerToken = &cred
+			}
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeGetItxMeetingAttachmentsError returns an encoder for errors returned
+// by the get-itx-meeting-attachments Meeting Service endpoint.
+func EncodeGetItxMeetingAttachmentsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(ctx context.Context, err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		var en goa.GoaErrorNamer
+		if !errors.As(v, &en) {
+			return encodeError(ctx, w, v)
+		}
+		switch en.GoaErrorName() {
+		case "BadRequest":
+			var res *meetingservice.BadRequestError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "Forbidden":
+			var res *meetingservice.ForbiddenError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsForbiddenResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusForbidden)
+			return enc.Encode(body)
+		case "InternalServerError":
+			var res *meetingservice.InternalServerError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		case "NotFound":
+			var res *meetingservice.NotFoundError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "ServiceUnavailable":
+			var res *meetingservice.ServiceUnavailableError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsServiceUnavailableResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return enc.Encode(body)
+		case "Unauthorized":
+			var res *meetingservice.UnauthorizedError
+			errors.As(v, &res)
+			enc := encoder(ctx, w)
+			var body any
+			if formatter != nil {
+				body = formatter(ctx, res)
+			} else {
+				body = NewGetItxMeetingAttachmentsUnauthorizedResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.GoaErrorName())
+			w.WriteHeader(http.StatusUnauthorized)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeCreateItxMeetingAttachmentResponse returns an encoder for responses
 // returned by the Meeting Service create-itx-meeting-attachment endpoint.
 func EncodeCreateItxMeetingAttachmentResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, any) error {
@@ -6820,10 +6976,10 @@ func marshalMeetingserviceRecurrenceToRecurrenceResponseBody(v *meetingservice.R
 	return res
 }
 
-// marshalMeetingserviceITXUserToITXUserResponseBody builds a value of type
-// *ITXUserResponseBody from a value of type *meetingservice.ITXUser.
-func marshalMeetingserviceITXUserToITXUserResponseBody(v *meetingservice.ITXUser) *ITXUserResponseBody {
-	res := &ITXUserResponseBody{
+// marshalMeetingserviceITXUserToITXUser builds a value of type *ITXUser from a
+// value of type *meetingservice.ITXUser.
+func marshalMeetingserviceITXUserToITXUser(v *meetingservice.ITXUser) *ITXUser {
+	res := &ITXUser{
 		Username:       v.Username,
 		Name:           v.Name,
 		Email:          v.Email,
@@ -6941,6 +7097,43 @@ func marshalMeetingserviceParticipantSessionToParticipantSessionResponseBody(v *
 		JoinTime:        v.JoinTime,
 		LeaveTime:       v.LeaveTime,
 		LeaveReason:     v.LeaveReason,
+	}
+
+	return res
+}
+
+// marshalMeetingserviceITXMeetingAttachmentToITXMeetingAttachmentResponse
+// builds a value of type *ITXMeetingAttachmentResponse from a value of type
+// *meetingservice.ITXMeetingAttachment.
+func marshalMeetingserviceITXMeetingAttachmentToITXMeetingAttachmentResponse(v *meetingservice.ITXMeetingAttachment) *ITXMeetingAttachmentResponse {
+	res := &ITXMeetingAttachmentResponse{
+		UID:              v.UID,
+		MeetingID:        v.MeetingID,
+		OccurrenceID:     v.OccurrenceID,
+		Type:             v.Type,
+		Source:           v.Source,
+		Category:         v.Category,
+		Link:             v.Link,
+		Name:             v.Name,
+		Description:      v.Description,
+		FileName:         v.FileName,
+		FileSize:         v.FileSize,
+		FileURL:          v.FileURL,
+		FileUploaded:     v.FileUploaded,
+		FileUploadStatus: v.FileUploadStatus,
+		FileContentType:  v.FileContentType,
+		CreatedAt:        v.CreatedAt,
+		UpdatedAt:        v.UpdatedAt,
+		FileUploadedAt:   v.FileUploadedAt,
+	}
+	if v.CreatedBy != nil {
+		res.CreatedBy = marshalMeetingserviceITXUserToITXUser(v.CreatedBy)
+	}
+	if v.UpdatedBy != nil {
+		res.UpdatedBy = marshalMeetingserviceITXUserToITXUser(v.UpdatedBy)
+	}
+	if v.FileUploadedBy != nil {
+		res.FileUploadedBy = marshalMeetingserviceITXUserToITXUser(v.FileUploadedBy)
 	}
 
 	return res

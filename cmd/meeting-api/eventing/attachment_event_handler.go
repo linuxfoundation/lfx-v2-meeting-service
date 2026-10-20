@@ -23,6 +23,7 @@ import (
 type attachmentDBRaw struct {
 	ID               string                `json:"id"`
 	MeetingID        string                `json:"meeting_id"`
+	OccurrenceID     string                `json:"occurrence_id"`
 	Type             string                `json:"type"`
 	Category         string                `json:"category"`
 	Link             string                `json:"link"`
@@ -213,6 +214,7 @@ func convertMapToMeetingAttachmentData(v1Data map[string]interface{}) (*models.M
 	return &models.MeetingAttachmentEventData{
 		UID:              tmp.ID,
 		MeetingID:        tmp.MeetingID,
+		OccurrenceID:     tmp.OccurrenceID,
 		Type:             tmp.Type,
 		Category:         tmp.Category,
 		Link:             tmp.Link,

@@ -22,9 +22,10 @@ import (
 // ConvertGoaToITXCreateMeetingAttachment converts Goa payload to ITX request
 func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMeetingAttachmentPayload) *itx.CreateMeetingAttachmentRequest {
 	req := &itx.CreateMeetingAttachmentRequest{
-		Type:     payload.Type,
-		Category: payload.Category,
-		Name:     payload.Name,
+		OccurrenceID: utils.StringValue(payload.OccurrenceID),
+		Type:         payload.Type,
+		Category:     payload.Category,
+		Name:         payload.Name,
 	}
 
 	if payload.Link != nil {
@@ -40,10 +41,13 @@ func ConvertGoaToITXCreateMeetingAttachment(payload *meetingservice.CreateItxMee
 
 // ConvertGoaToITXUpdateMeetingAttachment converts Goa payload to ITX request
 func ConvertGoaToITXUpdateMeetingAttachment(payload *meetingservice.UpdateItxMeetingAttachmentPayload) *itx.UpdateMeetingAttachmentRequest {
+	// ITX replaces the occurrence scope on every update, so an absent occurrence_id is passed through
+	// as empty and makes the attachment apply to all occurrences.
 	req := &itx.UpdateMeetingAttachmentRequest{
-		Type:     payload.Type,
-		Category: payload.Category,
-		Name:     payload.Name,
+		OccurrenceID: utils.StringValue(payload.OccurrenceID),
+		Type:         payload.Type,
+		Category:     payload.Category,
+		Name:         payload.Name,
 	}
 
 	if payload.Link != nil {
@@ -60,9 +64,10 @@ func ConvertGoaToITXUpdateMeetingAttachment(payload *meetingservice.UpdateItxMee
 // ConvertGoaToITXCreateMeetingAttachmentPresign converts Goa payload to ITX request
 func ConvertGoaToITXCreateMeetingAttachmentPresign(payload *meetingservice.CreateItxMeetingAttachmentPresignPayload) *itx.CreateAttachmentPresignRequest {
 	req := &itx.CreateAttachmentPresignRequest{
-		Name:     payload.Name,
-		FileSize: payload.FileSize,
-		FileType: payload.FileType,
+		OccurrenceID: utils.StringValue(payload.OccurrenceID),
+		Name:         payload.Name,
+		FileSize:     payload.FileSize,
+		FileType:     payload.FileType,
 	}
 
 	if payload.Description != nil {
@@ -76,11 +81,22 @@ func ConvertGoaToITXCreateMeetingAttachmentPresign(payload *meetingservice.Creat
 	return req
 }
 
+// ConvertITXMeetingAttachmentsToGoa converts a list of ITX attachments to Goa types. A nil or empty list
+// becomes an empty (non-nil) slice so the response is a JSON array rather than null.
+func ConvertITXMeetingAttachmentsToGoa(resp []itx.MeetingAttachment) []*meetingservice.ITXMeetingAttachment {
+	result := make([]*meetingservice.ITXMeetingAttachment, 0, len(resp))
+	for i := range resp {
+		result = append(result, ConvertITXMeetingAttachmentToGoa(&resp[i]))
+	}
+	return result
+}
+
 // ConvertITXMeetingAttachmentToGoa converts ITX response to Goa type
 func ConvertITXMeetingAttachmentToGoa(resp *itx.MeetingAttachment) *meetingservice.ITXMeetingAttachment {
 	result := &meetingservice.ITXMeetingAttachment{
 		UID:              resp.ID,
 		MeetingID:        resp.MeetingID,
+		OccurrenceID:     utils.StringPtrOmitEmpty(resp.OccurrenceID),
 		Type:             resp.Type,
 		Source:           utils.StringPtrOmitEmpty(resp.Source),
 		Category:         resp.Category,
@@ -118,6 +134,7 @@ func ConvertITXMeetingAttachmentPresignToGoa(resp *itx.MeetingAttachmentPresignR
 	result := &meetingservice.ITXMeetingAttachmentPresignResponse{
 		UID:              resp.ID,
 		MeetingID:        resp.MeetingID,
+		OccurrenceID:     utils.StringPtrOmitEmpty(resp.OccurrenceID),
 		FileURL:          resp.FileURL, // Required field
 		Type:             utils.StringPtrOmitEmpty(resp.Type),
 		Category:         utils.StringPtrOmitEmpty(resp.Category),

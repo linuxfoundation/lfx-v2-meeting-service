@@ -1966,6 +1966,50 @@ func BuildDeleteItxPastMeetingParticipantPayload(meetingServiceDeleteItxPastMeet
 	return v, nil
 }
 
+// BuildGetItxMeetingAttachmentsPayload builds the payload for the Meeting
+// Service get-itx-meeting-attachments endpoint from CLI flags.
+func BuildGetItxMeetingAttachmentsPayload(meetingServiceGetItxMeetingAttachmentsMeetingID *string, meetingServiceGetItxMeetingAttachmentsVersion *string, meetingServiceGetItxMeetingAttachmentsOccurrenceID *string, meetingServiceGetItxMeetingAttachmentsBearerToken *string) (*meetingservice.GetItxMeetingAttachmentsPayload, error) {
+	var err error
+	var meetingID string
+	{
+		if meetingServiceGetItxMeetingAttachmentsMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceGetItxMeetingAttachmentsMeetingID
+	}
+	var version *string
+	{
+		if meetingServiceGetItxMeetingAttachmentsVersion != nil {
+			version = meetingServiceGetItxMeetingAttachmentsVersion
+			if !(*meetingServiceGetItxMeetingAttachmentsVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceGetItxMeetingAttachmentsVersion, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var occurrenceID *string
+	{
+		if meetingServiceGetItxMeetingAttachmentsOccurrenceID != nil {
+			occurrenceID = meetingServiceGetItxMeetingAttachmentsOccurrenceID
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceGetItxMeetingAttachmentsBearerToken != nil {
+			bearerToken = meetingServiceGetItxMeetingAttachmentsBearerToken
+		}
+	}
+	v := &meetingservice.GetItxMeetingAttachmentsPayload{}
+	v.MeetingID = meetingID
+	v.Version = version
+	v.OccurrenceID = occurrenceID
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildCreateItxMeetingAttachmentPayload builds the payload for the Meeting
 // Service create-itx-meeting-attachment endpoint from CLI flags.
 func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttachmentBody *string, meetingServiceCreateItxMeetingAttachmentMeetingID *string, meetingServiceCreateItxMeetingAttachmentVersion *string, meetingServiceCreateItxMeetingAttachmentBearerToken *string) (*meetingservice.CreateItxMeetingAttachmentPayload, error) {
@@ -1977,7 +2021,7 @@ func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttach
 		}
 		err = json.Unmarshal([]byte(*meetingServiceCreateItxMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Et ducimus repudiandae velit.\",\n      \"link\": \"Quibusdam libero delectus deleniti aliquid quis.\",\n      \"name\": \"je\",\n      \"type\": \"link\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Meeting Minutes\",\n      \"description\": \"Et ducimus repudiandae velit.\",\n      \"link\": \"Quibusdam libero delectus deleniti aliquid quis.\",\n      \"name\": \"je\",\n      \"occurrence_id\": \"1788000000\",\n      \"type\": \"link\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -2018,11 +2062,12 @@ func BuildCreateItxMeetingAttachmentPayload(meetingServiceCreateItxMeetingAttach
 		}
 	}
 	v := &meetingservice.CreateItxMeetingAttachmentPayload{
-		Type:        body.Type,
-		Category:    body.Category,
-		Link:        body.Link,
-		Name:        body.Name,
-		Description: body.Description,
+		OccurrenceID: body.OccurrenceID,
+		Type:         body.Type,
+		Category:     body.Category,
+		Link:         body.Link,
+		Name:         body.Name,
+		Description:  body.Description,
 	}
 	v.MeetingID = meetingID
 	v.Version = version
@@ -2091,7 +2136,7 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 		}
 		err = json.Unmarshal([]byte(*meetingServiceUpdateItxMeetingAttachmentBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Quisquam facere sit accusamus commodi.\",\n      \"link\": \"Voluptatem ipsam totam ut qui alias.\",\n      \"name\": \"Harum est officia maxime nesciunt perferendis harum.\",\n      \"type\": \"link\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Quisquam facere sit accusamus commodi.\",\n      \"link\": \"Voluptatem ipsam totam ut qui alias.\",\n      \"name\": \"Harum est officia maxime nesciunt perferendis harum.\",\n      \"occurrence_id\": \"1788000000\",\n      \"type\": \"link\"\n   }'")
 		}
 		if !(body.Type == "file" || body.Type == "link") {
 			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", body.Type, []any{"file", "link"}))
@@ -2140,11 +2185,12 @@ func BuildUpdateItxMeetingAttachmentPayload(meetingServiceUpdateItxMeetingAttach
 		}
 	}
 	v := &meetingservice.UpdateItxMeetingAttachmentPayload{
-		Type:        body.Type,
-		Category:    body.Category,
-		Link:        body.Link,
-		Name:        body.Name,
-		Description: body.Description,
+		OccurrenceID: body.OccurrenceID,
+		Type:         body.Type,
+		Category:     body.Category,
+		Link:         body.Link,
+		Name:         body.Name,
+		Description:  body.Description,
 	}
 	v.MeetingID = meetingID
 	v.AttachmentID = attachmentID
@@ -2215,7 +2261,7 @@ func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetin
 		}
 		err = json.Unmarshal([]byte(*meetingServiceCreateItxMeetingAttachmentPresignBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Maxime quo occaecati soluta labore quas.\",\n      \"file_size\": 6380598486217411739,\n      \"file_type\": \"A similique.\",\n      \"name\": \"Laborum necessitatibus.\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"category\": \"Notes\",\n      \"description\": \"Maxime quo occaecati soluta labore quas.\",\n      \"file_size\": 6380598486217411739,\n      \"file_type\": \"A similique.\",\n      \"name\": \"Laborum necessitatibus.\",\n      \"occurrence_id\": \"1788000000\"\n   }'")
 		}
 		if body.Category != nil {
 			if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
@@ -2252,11 +2298,12 @@ func BuildCreateItxMeetingAttachmentPresignPayload(meetingServiceCreateItxMeetin
 		}
 	}
 	v := &meetingservice.CreateItxMeetingAttachmentPresignPayload{
-		Name:        body.Name,
-		Description: body.Description,
-		Category:    body.Category,
-		FileSize:    body.FileSize,
-		FileType:    body.FileType,
+		OccurrenceID: body.OccurrenceID,
+		Name:         body.Name,
+		Description:  body.Description,
+		Category:     body.Category,
+		FileSize:     body.FileSize,
+		FileType:     body.FileType,
 	}
 	v.MeetingID = meetingID
 	v.Version = version

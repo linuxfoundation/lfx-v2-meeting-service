@@ -400,6 +400,83 @@ paths:
             security:
                 - jwt_header_Authorization: []
     /itx/meetings/{meeting_id}/attachments:
+        get:
+            tags:
+                - Meeting Service
+            summary: get-itx-meeting-attachments Meeting Service
+            description: 'List the attachments of a meeting through ITX API proxy. With occurrence_id, returns the attachments that apply to that occurrence: the ones scoped to it plus the ones that apply to all occurrences'
+            operationId: Meeting Service#get-itx-meeting-attachments
+            parameters:
+                - name: v
+                  in: query
+                  description: Version of the API
+                  required: false
+                  type: string
+                  enum:
+                    - "1"
+                - name: meeting_id
+                  in: path
+                  description: Meeting ID
+                  required: true
+                  type: string
+                - name: occurrence_id
+                  in: query
+                  description: Only return the attachments that apply to this occurrence (its start time as a unix timestamp). Without it, every attachment on the meeting is returned
+                  required: false
+                  type: string
+            responses:
+                "200":
+                    description: OK response.
+                    schema:
+                        type: array
+                        items:
+                            $ref: '#/definitions/ITXMeetingAttachment'
+                "400":
+                    description: 'BadRequest: Bad request'
+                    schema:
+                        $ref: '#/definitions/BadRequestError'
+                        required:
+                            - code
+                            - message
+                "401":
+                    description: 'Unauthorized: Unauthorized'
+                    schema:
+                        $ref: '#/definitions/UnauthorizedError'
+                        required:
+                            - code
+                            - message
+                "403":
+                    description: 'Forbidden: Forbidden'
+                    schema:
+                        $ref: '#/definitions/ForbiddenError'
+                        required:
+                            - code
+                            - message
+                "404":
+                    description: 'NotFound: Meeting not found'
+                    schema:
+                        $ref: '#/definitions/NotFoundError'
+                        required:
+                            - code
+                            - message
+                "500":
+                    description: 'InternalServerError: Internal server error'
+                    schema:
+                        $ref: '#/definitions/InternalServerError'
+                        required:
+                            - code
+                            - message
+                "503":
+                    description: 'ServiceUnavailable: Service unavailable'
+                    schema:
+                        $ref: '#/definitions/ServiceUnavailableError'
+                        required:
+                            - code
+                            - message
+            schemes:
+                - http
+            security:
+                - jwt_header_Authorization: []
         post:
             tags:
                 - Meeting Service
@@ -3391,26 +3468,26 @@ definitions:
             created_at:
                 type: string
                 description: ISO 8601 timestamp
-                example: "1995-11-11T23:09:13Z"
+                example: "2003-03-27T16:05:15Z"
                 format: date-time
             created_by:
                 $ref: '#/definitions/ITXUser'
             description:
                 type: string
                 description: Optional description of the attachment
-                example: Perspiciatis accusamus.
+                example: Rerum dicta ea in iusto molestias officia.
             file_content_type:
                 type: string
                 description: MIME type of the file
-                example: Voluptates eius omnis dolor nobis nihil officia.
+                example: Beatae ut commodi error rerum.
             file_name:
                 type: string
                 description: File name (for file-type attachments)
-                example: Quod mollitia temporibus ducimus consequatur ex.
+                example: Commodi nesciunt architecto nostrum.
             file_size:
                 type: integer
                 description: File size in bytes (for file-type attachments)
-                example: 5970225172501659216
+                example: 7134420285742268451
                 format: int64
             file_upload_status:
                 type: string
@@ -3423,30 +3500,34 @@ definitions:
             file_uploaded:
                 type: boolean
                 description: Whether the file has been uploaded to S3
-                example: true
+                example: false
             file_uploaded_at:
                 type: string
                 description: ISO 8601 timestamp when file was uploaded
-                example: "1984-02-10T01:15:09Z"
+                example: "1970-12-22T21:28:51Z"
                 format: date-time
             file_uploaded_by:
                 $ref: '#/definitions/ITXUser'
             file_url:
                 type: string
                 description: S3 key path (for file-type attachments)
-                example: Voluptatem non repellat ipsa veniam.
+                example: Sapiente ea.
             link:
                 type: string
                 description: External link URL (for link-type attachments)
-                example: Dolorem vero asperiores qui dolor.
+                example: Accusantium molestiae sit culpa culpa.
             meeting_id:
                 type: string
                 description: Meeting ID
-                example: In nemo blanditiis sint eos voluptas.
+                example: Assumenda amet assumenda ex eaque temporibus minima.
             name:
                 type: string
                 description: Attachment name or file name
-                example: Dolores aspernatur reiciendis ipsum rerum.
+                example: Non corrupti.
+            occurrence_id:
+                type: string
+                description: Occurrence this attachment is scoped to (the occurrence start time as a unix timestamp). Omitted when the attachment applies to all occurrences of the meeting
+                example: "1788000000"
             source:
                 type: string
                 description: Attachment source origin
@@ -3469,39 +3550,40 @@ definitions:
             updated_at:
                 type: string
                 description: ISO 8601 timestamp
-                example: "2006-02-28T23:33:17Z"
+                example: "1983-10-23T06:13:28Z"
                 format: date-time
             updated_by:
                 $ref: '#/definitions/ITXUser'
         description: Meeting attachment from ITX service
         example:
             category: Presentation
-            created_at: "1995-11-11T23:09:13Z"
+            created_at: "2003-03-27T16:05:15Z"
             created_by:
                 email: john.doe@example.com
                 name: John Doe
                 profile_picture: https://example.com/avatar.jpg
                 username: jdoe
-            description: Perspiciatis accusamus.
-            file_content_type: Voluptates eius omnis dolor nobis nihil officia.
-            file_name: Quod mollitia temporibus ducimus consequatur ex.
-            file_size: 5970225172501659216
+            description: Rerum dicta ea in iusto molestias officia.
+            file_content_type: Beatae ut commodi error rerum.
+            file_name: Commodi nesciunt architecto nostrum.
+            file_size: 7134420285742268451
             file_upload_status: completed
-            file_uploaded: true
-            file_uploaded_at: "1984-02-10T01:15:09Z"
+            file_uploaded: false
+            file_uploaded_at: "1970-12-22T21:28:51Z"
             file_uploaded_by:
                 email: john.doe@example.com
                 name: John Doe
                 profile_picture: https://example.com/avatar.jpg
                 username: jdoe
-            file_url: Voluptatem non repellat ipsa veniam.
-            link: Dolorem vero asperiores qui dolor.
-            meeting_id: In nemo blanditiis sint eos voluptas.
-            name: Dolores aspernatur reiciendis ipsum rerum.
+            file_url: Sapiente ea.
+            link: Accusantium molestiae sit culpa culpa.
+            meeting_id: Assumenda amet assumenda ex eaque temporibus minima.
+            name: Non corrupti.
+            occurrence_id: "1788000000"
             source: api
             type: file
             uid: 7cad5a8d-19d0-41a4-81a6-043453daf9ee
-            updated_at: "2006-02-28T23:33:17Z"
+            updated_at: "1983-10-23T06:13:28Z"
             updated_by:
                 email: john.doe@example.com
                 name: John Doe
@@ -3561,6 +3643,10 @@ definitions:
                 type: string
                 description: File name
                 example: Possimus perferendis qui voluptatibus.
+            occurrence_id:
+                type: string
+                description: Occurrence this attachment is scoped to (unix timestamp). Omitted when the attachment applies to all occurrences
+                example: Dolorem laboriosam laborum et voluptate.
             type:
                 type: string
                 description: Attachment type (always 'file' for presign)
@@ -3594,6 +3680,7 @@ definitions:
             file_url: Praesentium ut ab.
             meeting_id: Ut dicta et.
             name: Possimus perferendis qui voluptatibus.
+            occurrence_id: Dolorem laboriosam laborum et voluptate.
             type: Error autem ut pariatur molestiae assumenda quia.
             uid: 2040f587-8ccd-42c7-bfb8-33f34827949f
             updated_at: "1980-09-04T14:04:50Z"
@@ -4875,12 +4962,17 @@ definitions:
                 type: string
                 description: File name
                 example: Laborum necessitatibus.
+            occurrence_id:
+                type: string
+                description: Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences
+                example: "1788000000"
         example:
             category: Notes
             description: Maxime quo occaecati soluta labore quas.
             file_size: 6380598486217411739
             file_type: A similique.
             name: Laborum necessitatibus.
+            occurrence_id: "1788000000"
         required:
             - name
             - file_size
@@ -4911,6 +5003,10 @@ definitions:
                 description: Attachment name
                 example: je
                 minLength: 1
+            occurrence_id:
+                type: string
+                description: Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences
+                example: "1788000000"
             type:
                 type: string
                 description: Attachment type
@@ -4923,6 +5019,7 @@ definitions:
             description: Et ducimus repudiandae velit.
             link: Quibusdam libero delectus deleniti aliquid quis.
             name: je
+            occurrence_id: "1788000000"
             type: link
         required:
             - type
@@ -5711,6 +5808,10 @@ definitions:
                 type: string
                 description: Attachment name
                 example: Harum est officia maxime nesciunt perferendis harum.
+            occurrence_id:
+                type: string
+                description: Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences. The scope is replaced on every update, so omitting it changes a scoped attachment back to all occurrences
+                example: "1788000000"
             type:
                 type: string
                 description: Attachment type
@@ -5723,6 +5824,7 @@ definitions:
             description: Quisquam facere sit accusamus commodi.
             link: Voluptatem ipsam totam ut qui alias.
             name: Harum est officia maxime nesciunt perferendis harum.
+            occurrence_id: "1788000000"
             type: link
         required:
             - type

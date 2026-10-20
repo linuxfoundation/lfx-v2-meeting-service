@@ -1465,6 +1465,46 @@ var _ = Service("Meeting Service", func() {
 	// ITX Meeting Attachment Methods
 	// ============================================================================
 
+	Method("get-itx-meeting-attachments", func() {
+		Description("List the attachments of a meeting through ITX API proxy. With occurrence_id, returns the attachments that apply to that occurrence: the ones scoped to it plus the ones that apply to all occurrences")
+
+		Security(JWTAuth)
+
+		Payload(func() {
+			BearerTokenAttribute()
+			VersionAttribute()
+			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("occurrence_id", String, "Only return the attachments that apply to this occurrence (its start time as a unix timestamp). Without it, every attachment on the meeting is returned", func() {
+				Example("1788000000")
+			})
+			Required("meeting_id")
+		})
+
+		Result(ArrayOf(ITXMeetingAttachment))
+
+		Error("BadRequest", BadRequestError, "Bad request")
+		Error("Unauthorized", UnauthorizedError, "Unauthorized")
+		Error("Forbidden", ForbiddenError, "Forbidden")
+		Error("NotFound", NotFoundError, "Meeting not found")
+		Error("InternalServerError", InternalServerError, "Internal server error")
+		Error("ServiceUnavailable", ServiceUnavailableError, "Service unavailable")
+
+		HTTP(func() {
+			GET("/itx/meetings/{meeting_id}/attachments")
+			Param("version:v")
+			Param("meeting_id")
+			Param("occurrence_id")
+			Header("bearer_token:Authorization")
+			Response(StatusOK)
+			Response("BadRequest", StatusBadRequest)
+			Response("Unauthorized", StatusUnauthorized)
+			Response("Forbidden", StatusForbidden)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response("ServiceUnavailable", StatusServiceUnavailable)
+		})
+	})
+
 	Method("create-itx-meeting-attachment", func() {
 		Description("Create a meeting attachment through ITX API proxy")
 
@@ -1475,6 +1515,9 @@ var _ = Service("Meeting Service", func() {
 			VersionAttribute()
 			Attribute("meeting_id", String, "Meeting ID", func() {
 				Example("1234567890")
+			})
+			Attribute("occurrence_id", String, "Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences", func() {
+				Example("1788000000")
 			})
 			Attribute("type", String, "Attachment type", func() {
 				Enum("file", "link")
@@ -1566,6 +1609,9 @@ var _ = Service("Meeting Service", func() {
 			Attribute("attachment_id", String, "Attachment ID", func() {
 				Format(FormatUUID)
 			})
+			Attribute("occurrence_id", String, "Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences. The scope is replaced on every update, so omitting it changes a scoped attachment back to all occurrences", func() {
+				Example("1788000000")
+			})
 			Attribute("type", String, "Attachment type", func() {
 				Enum("file", "link")
 			})
@@ -1648,6 +1694,9 @@ var _ = Service("Meeting Service", func() {
 			BearerTokenAttribute()
 			VersionAttribute()
 			Attribute("meeting_id", String, "Meeting ID")
+			Attribute("occurrence_id", String, "Scope the attachment to a single occurrence of a recurring meeting by passing the occurrence ID (its start time as a unix timestamp). It must be an upcoming, non-cancelled occurrence. Omit it to apply the attachment to all occurrences", func() {
+				Example("1788000000")
+			})
 			Attribute("name", String, "File name")
 			Attribute("description", String, "Optional description")
 			Attribute("category", String, "Attachment category", func() {

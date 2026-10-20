@@ -74,6 +74,7 @@ type ITXPastMeetingParticipantClient interface {
 
 // ITXMeetingAttachmentClient defines the interface for ITX meeting attachment operations
 type ITXMeetingAttachmentClient interface {
+	ListMeetingAttachments(ctx context.Context, meetingID, occurrenceID string) ([]itx.MeetingAttachment, error)
 	CreateMeetingAttachment(ctx context.Context, meetingID string, req *itx.CreateMeetingAttachmentRequest) (*itx.MeetingAttachment, error)
 	GetMeetingAttachment(ctx context.Context, meetingID, attachmentID string) (*itx.MeetingAttachment, error)
 	UpdateMeetingAttachment(ctx context.Context, meetingID, attachmentID string, req *itx.UpdateMeetingAttachmentRequest) error

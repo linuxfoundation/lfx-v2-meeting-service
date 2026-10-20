@@ -24,18 +24,20 @@ func (c CreatedUpdatedBy) LogValue() slog.Value {
 
 // CreateAttachmentPresignRequest represents the request to generate a presigned URL for attachment upload
 type CreateAttachmentPresignRequest struct {
-	Name        string            `json:"name"`                  // File name (required)
-	Description string            `json:"description,omitempty"` // Optional description
-	Category    string            `json:"category,omitempty"`    // Category: "Meeting Minutes", "Notes", "Presentation", "Other"
-	FileSize    int64             `json:"file_size"`             // File size in bytes (required)
-	FileType    string            `json:"file_type"`             // MIME type (required)
-	CreatedBy   *CreatedUpdatedBy `json:"created_by"`            // User who created the attachment (required)
+	OccurrenceID string            `json:"occurrence_id,omitempty"` // Meeting attachments only: single occurrence to scope the attachment to; omit for all occurrences
+	Name         string            `json:"name"`                    // File name (required)
+	Description  string            `json:"description,omitempty"`   // Optional description
+	Category     string            `json:"category,omitempty"`      // Category: "Meeting Minutes", "Notes", "Presentation", "Other"
+	FileSize     int64             `json:"file_size"`               // File size in bytes (required)
+	FileType     string            `json:"file_type"`               // MIME type (required)
+	CreatedBy    *CreatedUpdatedBy `json:"created_by"`              // User who created the attachment (required)
 }
 
 // MeetingAttachmentPresignResponse represents the response from presigned URL generation for meeting attachments
 type MeetingAttachmentPresignResponse struct {
 	ID               string            `json:"id"`                          // Attachment ID (UUID)
 	MeetingID        string            `json:"meeting_id"`                  // Zoom meeting ID
+	OccurrenceID     string            `json:"occurrence_id,omitempty"`     // Single occurrence the attachment is scoped to; omitted for all occurrences
 	Type             string            `json:"type"`                        // Attachment type ("file" or "link")
 	Category         string            `json:"category"`                    // Attachment category
 	Name             string            `json:"name"`                        // File name
@@ -80,6 +82,7 @@ type AttachmentDownloadResponse struct {
 type MeetingAttachment struct {
 	ID               string            `json:"id"`                           // Attachment ID (UUID)
 	MeetingID        string            `json:"meeting_id"`                   // Meeting ID
+	OccurrenceID     string            `json:"occurrence_id,omitempty"`      // Single occurrence the attachment is scoped to (unix timestamp); omitted for all occurrences
 	Type             string            `json:"type"`                         // "file" or "link"
 	Source           string            `json:"source,omitempty"`             // "api" or "description"
 	Category         string            `json:"category"`                     // "Meeting Minutes", "Notes", "Presentation", "Other"
@@ -102,22 +105,24 @@ type MeetingAttachment struct {
 
 // CreateMeetingAttachmentRequest represents the request to create a meeting attachment
 type CreateMeetingAttachmentRequest struct {
-	Type        string            `json:"type"`                  // Required: "file" or "link"
-	Category    string            `json:"category"`              // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
-	Link        string            `json:"link,omitempty"`        // Required if type is "link"
-	Name        string            `json:"name"`                  // Required: Attachment name
-	Description string            `json:"description,omitempty"` // Optional description
-	CreatedBy   *CreatedUpdatedBy `json:"created_by"`            // Required: User who created the attachment
+	OccurrenceID string            `json:"occurrence_id,omitempty"` // Optional: scope to a single occurrence (unix timestamp); omit for all occurrences
+	Type         string            `json:"type"`                    // Required: "file" or "link"
+	Category     string            `json:"category"`                // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
+	Link         string            `json:"link,omitempty"`          // Required if type is "link"
+	Name         string            `json:"name"`                    // Required: Attachment name
+	Description  string            `json:"description,omitempty"`   // Optional description
+	CreatedBy    *CreatedUpdatedBy `json:"created_by"`              // Required: User who created the attachment
 }
 
 // UpdateMeetingAttachmentRequest represents the request to update a meeting attachment
 type UpdateMeetingAttachmentRequest struct {
-	Type        string            `json:"type"`                  // Required: "file" or "link"
-	Category    string            `json:"category"`              // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
-	Link        string            `json:"link,omitempty"`        // Required if type is "link"
-	Name        string            `json:"name"`                  // Required: Attachment name
-	Description string            `json:"description,omitempty"` // Optional description
-	UpdatedBy   *CreatedUpdatedBy `json:"updated_by"`            // Required: User who updated the attachment
+	OccurrenceID string            `json:"occurrence_id,omitempty"` // Occurrence scope; replaced on every update, so omitting it makes the attachment apply to all occurrences
+	Type         string            `json:"type"`                    // Required: "file" or "link"
+	Category     string            `json:"category"`                // Required: "Meeting Minutes", "Notes", "Presentation", "Other"
+	Link         string            `json:"link,omitempty"`          // Required if type is "link"
+	Name         string            `json:"name"`                    // Required: Attachment name
+	Description  string            `json:"description,omitempty"`   // Optional description
+	UpdatedBy    *CreatedUpdatedBy `json:"updated_by"`              // Required: User who updated the attachment
 }
 
 // PastMeetingAttachment represents a past meeting attachment

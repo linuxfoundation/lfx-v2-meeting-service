@@ -92,6 +92,10 @@ type Service interface {
 	// Delete a past meeting participant through ITX API proxy - deletes invitee
 	// and/or attendee records as needed
 	DeleteItxPastMeetingParticipant(context.Context, *DeleteItxPastMeetingParticipantPayload) (err error)
+	// List the attachments of a meeting through ITX API proxy. With occurrence_id,
+	// returns the attachments that apply to that occurrence: the ones scoped to it
+	// plus the ones that apply to all occurrences
+	GetItxMeetingAttachments(context.Context, *GetItxMeetingAttachmentsPayload) (res []*ITXMeetingAttachment, err error)
 	// Create a meeting attachment through ITX API proxy
 	CreateItxMeetingAttachment(context.Context, *CreateItxMeetingAttachmentPayload) (res *ITXMeetingAttachment, err error)
 	// Get a meeting attachment through ITX API proxy
@@ -140,7 +144,7 @@ const ServiceName = "Meeting Service"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [43]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "self-unregister-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "get-itx-past-meeting-chat", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
+var MethodNames = [44]string{"readyz", "livez", "create-itx-meeting", "get-itx-meeting", "delete-itx-meeting", "update-itx-meeting", "get-itx-meeting-count", "create-itx-registrant", "self-register-itx-meeting", "self-unregister-itx-meeting", "get-itx-registrant", "update-itx-registrant", "delete-itx-registrant", "get-itx-join-link", "get-itx-registrant-ics", "resend-itx-registrant-invitation", "resend-itx-meeting-invitations", "register-itx-committee-members", "update-itx-occurrence", "delete-itx-occurrence", "submit-itx-meeting-response", "create-itx-past-meeting", "get-itx-past-meeting", "delete-itx-past-meeting", "update-itx-past-meeting", "get-itx-past-meeting-summary", "update-itx-past-meeting-summary", "get-itx-past-meeting-chat", "create-itx-past-meeting-participant", "update-itx-past-meeting-participant", "delete-itx-past-meeting-participant", "get-itx-meeting-attachments", "create-itx-meeting-attachment", "get-itx-meeting-attachment", "update-itx-meeting-attachment", "delete-itx-meeting-attachment", "create-itx-meeting-attachment-presign", "get-itx-meeting-attachment-download", "create-itx-past-meeting-attachment", "get-itx-past-meeting-attachment", "update-itx-past-meeting-attachment", "delete-itx-past-meeting-attachment", "create-itx-past-meeting-attachment-presign", "get-itx-past-meeting-attachment-download"}
 
 // Voting status filter for committee members
 type AllowedVotingStatus string
@@ -176,6 +180,11 @@ type CreateItxMeetingAttachmentPayload struct {
 	Version *string
 	// Meeting ID
 	MeetingID string
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences
+	OccurrenceID *string
 	// Attachment type
 	Type string
 	// Attachment category
@@ -197,6 +206,11 @@ type CreateItxMeetingAttachmentPresignPayload struct {
 	Version *string
 	// Meeting ID
 	MeetingID string
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences
+	OccurrenceID *string
 	// File name
 	Name string
 	// Optional description
@@ -603,6 +617,20 @@ type GetItxMeetingAttachmentPayload struct {
 	AttachmentID string
 }
 
+// GetItxMeetingAttachmentsPayload is the payload type of the Meeting Service
+// service get-itx-meeting-attachments method.
+type GetItxMeetingAttachmentsPayload struct {
+	// JWT token issued by Heimdall
+	BearerToken *string
+	// Version of the API
+	Version *string
+	// Meeting ID
+	MeetingID string
+	// Only return the attachments that apply to this occurrence (its start time as
+	// a unix timestamp). Without it, every attachment on the meeting is returned
+	OccurrenceID *string
+}
+
 // GetItxMeetingCountPayload is the payload type of the Meeting Service service
 // get-itx-meeting-count method.
 type GetItxMeetingCountPayload struct {
@@ -730,6 +758,10 @@ type ITXMeetingAttachment struct {
 	UID string
 	// Meeting ID
 	MeetingID string
+	// Occurrence this attachment is scoped to (the occurrence start time as a unix
+	// timestamp). Omitted when the attachment applies to all occurrences of the
+	// meeting
+	OccurrenceID *string
 	// Attachment type
 	Type string
 	// Attachment source origin
@@ -775,6 +807,9 @@ type ITXMeetingAttachmentPresignResponse struct {
 	UID string
 	// Meeting ID
 	MeetingID string
+	// Occurrence this attachment is scoped to (unix timestamp). Omitted when the
+	// attachment applies to all occurrences
+	OccurrenceID *string
 	// Attachment type (always 'file' for presign)
 	Type *string
 	// Attachment category
@@ -1472,6 +1507,12 @@ type UpdateItxMeetingAttachmentPayload struct {
 	MeetingID string
 	// Attachment ID
 	AttachmentID string
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences. The scope is replaced on every update, so omitting it
+	// changes a scoped attachment back to all occurrences
+	OccurrenceID *string
 	// Attachment type
 	Type string
 	// Attachment category

@@ -455,7 +455,8 @@ Access the live docs when the service is running:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/itx/meetings/{meeting_id}/attachments` | POST | Create attachment |
+| `/itx/meetings/{meeting_id}/attachments` | GET | List attachments (optional `occurrence_id` filter) |
+| `/itx/meetings/{meeting_id}/attachments` | POST | Create attachment (optional `occurrence_id` scope) |
 | `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | GET | Get attachment metadata |
 | `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | PUT | Update attachment |
 | `/itx/meetings/{meeting_id}/attachments/{attachment_id}` | DELETE | Delete attachment |

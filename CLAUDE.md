@@ -707,6 +707,9 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 ### ITX Meeting Attachment Operations
 
+An attachment applies to all occurrences of a meeting or, through the optional `occurrence_id` body field, to one single occurrence (see [Occurrence scope](docs/api-contracts/itx-meeting-attachments-api.md#occurrence-scope)). A PUT replaces the scope, so omitting `occurrence_id` on update makes the attachment apply to all occurrences again.
+
+- `GET /itx/meetings/{meeting_id}/attachments` - List attachments (optional `occurrence_id` query returns that occurrence's attachments plus the series-wide ones)
 - `POST /itx/meetings/{meeting_id}/attachments` - Create attachment
 - `GET /itx/meetings/{meeting_id}/attachments/{attachment_id}` - Get attachment
 - `PUT /itx/meetings/{meeting_id}/attachments/{attachment_id}` - Update attachment

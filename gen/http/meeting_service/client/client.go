@@ -139,6 +139,10 @@ type Client struct {
 	// requests to the delete-itx-past-meeting-participant endpoint.
 	DeleteItxPastMeetingParticipantDoer goahttp.Doer
 
+	// GetItxMeetingAttachments Doer is the HTTP client used to make requests to
+	// the get-itx-meeting-attachments endpoint.
+	GetItxMeetingAttachmentsDoer goahttp.Doer
+
 	// CreateItxMeetingAttachment Doer is the HTTP client used to make requests to
 	// the create-itx-meeting-attachment endpoint.
 	CreateItxMeetingAttachmentDoer goahttp.Doer
@@ -239,6 +243,7 @@ func NewClient(
 		CreateItxPastMeetingParticipantDoer:       doer,
 		UpdateItxPastMeetingParticipantDoer:       doer,
 		DeleteItxPastMeetingParticipantDoer:       doer,
+		GetItxMeetingAttachmentsDoer:              doer,
 		CreateItxMeetingAttachmentDoer:            doer,
 		GetItxMeetingAttachmentDoer:               doer,
 		UpdateItxMeetingAttachmentDoer:            doer,
@@ -988,6 +993,30 @@ func (c *Client) DeleteItxPastMeetingParticipant() goa.Endpoint {
 		resp, err := c.DeleteItxPastMeetingParticipantDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "delete-itx-past-meeting-participant", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetItxMeetingAttachments returns an endpoint that makes HTTP requests to the
+// Meeting Service service get-itx-meeting-attachments server.
+func (c *Client) GetItxMeetingAttachments() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetItxMeetingAttachmentsRequest(c.encoder)
+		decodeResponse = DecodeGetItxMeetingAttachmentsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildGetItxMeetingAttachmentsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetItxMeetingAttachmentsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "get-itx-meeting-attachments", err)
 		}
 		return decodeResponse(resp)
 	}

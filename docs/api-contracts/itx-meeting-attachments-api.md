@@ -21,7 +21,38 @@ Shape (attachment endpoints use the reduced `{ username, name, email }` shape â€
 
 The name / email are resolved from the auth service (via a NATS lookup) using the JWT's `username` claim. If the lookup fails or NATS is unavailable, the proxy degrades gracefully to `{ username, email }` (email from the JWT claim) and never blocks the write. Prior to July 2026 the attachment endpoints only sent `{ username }`; the `name` / `email` enrichment was added to bring them in line with the meeting endpoints.
 
+## Occurrence scope
+
+An attachment applies either to **all occurrences** of a meeting or to **one single occurrence** of a recurring meeting. The scope is the optional `occurrence_id` field: the occurrence's start time as a unix timestamp string, the same ID used in `/itx/meetings/{meeting_id}/occurrences/{occurrence_id}`.
+
+- **Omitted** means all occurrences. This is the default, and every attachment created before this field existed behaves this way.
+- **Set** scopes the attachment to that occurrence only. It must be an upcoming, non-cancelled occurrence of a recurring meeting; otherwise ITX rejects the request with `400`. Non-recurring meetings have no occurrences, so they cannot be scoped.
+- `occurrence_id` is accepted on create, presign and update, and returned on every attachment response (omitted when series-wide).
+- **Update replaces the scope.** `PUT` is a full replacement, so omitting `occurrence_id` on an update changes a scoped attachment back to all occurrences. A client that edits other fields must send the current `occurrence_id` back to keep the attachment scoped.
+- Attachments created from the meeting description (`source: "description"`) always apply to all occurrences and cannot be scoped.
+- ITX keeps scoped attachments in step with the occurrence: if the occurrence is rescheduled the attachment follows it to the new `occurrence_id`, and if the occurrence is cancelled the attachment is deleted.
+
 ## Endpoints
+
+### List Meeting Attachments
+
+Lists the attachments of a meeting. With `occurrence_id`, returns the attachments that apply to that occurrence: the ones scoped to it plus the ones that apply to all occurrences. Without it, every attachment on the meeting is returned, including those scoped to other occurrences.
+
+**Proxy Endpoint**: `GET /itx/meetings/{meeting_id}/attachments`
+
+**ITX Endpoint**: `GET /v2/zoom/meetings/{meeting_id}/attachments`
+
+**Path Parameters**:
+- `meeting_id` (string, required): The Zoom meeting ID
+
+**Query Parameters**:
+- `occurrence_id` (string, optional): Only return the attachments that apply to this occurrence
+
+**Authorization**: Requires `viewer` permission on the meeting
+
+**Returns**: 200 with a JSON array of [Attachment Response](#attachment-response) objects (an empty array when there are none)
+
+---
 
 ### Create Meeting Attachment
 
@@ -123,6 +154,8 @@ Generates a presigned download URL for a file attachment.
 
 ### Create Attachment Request (Link Type)
 
+Every create, presign and update request accepts the optional `occurrence_id` field described in [Occurrence scope](#occurrence-scope), for example `"occurrence_id": "1788000000"`.
+
 For external URL references (Google Docs, SharePoint, etc.):
 
 **Proxy API**:
@@ -207,7 +240,7 @@ For file uploads using presigned URL flow:
 
 **ITX API**: Identical to the Proxy API request, plus a proxy-added `updated_by` field (same shape as `created_by` â€” see [Audit stamping](#audit-stamping)).
 
-All fields are optional - only include fields you want to update.
+All fields are optional - only include fields you want to update. The exception is `occurrence_id`, which is replaced on every update: omit it to make the attachment apply to all occurrences, or send it to scope the attachment to that occurrence (see [Occurrence scope](#occurrence-scope)).
 
 **Returns**: 204 No Content (no response body)
 
@@ -241,11 +274,14 @@ All fields are optional - only include fields you want to update.
 
 ### Attachment Response
 
+`occurrence_id` is present only when the attachment is scoped to a single occurrence; it is omitted for attachments that apply to all occurrences.
+
 **Proxy API**:
 ```json
 {
   "uid": "ea1e8536-a985-4cf5-b981-a170927a1d11",
   "meeting_id": "96365872728",
+  "occurrence_id": "1788000000",
   "type": "file",
   "category": "meeting_notes",
   "name": "Meeting Notes",
@@ -478,6 +514,8 @@ For file attachments, use this three-step process:
    - Same UUID value, different field name
 
 6. **Update Returns 204**: PUT endpoint returns 204 No Content with no response body
+
+7. **Occurrence Scope**: `occurrence_id` is passed through to ITX unchanged and is replaced on every update. See [Occurrence scope](#occurrence-scope)
 
 7. **File Size Limits**: Check with ITX service for maximum file size limits
 

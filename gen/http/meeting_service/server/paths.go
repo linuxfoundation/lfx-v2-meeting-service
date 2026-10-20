@@ -164,6 +164,11 @@ func DeleteItxPastMeetingParticipantMeetingServicePath(pastMeetingID string, par
 	return fmt.Sprintf("/itx/past_meetings/%v/participants/%v", pastMeetingID, participantID)
 }
 
+// GetItxMeetingAttachmentsMeetingServicePath returns the URL path to the Meeting Service service get-itx-meeting-attachments HTTP endpoint.
+func GetItxMeetingAttachmentsMeetingServicePath(meetingID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/attachments", meetingID)
+}
+
 // CreateItxMeetingAttachmentMeetingServicePath returns the URL path to the Meeting Service service create-itx-meeting-attachment HTTP endpoint.
 func CreateItxMeetingAttachmentMeetingServicePath(meetingID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/attachments", meetingID)

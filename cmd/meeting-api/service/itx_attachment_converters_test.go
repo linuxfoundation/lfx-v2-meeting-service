@@ -510,3 +510,80 @@ func TestConvertITXAttachmentDownloadToGoa(t *testing.T) {
 		assert.Equal(t, "https://s3.example.com/download?sig=abc", g.DownloadURL)
 	})
 }
+
+// ── Meeting attachment — occurrence scope ────────────────────────────────────
+
+func TestConvertMeetingAttachmentOccurrenceScope(t *testing.T) {
+	t.Run("create passes occurrence_id to ITX", func(t *testing.T) {
+		p := &meetingservice.CreateItxMeetingAttachmentPayload{
+			Type: "link", Category: "Notes", Name: "notes",
+			OccurrenceID: utils.StringPtrOmitEmpty("1788000000"),
+		}
+		assert.Equal(t, "1788000000", ConvertGoaToITXCreateMeetingAttachment(p).OccurrenceID)
+	})
+
+	t.Run("create without occurrence_id leaves the attachment series-wide", func(t *testing.T) {
+		p := &meetingservice.CreateItxMeetingAttachmentPayload{Type: "link", Category: "Notes", Name: "notes"}
+		assert.Empty(t, ConvertGoaToITXCreateMeetingAttachment(p).OccurrenceID)
+	})
+
+	t.Run("update passes occurrence_id to ITX", func(t *testing.T) {
+		p := &meetingservice.UpdateItxMeetingAttachmentPayload{
+			Type: "link", Category: "Notes", Name: "notes",
+			OccurrenceID: utils.StringPtrOmitEmpty("1788000000"),
+		}
+		assert.Equal(t, "1788000000", ConvertGoaToITXUpdateMeetingAttachment(p).OccurrenceID)
+	})
+
+	t.Run("update without occurrence_id sends an empty scope, which ITX reads as all occurrences", func(t *testing.T) {
+		p := &meetingservice.UpdateItxMeetingAttachmentPayload{Type: "link", Category: "Notes", Name: "notes"}
+		assert.Empty(t, ConvertGoaToITXUpdateMeetingAttachment(p).OccurrenceID)
+	})
+
+	t.Run("presign passes occurrence_id to ITX", func(t *testing.T) {
+		p := &meetingservice.CreateItxMeetingAttachmentPresignPayload{
+			Name: "a.pdf", FileSize: 1, FileType: "application/pdf",
+			OccurrenceID: utils.StringPtrOmitEmpty("1788000000"),
+		}
+		assert.Equal(t, "1788000000", ConvertGoaToITXCreateMeetingAttachmentPresign(p).OccurrenceID)
+	})
+
+	t.Run("response carries occurrence_id when scoped and omits it when series-wide", func(t *testing.T) {
+		scoped := ConvertITXMeetingAttachmentToGoa(&itx.MeetingAttachment{ID: "att-1", MeetingID: "m", OccurrenceID: "1788000000"})
+		require.NotNil(t, scoped.OccurrenceID)
+		assert.Equal(t, "1788000000", *scoped.OccurrenceID)
+
+		seriesWide := ConvertITXMeetingAttachmentToGoa(&itx.MeetingAttachment{ID: "att-2", MeetingID: "m"})
+		assert.Nil(t, seriesWide.OccurrenceID)
+	})
+
+	t.Run("presign response carries occurrence_id when scoped", func(t *testing.T) {
+		scoped := ConvertITXMeetingAttachmentPresignToGoa(&itx.MeetingAttachmentPresignResponse{ID: "att-1", MeetingID: "m", OccurrenceID: "1788000000", FileURL: "https://example.com/u"})
+		require.NotNil(t, scoped.OccurrenceID)
+		assert.Equal(t, "1788000000", *scoped.OccurrenceID)
+
+		seriesWide := ConvertITXMeetingAttachmentPresignToGoa(&itx.MeetingAttachmentPresignResponse{ID: "att-2", MeetingID: "m", FileURL: "https://example.com/u"})
+		assert.Nil(t, seriesWide.OccurrenceID)
+	})
+}
+
+func TestConvertITXMeetingAttachmentsToGoa(t *testing.T) {
+	t.Run("converts every attachment in order", func(t *testing.T) {
+		result := ConvertITXMeetingAttachmentsToGoa([]itx.MeetingAttachment{
+			{ID: "att-1", MeetingID: "m"},
+			{ID: "att-2", MeetingID: "m", OccurrenceID: "1788000000"},
+		})
+		require.Len(t, result, 2)
+		assert.Equal(t, "att-1", result[0].UID)
+		assert.Nil(t, result[0].OccurrenceID)
+		assert.Equal(t, "att-2", result[1].UID)
+		require.NotNil(t, result[1].OccurrenceID)
+		assert.Equal(t, "1788000000", *result[1].OccurrenceID)
+	})
+
+	t.Run("nil input becomes an empty non-nil slice so the response is a JSON array", func(t *testing.T) {
+		result := ConvertITXMeetingAttachmentsToGoa(nil)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
+	})
+}

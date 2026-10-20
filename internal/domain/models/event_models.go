@@ -1310,6 +1310,7 @@ type SummaryZoomConfig struct {
 type MeetingAttachmentEventData struct {
 	UID              string      `json:"uid"`
 	MeetingID        string      `json:"meeting_id"`
+	OccurrenceID     string      `json:"occurrence_id,omitempty"`
 	ProjectUID       string      `json:"project_uid,omitempty"`
 	ProjectSlug      string      `json:"project_slug,omitempty"`
 	Type             string      `json:"type"`
@@ -1373,6 +1374,9 @@ func (a *MeetingAttachmentEventData) Tags() []string {
 	tags := []string{
 		"meeting_attachment_uid:" + a.UID,
 		"meeting_id:" + a.MeetingID,
+	}
+	if a.OccurrenceID != "" {
+		tags = append(tags, "occurrence_id:"+a.OccurrenceID)
 	}
 	if a.ProjectUID != "" {
 		tags = append(tags, "project_uid:"+a.ProjectUID)
