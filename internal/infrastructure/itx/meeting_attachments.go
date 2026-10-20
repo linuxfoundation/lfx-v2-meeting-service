@@ -13,27 +13,29 @@ import (
 // CreateMeetingAttachmentPresignURL generates a presigned URL for meeting attachment upload.
 func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingID string, req *itx.CreateAttachmentPresignRequest) (*itx.MeetingAttachmentPresignResponse, error) {
 	return doJSONTyped[itx.MeetingAttachmentPresignResponse](c, ctx, apiRequest{
-		method:      http.MethodPost,
-		path:        "/v2/zoom/meetings/%s/attachments/presign",
-		pathArgs:    []any{meetingID},
-		body:        req,
-		accept:      acceptJSON,
-		debugOp:     "CreateMeetingAttachmentPresignURL",
-		debugFields: []any{"meetingID", meetingID},
-		parseError:  "failed to parse ITX response",
+		method:          http.MethodPost,
+		path:            "/v2/zoom/meetings/%s/attachments/presign",
+		pathArgs:        []any{meetingID},
+		body:            req,
+		accept:          acceptJSON,
+		debugOp:         "CreateMeetingAttachmentPresignURL",
+		debugFields:     []any{"meetingID", meetingID},
+		skipResponseLog: true,
+		parseError:      "failed to parse ITX response",
 	})
 }
 
 // GetMeetingAttachmentDownloadURL generates a presigned URL for meeting attachment download.
 func (c *Client) GetMeetingAttachmentDownloadURL(ctx context.Context, meetingID, attachmentID string) (*itx.AttachmentDownloadResponse, error) {
 	return doJSONTyped[itx.AttachmentDownloadResponse](c, ctx, apiRequest{
-		method:      http.MethodGet,
-		path:        "/v2/zoom/meetings/%s/attachments/%s/download",
-		pathArgs:    []any{meetingID, attachmentID},
-		accept:      acceptJSON,
-		debugOp:     "GetMeetingAttachmentDownloadURL",
-		debugFields: []any{"meetingID", meetingID, "attachmentID", attachmentID},
-		parseError:  "failed to parse ITX response",
+		method:          http.MethodGet,
+		path:            "/v2/zoom/meetings/%s/attachments/%s/download",
+		pathArgs:        []any{meetingID, attachmentID},
+		accept:          acceptJSON,
+		debugOp:         "GetMeetingAttachmentDownloadURL",
+		debugFields:     []any{"meetingID", meetingID, "attachmentID", attachmentID},
+		skipResponseLog: true,
+		parseError:      "failed to parse ITX response",
 	})
 }
 

@@ -4,10 +4,13 @@
 package nats
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"testing"
 
+	natsgo "github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -105,5 +108,23 @@ func TestPreferredEmailRequest_Decoding(t *testing.T) {
 		require.NotNil(t, req.Email)
 		assert.Equal(t, "alice@work.com", *req.Email)
 		assert.Nil(t, req.EmailID)
+	})
+}
+
+func TestPreferredEmailResponder_RespondError(t *testing.T) {
+	t.Run("logs the content-free description, not the upstream detail", func(t *testing.T) {
+		err := domain.NewConflictError("email alice@example.com already exists")
+		err.LogMessage = "user-service returned HTTP 409 (conflict)"
+
+		var logs bytes.Buffer
+		responder := NewPreferredEmailResponder(nil, nil, slog.New(slog.NewJSONHandler(&logs, nil)))
+		// An unbound message makes the reply itself fail, which is logged separately.
+		responder.respondError(&natsgo.Msg{}, "get", err)
+
+		assert.Contains(t, logs.String(), "user-service returned HTTP 409 (conflict)")
+		assert.NotContains(t, logs.String(), "alice@example.com")
+
+		// The NATS caller still receives the detailed error.
+		assert.Contains(t, newErrorReply(err).Error, "alice@example.com")
 	})
 }

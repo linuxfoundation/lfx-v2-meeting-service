@@ -29,6 +29,10 @@ const itxScope = "manage:zoom"
 const (
 	acceptJSON     = "application/json"
 	acceptCalendar = "text/calendar"
+	// Allow larger calendar downloads than JSON responses while bounding the
+	// bytes retained from any ITX response, including non-2xx responses.
+	maxJSONResponseBytes     int64 = 8 << 20
+	maxCalendarResponseBytes int64 = 16 << 20
 )
 
 type apiRequest struct {
@@ -187,11 +191,27 @@ func (c *Client) execute(ctx context.Context, req apiRequest) ([]byte, error) {
 		_ = resp.Body.Close()
 	}()
 
-	respBody, err := io.ReadAll(resp.Body)
+	maxResponseBytes := maxJSONResponseBytes
+	if req.accept == acceptCalendar && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		maxResponseBytes = maxCalendarResponseBytes
+	}
+	if resp.ContentLength > maxResponseBytes {
+		slog.ErrorContext(ctx, "ITX "+op+" response exceeds size limit",
+			"method", req.method, "url", logURL, "statusCode", resp.StatusCode, "maxBytes", maxResponseBytes)
+		return nil, domain.NewUnavailableError("ITX response exceeds size limit")
+	}
+	// Read one byte beyond the limit to distinguish an exact-limit response
+	// from an oversized one without consuming the rest of the upstream stream.
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes+1))
 	if err != nil {
 		slog.ErrorContext(ctx, "ITX "+op+" failed to read response",
 			"method", req.method, "url", logURL, "statusCode", resp.StatusCode, logging.ErrKey, err)
 		return nil, domain.NewInternalError("failed to read response", err)
+	}
+	if int64(len(respBody)) > maxResponseBytes {
+		slog.ErrorContext(ctx, "ITX "+op+" response exceeds size limit",
+			"method", req.method, "url", logURL, "statusCode", resp.StatusCode, "maxBytes", maxResponseBytes)
+		return nil, domain.NewUnavailableError("ITX response exceeds size limit")
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
