@@ -48,9 +48,13 @@
 //     yields no step. Blank lines are ignored.
 //
 // Parse(Format(p)) == p for canonical parts: trimmed, non-empty fields, single-line
-// steps. The grammar has limits by design, which it does not escape: a multi-line step is
-// not representable (each line of Next Steps is one step), and free text that contains a
-// section heading or a "### " line on its own line is read as structure.
+// steps, and label-less details only before the first labelled one. The grammar has limits
+// by design, which it does not escape: a multi-line step is not representable (each line of
+// Next Steps is one step); free text that contains a section heading or a "### " line on
+// its own line is read as structure; and a label-less detail that follows a labelled one is
+// merged by Parse into the previous detail's summary, because Format writes it with no
+// "### " line of its own, so Parse(Format(p)) == p only when label-less details come first.
+// A Next Steps line without a bullet marker is still one step.
 package summaryformat
 
 import (
