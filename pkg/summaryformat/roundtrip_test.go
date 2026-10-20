@@ -174,8 +174,18 @@ func TestRoundTrip_TolerantInputs(t *testing.T) {
 		},
 		{
 			name: "steps without dashes, with other bullets, and blank lines",
-			text: "## Next Steps\nSchedule design review\n\n* Update roadmap doc\n• Assign bug fixes\n-Write notes\n-\n",
-			want: summaryformat.Parts{NextSteps: []string{"Schedule design review", "Update roadmap doc", "Assign bug fixes", "Write notes"}},
+			text: "## Next Steps\nSchedule design review\n\n* Update roadmap doc\n• Assign bug fixes\n-\n",
+			want: summaryformat.Parts{NextSteps: []string{"Schedule design review", "Update roadmap doc", "Assign bug fixes"}},
+		},
+		{
+			name: "unbulleted step starting with a dash is kept verbatim",
+			text: "## Next Steps\n-5% budget",
+			want: summaryformat.Parts{NextSteps: []string{"-5% budget"}},
+		},
+		{
+			name: "unbulleted step starting with two dashes is kept verbatim",
+			text: "## Next Steps\n--dry-run first",
+			want: summaryformat.Parts{NextSteps: []string{"--dry-run first"}},
 		},
 		{
 			name: "surrounding whitespace on headings and content",

@@ -44,8 +44,9 @@
 //     writes for a label-less detail. A detail whose label and summary are both empty
 //     is dropped.
 //   - Next Steps: each non-blank line is one step, after stripping one leading "- ",
-//     "* " or "• " (or a bare "-") and trimming; a line that is only a bullet marker
-//     yields no step. Blank lines are ignored.
+//     "* " or "• " and trimming; a line that is only a bullet marker yields no step; a
+//     line without a marker is one step verbatim (a leading "-" with no space after it is
+//     kept). Blank lines are ignored.
 //
 // Parse(Format(p)) == p for canonical parts: trimmed, non-empty fields, single-line
 // steps, and label-less details only before the first labelled one. The grammar has limits
@@ -220,7 +221,7 @@ func cutDetailHeading(trimmed string) (string, bool) {
 }
 
 // cutStep returns the step on a trimmed Next Steps line after one leading bullet marker,
-// or "" for a blank line or a bare marker.
+// or "" for a blank line or a bare marker. A line without a marker is the step verbatim.
 func cutStep(trimmed string) string {
 	for _, marker := range []string{"-", "*", "•"} {
 		if trimmed == marker {
@@ -230,5 +231,5 @@ func cutStep(trimmed string) string {
 			return strings.TrimSpace(rest)
 		}
 	}
-	return strings.TrimSpace(strings.TrimPrefix(trimmed, "-"))
+	return trimmed
 }
