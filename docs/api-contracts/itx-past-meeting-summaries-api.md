@@ -57,7 +57,21 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
 
 ### Update Summary Request
 
-**Proxy API**:
+**Proxy API**: the edit is one `edited_content` string in the summary markdown (the same text the search index carries in `content`/`edited_content`, see [Summary markdown](#summary-markdown)), plus `approved`:
+
+```json
+{
+  "edited_content": "## Overview\nThis meeting covered Q4 planning and resource allocation.\n\n## Key Topics\n### Key Discussion Points\nTeam discussed hiring plans and budget for Q4. Agreed on 3 new positions.\n\n### Decisions Made\nApproved budget increase of 15% for engineering team.\n\n## Next Steps\n- Finance team to draft budget proposal by end of week\n- HR to post job openings for approved positions\n- Schedule follow-up meeting for Q1 planning",
+  "approved": true
+}
+```
+
+**Optional Fields**:
+- `edited_content` (string): the whole edited summary in the summary markdown. When present and non-empty it replaces all three edited fields in ITX; when absent, empty or whitespace-only, no edited field is sent (an approval-only update leaves the edits untouched).
+- `approved` (boolean): Whether the summary has been approved for publication
+
+**ITX API**: `edited_content` is parsed into ITX's three edited fields, plus a proxy-added `modified_by` field:
+
 ```json
 {
   "edited_summary_overview": "This meeting covered Q4 planning and resource allocation.",
@@ -76,24 +90,6 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
     "HR to post job openings for approved positions",
     "Schedule follow-up meeting for Q1 planning"
   ],
-  "approved": true
-}
-```
-
-**ITX API**: Identical to the Proxy API request, plus a proxy-added `modified_by` field:
-
-```json
-{
-  "edited_summary_overview": "This meeting covered Q4 planning and resource allocation.",
-  "edited_summary_details": [
-    {
-      "label": "Key Discussion Points",
-      "summary": "Team discussed hiring plans and budget for Q4. Agreed on 3 new positions."
-    }
-  ],
-  "edited_next_steps": [
-    "Finance team to draft budget proposal by end of week"
-  ],
   "approved": true,
   "modified_by": {
     "username": "jdoe",
@@ -106,12 +102,35 @@ Updates an existing AI-generated summary for a past meeting occurrence. This is 
 
 > **Proxy-added field**: `modified_by` is stamped by the proxy from the requesting user's authenticated JWT principal. See [Audit stamping](#audit-stamping).
 
-**Optional Fields**:
-- `edited_summary_overview` (string): Edited version of the AI-generated overview
-- `edited_summary_details` (array): Edited version of the AI-generated detail sections
-  - Each item has `label` (string) and `summary` (string)
-- `edited_next_steps` (array of strings): Edited version of the AI-generated next steps
-- `approved` (boolean): Whether the summary has been approved for publication
+**ITX fields**:
+- `edited_summary_overview` (string): the `## Overview` section
+- `edited_summary_details` (array): one item per `### <label>` section of `## Key Topics`, each with `label` (string) and `summary` (string)
+- `edited_next_steps` (array of strings): the `- <step>` lines of `## Next Steps`
+- `approved` (boolean): forwarded as sent
+
+On an edit the proxy sends **all three** edited fields, with `""` for a removed overview and `[]` for a removed section, so that ITX replaces the whole edited summary (the v1 UI sends the same shape). On an approval-only update it sends **none** of them.
+
+---
+
+### Summary markdown
+
+`content`, `edited_content` (proxy response) and `edited_content` (proxy request) all carry the summary parts in one line-oriented markdown format, rendered and parsed by `pkg/summaryformat` and shared with the index writer (`docs/indexer-contract.md`, `v1_past_meeting_summary`), so an edit made on the displayed text parses back into the structured fields ITX holds:
+
+```markdown
+## Overview
+<overview>
+
+## Key Topics
+### <label>
+<summary>
+
+## Next Steps
+- <step>
+```
+
+- Each section appears only when it has content, in that order; a label-less detail is its summary alone under `## Key Topics`.
+- Parsing recognises exactly `## Overview`, `## Key Topics` and `## Next Steps` (case-sensitive, surrounding whitespace ignored) as section switches; text before any heading is the overview; a `### ` line starts a new detail; each non-blank line under `## Next Steps` is one step, with a leading `- `, `* ` or `• ` removed. Any other line is content of its section, verbatim.
+- Limits: a step is one line; free text that puts a section heading or a `### ` line on its own line is read as structure.
 
 ---
 
@@ -126,7 +145,33 @@ of the upstream record.
 
 ### Summary Response
 
-**Proxy API & ITX API** (Identical):
+**Proxy API**: the `PastMeetingSummary` shape of the OpenAPI spec (`uid`, `past_meeting_id`, `meeting_id`, `platform`, `zoom_config`, `summary_data`, `requires_approval`, `approved`, `created_at`, `updated_at`, and `email_sent` when ITX provides it). `summary_data.content` renders ITX's `summary_overview`, `summary_details` and `next_steps` in the [summary markdown](#summary-markdown); `summary_data.edited_content` renders the three `edited_*` fields the same way. Either is omitted when its parts are all empty.
+
+```json
+{
+  "uid": "ea1e8536-a985-4cf5-b981-a170927a1d11",
+  "past_meeting_id": "12343245463-1630560600000",
+  "meeting_id": "12343245463",
+  "platform": "Zoom",
+  "zoom_config": {
+    "meeting_id": "12343245463",
+    "meeting_uuid": "fb2f9647-b096-5dg6-c092-b281938b2e22"
+  },
+  "summary_data": {
+    "start_time": "2021-06-27T05:30:00Z",
+    "end_time": "2021-06-27T06:30:00Z",
+    "title": "Q4 Planning Meeting",
+    "content": "## Overview\nThe team discussed Q4 planning, resource allocation, and hiring needs.\n\n## Key Topics\n### Discussion Topics\nQ4 goals, budget allocation, team expansion plans\n\n### Decisions\nApproved 15% budget increase and 3 new positions\n\n## Next Steps\n- Finance to draft budget proposal\n- HR to post job openings\n- Schedule Q1 planning meeting",
+    "edited_content": "## Overview\nThis meeting covered Q4 planning and resource allocation.\n\n## Key Topics\n### Key Discussion Points\nTeam discussed hiring plans and budget for Q4. Agreed on 3 new positions.\n\n## Next Steps\n- Finance team to draft budget proposal by end of week\n- HR to post job openings for approved positions"
+  },
+  "requires_approval": true,
+  "approved": false,
+  "created_at": "2021-06-27T05:45:00Z",
+  "updated_at": "2021-06-27T06:15:00Z"
+}
+```
+
+**ITX API**:
 ```json
 {
   "id": "ea1e8536-a985-4cf5-b981-a170927a1d11",
@@ -185,7 +230,7 @@ of the upstream record.
 }
 ```
 
-**Response Fields**:
+**ITX Response Fields**:
 - `id` (string): UUID of the summary record (read-only)
 - `meeting_and_occurrence_id` (string): Hyphenated meeting and occurrence ID (read-only)
 - `meeting_id` (string): Meeting ID (read-only)
@@ -230,7 +275,23 @@ of the upstream record.
 
 ## Field Mapping
 
-**No field mapping required** - all fields are identical between the proxy and ITX APIs.
+**Request** (proxy → ITX): `edited_content` → `edited_summary_overview` + `edited_summary_details` + `edited_next_steps`, parsed from the [summary markdown](#summary-markdown); all three are sent on an edit (`""`/`[]` for removed parts) and none on an approval-only update. `approved` passes through. `modified_by` is added by the proxy.
+
+**Response** (ITX → proxy):
+
+| Proxy field | ITX field(s) |
+|---|---|
+| `uid` | `id` |
+| `past_meeting_id` | `meeting_and_occurrence_id` |
+| `meeting_id` | `meeting_id` |
+| `platform` | always `"Zoom"` |
+| `zoom_config.meeting_id`, `zoom_config.meeting_uuid` | `meeting_id`, `zoom_meeting_uuid` (object omitted when both are empty) |
+| `summary_data.start_time`, `summary_data.end_time`, `summary_data.title` | `summary_start_time`, `summary_end_time`, `summary_title` |
+| `summary_data.content` | `summary_overview` + `summary_details` + `next_steps`, rendered as summary markdown |
+| `summary_data.edited_content` | `edited_summary_overview` + `edited_summary_details` + `edited_next_steps`, rendered as summary markdown |
+| `requires_approval`, `approved` | `requires_approval`, `approved` |
+| `email_sent` | carried from ITX when present; omitted otherwise (see "Proxy response: `email_sent`") |
+| `created_at`, `updated_at` | `created_at`, `modified_at` |
 
 ---
 
@@ -260,11 +321,7 @@ of the upstream record.
    - `summary_start_time`
    - `summary_end_time`
 
-6. **Editable Fields**: Only these fields can be updated via the API:
-   - `edited_summary_overview`
-   - `edited_summary_details`
-   - `edited_next_steps`
-   - `approved`
+6. **Editable Fields**: Only these fields can be updated via the API: `edited_content` (the proxy's single edit field, mapped to ITX's `edited_summary_overview`, `edited_summary_details` and `edited_next_steps`) and `approved`.
 
 7. **Multiple Summaries**: A single meeting occurrence can have multiple summary records if:
    - The meeting was very long and Zoom split it into multiple summary sessions

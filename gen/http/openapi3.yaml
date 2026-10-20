@@ -4950,9 +4950,27 @@ paths:
                                 platform: Zoom
                                 requires_approval: false
                                 summary_data:
-                                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                                    content: |-
+                                        ## Overview
+                                        Team discussed Q1 roadmap.
+
+                                        ## Key Topics
+                                        ### Feature Planning
+                                        Focus on authentication improvements.
+
+                                        ## Next Steps
+                                        - Schedule design review
                                     doc_url: https://zoom.us/rec/summary/abc123
-                                    edited_content: Updated meeting summary with additional details and action items.
+                                    edited_content: |-
+                                        ## Overview
+                                        Team discussed Q1 roadmap.
+
+                                        ## Key Topics
+                                        ### Feature Planning
+                                        Focus on authentication improvements.
+
+                                        ## Next Steps
+                                        - Schedule design review
                                     end_time: "2024-01-15T11:00:00Z"
                                     start_time: "2024-01-15T10:00:00Z"
                                     title: Weekly Team Standup Meeting
@@ -5063,7 +5081,16 @@ paths:
                             $ref: '#/components/schemas/UpdateItxPastMeetingSummaryRequestBody'
                         example:
                             approved: true
-                            edited_content: Dolores provident non qui repellendus rem id.
+                            edited_content: |-
+                                ## Overview
+                                Team discussed Q1 roadmap.
+
+                                ## Key Topics
+                                ### Feature Planning
+                                Focus on authentication improvements.
+
+                                ## Next Steps
+                                - Schedule design review
             responses:
                 "200":
                     description: OK response.
@@ -5081,9 +5108,27 @@ paths:
                                 platform: Zoom
                                 requires_approval: false
                                 summary_data:
-                                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                                    content: |-
+                                        ## Overview
+                                        Team discussed Q1 roadmap.
+
+                                        ## Key Topics
+                                        ### Feature Planning
+                                        Focus on authentication improvements.
+
+                                        ## Next Steps
+                                        - Schedule design review
                                     doc_url: https://zoom.us/rec/summary/abc123
-                                    edited_content: Updated meeting summary with additional details and action items.
+                                    edited_content: |-
+                                        ## Overview
+                                        Team discussed Q1 roadmap.
+
+                                        ## Key Topics
+                                        ### Feature Planning
+                                        Focus on authentication improvements.
+
+                                        ## Next Steps
+                                        - Schedule design review
                                     end_time: "2024-01-15T11:00:00Z"
                                     start_time: "2024-01-15T10:00:00Z"
                                     title: Weekly Team Standup Meeting
@@ -7663,9 +7708,27 @@ components:
                 platform: Zoom
                 requires_approval: false
                 summary_data:
-                    content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    content: |-
+                        ## Overview
+                        Team discussed Q1 roadmap.
+
+                        ## Key Topics
+                        ### Feature Planning
+                        Focus on authentication improvements.
+
+                        ## Next Steps
+                        - Schedule design review
                     doc_url: https://zoom.us/rec/summary/abc123
-                    edited_content: Updated meeting summary with additional details and action items.
+                    edited_content: |-
+                        ## Overview
+                        Team discussed Q1 roadmap.
+
+                        ## Key Topics
+                        ### Feature Planning
+                        Focus on authentication improvements.
+
+                        ## Next Steps
+                        - Schedule design review
                     end_time: "2024-01-15T11:00:00Z"
                     start_time: "2024-01-15T10:00:00Z"
                     title: Weekly Team Standup Meeting
@@ -7865,16 +7928,34 @@ components:
             properties:
                 content:
                     type: string
-                    description: The main AI-generated summary content
-                    example: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                    description: 'The main AI-generated summary content. Summary markdown: `## Overview`, `## Key Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines; the same text the search index carries in `content`/`edited_content`'
+                    example: |-
+                        ## Overview
+                        Team discussed Q1 roadmap.
+
+                        ## Key Topics
+                        ### Feature Planning
+                        Focus on authentication improvements.
+
+                        ## Next Steps
+                        - Schedule design review
                 doc_url:
                     type: string
                     description: URL to the full summary document
                     example: https://zoom.us/rec/summary/abc123
                 edited_content:
                     type: string
-                    description: User-edited summary content
-                    example: Updated meeting summary with additional details and action items.
+                    description: 'User-edited summary content. Summary markdown: `## Overview`, `## Key Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines; the same text the search index carries in `content`/`edited_content`'
+                    example: |-
+                        ## Overview
+                        Team discussed Q1 roadmap.
+
+                        ## Key Topics
+                        ### Feature Planning
+                        Focus on authentication improvements.
+
+                        ## Next Steps
+                        - Schedule design review
                 end_time:
                     type: string
                     description: Summary end time
@@ -7891,9 +7972,27 @@ components:
                     example: Weekly Team Standup Meeting
             description: AI-generated summary content for a past meeting
             example:
-                content: This meeting discussed sprint progress, addressed blockers, and outlined next steps for the team.
+                content: |-
+                    ## Overview
+                    Team discussed Q1 roadmap.
+
+                    ## Key Topics
+                    ### Feature Planning
+                    Focus on authentication improvements.
+
+                    ## Next Steps
+                    - Schedule design review
                 doc_url: https://zoom.us/rec/summary/abc123
-                edited_content: Updated meeting summary with additional details and action items.
+                edited_content: |-
+                    ## Overview
+                    Team discussed Q1 roadmap.
+
+                    ## Key Topics
+                    ### Feature Planning
+                    Focus on authentication improvements.
+
+                    ## Next Steps
+                    - Schedule design review
                 end_time: "2024-01-15T11:00:00Z"
                 start_time: "2024-01-15T10:00:00Z"
                 title: Weekly Team Standup Meeting
@@ -8395,12 +8494,30 @@ components:
                     example: true
                 edited_content:
                     type: string
-                    description: User-edited summary content
-                    example: Dolores provident non qui repellendus rem id.
+                    description: 'User-edited summary content. Summary markdown: `## Overview`, `## Key Topics` with `### <label>` sections, `## Next Steps` with `- <step>` lines; the same text the search index carries in `content`/`edited_content`. Replaces the whole edited summary in ITX when present and non-empty; absent or empty leaves the edits untouched (approval-only update)'
+                    example: |-
+                        ## Overview
+                        Team discussed Q1 roadmap.
+
+                        ## Key Topics
+                        ### Feature Planning
+                        Focus on authentication improvements.
+
+                        ## Next Steps
+                        - Schedule design review
             description: Request body for update-itx-past-meeting-summary.
             example:
                 approved: true
-                edited_content: Dolores provident non qui repellendus rem id.
+                edited_content: |-
+                    ## Overview
+                    Team discussed Q1 roadmap.
+
+                    ## Key Topics
+                    ### Feature Planning
+                    Focus on authentication improvements.
+
+                    ## Next Steps
+                    - Schedule design review
     securitySchemes:
         jwt_header_Authorization:
             type: http
