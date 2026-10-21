@@ -29,6 +29,12 @@ type fakeRegistrantClient struct {
 	deleteRegistrantCalled bool
 	deleteRegistrantErr    error
 	lastDeleteReq          *itx.DeleteRegistrantRequest
+
+	// self-resend fields
+	resendCalled         bool
+	resendErr            error
+	lastResendMeetingID  string
+	lastResendRegistrant string
 }
 
 func (f *fakeRegistrantClient) CreateRegistrant(_ context.Context, _ string, req *itx.ZoomMeetingRegistrant) (*itx.ZoomMeetingRegistrant, error) {
@@ -50,6 +56,13 @@ func (f *fakeRegistrantClient) DeleteRegistrant(_ context.Context, _, _ string, 
 	f.deleteRegistrantCalled = true
 	f.lastDeleteReq = req
 	return f.deleteRegistrantErr
+}
+
+func (f *fakeRegistrantClient) ResendRegistrantInvitation(_ context.Context, meetingID, registrantID string) error {
+	f.resendCalled = true
+	f.lastResendMeetingID = meetingID
+	f.lastResendRegistrant = registrantID
+	return f.resendErr
 }
 
 // fakeRegistrantMeetingClient returns a canned meeting response for visibility checks
@@ -545,6 +558,131 @@ func TestRegistrantService_SelfUnregisterFromMeeting(t *testing.T) {
 		err := svc.SelfUnregisterFromMeeting(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
 		require.NoError(t, err)
 		assert.True(t, client.deleteRegistrantCalled)
+	})
+}
+
+func TestRegistrantService_SelfResendRegistrantInvitation(t *testing.T) {
+	newResendSvc := func(client *fakeRegistrantClient, reader domain.UserMetadataReader) *RegistrantService {
+		return NewRegistrantService(client, &fakeRegistrantMeetingClient{}, noOpIDMapper{}, reader, nil)
+	}
+
+	t.Run("resends when email matches (case-insensitive)", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "Alice@Example.com", Username: "other"},
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.resendCalled)
+		assert.Equal(t, "mtg-1", client.lastResendMeetingID)
+		assert.Equal(t, "reg-1", client.lastResendRegistrant, "must resend the registrant that passed the ownership check")
+	})
+
+	t.Run("resends when username matches", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "other@example.com", Username: "alice"},
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.resendCalled)
+	})
+
+	t.Run("uses profile email from NATS when JWT email is absent", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "alice@example.com"},
+		}
+		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Email: "alice@example.com"}}
+		svc := newResendSvc(client, reader)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.NoError(t, err)
+		assert.True(t, client.resendCalled)
+	})
+
+	t.Run("returns forbidden and skips resend when identity does not match", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "bob@example.com", Username: "bob"},
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.resendCalled, "the invitation must not be resent when the ownership check fails")
+	})
+
+	t.Run("does not match an empty registrant identity against an empty JWT email", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "", Username: ""},
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", ""), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.resendCalled)
+	})
+
+	t.Run("returns validation error for M2M client token", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("6cjgEeimLcnqcHtqmRYqmOSt6s5spXNP@clients", "svc@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeValidation, de.Type)
+		assert.False(t, client.getRegistrantCalled, "GetRegistrant must not be called for M2M tokens")
+		assert.False(t, client.resendCalled)
+	})
+
+	t.Run("returns forbidden when principal is absent", func(t *testing.T) {
+		client := &fakeRegistrantClient{}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(context.Background(), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeForbidden, de.Type)
+		assert.False(t, client.getRegistrantCalled, "GetRegistrant must not be called when principal is absent")
+		assert.False(t, client.resendCalled)
+	})
+
+	t.Run("propagates GetRegistrant error", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantErr: domain.NewNotFoundError("registrant not found"),
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeNotFound, de.Type)
+		assert.False(t, client.resendCalled)
+	})
+
+	t.Run("propagates ResendRegistrantInvitation error", func(t *testing.T) {
+		client := &fakeRegistrantClient{
+			getRegistrantResp: &itx.ZoomMeetingRegistrant{Email: "alice@example.com"},
+			resendErr:         domain.NewInternalError("itx unavailable"),
+		}
+		svc := newResendSvc(client, nil)
+
+		err := svc.SelfResendRegistrantInvitation(ctxWithPrincipal("alice", "alice@example.com"), "mtg-1", "reg-1")
+		require.Error(t, err)
+		var de *domain.DomainError
+		require.ErrorAs(t, err, &de)
+		assert.Equal(t, domain.ErrorTypeInternal, de.Type)
+		assert.True(t, client.resendCalled)
 	})
 }
 

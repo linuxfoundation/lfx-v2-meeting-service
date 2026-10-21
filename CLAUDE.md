@@ -682,6 +682,7 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 - `DELETE /itx/meetings/{meeting_id}/registrants/{registrant_id}` - Delete registrant
 - `GET /itx/meetings/{meeting_id}/registrants/{registrant_id}/ics` - Download ICS calendar file
 - `POST /itx/meetings/{meeting_id}/registrants/{registrant_id}/resend` - Resend invite to one registrant
+- `POST /itx/meetings/{meeting_id}/registrants/{registrant_id}/self_resend` - Self-resend (caller resends the invite to their own registrant record)
 
 ### ITX Past Meeting Operations
 

@@ -199,33 +199,9 @@ func (s *RegistrantService) UpdateRegistrant(ctx context.Context, meetingID, reg
 // The delete is flagged as a self removal, so ITX also removes a committee registrant and records
 // an exclusion that keeps committee syncs from adding the user back.
 func (s *RegistrantService) SelfUnregisterFromMeeting(ctx context.Context, meetingID, registrantID string) error {
-	username, _ := ctx.Value(constants.PrincipalContextID).(string)
-	if username == "" {
-		return domain.NewForbiddenError("must be authenticated to unregister from a meeting")
-	}
-	if strings.HasSuffix(username, "@clients") {
-		return domain.NewValidationError("self-unregistration requires a user token, not an M2M client token")
-	}
-
-	registrant, err := s.registrantClient.GetRegistrant(ctx, meetingID, registrantID)
+	username, email, err := s.verifyOwnRegistrant(ctx, meetingID, registrantID, selfUnregisterMessages)
 	if err != nil {
 		return err
-	}
-
-	email, _ := ctx.Value(constants.EmailContextID).(string)
-	if email == "" && s.userMetadata != nil {
-		if profile, resolveErr := s.userMetadata.ResolveProfile(ctx, username); resolveErr == nil && profile != nil && profile.Email != "" {
-			email = profile.Email
-		}
-	}
-
-	emailMatch := email != "" && strings.EqualFold(registrant.Email, email)
-	usernameMatch := registrant.Username == username
-	if !emailMatch && !usernameMatch {
-		slog.WarnContext(ctx, "self-unregister ownership check failed: registrant does not belong to principal",
-			"principal", redaction.Redact(username),
-			"registrant_id", registrantID)
-		return domain.NewForbiddenError("registrant does not belong to the authenticated user")
 	}
 
 	// Tell ITX this is the registrant removing themselves. ITX checks updated_by against the
@@ -235,6 +211,82 @@ func (s *RegistrantService) SelfUnregisterFromMeeting(ctx context.Context, meeti
 		SelfRemoval: true,
 		UpdatedBy:   &itx.User{Username: username, Email: email},
 	})
+}
+
+// SelfResendRegistrantInvitation resends the meeting invitation to the authenticated user's own
+// registrant record. Like SelfUnregisterFromMeeting, the caller supplies their registrant_id and the
+// service verifies it belongs to the JWT principal (email or username) before acting; M2M tokens are
+// rejected. The ownership check is what makes it safe behind a viewer-level gateway rule, unlike the
+// organizer-only ResendRegistrantInvitation: the invitation can only go to a registrant record that
+// belongs to the caller, so the endpoint cannot be used to email anyone else.
+func (s *RegistrantService) SelfResendRegistrantInvitation(ctx context.Context, meetingID, registrantID string) error {
+	if _, _, err := s.verifyOwnRegistrant(ctx, meetingID, registrantID, selfResendMessages); err != nil {
+		return err
+	}
+
+	return s.registrantClient.ResendRegistrantInvitation(ctx, meetingID, registrantID)
+}
+
+// selfActionMessages words the errors and the log line of verifyOwnRegistrant for the self-service
+// action that calls it, so each action keeps its own client-facing message.
+type selfActionMessages struct {
+	// unauthenticated is the 403 message when the request carries no principal.
+	unauthenticated string
+	// m2mToken is the 400 message when the principal is an M2M client rather than a user.
+	m2mToken string
+	// ownershipFailed is the log line written when the registrant belongs to someone else.
+	ownershipFailed string
+}
+
+var (
+	selfUnregisterMessages = selfActionMessages{
+		unauthenticated: "must be authenticated to unregister from a meeting",
+		m2mToken:        "self-unregistration requires a user token, not an M2M client token",
+		ownershipFailed: "self-unregister ownership check failed: registrant does not belong to principal",
+	}
+	selfResendMessages = selfActionMessages{
+		unauthenticated: "must be authenticated to resend a meeting invitation",
+		m2mToken:        "self-resend requires a user token, not an M2M client token",
+		ownershipFailed: "self-resend ownership check failed: registrant does not belong to principal",
+	}
+)
+
+// verifyOwnRegistrant checks that the registrant record belongs to the authenticated user and returns
+// the username and email the check used. It rejects a request with no principal (403) and an M2M client
+// principal (400) before reading anything, then loads the registrant and requires its email
+// (case-insensitive) or username to match the JWT principal, returning 403 when neither does. The email
+// comes from the JWT claim, falling back to the NATS user profile when the token carries none.
+func (s *RegistrantService) verifyOwnRegistrant(ctx context.Context, meetingID, registrantID string, msgs selfActionMessages) (username, email string, err error) {
+	username, _ = ctx.Value(constants.PrincipalContextID).(string)
+	if username == "" {
+		return "", "", domain.NewForbiddenError(msgs.unauthenticated)
+	}
+	if strings.HasSuffix(username, "@clients") {
+		return "", "", domain.NewValidationError(msgs.m2mToken)
+	}
+
+	registrant, err := s.registrantClient.GetRegistrant(ctx, meetingID, registrantID)
+	if err != nil {
+		return "", "", err
+	}
+
+	email, _ = ctx.Value(constants.EmailContextID).(string)
+	if email == "" && s.userMetadata != nil {
+		if profile, resolveErr := s.userMetadata.ResolveProfile(ctx, username); resolveErr == nil && profile != nil && profile.Email != "" {
+			email = profile.Email
+		}
+	}
+
+	emailMatch := email != "" && strings.EqualFold(registrant.Email, email)
+	usernameMatch := registrant.Username == username
+	if !emailMatch && !usernameMatch {
+		slog.WarnContext(ctx, msgs.ownershipFailed,
+			"principal", redaction.Redact(username),
+			"registrant_id", registrantID)
+		return "", "", domain.NewForbiddenError("registrant does not belong to the authenticated user")
+	}
+
+	return username, email, nil
 }
 
 // DeleteRegistrant deletes a meeting registrant via ITX proxy

@@ -420,6 +420,7 @@ Access the live docs when the service is running:
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}` | DELETE | Delete registrant |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}/ics` | GET | Download ICS calendar file |
 | `/itx/meetings/{meeting_id}/registrants/{registrant_id}/resend` | POST | Resend invite to one registrant |
+| `/itx/meetings/{meeting_id}/registrants/{registrant_id}/self_resend` | POST | Self-resend (caller resends the invite to their own registrant record) |
 
 #### ITX Past Meeting Operations
 

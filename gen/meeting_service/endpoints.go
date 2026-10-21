@@ -33,6 +33,7 @@ type Endpoints struct {
 	GetItxJoinLink                        goa.Endpoint
 	GetItxRegistrantIcs                   goa.Endpoint
 	ResendItxRegistrantInvitation         goa.Endpoint
+	SelfResendItxRegistrantInvitation     goa.Endpoint
 	ResendItxMeetingInvitations           goa.Endpoint
 	RegisterItxCommitteeMembers           goa.Endpoint
 	UpdateItxOccurrence                   goa.Endpoint
@@ -94,6 +95,7 @@ func NewEndpoints(s Service) *Endpoints {
 		GetItxJoinLink:                        NewGetItxJoinLinkEndpoint(s, a.JWTAuth),
 		GetItxRegistrantIcs:                   NewGetItxRegistrantIcsEndpoint(s, a.JWTAuth),
 		ResendItxRegistrantInvitation:         NewResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
+		SelfResendItxRegistrantInvitation:     NewSelfResendItxRegistrantInvitationEndpoint(s, a.JWTAuth),
 		ResendItxMeetingInvitations:           NewResendItxMeetingInvitationsEndpoint(s, a.JWTAuth),
 		RegisterItxCommitteeMembers:           NewRegisterItxCommitteeMembersEndpoint(s, a.JWTAuth),
 		UpdateItxOccurrence:                   NewUpdateItxOccurrenceEndpoint(s, a.JWTAuth),
@@ -144,6 +146,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.GetItxJoinLink = m(e.GetItxJoinLink)
 	e.GetItxRegistrantIcs = m(e.GetItxRegistrantIcs)
 	e.ResendItxRegistrantInvitation = m(e.ResendItxRegistrantInvitation)
+	e.SelfResendItxRegistrantInvitation = m(e.SelfResendItxRegistrantInvitation)
 	e.ResendItxMeetingInvitations = m(e.ResendItxMeetingInvitations)
 	e.RegisterItxCommitteeMembers = m(e.RegisterItxCommitteeMembers)
 	e.UpdateItxOccurrence = m(e.UpdateItxOccurrence)
@@ -510,6 +513,30 @@ func NewResendItxRegistrantInvitationEndpoint(s Service, authJWTFn security.Auth
 			return nil, err
 		}
 		return nil, s.ResendItxRegistrantInvitation(ctx, p)
+	}
+}
+
+// NewSelfResendItxRegistrantInvitationEndpoint returns an endpoint function
+// that calls the method "self-resend-itx-registrant-invitation" of service
+// "Meeting Service".
+func NewSelfResendItxRegistrantInvitationEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*SelfResendItxRegistrantInvitationPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = string(*p.BearerToken)
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.SelfResendItxRegistrantInvitation(ctx, p)
 	}
 }
 

@@ -32,6 +32,7 @@ type Client struct {
 	GetItxJoinLinkEndpoint                        goa.Endpoint
 	GetItxRegistrantIcsEndpoint                   goa.Endpoint
 	ResendItxRegistrantInvitationEndpoint         goa.Endpoint
+	SelfResendItxRegistrantInvitationEndpoint     goa.Endpoint
 	ResendItxMeetingInvitationsEndpoint           goa.Endpoint
 	RegisterItxCommitteeMembersEndpoint           goa.Endpoint
 	UpdateItxOccurrenceEndpoint                   goa.Endpoint
@@ -63,7 +64,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, getItxPastMeetingChat, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, getItxMeetingAttachments, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, selfResendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, getItxPastMeetingChat, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, getItxMeetingAttachments, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                                readyz,
 		LivezEndpoint:                                 livez,
@@ -81,6 +82,7 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		GetItxJoinLinkEndpoint:                        getItxJoinLink,
 		GetItxRegistrantIcsEndpoint:                   getItxRegistrantIcs,
 		ResendItxRegistrantInvitationEndpoint:         resendItxRegistrantInvitation,
+		SelfResendItxRegistrantInvitationEndpoint:     selfResendItxRegistrantInvitation,
 		ResendItxMeetingInvitationsEndpoint:           resendItxMeetingInvitations,
 		RegisterItxCommitteeMembersEndpoint:           registerItxCommitteeMembers,
 		UpdateItxOccurrenceEndpoint:                   updateItxOccurrence,
@@ -377,6 +379,22 @@ func (c *Client) GetItxRegistrantIcs(ctx context.Context, p *GetItxRegistrantIcs
 //   - error: internal error
 func (c *Client) ResendItxRegistrantInvitation(ctx context.Context, p *ResendItxRegistrantInvitationPayload) (err error) {
 	_, err = c.ResendItxRegistrantInvitationEndpoint(ctx, p)
+	return
+}
+
+// SelfResendItxRegistrantInvitation calls the
+// "self-resend-itx-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+// SelfResendItxRegistrantInvitation may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Registrant does not belong to the authenticated user
+//   - "NotFound" (type *NotFoundError): Meeting or registrant not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) SelfResendItxRegistrantInvitation(ctx context.Context, p *SelfResendItxRegistrantInvitationPayload) (err error) {
+	_, err = c.SelfResendItxRegistrantInvitationEndpoint(ctx, p)
 	return
 }
 

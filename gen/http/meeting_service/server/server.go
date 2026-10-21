@@ -36,6 +36,7 @@ type Server struct {
 	GetItxJoinLink                        http.Handler
 	GetItxRegistrantIcs                   http.Handler
 	ResendItxRegistrantInvitation         http.Handler
+	SelfResendItxRegistrantInvitation     http.Handler
 	ResendItxMeetingInvitations           http.Handler
 	RegisterItxCommitteeMembers           http.Handler
 	UpdateItxOccurrence                   http.Handler
@@ -133,6 +134,7 @@ func New(
 			{"GetItxJoinLink", "GET", "/itx/meetings/{meeting_id}/join_link"},
 			{"GetItxRegistrantIcs", "GET", "/itx/meetings/{meeting_id}/registrants/{registrant_id}/ics"},
 			{"ResendItxRegistrantInvitation", "POST", "/itx/meetings/{meeting_id}/registrants/{registrant_id}/resend"},
+			{"SelfResendItxRegistrantInvitation", "POST", "/itx/meetings/{meeting_id}/registrants/{registrant_id}/self_resend"},
 			{"ResendItxMeetingInvitations", "POST", "/itx/meetings/{meeting_id}/resend"},
 			{"RegisterItxCommitteeMembers", "POST", "/itx/meetings/{meeting_id}/register_committee_members"},
 			{"UpdateItxOccurrence", "PUT", "/itx/meetings/{meeting_id}/occurrences/{occurrence_id}"},
@@ -182,6 +184,7 @@ func New(
 		GetItxJoinLink:                        NewGetItxJoinLinkHandler(e.GetItxJoinLink, mux, decoder, encoder, errhandler, formatter),
 		GetItxRegistrantIcs:                   NewGetItxRegistrantIcsHandler(e.GetItxRegistrantIcs, mux, decoder, encoder, errhandler, formatter),
 		ResendItxRegistrantInvitation:         NewResendItxRegistrantInvitationHandler(e.ResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
+		SelfResendItxRegistrantInvitation:     NewSelfResendItxRegistrantInvitationHandler(e.SelfResendItxRegistrantInvitation, mux, decoder, encoder, errhandler, formatter),
 		ResendItxMeetingInvitations:           NewResendItxMeetingInvitationsHandler(e.ResendItxMeetingInvitations, mux, decoder, encoder, errhandler, formatter),
 		RegisterItxCommitteeMembers:           NewRegisterItxCommitteeMembersHandler(e.RegisterItxCommitteeMembers, mux, decoder, encoder, errhandler, formatter),
 		UpdateItxOccurrence:                   NewUpdateItxOccurrenceHandler(e.UpdateItxOccurrence, mux, decoder, encoder, errhandler, formatter),
@@ -238,6 +241,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.GetItxJoinLink = m(s.GetItxJoinLink)
 	s.GetItxRegistrantIcs = m(s.GetItxRegistrantIcs)
 	s.ResendItxRegistrantInvitation = m(s.ResendItxRegistrantInvitation)
+	s.SelfResendItxRegistrantInvitation = m(s.SelfResendItxRegistrantInvitation)
 	s.ResendItxMeetingInvitations = m(s.ResendItxMeetingInvitations)
 	s.RegisterItxCommitteeMembers = m(s.RegisterItxCommitteeMembers)
 	s.UpdateItxOccurrence = m(s.UpdateItxOccurrence)
@@ -289,6 +293,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetItxJoinLinkHandler(mux, h.GetItxJoinLink)
 	MountGetItxRegistrantIcsHandler(mux, h.GetItxRegistrantIcs)
 	MountResendItxRegistrantInvitationHandler(mux, h.ResendItxRegistrantInvitation)
+	MountSelfResendItxRegistrantInvitationHandler(mux, h.SelfResendItxRegistrantInvitation)
 	MountResendItxMeetingInvitationsHandler(mux, h.ResendItxMeetingInvitations)
 	MountRegisterItxCommitteeMembersHandler(mux, h.RegisterItxCommitteeMembers)
 	MountUpdateItxOccurrenceHandler(mux, h.UpdateItxOccurrence)
@@ -1151,6 +1156,61 @@ func NewResendItxRegistrantInvitationHandler(
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
 		ctx = context.WithValue(ctx, goa.MethodKey, "resend-itx-registrant-invitation")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			if errhandler != nil {
+				errhandler(ctx, w, err)
+			}
+		}
+	})
+}
+
+// MountSelfResendItxRegistrantInvitationHandler configures the mux to serve
+// the "Meeting Service" service "self-resend-itx-registrant-invitation"
+// endpoint.
+func MountSelfResendItxRegistrantInvitationHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/itx/meetings/{meeting_id}/registrants/{registrant_id}/self_resend", f)
+}
+
+// NewSelfResendItxRegistrantInvitationHandler creates a HTTP handler which
+// loads the HTTP request and calls the "Meeting Service" service
+// "self-resend-itx-registrant-invitation" endpoint.
+func NewSelfResendItxRegistrantInvitationHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(ctx context.Context, err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeSelfResendItxRegistrantInvitationRequest(mux, decoder)
+		encodeResponse = EncodeSelfResendItxRegistrantInvitationResponse(encoder)
+		encodeError    = EncodeSelfResendItxRegistrantInvitationError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "self-resend-itx-registrant-invitation")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "Meeting Service")
 		payload, err := decodeRequest(r)
 		if err != nil {

@@ -79,6 +79,10 @@ type Client struct {
 	// to the resend-itx-registrant-invitation endpoint.
 	ResendItxRegistrantInvitationDoer goahttp.Doer
 
+	// SelfResendItxRegistrantInvitation Doer is the HTTP client used to make
+	// requests to the self-resend-itx-registrant-invitation endpoint.
+	SelfResendItxRegistrantInvitationDoer goahttp.Doer
+
 	// ResendItxMeetingInvitations Doer is the HTTP client used to make requests to
 	// the resend-itx-meeting-invitations endpoint.
 	ResendItxMeetingInvitationsDoer goahttp.Doer
@@ -228,6 +232,7 @@ func NewClient(
 		GetItxJoinLinkDoer:                        doer,
 		GetItxRegistrantIcsDoer:                   doer,
 		ResendItxRegistrantInvitationDoer:         doer,
+		SelfResendItxRegistrantInvitationDoer:     doer,
 		ResendItxMeetingInvitationsDoer:           doer,
 		RegisterItxCommitteeMembersDoer:           doer,
 		UpdateItxOccurrenceDoer:                   doer,
@@ -633,6 +638,31 @@ func (c *Client) ResendItxRegistrantInvitation() goa.Endpoint {
 		resp, err := c.ResendItxRegistrantInvitationDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("Meeting Service", "resend-itx-registrant-invitation", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SelfResendItxRegistrantInvitation returns an endpoint that makes HTTP
+// requests to the Meeting Service service
+// self-resend-itx-registrant-invitation server.
+func (c *Client) SelfResendItxRegistrantInvitation() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSelfResendItxRegistrantInvitationRequest(c.encoder)
+		decodeResponse = DecodeSelfResendItxRegistrantInvitationResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v any) (any, error) {
+		req, err := c.BuildSelfResendItxRegistrantInvitationRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SelfResendItxRegistrantInvitationDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("Meeting Service", "self-resend-itx-registrant-invitation", err)
 		}
 		return decodeResponse(resp)
 	}

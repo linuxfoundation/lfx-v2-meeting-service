@@ -2398,6 +2398,66 @@ type ResendItxRegistrantInvitationUnauthorizedResponseBody struct {
 	Message string `form:"message" json:"message" xml:"message"`
 }
 
+// SelfResendItxRegistrantInvitationBadRequestResponseBody is the type of the
+// "Meeting Service" service "self-resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "BadRequest" error.
+type SelfResendItxRegistrantInvitationBadRequestResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfResendItxRegistrantInvitationForbiddenResponseBody is the type of the
+// "Meeting Service" service "self-resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "Forbidden" error.
+type SelfResendItxRegistrantInvitationForbiddenResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfResendItxRegistrantInvitationInternalServerErrorResponseBody is the type
+// of the "Meeting Service" service "self-resend-itx-registrant-invitation"
+// endpoint HTTP response body for the "InternalServerError" error.
+type SelfResendItxRegistrantInvitationInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfResendItxRegistrantInvitationNotFoundResponseBody is the type of the
+// "Meeting Service" service "self-resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "NotFound" error.
+type SelfResendItxRegistrantInvitationNotFoundResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfResendItxRegistrantInvitationServiceUnavailableResponseBody is the type
+// of the "Meeting Service" service "self-resend-itx-registrant-invitation"
+// endpoint HTTP response body for the "ServiceUnavailable" error.
+type SelfResendItxRegistrantInvitationServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
+// SelfResendItxRegistrantInvitationUnauthorizedResponseBody is the type of the
+// "Meeting Service" service "self-resend-itx-registrant-invitation" endpoint
+// HTTP response body for the "Unauthorized" error.
+type SelfResendItxRegistrantInvitationUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code string `form:"code" json:"code" xml:"code"`
+	// Error message
+	Message string `form:"message" json:"message" xml:"message"`
+}
+
 // ResendItxMeetingInvitationsBadRequestResponseBody is the type of the
 // "Meeting Service" service "resend-itx-meeting-invitations" endpoint HTTP
 // response body for the "BadRequest" error.
@@ -6068,6 +6128,74 @@ func NewResendItxRegistrantInvitationUnauthorizedResponseBody(res *meetingservic
 	return body
 }
 
+// NewSelfResendItxRegistrantInvitationBadRequestResponseBody builds the HTTP
+// response body from the result of the "self-resend-itx-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewSelfResendItxRegistrantInvitationBadRequestResponseBody(res *meetingservice.BadRequestError) *SelfResendItxRegistrantInvitationBadRequestResponseBody {
+	body := &SelfResendItxRegistrantInvitationBadRequestResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfResendItxRegistrantInvitationForbiddenResponseBody builds the HTTP
+// response body from the result of the "self-resend-itx-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewSelfResendItxRegistrantInvitationForbiddenResponseBody(res *meetingservice.ForbiddenError) *SelfResendItxRegistrantInvitationForbiddenResponseBody {
+	body := &SelfResendItxRegistrantInvitationForbiddenResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfResendItxRegistrantInvitationInternalServerErrorResponseBody builds
+// the HTTP response body from the result of the
+// "self-resend-itx-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+func NewSelfResendItxRegistrantInvitationInternalServerErrorResponseBody(res *meetingservice.InternalServerError) *SelfResendItxRegistrantInvitationInternalServerErrorResponseBody {
+	body := &SelfResendItxRegistrantInvitationInternalServerErrorResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfResendItxRegistrantInvitationNotFoundResponseBody builds the HTTP
+// response body from the result of the "self-resend-itx-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewSelfResendItxRegistrantInvitationNotFoundResponseBody(res *meetingservice.NotFoundError) *SelfResendItxRegistrantInvitationNotFoundResponseBody {
+	body := &SelfResendItxRegistrantInvitationNotFoundResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfResendItxRegistrantInvitationServiceUnavailableResponseBody builds
+// the HTTP response body from the result of the
+// "self-resend-itx-registrant-invitation" endpoint of the "Meeting Service"
+// service.
+func NewSelfResendItxRegistrantInvitationServiceUnavailableResponseBody(res *meetingservice.ServiceUnavailableError) *SelfResendItxRegistrantInvitationServiceUnavailableResponseBody {
+	body := &SelfResendItxRegistrantInvitationServiceUnavailableResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
+// NewSelfResendItxRegistrantInvitationUnauthorizedResponseBody builds the HTTP
+// response body from the result of the "self-resend-itx-registrant-invitation"
+// endpoint of the "Meeting Service" service.
+func NewSelfResendItxRegistrantInvitationUnauthorizedResponseBody(res *meetingservice.UnauthorizedError) *SelfResendItxRegistrantInvitationUnauthorizedResponseBody {
+	body := &SelfResendItxRegistrantInvitationUnauthorizedResponseBody{
+		Code:    res.Code,
+		Message: res.Message,
+	}
+	return body
+}
+
 // NewResendItxMeetingInvitationsBadRequestResponseBody builds the HTTP
 // response body from the result of the "resend-itx-meeting-invitations"
 // endpoint of the "Meeting Service" service.
@@ -8246,6 +8374,18 @@ func NewGetItxRegistrantIcsPayload(meetingID string, registrantID string, versio
 // resend-itx-registrant-invitation endpoint payload.
 func NewResendItxRegistrantInvitationPayload(meetingID string, registrantID string, version *string, bearerToken *string) *meetingservice.ResendItxRegistrantInvitationPayload {
 	v := &meetingservice.ResendItxRegistrantInvitationPayload{}
+	v.MeetingID = meetingID
+	v.RegistrantID = registrantID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v
+}
+
+// NewSelfResendItxRegistrantInvitationPayload builds a Meeting Service service
+// self-resend-itx-registrant-invitation endpoint payload.
+func NewSelfResendItxRegistrantInvitationPayload(meetingID string, registrantID string, version *string, bearerToken *string) *meetingservice.SelfResendItxRegistrantInvitationPayload {
+	v := &meetingservice.SelfResendItxRegistrantInvitationPayload{}
 	v.MeetingID = meetingID
 	v.RegistrantID = registrantID
 	v.Version = version
