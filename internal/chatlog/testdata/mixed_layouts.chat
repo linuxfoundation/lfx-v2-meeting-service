@@ -1,0 +1,8 @@
+00:00:12	From Alice Example to Everyone:	older layout line
+00:00:20 From Bob Fixture to Everyone:
+	newer layout line
+00:00:31	Carol Example:	name layout line
+and its unindented continuation
+00:00:40	From Alice Example to Bob Fixture(Direct Message):	private-older-text
+loose line after an older-layout message
+00:00:50	Dana Example:	last

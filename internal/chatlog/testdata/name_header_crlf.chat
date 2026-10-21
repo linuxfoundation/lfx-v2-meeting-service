@@ -1,0 +1,13 @@
+00:00:12	Alice Example:	Hello everyone
+00:00:30	Bob Fixture (Example Foundation, Inc.):	Two points today:
+1. the release
+2. the roadmap
+00:01:03	Carol Example:	Replying to "Two points today:"
+agreed on both
+00:01:20	Alice Example to Bob Fixture:	private-to-text
+private-to-continuation-text
+00:01:45	Bob Fixture (Direct Message):	private-dm-text
+00:02:00	Carol Example (Privately):	private-pm-text
+00:02:30	Dana Example:	
+text after an empty header line
+
