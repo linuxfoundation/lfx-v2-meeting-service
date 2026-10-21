@@ -259,6 +259,8 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 			"00:00:45\tFrank Dropped to Alice Example:\tprivate-to-text\r\n" +
 			"private-to-continuation-text\r\n" +
 			"00:00:50\tGrace Dropped (Direct Message):\tprivate-dm-text\r\n" +
+			"00:00:55\tHenry Dropped (Privately) to Everyone:\tprivate-marked-text\r\n" +
+			"private-marked-continuation\r\n" +
 			"00:01:00\tCarol Example:\tReplying to \"Two points today:\"\r\n" +
 			"agreed on both\r\n" +
 			"\r\n"}}
@@ -280,7 +282,7 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 
 		out, err := json.Marshal(resp)
 		require.NoError(t, err)
-		for _, dropped := range []string{"Frank Dropped", "Grace Dropped", "private-to-text", "private-to-continuation-text", "private-dm-text", "Direct Message"} {
+		for _, dropped := range []string{"Frank Dropped", "Grace Dropped", "Henry Dropped", "private-to-text", "private-to-continuation-text", "private-dm-text", "private-marked-text", "private-marked-continuation", "Direct Message", "Privately"} {
 			assert.NotContains(t, string(out), dropped)
 		}
 	})

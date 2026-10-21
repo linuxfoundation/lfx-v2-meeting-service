@@ -103,8 +103,11 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("a timestamped line of an unknown layout starts its own message", func(t *testing.T) {
-		// The drifted line has a timestamp and a tab but no ":<TAB>" header
-		// terminator, so no header pattern matches it.
+		// The fixture's middle line stands for a layout the parser does not
+		// know. It used to be "Alice Example:<TAB>drifted layout line", which is
+		// the name header layout and is recognised now, so it became a line
+		// with a timestamp and a tab but no ":<TAB>" header terminator, which no
+		// header pattern matches.
 		got := Parse(fixture(t, "drifted_timestamped_line.chat"), false)
 		require.Len(t, got, 3, "the drifted line must not be glued to its neighbours")
 		assert.Equal(t, []Message{
@@ -219,12 +222,30 @@ func TestParse_NameHeaderLayout(t *testing.T) {
 			"Bob Fixture (direct message)",
 			"Bob Fixture (Privately)",
 			"Bob Fixture (PRIVATELY)",
+			// A marker wins over a public recipient after " to ".
+			"Alice Example (Privately) to Everyone",
+			"Alice Example (direct message) to EVERYONE",
+			"Alice Example to Everyone (Direct Message)",
 		} {
 			got := Parse([]byte("00:00:12\t"+header+":\tprivate-text\n"), false)
 			require.Len(t, got, 1, header)
 			assert.Equal(t, "00:00:12", got[0].Offset, header)
 			assert.Empty(t, PublicOnly(got), "header %q must be dropped", header)
 		}
+	})
+
+	t.Run("a marker before \" to Everyone\" drops the message and its continuation lines", func(t *testing.T) {
+		got := Parse([]byte(""+
+			"00:00:12\tAlice Example:\tpublic one\n"+
+			"00:00:20\tBob Fixture (Privately) to Everyone:\tprivate-marked-text\n"+
+			"private-marked-continuation\n"+
+			"00:00:30\tCarol Example:\tpublic two\n"), false)
+		require.Len(t, got, 3)
+		assert.Equal(t, Message{Offset: "00:00:20", Sender: "Bob Fixture (Privately)", Recipient: "(Privately)", Text: "private-marked-text\nprivate-marked-continuation"}, got[1])
+		public := PublicOnly(got)
+		require.Len(t, public, 2)
+		assert.Equal(t, "public one", public[0].Text)
+		assert.Equal(t, "public two", public[1].Text)
 	})
 
 	t.Run("a header that names Everyone after \" to \" is public, as in the older layouts", func(t *testing.T) {
@@ -363,7 +384,6 @@ func TestClassifyNameHeader(t *testing.T) {
 		{"Antonio Example", "Antonio Example", "Everyone", true},
 		{"Alice Tomas", "Alice Tomas", "Everyone", true},
 		{"Alice Example to Bob Fixture", "Alice Example", "Bob Fixture", false},
-		{"Alice Example to Bob Fixture (Direct Message)", "Alice Example", "Bob Fixture (Direct Message)", false},
 		{"Alice Example to Everyone", "Alice Example", "Everyone", true},
 		// The first " to " separates sender and recipient.
 		{"Alice Example to Bob to Carol", "Alice Example", "Bob to Carol", false},
@@ -371,6 +391,11 @@ func TestClassifyNameHeader(t *testing.T) {
 		{"Bob Fixture (direct message)", "Bob Fixture (direct message)", "(Direct Message)", false},
 		{"Bob Fixture (Privately)", "Bob Fixture (Privately)", "(Privately)", false},
 		{"Bob Fixture (PRIVATELY)", "Bob Fixture (PRIVATELY)", "(Privately)", false},
+		// A marker wins wherever it sits, including over " to Everyone".
+		{"Alice Example to Bob Fixture (Direct Message)", "Alice Example", "(Direct Message)", false},
+		{"Alice Example (Privately) to Everyone", "Alice Example (Privately)", "(Privately)", false},
+		{"Alice Example (direct message) to EVERYONE", "Alice Example (direct message)", "(Direct Message)", false},
+		{"Alice Example to Everyone (Direct Message)", "Alice Example", "(Direct Message)", false},
 	} {
 		sender, recipient := classifyNameHeader(tc.header)
 		assert.Equal(t, tc.sender, sender, "sender of %q", tc.header)
@@ -494,7 +519,7 @@ func TestPublicOnly(t *testing.T) {
 			"00:00:40\tAlice Example to Bob Fixture (Direct Message):\tdm-private-text\n"+
 			"00:01:03\tFrom Bob Fixture to Everyone:\tpublic two\n"), false)
 		require.Len(t, all, 3, "the line is its own message, not glued to a neighbour")
-		assert.Equal(t, Message{Offset: "00:00:40", Sender: "Alice Example", Recipient: "Bob Fixture (Direct Message)", Text: "dm-private-text"}, all[1])
+		assert.Equal(t, Message{Offset: "00:00:40", Sender: "Alice Example", Recipient: "(Direct Message)", Text: "dm-private-text"}, all[1])
 
 		public := PublicOnly(all)
 		require.Len(t, public, 2)

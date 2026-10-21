@@ -29,7 +29,7 @@ type Message struct {
 	// display name, or a form such as "Name(Direct Message)". In the name
 	// header layout, which writes no recipient, it is what classifyNameHeader
 	// derives from the header: everyoneRecipient for a plain display name, the
-	// part after " to " or the private marker itself otherwise.
+	// private marker when the header carries one, else the part after " to ".
 	Recipient string
 	// Text is the message text. Multi-line messages keep their line breaks
 	// as "\n".
@@ -218,22 +218,26 @@ const recipientlessNameHeaderIsPublic = true
 var privateMarkers = []string{"(Direct Message)", "(Privately)"}
 
 // classifyNameHeader derives sender and recipient from a name layout header,
-// already trimmed. A header containing " to " (spaces on both sides, so
+// already trimmed. A header containing a private marker, case-insensitively and
+// wherever it sits, is private whatever else the header holds: the recipient is
+// the marker, which IsPublicRecipient refuses, so "Name (Privately) to Everyone"
+// is dropped; the sender is the text before " to " when there is one, else the
+// whole header. Otherwise a header containing " to " (spaces on both sides, so
 // "Antonio" is not one) is read as sender to recipient, as in the older
-// layouts: the recipient is judged by IsPublicRecipient like any other. A
-// header containing a private marker is private: the sender is the whole
-// header and the recipient the marker, which IsPublicRecipient refuses. Any
+// layouts, and the recipient is judged by IsPublicRecipient like any other. Any
 // other header is a plain display name, classified by
 // recipientlessNameHeaderIsPublic.
 func classifyNameHeader(header string) (sender, recipient string) {
-	if i := strings.Index(header, " to "); i >= 0 {
-		return strings.TrimSpace(header[:i]), strings.TrimSpace(header[i+len(" to "):])
-	}
+	before, after, hasTo := strings.Cut(header, " to ")
+	sender = strings.TrimSpace(before)
 	lower := strings.ToLower(header)
 	for _, marker := range privateMarkers {
 		if strings.Contains(lower, strings.ToLower(marker)) {
-			return header, marker
+			return sender, marker
 		}
+	}
+	if hasTo {
+		return sender, strings.TrimSpace(after)
 	}
 	if recipientlessNameHeaderIsPublic {
 		return header, everyoneRecipient
