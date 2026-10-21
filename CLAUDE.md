@@ -140,7 +140,7 @@ The service follows a clean architecture pattern with:
 - **ITX Past Meeting Operations**: Full CRUD operations for past meeting records via ITX API
 - **ITX Past Meeting Summary Operations**: Retrieve and update AI-generated meeting summaries
 - **Past Meeting Chat**: Returns the chat saved with a past meeting's recording as parsed text. Not an ITX proxy: the service reads the recording record from the `v1-objects` KV bucket, fetches the `CHAT` file(s) from the provider server side (15 s, 5 MB, `text/*` or `application/octet-stream`, HTML refused by label and by content), returns only messages sent to everyone, and never returns or logs the provider link (see [Past Meeting Chat API contract](docs/api-contracts/itx-past-meeting-chat-api.md))
-- **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings
+- **ITX Attachment Operations**: Create, read, update, delete, presign, and download attachments on both active meetings and past meetings, and list the attachments of an active meeting. A meeting attachment applies to all occurrences or, through an optional `occurrence_id`, to one single occurrence
 - **Event Processing**: NATS JetStream KV bucket watching for v1→v2 data sync (see [Event Processing Documentation](docs/event-processing.md))
 - **LFID Invite Feature**: Outbound LFID invites for unregistered registrants, plus `invite_accepted` subscriber to enrich records when invites are accepted. Every acceptance is re-verified against the invite service before any ITX write — this is defense in depth, not a complete origin control: it only becomes one once NATS subject authorization (or a signed acceptance) is in place. See [Event verification](docs/event-processing.md#event-verification-defense-in-depth-not-a-complete-origin-control).
 - **JWT Authentication**: Secure API access via Heimdall integration
@@ -707,6 +707,9 @@ All V2 functionality has been removed. The service is now a lightweight stateles
 
 ### ITX Meeting Attachment Operations
 
+An attachment applies to all occurrences of a meeting or, through the optional `occurrence_id` body field, to one single occurrence (see [Occurrence scope](docs/api-contracts/itx-meeting-attachments-api.md#occurrence-scope)). A PUT replaces the scope, so omitting `occurrence_id` on update makes the attachment apply to all occurrences again.
+
+- `GET /itx/meetings/{meeting_id}/attachments` - List attachments (optional `occurrence_id` query returns that occurrence's attachments plus the series-wide ones)
 - `POST /itx/meetings/{meeting_id}/attachments` - Create attachment
 - `GET /itx/meetings/{meeting_id}/attachments/{attachment_id}` - Get attachment
 - `PUT /itx/meetings/{meeting_id}/attachments/{attachment_id}` - Update attachment

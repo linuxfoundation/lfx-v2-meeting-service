@@ -456,6 +456,11 @@ type UpdateItxPastMeetingParticipantRequestBody struct {
 // CreateItxMeetingAttachmentRequestBody is the type of the "Meeting Service"
 // service "create-itx-meeting-attachment" endpoint HTTP request body.
 type CreateItxMeetingAttachmentRequestBody struct {
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
 	// Attachment category
@@ -471,6 +476,12 @@ type CreateItxMeetingAttachmentRequestBody struct {
 // UpdateItxMeetingAttachmentRequestBody is the type of the "Meeting Service"
 // service "update-itx-meeting-attachment" endpoint HTTP request body.
 type UpdateItxMeetingAttachmentRequestBody struct {
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences. The scope is replaced on every update, so omitting it
+	// changes a scoped attachment back to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// Attachment type
 	Type string `form:"type" json:"type" xml:"type"`
 	// Attachment category
@@ -487,6 +498,11 @@ type UpdateItxMeetingAttachmentRequestBody struct {
 // Service" service "create-itx-meeting-attachment-presign" endpoint HTTP
 // request body.
 type CreateItxMeetingAttachmentPresignRequestBody struct {
+	// Scope the attachment to a single occurrence of a recurring meeting by
+	// passing the occurrence ID (its start time as a unix timestamp). It must be
+	// an upcoming, non-cancelled occurrence. Omit it to apply the attachment to
+	// all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// File name
 	Name string `form:"name" json:"name" xml:"name"`
 	// Optional description
@@ -615,7 +631,7 @@ type CreateItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
 	// The single user responsible for this meeting. Defaults to the creator on
 	// creation; omitting the field on update preserves the stored owner.
-	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
+	Owner *ITXUser `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
@@ -705,7 +721,7 @@ type GetItxMeetingResponseBody struct {
 	LastMailingListMembersSyncJobWarningCount *int `form:"last_mailing_list_members_sync_job_warning_count,omitempty" json:"last_mailing_list_members_sync_job_warning_count,omitempty" xml:"last_mailing_list_members_sync_job_warning_count,omitempty"`
 	// The single user responsible for this meeting. Defaults to the creator on
 	// creation; omitting the field on update preserves the stored owner.
-	Owner *ITXUserResponseBody `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
+	Owner *ITXUser `form:"owner,omitempty" json:"owner,omitempty" xml:"owner,omitempty"`
 	// RFC3339 start time of the next upcoming occurrence. Empty when no future
 	// occurrence exists.
 	NextOccurrenceStartTime *string `form:"next_occurrence_start_time,omitempty" json:"next_occurrence_start_time,omitempty" xml:"next_occurrence_start_time,omitempty"`
@@ -776,11 +792,11 @@ type CreateItxRegistrantResponseBody struct {
 	// Creation timestamp RFC3339 (read-only)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Creator user info (read-only)
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// Last modified timestamp RFC3339 (read-only)
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last updater user info (read-only)
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // SelfRegisterItxMeetingResponseBody is the type of the "Meeting Service"
@@ -825,11 +841,11 @@ type SelfRegisterItxMeetingResponseBody struct {
 	// Creation timestamp RFC3339 (read-only)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Creator user info (read-only)
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// Last modified timestamp RFC3339 (read-only)
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last updater user info (read-only)
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // GetItxRegistrantResponseBody is the type of the "Meeting Service" service
@@ -874,11 +890,11 @@ type GetItxRegistrantResponseBody struct {
 	// Creation timestamp RFC3339 (read-only)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Creator user info (read-only)
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// Last modified timestamp RFC3339 (read-only)
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last updater user info (read-only)
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // GetItxJoinLinkResponseBody is the type of the "Meeting Service" service
@@ -1131,11 +1147,11 @@ type CreateItxPastMeetingParticipantResponseBody struct {
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Creator user info
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// Last modified timestamp (RFC3339)
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last modifier user info
-	ModifiedBy *ITXUserResponseBody `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
+	ModifiedBy *ITXUser `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
 }
 
 // UpdateItxPastMeetingParticipantResponseBody is the type of the "Meeting
@@ -1205,11 +1221,11 @@ type UpdateItxPastMeetingParticipantResponseBody struct {
 	// Creation timestamp (RFC3339)
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// Creator user info
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// Last modified timestamp (RFC3339)
 	ModifiedAt *string `form:"modified_at,omitempty" json:"modified_at,omitempty" xml:"modified_at,omitempty"`
 	// Last modifier user info
-	ModifiedBy *ITXUserResponseBody `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
+	ModifiedBy *ITXUser `form:"modified_by,omitempty" json:"modified_by,omitempty" xml:"modified_by,omitempty"`
 }
 
 // CreateItxMeetingAttachmentResponseBody is the type of the "Meeting Service"
@@ -1219,6 +1235,10 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Meeting ID
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Occurrence this attachment is scoped to (the occurrence start time as a unix
+	// timestamp). Omitted when the attachment applies to all occurrences of the
+	// meeting
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Attachment source origin
@@ -1246,13 +1266,13 @@ type CreateItxMeetingAttachmentResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 	// User who uploaded the file
-	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	FileUploadedBy *ITXUser `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
 	// ISO 8601 timestamp when file was uploaded
 	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
 }
@@ -1264,6 +1284,10 @@ type GetItxMeetingAttachmentResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Meeting ID
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Occurrence this attachment is scoped to (the occurrence start time as a unix
+	// timestamp). Omitted when the attachment applies to all occurrences of the
+	// meeting
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// Attachment type
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Attachment source origin
@@ -1291,13 +1315,13 @@ type GetItxMeetingAttachmentResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 	// User who uploaded the file
-	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	FileUploadedBy *ITXUser `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
 	// ISO 8601 timestamp when file was uploaded
 	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
 }
@@ -1310,6 +1334,9 @@ type CreateItxMeetingAttachmentPresignResponseBody struct {
 	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
 	// Meeting ID
 	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Occurrence this attachment is scoped to (unix timestamp). Omitted when the
+	// attachment applies to all occurrences
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
 	// Attachment type (always 'file' for presign)
 	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
 	// Attachment category
@@ -1331,11 +1358,11 @@ type CreateItxMeetingAttachmentPresignResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // GetItxMeetingAttachmentDownloadResponseBody is the type of the "Meeting
@@ -1383,13 +1410,13 @@ type CreateItxPastMeetingAttachmentResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 	// User who uploaded the file
-	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	FileUploadedBy *ITXUser `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
 	// ISO 8601 timestamp when file was uploaded
 	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
 }
@@ -1430,13 +1457,13 @@ type GetItxPastMeetingAttachmentResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 	// User who uploaded the file
-	FileUploadedBy *ITXUserResponseBody `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	FileUploadedBy *ITXUser `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
 	// ISO 8601 timestamp when file was uploaded
 	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
 }
@@ -1472,11 +1499,11 @@ type CreateItxPastMeetingAttachmentPresignResponseBody struct {
 	// ISO 8601 timestamp
 	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
 	// User who created the attachment
-	CreatedBy *ITXUserResponseBody `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
 	// ISO 8601 timestamp
 	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
 	// User who last updated the attachment
-	UpdatedBy *ITXUserResponseBody `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
 }
 
 // GetItxPastMeetingAttachmentDownloadResponseBody is the type of the "Meeting
@@ -3277,6 +3304,66 @@ type DeleteItxPastMeetingParticipantUnauthorizedResponseBody struct {
 	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
 }
 
+// GetItxMeetingAttachmentsBadRequestResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachments" endpoint HTTP response body
+// for the "BadRequest" error.
+type GetItxMeetingAttachmentsBadRequestResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingAttachmentsForbiddenResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachments" endpoint HTTP response body
+// for the "Forbidden" error.
+type GetItxMeetingAttachmentsForbiddenResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingAttachmentsInternalServerErrorResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachments" endpoint HTTP
+// response body for the "InternalServerError" error.
+type GetItxMeetingAttachmentsInternalServerErrorResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingAttachmentsNotFoundResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachments" endpoint HTTP response body
+// for the "NotFound" error.
+type GetItxMeetingAttachmentsNotFoundResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingAttachmentsServiceUnavailableResponseBody is the type of the
+// "Meeting Service" service "get-itx-meeting-attachments" endpoint HTTP
+// response body for the "ServiceUnavailable" error.
+type GetItxMeetingAttachmentsServiceUnavailableResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
+// GetItxMeetingAttachmentsUnauthorizedResponseBody is the type of the "Meeting
+// Service" service "get-itx-meeting-attachments" endpoint HTTP response body
+// for the "Unauthorized" error.
+type GetItxMeetingAttachmentsUnauthorizedResponseBody struct {
+	// HTTP status code
+	Code *string `form:"code,omitempty" json:"code,omitempty" xml:"code,omitempty"`
+	// Error message
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+}
+
 // CreateItxMeetingAttachmentBadRequestResponseBody is the type of the "Meeting
 // Service" service "create-itx-meeting-attachment" endpoint HTTP response body
 // for the "BadRequest" error.
@@ -4029,8 +4116,8 @@ type RecurrenceResponseBody struct {
 	EndDateTime *string `form:"end_date_time,omitempty" json:"end_date_time,omitempty" xml:"end_date_time,omitempty"`
 }
 
-// ITXUserResponseBody is used to define fields on response body types.
-type ITXUserResponseBody struct {
+// ITXUser is used to define fields on response body types.
+type ITXUser struct {
 	// Username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Full name
@@ -4135,6 +4222,54 @@ type ParticipantSessionResponseBody struct {
 	LeaveTime *string `form:"leave_time,omitempty" json:"leave_time,omitempty" xml:"leave_time,omitempty"`
 	// Reason for leaving
 	LeaveReason *string `form:"leave_reason,omitempty" json:"leave_reason,omitempty" xml:"leave_reason,omitempty"`
+}
+
+// ITXMeetingAttachmentResponse is used to define fields on response body types.
+type ITXMeetingAttachmentResponse struct {
+	// Attachment ID
+	UID *string `form:"uid,omitempty" json:"uid,omitempty" xml:"uid,omitempty"`
+	// Meeting ID
+	MeetingID *string `form:"meeting_id,omitempty" json:"meeting_id,omitempty" xml:"meeting_id,omitempty"`
+	// Occurrence this attachment is scoped to (the occurrence start time as a unix
+	// timestamp). Omitted when the attachment applies to all occurrences of the
+	// meeting
+	OccurrenceID *string `form:"occurrence_id,omitempty" json:"occurrence_id,omitempty" xml:"occurrence_id,omitempty"`
+	// Attachment type
+	Type *string `form:"type,omitempty" json:"type,omitempty" xml:"type,omitempty"`
+	// Attachment source origin
+	Source *string `form:"source,omitempty" json:"source,omitempty" xml:"source,omitempty"`
+	// Attachment category
+	Category *string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty"`
+	// External link URL (for link-type attachments)
+	Link *string `form:"link,omitempty" json:"link,omitempty" xml:"link,omitempty"`
+	// Attachment name or file name
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Optional description of the attachment
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// File name (for file-type attachments)
+	FileName *string `form:"file_name,omitempty" json:"file_name,omitempty" xml:"file_name,omitempty"`
+	// File size in bytes (for file-type attachments)
+	FileSize *int64 `form:"file_size,omitempty" json:"file_size,omitempty" xml:"file_size,omitempty"`
+	// S3 key path (for file-type attachments)
+	FileURL *string `form:"file_url,omitempty" json:"file_url,omitempty" xml:"file_url,omitempty"`
+	// Whether the file has been uploaded to S3
+	FileUploaded *bool `form:"file_uploaded,omitempty" json:"file_uploaded,omitempty" xml:"file_uploaded,omitempty"`
+	// Upload status
+	FileUploadStatus *string `form:"file_upload_status,omitempty" json:"file_upload_status,omitempty" xml:"file_upload_status,omitempty"`
+	// MIME type of the file
+	FileContentType *string `form:"file_content_type,omitempty" json:"file_content_type,omitempty" xml:"file_content_type,omitempty"`
+	// ISO 8601 timestamp
+	CreatedAt *string `form:"created_at,omitempty" json:"created_at,omitempty" xml:"created_at,omitempty"`
+	// User who created the attachment
+	CreatedBy *ITXUser `form:"created_by,omitempty" json:"created_by,omitempty" xml:"created_by,omitempty"`
+	// ISO 8601 timestamp
+	UpdatedAt *string `form:"updated_at,omitempty" json:"updated_at,omitempty" xml:"updated_at,omitempty"`
+	// User who last updated the attachment
+	UpdatedBy *ITXUser `form:"updated_by,omitempty" json:"updated_by,omitempty" xml:"updated_by,omitempty"`
+	// User who uploaded the file
+	FileUploadedBy *ITXUser `form:"file_uploaded_by,omitempty" json:"file_uploaded_by,omitempty" xml:"file_uploaded_by,omitempty"`
+	// ISO 8601 timestamp when file was uploaded
+	FileUploadedAt *string `form:"file_uploaded_at,omitempty" json:"file_uploaded_at,omitempty" xml:"file_uploaded_at,omitempty"`
 }
 
 // CommitteeRequestBody is used to define fields on request body types.
@@ -4553,11 +4688,12 @@ func NewUpdateItxPastMeetingParticipantRequestBody(p *meetingservice.UpdateItxPa
 // Service" service.
 func NewCreateItxMeetingAttachmentRequestBody(p *meetingservice.CreateItxMeetingAttachmentPayload) *CreateItxMeetingAttachmentRequestBody {
 	body := &CreateItxMeetingAttachmentRequestBody{
-		Type:        p.Type,
-		Category:    p.Category,
-		Link:        p.Link,
-		Name:        p.Name,
-		Description: p.Description,
+		OccurrenceID: p.OccurrenceID,
+		Type:         p.Type,
+		Category:     p.Category,
+		Link:         p.Link,
+		Name:         p.Name,
+		Description:  p.Description,
 	}
 	return body
 }
@@ -4567,11 +4703,12 @@ func NewCreateItxMeetingAttachmentRequestBody(p *meetingservice.CreateItxMeeting
 // Service" service.
 func NewUpdateItxMeetingAttachmentRequestBody(p *meetingservice.UpdateItxMeetingAttachmentPayload) *UpdateItxMeetingAttachmentRequestBody {
 	body := &UpdateItxMeetingAttachmentRequestBody{
-		Type:        p.Type,
-		Category:    p.Category,
-		Link:        p.Link,
-		Name:        p.Name,
-		Description: p.Description,
+		OccurrenceID: p.OccurrenceID,
+		Type:         p.Type,
+		Category:     p.Category,
+		Link:         p.Link,
+		Name:         p.Name,
+		Description:  p.Description,
 	}
 	return body
 }
@@ -4581,11 +4718,12 @@ func NewUpdateItxMeetingAttachmentRequestBody(p *meetingservice.UpdateItxMeeting
 // the "Meeting Service" service.
 func NewCreateItxMeetingAttachmentPresignRequestBody(p *meetingservice.CreateItxMeetingAttachmentPresignPayload) *CreateItxMeetingAttachmentPresignRequestBody {
 	body := &CreateItxMeetingAttachmentPresignRequestBody{
-		Name:        p.Name,
-		Description: p.Description,
-		Category:    p.Category,
-		FileSize:    p.FileSize,
-		FileType:    p.FileType,
+		OccurrenceID: p.OccurrenceID,
+		Name:         p.Name,
+		Description:  p.Description,
+		Category:     p.Category,
+		FileSize:     p.FileSize,
+		FileType:     p.FileType,
 	}
 	return body
 }
@@ -4699,7 +4837,7 @@ func NewCreateItxMeetingITXZoomMeetingResponseCreated(body *CreateItxMeetingResp
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
 	}
 	if body.Owner != nil {
-		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
+		v.Owner = unmarshalITXUserToMeetingserviceITXUser(body.Owner)
 	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
@@ -4837,7 +4975,7 @@ func NewGetItxMeetingITXZoomMeetingResponseOK(body *GetItxMeetingResponseBody) *
 		v.Recurrence = unmarshalRecurrenceResponseBodyToMeetingserviceRecurrence(body.Recurrence)
 	}
 	if body.Owner != nil {
-		v.Owner = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.Owner)
+		v.Owner = unmarshalITXUserToMeetingserviceITXUser(body.Owner)
 	}
 	if body.Occurrences != nil {
 		v.Occurrences = make([]*meetingservice.ITXOccurrence, len(body.Occurrences))
@@ -5165,10 +5303,10 @@ func NewCreateItxRegistrantITXZoomMeetingRegistrantCreated(body *CreateItxRegist
 		ModifiedAt:                    body.ModifiedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 
 	return v
@@ -5278,10 +5416,10 @@ func NewSelfRegisterItxMeetingITXZoomMeetingRegistrantCreated(body *SelfRegister
 		ModifiedAt:                    body.ModifiedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 
 	return v
@@ -5456,10 +5594,10 @@ func NewGetItxRegistrantITXZoomMeetingRegistrantOK(body *GetItxRegistrantRespons
 		ModifiedAt:                    body.ModifiedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 
 	return v
@@ -6880,10 +7018,10 @@ func NewCreateItxPastMeetingParticipantITXPastMeetingParticipantCreated(body *Cr
 		}
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.ModifiedBy != nil {
-		v.ModifiedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.ModifiedBy)
+		v.ModifiedBy = unmarshalITXUserToMeetingserviceITXUser(body.ModifiedBy)
 	}
 
 	return v
@@ -7004,10 +7142,10 @@ func NewUpdateItxPastMeetingParticipantITXPastMeetingParticipantOK(body *UpdateI
 		}
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.ModifiedBy != nil {
-		v.ModifiedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.ModifiedBy)
+		v.ModifiedBy = unmarshalITXUserToMeetingserviceITXUser(body.ModifiedBy)
 	}
 
 	return v
@@ -7149,6 +7287,88 @@ func NewDeleteItxPastMeetingParticipantUnauthorized(body *DeleteItxPastMeetingPa
 	return v
 }
 
+// NewGetItxMeetingAttachmentsITXMeetingAttachmentOK builds a "Meeting Service"
+// service "get-itx-meeting-attachments" endpoint result from a HTTP "OK"
+// response.
+func NewGetItxMeetingAttachmentsITXMeetingAttachmentOK(body []*ITXMeetingAttachmentResponse) []*meetingservice.ITXMeetingAttachment {
+	v := make([]*meetingservice.ITXMeetingAttachment, len(body))
+	for i, val := range body {
+		if val == nil {
+			v[i] = nil
+			continue
+		}
+		v[i] = unmarshalITXMeetingAttachmentResponseToMeetingserviceITXMeetingAttachment(val)
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsBadRequest builds a Meeting Service service
+// get-itx-meeting-attachments endpoint BadRequest error.
+func NewGetItxMeetingAttachmentsBadRequest(body *GetItxMeetingAttachmentsBadRequestResponseBody) *meetingservice.BadRequestError {
+	v := &meetingservice.BadRequestError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsForbidden builds a Meeting Service service
+// get-itx-meeting-attachments endpoint Forbidden error.
+func NewGetItxMeetingAttachmentsForbidden(body *GetItxMeetingAttachmentsForbiddenResponseBody) *meetingservice.ForbiddenError {
+	v := &meetingservice.ForbiddenError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsInternalServerError builds a Meeting Service
+// service get-itx-meeting-attachments endpoint InternalServerError error.
+func NewGetItxMeetingAttachmentsInternalServerError(body *GetItxMeetingAttachmentsInternalServerErrorResponseBody) *meetingservice.InternalServerError {
+	v := &meetingservice.InternalServerError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsNotFound builds a Meeting Service service
+// get-itx-meeting-attachments endpoint NotFound error.
+func NewGetItxMeetingAttachmentsNotFound(body *GetItxMeetingAttachmentsNotFoundResponseBody) *meetingservice.NotFoundError {
+	v := &meetingservice.NotFoundError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsServiceUnavailable builds a Meeting Service
+// service get-itx-meeting-attachments endpoint ServiceUnavailable error.
+func NewGetItxMeetingAttachmentsServiceUnavailable(body *GetItxMeetingAttachmentsServiceUnavailableResponseBody) *meetingservice.ServiceUnavailableError {
+	v := &meetingservice.ServiceUnavailableError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
+// NewGetItxMeetingAttachmentsUnauthorized builds a Meeting Service service
+// get-itx-meeting-attachments endpoint Unauthorized error.
+func NewGetItxMeetingAttachmentsUnauthorized(body *GetItxMeetingAttachmentsUnauthorizedResponseBody) *meetingservice.UnauthorizedError {
+	v := &meetingservice.UnauthorizedError{
+		Code:    *body.Code,
+		Message: *body.Message,
+	}
+
+	return v
+}
+
 // NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated builds a "Meeting
 // Service" service "create-itx-meeting-attachment" endpoint result from a HTTP
 // "Created" response.
@@ -7156,6 +7376,7 @@ func NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated(body *CreateItxMee
 	v := &meetingservice.ITXMeetingAttachment{
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
+		OccurrenceID:     body.OccurrenceID,
 		Type:             *body.Type,
 		Source:           body.Source,
 		Category:         *body.Category,
@@ -7173,13 +7394,13 @@ func NewCreateItxMeetingAttachmentITXMeetingAttachmentCreated(body *CreateItxMee
 		FileUploadedAt:   body.FileUploadedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 	if body.FileUploadedBy != nil {
-		v.FileUploadedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.FileUploadedBy)
+		v.FileUploadedBy = unmarshalITXUserToMeetingserviceITXUser(body.FileUploadedBy)
 	}
 
 	return v
@@ -7258,6 +7479,7 @@ func NewGetItxMeetingAttachmentITXMeetingAttachmentOK(body *GetItxMeetingAttachm
 	v := &meetingservice.ITXMeetingAttachment{
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
+		OccurrenceID:     body.OccurrenceID,
 		Type:             *body.Type,
 		Source:           body.Source,
 		Category:         *body.Category,
@@ -7275,13 +7497,13 @@ func NewGetItxMeetingAttachmentITXMeetingAttachmentOK(body *GetItxMeetingAttachm
 		FileUploadedAt:   body.FileUploadedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 	if body.FileUploadedBy != nil {
-		v.FileUploadedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.FileUploadedBy)
+		v.FileUploadedBy = unmarshalITXUserToMeetingserviceITXUser(body.FileUploadedBy)
 	}
 
 	return v
@@ -7492,6 +7714,7 @@ func NewCreateItxMeetingAttachmentPresignITXMeetingAttachmentPresignResponseCrea
 	v := &meetingservice.ITXMeetingAttachmentPresignResponse{
 		UID:              *body.UID,
 		MeetingID:        *body.MeetingID,
+		OccurrenceID:     body.OccurrenceID,
 		Type:             body.Type,
 		Category:         body.Category,
 		Name:             body.Name,
@@ -7505,10 +7728,10 @@ func NewCreateItxMeetingAttachmentPresignITXMeetingAttachmentPresignResponseCrea
 		UpdatedAt:        body.UpdatedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 
 	return v
@@ -7686,13 +7909,13 @@ func NewCreateItxPastMeetingAttachmentITXPastMeetingAttachmentCreated(body *Crea
 		FileUploadedAt:         body.FileUploadedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 	if body.FileUploadedBy != nil {
-		v.FileUploadedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.FileUploadedBy)
+		v.FileUploadedBy = unmarshalITXUserToMeetingserviceITXUser(body.FileUploadedBy)
 	}
 
 	return v
@@ -7790,13 +8013,13 @@ func NewGetItxPastMeetingAttachmentITXPastMeetingAttachmentOK(body *GetItxPastMe
 		FileUploadedAt:         body.FileUploadedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 	if body.FileUploadedBy != nil {
-		v.FileUploadedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.FileUploadedBy)
+		v.FileUploadedBy = unmarshalITXUserToMeetingserviceITXUser(body.FileUploadedBy)
 	}
 
 	return v
@@ -8024,10 +8247,10 @@ func NewCreateItxPastMeetingAttachmentPresignITXPastMeetingAttachmentPresignResp
 		UpdatedAt:              body.UpdatedAt,
 	}
 	if body.CreatedBy != nil {
-		v.CreatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.CreatedBy)
+		v.CreatedBy = unmarshalITXUserToMeetingserviceITXUser(body.CreatedBy)
 	}
 	if body.UpdatedBy != nil {
-		v.UpdatedBy = unmarshalITXUserResponseBodyToMeetingserviceITXUser(body.UpdatedBy)
+		v.UpdatedBy = unmarshalITXUserToMeetingserviceITXUser(body.UpdatedBy)
 	}
 
 	return v
@@ -8244,7 +8467,7 @@ func ValidateCreateItxMeetingResponseBody(body *CreateItxMeetingResponseBody) (e
 		}
 	}
 	if body.Owner != nil {
-		if err2 := validateITXUserResponseBody(body.Owner, "body.owner"); err2 != nil {
+		if err2 := validateITXUser(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8336,7 +8559,7 @@ func ValidateGetItxMeetingResponseBody(body *GetItxMeetingResponseBody) (err err
 		}
 	}
 	if body.Owner != nil {
-		if err2 := validateITXUserResponseBody(body.Owner, "body.owner"); err2 != nil {
+		if err2 := validateITXUser(body.Owner, "body.owner"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8386,12 +8609,12 @@ func ValidateCreateItxRegistrantResponseBody(body *CreateItxRegistrantResponseBo
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8410,12 +8633,12 @@ func ValidateSelfRegisterItxMeetingResponseBody(body *SelfRegisterItxMeetingResp
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8434,12 +8657,12 @@ func ValidateGetItxRegistrantResponseBody(body *GetItxRegistrantResponseBody) (e
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8724,7 +8947,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8732,7 +8955,7 @@ func ValidateCreateItxPastMeetingParticipantResponseBody(body *CreateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
 	}
 	if body.ModifiedBy != nil {
-		if err2 := validateITXUserResponseBody(body.ModifiedBy, "body.modified_by"); err2 != nil {
+		if err2 := validateITXUser(body.ModifiedBy, "body.modified_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8762,7 +8985,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8770,7 +8993,7 @@ func ValidateUpdateItxPastMeetingParticipantResponseBody(body *UpdateItxPastMeet
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.modified_at", *body.ModifiedAt, goa.FormatDateTime))
 	}
 	if body.ModifiedBy != nil {
-		if err2 := validateITXUserResponseBody(body.ModifiedBy, "body.modified_by"); err2 != nil {
+		if err2 := validateITXUser(body.ModifiedBy, "body.modified_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8822,7 +9045,7 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8830,12 +9053,12 @@ func ValidateCreateItxMeetingAttachmentResponseBody(body *CreateItxMeetingAttach
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8890,7 +9113,7 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8898,12 +9121,12 @@ func ValidateGetItxMeetingAttachmentResponseBody(body *GetItxMeetingAttachmentRe
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8932,7 +9155,7 @@ func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetin
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -8940,7 +9163,7 @@ func ValidateCreateItxMeetingAttachmentPresignResponseBody(body *CreateItxMeetin
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9004,7 +9227,7 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9012,12 +9235,12 @@ func ValidateCreateItxPastMeetingAttachmentResponseBody(body *CreateItxPastMeeti
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9075,7 +9298,7 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9083,12 +9306,12 @@ func ValidateGetItxPastMeetingAttachmentResponseBody(body *GetItxPastMeetingAtta
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
 	if body.FileUploadedBy != nil {
-		if err2 := validateITXUserResponseBody(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9117,7 +9340,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPa
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
 	}
 	if body.CreatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.CreatedBy, "body.created_by"); err2 != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -9125,7 +9348,7 @@ func ValidateCreateItxPastMeetingAttachmentPresignResponseBody(body *CreateItxPa
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
 	}
 	if body.UpdatedBy != nil {
-		if err2 := validateITXUserResponseBody(body.UpdatedBy, "body.updated_by"); err2 != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
@@ -11309,6 +11532,79 @@ func ValidateDeleteItxPastMeetingParticipantUnauthorizedResponseBody(body *Delet
 	return
 }
 
+// ValidateGetItxMeetingAttachmentsBadRequestResponseBody runs the validations
+// defined on GetItxMeetingAttachmentsBadRequestResponseBody
+func ValidateGetItxMeetingAttachmentsBadRequestResponseBody(body *GetItxMeetingAttachmentsBadRequestResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingAttachmentsForbiddenResponseBody runs the validations
+// defined on GetItxMeetingAttachmentsForbiddenResponseBody
+func ValidateGetItxMeetingAttachmentsForbiddenResponseBody(body *GetItxMeetingAttachmentsForbiddenResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingAttachmentsInternalServerErrorResponseBody runs the
+// validations defined on
+// GetItxMeetingAttachmentsInternalServerErrorResponseBody
+func ValidateGetItxMeetingAttachmentsInternalServerErrorResponseBody(body *GetItxMeetingAttachmentsInternalServerErrorResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingAttachmentsNotFoundResponseBody runs the validations
+// defined on GetItxMeetingAttachmentsNotFoundResponseBody
+func ValidateGetItxMeetingAttachmentsNotFoundResponseBody(body *GetItxMeetingAttachmentsNotFoundResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingAttachmentsServiceUnavailableResponseBody runs the
+// validations defined on GetItxMeetingAttachmentsServiceUnavailableResponseBody
+func ValidateGetItxMeetingAttachmentsServiceUnavailableResponseBody(body *GetItxMeetingAttachmentsServiceUnavailableResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
+// ValidateGetItxMeetingAttachmentsUnauthorizedResponseBody runs the
+// validations defined on GetItxMeetingAttachmentsUnauthorizedResponseBody
+func ValidateGetItxMeetingAttachmentsUnauthorizedResponseBody(body *GetItxMeetingAttachmentsUnauthorizedResponseBody) (err error) {
+	if body.Code == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("code", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	return
+}
+
 // ValidateCreateItxMeetingAttachmentBadRequestResponseBody runs the
 // validations defined on CreateItxMeetingAttachmentBadRequestResponseBody
 func ValidateCreateItxMeetingAttachmentBadRequestResponseBody(body *CreateItxMeetingAttachmentBadRequestResponseBody) (err error) {
@@ -12260,8 +12556,8 @@ func validateRecurrenceResponseBody(body *RecurrenceResponseBody, path string) (
 	return
 }
 
-// ValidateITXUserResponseBody runs the validations defined on ITXUser
-func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
+// ValidateITXUser runs the validations defined on ITXUser
+func ValidateITXUser(body *ITXUser) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("body.email", *body.Email, goa.FormatEmail))
 	}
@@ -12271,9 +12567,9 @@ func ValidateITXUserResponseBody(body *ITXUserResponseBody) (err error) {
 	return
 }
 
-// validateITXUserResponseBody checks ITXUser and reports errors using the path
-// supplied by its caller
-func validateITXUserResponseBody(body *ITXUserResponseBody, path string) (err error) {
+// validateITXUser checks ITXUser and reports errors using the path supplied by
+// its caller
+func validateITXUser(body *ITXUser, path string) (err error) {
 	if body.Email != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat(path+".email", *body.Email, goa.FormatEmail))
 	}
@@ -12468,6 +12764,142 @@ func validateParticipantSessionResponseBody(body *ParticipantSessionResponseBody
 	}
 	if body.LeaveTime != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat(path+".leave_time", *body.LeaveTime, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateITXMeetingAttachmentResponse runs the validations defined on
+// ITXMeetingAttachment
+func ValidateITXMeetingAttachmentResponse(body *ITXMeetingAttachmentResponse) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", "body"))
+	}
+	if body.MeetingID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_id", "body"))
+	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", "body"))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.uid", *body.UID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.source", *body.Source, []any{"api", "description"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	if body.FileUploadStatus != nil {
+		if !(*body.FileUploadStatus == "ongoing" || *body.FileUploadStatus == "completed" || *body.FileUploadStatus == "failed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.file_upload_status", *body.FileUploadStatus, []any{"ongoing", "completed", "failed"}))
+		}
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.CreatedBy != nil {
+		if err2 := validateITXUser(body.CreatedBy, "body.created_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	if body.UpdatedBy != nil {
+		if err2 := validateITXUser(body.UpdatedBy, "body.updated_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.FileUploadedBy != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, "body.file_uploaded_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.FileUploadedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("body.file_uploaded_at", *body.FileUploadedAt, goa.FormatDateTime))
+	}
+	return
+}
+
+// validateITXMeetingAttachmentResponse checks ITXMeetingAttachment and reports
+// errors using the path supplied by its caller
+func validateITXMeetingAttachmentResponse(body *ITXMeetingAttachmentResponse, path string) (err error) {
+	if body.UID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("uid", path))
+	}
+	if body.MeetingID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("meeting_id", path))
+	}
+	if body.Type == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("type", path))
+	}
+	if body.Category == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("category", path))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", path))
+	}
+	if body.UID != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".uid", *body.UID, goa.FormatUUID))
+	}
+	if body.Type != nil {
+		if !(*body.Type == "file" || *body.Type == "link") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".type", *body.Type, []any{"file", "link"}))
+		}
+	}
+	if body.Source != nil {
+		if !(*body.Source == "api" || *body.Source == "description") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".source", *body.Source, []any{"api", "description"}))
+		}
+	}
+	if body.Category != nil {
+		if !(*body.Category == "Meeting Minutes" || *body.Category == "Notes" || *body.Category == "Presentation" || *body.Category == "Other") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".category", *body.Category, []any{"Meeting Minutes", "Notes", "Presentation", "Other"}))
+		}
+	}
+	if body.FileUploadStatus != nil {
+		if !(*body.FileUploadStatus == "ongoing" || *body.FileUploadStatus == "completed" || *body.FileUploadStatus == "failed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError(path+".file_upload_status", *body.FileUploadStatus, []any{"ongoing", "completed", "failed"}))
+		}
+	}
+	if body.CreatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".created_at", *body.CreatedAt, goa.FormatDateTime))
+	}
+	if body.CreatedBy != nil {
+		if err2 := validateITXUser(body.CreatedBy, path+".created_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.UpdatedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".updated_at", *body.UpdatedAt, goa.FormatDateTime))
+	}
+	if body.UpdatedBy != nil {
+		if err2 := validateITXUser(body.UpdatedBy, path+".updated_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.FileUploadedBy != nil {
+		if err2 := validateITXUser(body.FileUploadedBy, path+".file_uploaded_by"); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.FileUploadedAt != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat(path+".file_uploaded_at", *body.FileUploadedAt, goa.FormatDateTime))
 	}
 	return
 }

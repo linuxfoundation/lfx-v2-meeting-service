@@ -27,6 +27,12 @@ func NewMeetingAttachmentService(attachmentClient domain.ITXMeetingAttachmentCli
 	}
 }
 
+// ListMeetingAttachments lists the attachments of a meeting via ITX proxy. A non-empty occurrenceID
+// narrows the result to the attachments that apply to that occurrence.
+func (s *MeetingAttachmentService) ListMeetingAttachments(ctx context.Context, meetingID, occurrenceID string) ([]itx.MeetingAttachment, error) {
+	return s.attachmentClient.ListMeetingAttachments(ctx, meetingID, occurrenceID)
+}
+
 // CreateMeetingAttachment creates a new meeting attachment via ITX proxy
 func (s *MeetingAttachmentService) CreateMeetingAttachment(ctx context.Context, meetingID string, req *itx.CreateMeetingAttachmentRequest) (*itx.MeetingAttachment, error) {
 	// Stamp created_by (with full profile enrichment when available) from the

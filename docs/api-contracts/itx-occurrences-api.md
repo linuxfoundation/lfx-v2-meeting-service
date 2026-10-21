@@ -468,6 +468,14 @@ Authorization: Bearer <jwt_token>
 - When an occurrence is deleted, registrants specific to that occurrence are automatically unregistered
 - If registrants are registered for "all occurrences," they remain registered for other occurrences
 
+### Impact on Attachments
+
+Meeting attachments can be scoped to a single occurrence through their `occurrence_id` (see [Occurrence scope](itx-meeting-attachments-api.md#occurrence-scope)). ITX keeps those attachments in step with the occurrence, the same way it handles registrants who are registered to a single occurrence. Attachments that apply to all occurrences are never affected.
+
+- When a single occurrence is rescheduled, its attachments move to the occurrence's new ID, because an occurrence ID is its start time
+- When an occurrence is deleted, the attachments scoped to it are deleted along with their uploaded files
+- When a series-wide edit changes occurrence start times (all following occurrences, or the whole meeting), an attachment whose occurrence no longer exists moves to the nearest upcoming occurrence. Attachments on cancelled occurrences, or on occurrences that already started, are left as they are
+
 ### Recurrence Pattern Changes
 
 When updating an occurrence with a new `recurrence` object:

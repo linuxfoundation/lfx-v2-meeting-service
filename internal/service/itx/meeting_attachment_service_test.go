@@ -19,6 +19,14 @@ type fakeMeetingAttachmentClient struct {
 	lastCreateReq        *itx.CreateMeetingAttachmentRequest
 	lastUpdateReq        *itx.UpdateMeetingAttachmentRequest
 	lastCreatePresignReq *itx.CreateAttachmentPresignRequest
+	lastListMeetingID    string
+	lastListOccurrenceID string
+	listResult           []itx.MeetingAttachment
+}
+
+func (f *fakeMeetingAttachmentClient) ListMeetingAttachments(_ context.Context, meetingID, occurrenceID string) ([]itx.MeetingAttachment, error) {
+	f.lastListMeetingID, f.lastListOccurrenceID = meetingID, occurrenceID
+	return f.listResult, nil
 }
 
 func (f *fakeMeetingAttachmentClient) CreateMeetingAttachment(_ context.Context, _ string, req *itx.CreateMeetingAttachmentRequest) (*itx.MeetingAttachment, error) {
@@ -94,5 +102,29 @@ func TestMeetingAttachmentService_StampsAuditFields(t *testing.T) {
 		_, err := svc.CreateMeetingAttachment(context.Background(), "mtg-1", &itx.CreateMeetingAttachmentRequest{Name: "notes.pdf"})
 		require.NoError(t, err)
 		assert.Nil(t, client.lastCreateReq.CreatedBy)
+	})
+}
+
+func TestMeetingAttachmentService_ListMeetingAttachments(t *testing.T) {
+	t.Run("passes the meeting and occurrence through and returns what ITX returns", func(t *testing.T) {
+		client := &fakeMeetingAttachmentClient{listResult: []itx.MeetingAttachment{{ID: "att-1"}, {ID: "att-2", OccurrenceID: "1788000000"}}}
+		svc := NewMeetingAttachmentService(client, nil)
+
+		got, err := svc.ListMeetingAttachments(context.Background(), "mtg-1", "1788000000")
+		require.NoError(t, err)
+
+		assert.Equal(t, "mtg-1", client.lastListMeetingID)
+		assert.Equal(t, "1788000000", client.lastListOccurrenceID)
+		require.Len(t, got, 2)
+		assert.Equal(t, "att-2", got[1].ID)
+	})
+
+	t.Run("an empty occurrence means no filter", func(t *testing.T) {
+		client := &fakeMeetingAttachmentClient{}
+		svc := NewMeetingAttachmentService(client, nil)
+
+		_, err := svc.ListMeetingAttachments(context.Background(), "mtg-1", "")
+		require.NoError(t, err)
+		assert.Empty(t, client.lastListOccurrenceID)
 	})
 }

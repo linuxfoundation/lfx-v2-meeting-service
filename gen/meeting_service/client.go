@@ -47,6 +47,7 @@ type Client struct {
 	CreateItxPastMeetingParticipantEndpoint       goa.Endpoint
 	UpdateItxPastMeetingParticipantEndpoint       goa.Endpoint
 	DeleteItxPastMeetingParticipantEndpoint       goa.Endpoint
+	GetItxMeetingAttachmentsEndpoint              goa.Endpoint
 	CreateItxMeetingAttachmentEndpoint            goa.Endpoint
 	GetItxMeetingAttachmentEndpoint               goa.Endpoint
 	UpdateItxMeetingAttachmentEndpoint            goa.Endpoint
@@ -62,7 +63,7 @@ type Client struct {
 }
 
 // NewClient initializes a "Meeting Service" service client given the endpoints.
-func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, getItxPastMeetingChat, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
+func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting, updateItxMeeting, getItxMeetingCount, createItxRegistrant, selfRegisterItxMeeting, selfUnregisterItxMeeting, getItxRegistrant, updateItxRegistrant, deleteItxRegistrant, getItxJoinLink, getItxRegistrantIcs, resendItxRegistrantInvitation, resendItxMeetingInvitations, registerItxCommitteeMembers, updateItxOccurrence, deleteItxOccurrence, submitItxMeetingResponse, createItxPastMeeting, getItxPastMeeting, deleteItxPastMeeting, updateItxPastMeeting, getItxPastMeetingSummary, updateItxPastMeetingSummary, getItxPastMeetingChat, createItxPastMeetingParticipant, updateItxPastMeetingParticipant, deleteItxPastMeetingParticipant, getItxMeetingAttachments, createItxMeetingAttachment, getItxMeetingAttachment, updateItxMeetingAttachment, deleteItxMeetingAttachment, createItxMeetingAttachmentPresign, getItxMeetingAttachmentDownload, createItxPastMeetingAttachment, getItxPastMeetingAttachment, updateItxPastMeetingAttachment, deleteItxPastMeetingAttachment, createItxPastMeetingAttachmentPresign, getItxPastMeetingAttachmentDownload goa.Endpoint) *Client {
 	return &Client{
 		ReadyzEndpoint:                                readyz,
 		LivezEndpoint:                                 livez,
@@ -95,6 +96,7 @@ func NewClient(readyz, livez, createItxMeeting, getItxMeeting, deleteItxMeeting,
 		CreateItxPastMeetingParticipantEndpoint:       createItxPastMeetingParticipant,
 		UpdateItxPastMeetingParticipantEndpoint:       updateItxPastMeetingParticipant,
 		DeleteItxPastMeetingParticipantEndpoint:       deleteItxPastMeetingParticipant,
+		GetItxMeetingAttachmentsEndpoint:              getItxMeetingAttachments,
 		CreateItxMeetingAttachmentEndpoint:            createItxMeetingAttachment,
 		GetItxMeetingAttachmentEndpoint:               getItxMeetingAttachment,
 		UpdateItxMeetingAttachmentEndpoint:            updateItxMeetingAttachment,
@@ -637,6 +639,25 @@ func (c *Client) UpdateItxPastMeetingParticipant(ctx context.Context, p *UpdateI
 func (c *Client) DeleteItxPastMeetingParticipant(ctx context.Context, p *DeleteItxPastMeetingParticipantPayload) (err error) {
 	_, err = c.DeleteItxPastMeetingParticipantEndpoint(ctx, p)
 	return
+}
+
+// GetItxMeetingAttachments calls the "get-itx-meeting-attachments" endpoint of
+// the "Meeting Service" service.
+// GetItxMeetingAttachments may return the following errors:
+//   - "BadRequest" (type *BadRequestError): Bad request
+//   - "Unauthorized" (type *UnauthorizedError): Unauthorized
+//   - "Forbidden" (type *ForbiddenError): Forbidden
+//   - "NotFound" (type *NotFoundError): Meeting not found
+//   - "InternalServerError" (type *InternalServerError): Internal server error
+//   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
+//   - error: internal error
+func (c *Client) GetItxMeetingAttachments(ctx context.Context, p *GetItxMeetingAttachmentsPayload) (res []*ITXMeetingAttachment, err error) {
+	var ires any
+	ires, err = c.GetItxMeetingAttachmentsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]*ITXMeetingAttachment), nil
 }
 
 // CreateItxMeetingAttachment calls the "create-itx-meeting-attachment"

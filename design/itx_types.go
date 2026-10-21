@@ -807,6 +807,9 @@ var ITXMeetingAttachment = Type("ITXMeetingAttachment", func() {
 		Example("7cad5a8d-19d0-41a4-81a6-043453daf9ee")
 	})
 	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("occurrence_id", String, "Occurrence this attachment is scoped to (the occurrence start time as a unix timestamp). Omitted when the attachment applies to all occurrences of the meeting", func() {
+		Example("1788000000")
+	})
 	Attribute("type", String, "Attachment type", func() {
 		Enum("file", "link")
 		Example("file")
@@ -901,6 +904,7 @@ var ITXMeetingAttachmentPresignResponse = Type("ITXMeetingAttachmentPresignRespo
 		Format(FormatUUID)
 	})
 	Attribute("meeting_id", String, "Meeting ID")
+	Attribute("occurrence_id", String, "Occurrence this attachment is scoped to (unix timestamp). Omitted when the attachment applies to all occurrences")
 	Attribute("type", String, "Attachment type (always 'file' for presign)")
 	Attribute("category", String, "Attachment category")
 	Attribute("name", String, "File name")

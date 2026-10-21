@@ -9,7 +9,18 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/cmd/meeting-api/service"
 	meetingservice "github.com/linuxfoundation/lfx-v2-meeting-service/gen/meeting_service"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
+
+// GetItxMeetingAttachments lists the attachments of a meeting via ITX proxy, optionally only those
+// that apply to one occurrence
+func (s *MeetingsAPI) GetItxMeetingAttachments(ctx context.Context, p *meetingservice.GetItxMeetingAttachmentsPayload) ([]*meetingservice.ITXMeetingAttachment, error) {
+	resp, err := s.itxMeetingAttachmentService.ListMeetingAttachments(ctx, p.MeetingID, utils.StringValue(p.OccurrenceID))
+	if err != nil {
+		return nil, handleError(ctx, err)
+	}
+	return service.ConvertITXMeetingAttachmentsToGoa(resp), nil
+}
 
 // CreateItxMeetingAttachment creates a meeting attachment via ITX proxy.
 // created_by is stamped by MeetingAttachmentService from the principal on ctx

@@ -327,6 +327,7 @@ Meeting attachment and past meeting attachment records use the same field names;
 | -------- | -------- | -------------- |
 | `id` | `uid` | Direct copy |
 | `meeting_id`, `meeting_and_occurrence_id` | same names | Direct copy |
+| `occurrence_id` | `occurrence_id` | Direct copy; meeting attachments only, set when the attachment is scoped to a single occurrence and omitted when it applies to all occurrences |
 | `type`, `category`, `link`, `name`, `description`, `source` | same names | Direct copy |
 | `file_name`, `file_url`, `file_uploaded`, `file_upload_status`, `file_content_type` | same names | Direct copy |
 | `file_size` | `file_size` | String or number accepted |

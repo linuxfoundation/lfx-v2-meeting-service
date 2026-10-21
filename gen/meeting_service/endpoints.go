@@ -48,6 +48,7 @@ type Endpoints struct {
 	CreateItxPastMeetingParticipant       goa.Endpoint
 	UpdateItxPastMeetingParticipant       goa.Endpoint
 	DeleteItxPastMeetingParticipant       goa.Endpoint
+	GetItxMeetingAttachments              goa.Endpoint
 	CreateItxMeetingAttachment            goa.Endpoint
 	GetItxMeetingAttachment               goa.Endpoint
 	UpdateItxMeetingAttachment            goa.Endpoint
@@ -108,6 +109,7 @@ func NewEndpoints(s Service) *Endpoints {
 		CreateItxPastMeetingParticipant:       NewCreateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
 		UpdateItxPastMeetingParticipant:       NewUpdateItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
 		DeleteItxPastMeetingParticipant:       NewDeleteItxPastMeetingParticipantEndpoint(s, a.JWTAuth),
+		GetItxMeetingAttachments:              NewGetItxMeetingAttachmentsEndpoint(s, a.JWTAuth),
 		CreateItxMeetingAttachment:            NewCreateItxMeetingAttachmentEndpoint(s, a.JWTAuth),
 		GetItxMeetingAttachment:               NewGetItxMeetingAttachmentEndpoint(s, a.JWTAuth),
 		UpdateItxMeetingAttachment:            NewUpdateItxMeetingAttachmentEndpoint(s, a.JWTAuth),
@@ -157,6 +159,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreateItxPastMeetingParticipant = m(e.CreateItxPastMeetingParticipant)
 	e.UpdateItxPastMeetingParticipant = m(e.UpdateItxPastMeetingParticipant)
 	e.DeleteItxPastMeetingParticipant = m(e.DeleteItxPastMeetingParticipant)
+	e.GetItxMeetingAttachments = m(e.GetItxMeetingAttachments)
 	e.CreateItxMeetingAttachment = m(e.CreateItxMeetingAttachment)
 	e.GetItxMeetingAttachment = m(e.GetItxMeetingAttachment)
 	e.UpdateItxMeetingAttachment = m(e.UpdateItxMeetingAttachment)
@@ -858,6 +861,29 @@ func NewDeleteItxPastMeetingParticipantEndpoint(s Service, authJWTFn security.Au
 			return nil, err
 		}
 		return nil, s.DeleteItxPastMeetingParticipant(ctx, p)
+	}
+}
+
+// NewGetItxMeetingAttachmentsEndpoint returns an endpoint function that calls
+// the method "get-itx-meeting-attachments" of service "Meeting Service".
+func NewGetItxMeetingAttachmentsEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
+	return func(ctx context.Context, req any) (any, error) {
+		p := req.(*GetItxMeetingAttachmentsPayload)
+		var err error
+		sc := security.JWTScheme{
+			Name:           "jwt",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		var token string
+		if p.BearerToken != nil {
+			token = string(*p.BearerToken)
+		}
+		ctx, err = authJWTFn(ctx, token, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return s.GetItxMeetingAttachments(ctx, p)
 	}
 }
 

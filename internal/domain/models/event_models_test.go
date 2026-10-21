@@ -121,3 +121,31 @@ func TestSummaryEventData_JSON(t *testing.T) {
 	assert.Equal(t, false, doc["requires_approval"])
 	assert.Equal(t, false, doc["approved"])
 }
+
+func TestMeetingAttachmentEventData_Tags(t *testing.T) {
+	t.Run("a scoped attachment is tagged with its occurrence", func(t *testing.T) {
+		tags := (&MeetingAttachmentEventData{UID: "att-1", MeetingID: "mtg-1", OccurrenceID: "1788000000"}).Tags()
+		assert.Contains(t, tags, "occurrence_id:1788000000")
+	})
+
+	t.Run("a series-wide attachment has no occurrence tag", func(t *testing.T) {
+		tags := (&MeetingAttachmentEventData{UID: "att-1", MeetingID: "mtg-1"}).Tags()
+		for _, tag := range tags {
+			assert.NotContains(t, tag, "occurrence_id:")
+		}
+	})
+}
+
+func TestMeetingAttachmentEventData_JSON(t *testing.T) {
+	t.Run("occurrence_id is omitted when series-wide", func(t *testing.T) {
+		b, err := json.Marshal(&MeetingAttachmentEventData{UID: "att-1", MeetingID: "mtg-1"})
+		require.NoError(t, err)
+		assert.NotContains(t, string(b), "occurrence_id")
+	})
+
+	t.Run("occurrence_id is indexed when scoped", func(t *testing.T) {
+		b, err := json.Marshal(&MeetingAttachmentEventData{UID: "att-1", MeetingID: "mtg-1", OccurrenceID: "1788000000"})
+		require.NoError(t, err)
+		assert.Contains(t, string(b), `"occurrence_id":"1788000000"`)
+	})
+}

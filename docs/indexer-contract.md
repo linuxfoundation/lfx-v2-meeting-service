@@ -898,6 +898,7 @@ Every summary publish carries the full config, so approving a summary (or revoki
 |---|---|---|
 | `uid` | string | Attachment unique identifier (the record's `id`) |
 | `meeting_id` | string | ID of the parent meeting |
+| `occurrence_id` | string (optional) | Single occurrence the attachment is scoped to (the occurrence start time as a unix timestamp); omitted when the attachment applies to all occurrences of the meeting |
 | `project_uid` | string | v2 UUID of the parent meeting's project (always set: attachments without a mapped project are skipped) |
 | `project_slug` | string (optional) | URL slug of the parent project (resolved via `lfx.projects-api.get_slug`; omitted when unavailable) |
 | `type` | string | Attachment type: `"file"` or `"link"` |
@@ -926,6 +927,7 @@ Every summary publish carries the full config, so approving a summary (or revoki
 |---|---|---|
 | `meeting_attachment_uid:{uid}` | `meeting_attachment_uid:a1b2c3d4-...` | Lookup by attachment UID |
 | `meeting_id:{value}` | `meeting_id:93699735000` | Find attachments for a meeting |
+| `occurrence_id:{value}` | `occurrence_id:1788000000` | Find attachments scoped to one occurrence (only set when scoped; series-wide attachments carry no `occurrence_id` tag) |
 | `project_uid:{value}` | `project_uid:abc123...` | Find attachments by project |
 | `project_slug:{value}` | `project_slug:cncf` | Find attachments by project slug |
 | `type:{value}` | `type:file` | Find attachments by type |

@@ -6,9 +6,36 @@ package itx
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 )
+
+// ListMeetingAttachments lists the attachments of a meeting. When occurrenceID is set, ITX returns
+// only the attachments that apply to that occurrence: the ones scoped to it plus the series-wide ones.
+func (c *Client) ListMeetingAttachments(ctx context.Context, meetingID, occurrenceID string) ([]itx.MeetingAttachment, error) {
+	query := url.Values{}
+	if occurrenceID != "" {
+		query.Set("occurrence_id", occurrenceID)
+	}
+	attachments, err := doJSONTyped[[]itx.MeetingAttachment](c, ctx, apiRequest{
+		method:      http.MethodGet,
+		path:        "/v2/zoom/meetings/%s/attachments",
+		pathArgs:    []any{meetingID},
+		query:       query,
+		accept:      acceptJSON,
+		debugOp:     "ListMeetingAttachments",
+		debugFields: []any{"meetingID", meetingID, "occurrenceID", occurrenceID},
+		parseError:  "failed to parse ITX response",
+	})
+	if err != nil {
+		return nil, err
+	}
+	if attachments == nil || *attachments == nil {
+		return []itx.MeetingAttachment{}, nil
+	}
+	return *attachments, nil
+}
 
 // CreateMeetingAttachmentPresignURL generates a presigned URL for meeting attachment upload.
 func (c *Client) CreateMeetingAttachmentPresignURL(ctx context.Context, meetingID string, req *itx.CreateAttachmentPresignRequest) (*itx.MeetingAttachmentPresignResponse, error) {
