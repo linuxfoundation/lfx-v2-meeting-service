@@ -2847,6 +2847,190 @@ func DecodeResendItxRegistrantInvitationResponse(decoder func(*http.Response) go
 	}
 }
 
+// BuildSelfResendItxRegistrantInvitationRequest instantiates a HTTP request
+// object with method and path set to call the "Meeting Service" service
+// "self-resend-itx-registrant-invitation" endpoint
+func (c *Client) BuildSelfResendItxRegistrantInvitationRequest(ctx context.Context, v any) (*http.Request, error) {
+	var (
+		meetingID    string
+		registrantID string
+	)
+	{
+		p, ok := v.(*meetingservice.SelfResendItxRegistrantInvitationPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("Meeting Service", "self-resend-itx-registrant-invitation", "*meetingservice.SelfResendItxRegistrantInvitationPayload", v)
+		}
+		meetingID = p.MeetingID
+		registrantID = p.RegistrantID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: SelfResendItxRegistrantInvitationMeetingServicePath(meetingID, registrantID)}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("Meeting Service", "self-resend-itx-registrant-invitation", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeSelfResendItxRegistrantInvitationRequest returns an encoder for
+// requests sent to the Meeting Service self-resend-itx-registrant-invitation
+// server.
+func EncodeSelfResendItxRegistrantInvitationRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
+	return func(req *http.Request, v any) error {
+		p, ok := v.(*meetingservice.SelfResendItxRegistrantInvitationPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("Meeting Service", "self-resend-itx-registrant-invitation", "*meetingservice.SelfResendItxRegistrantInvitationPayload", v)
+		}
+		if p.BearerToken != nil {
+			head := *p.BearerToken
+			if !strings.Contains(head, " ") {
+				req.Header.Set("Authorization", "Bearer "+head)
+			} else {
+				req.Header.Set("Authorization", head)
+			}
+		}
+		values := req.URL.Query()
+		if p.Version != nil {
+			values.Add("v", *p.Version)
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeSelfResendItxRegistrantInvitationResponse returns a decoder for
+// responses returned by the Meeting Service
+// self-resend-itx-registrant-invitation endpoint. restoreBody controls whether
+// the response body should be restored after having been read.
+// DecodeSelfResendItxRegistrantInvitationResponse may return the following
+// errors:
+//   - "BadRequest" (type *meetingservice.BadRequestError): http.StatusBadRequest
+//   - "Forbidden" (type *meetingservice.ForbiddenError): http.StatusForbidden
+//   - "InternalServerError" (type *meetingservice.InternalServerError): http.StatusInternalServerError
+//   - "NotFound" (type *meetingservice.NotFoundError): http.StatusNotFound
+//   - "ServiceUnavailable" (type *meetingservice.ServiceUnavailableError): http.StatusServiceUnavailable
+//   - "Unauthorized" (type *meetingservice.UnauthorizedError): http.StatusUnauthorized
+//   - error: internal error
+func DecodeSelfResendItxRegistrantInvitationResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (any, error) {
+	return func(resp *http.Response) (result any, decodeErr error) {
+		responseBody := resp.Body
+		if restoreBody {
+			b, readErr := io.ReadAll(responseBody)
+			closeErr := responseBody.Close()
+			if err := errors.Join(readErr, closeErr); err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer func() {
+				if err := responseBody.Close(); err != nil {
+					decodeErr = errors.Join(decodeErr, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err))
+				}
+			}()
+		}
+		switch resp.StatusCode {
+		case http.StatusNoContent:
+			return nil, nil
+		case http.StatusBadRequest:
+			var (
+				body SelfResendItxRegistrantInvitationBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationBadRequest(&body)
+		case http.StatusForbidden:
+			var (
+				body SelfResendItxRegistrantInvitationForbiddenResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationForbiddenResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationForbidden(&body)
+		case http.StatusInternalServerError:
+			var (
+				body SelfResendItxRegistrantInvitationInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationInternalServerError(&body)
+		case http.StatusNotFound:
+			var (
+				body SelfResendItxRegistrantInvitationNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationNotFound(&body)
+		case http.StatusServiceUnavailable:
+			var (
+				body SelfResendItxRegistrantInvitationServiceUnavailableResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationServiceUnavailableResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationServiceUnavailable(&body)
+		case http.StatusUnauthorized:
+			var (
+				body SelfResendItxRegistrantInvitationUnauthorizedResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			err = ValidateSelfResendItxRegistrantInvitationUnauthorizedResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, NewSelfResendItxRegistrantInvitationUnauthorized(&body)
+		default:
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("Meeting Service", "self-resend-itx-registrant-invitation", err)
+			}
+			return nil, goahttp.ErrInvalidResponse("Meeting Service", "self-resend-itx-registrant-invitation", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // BuildResendItxMeetingInvitationsRequest instantiates a HTTP request object
 // with method and path set to call the "Meeting Service" service
 // "resend-itx-meeting-invitations" endpoint

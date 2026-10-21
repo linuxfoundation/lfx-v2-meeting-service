@@ -89,6 +89,11 @@ func ResendItxRegistrantInvitationMeetingServicePath(meetingID string, registran
 	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/resend", meetingID, registrantID)
 }
 
+// SelfResendItxRegistrantInvitationMeetingServicePath returns the URL path to the Meeting Service service self-resend-itx-registrant-invitation HTTP endpoint.
+func SelfResendItxRegistrantInvitationMeetingServicePath(meetingID string, registrantID string) string {
+	return fmt.Sprintf("/itx/meetings/%v/registrants/%v/self_resend", meetingID, registrantID)
+}
+
 // ResendItxMeetingInvitationsMeetingServicePath returns the URL path to the Meeting Service service resend-itx-meeting-invitations HTTP endpoint.
 func ResendItxMeetingInvitationsMeetingServicePath(meetingID string) string {
 	return fmt.Sprintf("/itx/meetings/%v/resend", meetingID)

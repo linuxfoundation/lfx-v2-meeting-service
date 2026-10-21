@@ -1003,6 +1003,52 @@ func BuildResendItxRegistrantInvitationPayload(meetingServiceResendItxRegistrant
 	return v, nil
 }
 
+// BuildSelfResendItxRegistrantInvitationPayload builds the payload for the
+// Meeting Service self-resend-itx-registrant-invitation endpoint from CLI
+// flags.
+func BuildSelfResendItxRegistrantInvitationPayload(meetingServiceSelfResendItxRegistrantInvitationMeetingID *string, meetingServiceSelfResendItxRegistrantInvitationRegistrantID *string, meetingServiceSelfResendItxRegistrantInvitationVersion *string, meetingServiceSelfResendItxRegistrantInvitationBearerToken *string) (*meetingservice.SelfResendItxRegistrantInvitationPayload, error) {
+	var err error
+	var meetingID string
+	{
+		if meetingServiceSelfResendItxRegistrantInvitationMeetingID == nil {
+			return nil, fmt.Errorf("missing required flag --meeting-id")
+		}
+		meetingID = *meetingServiceSelfResendItxRegistrantInvitationMeetingID
+	}
+	var registrantID string
+	{
+		if meetingServiceSelfResendItxRegistrantInvitationRegistrantID == nil {
+			return nil, fmt.Errorf("missing required flag --registrant-id")
+		}
+		registrantID = *meetingServiceSelfResendItxRegistrantInvitationRegistrantID
+	}
+	var version *string
+	{
+		if meetingServiceSelfResendItxRegistrantInvitationVersion != nil {
+			version = meetingServiceSelfResendItxRegistrantInvitationVersion
+			if !(*meetingServiceSelfResendItxRegistrantInvitationVersion == "1") {
+				err = goa.MergeErrors(err, goa.InvalidEnumValueError("version", *meetingServiceSelfResendItxRegistrantInvitationVersion, []any{"1"}))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var bearerToken *string
+	{
+		if meetingServiceSelfResendItxRegistrantInvitationBearerToken != nil {
+			bearerToken = meetingServiceSelfResendItxRegistrantInvitationBearerToken
+		}
+	}
+	v := &meetingservice.SelfResendItxRegistrantInvitationPayload{}
+	v.MeetingID = meetingID
+	v.RegistrantID = registrantID
+	v.Version = version
+	v.BearerToken = bearerToken
+
+	return v, nil
+}
+
 // BuildResendItxMeetingInvitationsPayload builds the payload for the Meeting
 // Service resend-itx-meeting-invitations endpoint from CLI flags.
 func BuildResendItxMeetingInvitationsPayload(meetingServiceResendItxMeetingInvitationsBody *string, meetingServiceResendItxMeetingInvitationsMeetingID *string, meetingServiceResendItxMeetingInvitationsVersion *string, meetingServiceResendItxMeetingInvitationsBearerToken *string) (*meetingservice.ResendItxMeetingInvitationsPayload, error) {

@@ -610,6 +610,42 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+## Self-Resend Registrant Invitation
+
+Allows any authenticated user with at least `viewer` access to a meeting to resend the invitation to their own registrant record, for example to get the calendar invite back. The caller supplies their `registrant_id`; the service verifies ownership (email or username from the JWT) before resending. M2M tokens are rejected.
+
+This is the self-service counterpart of [Resend Registrant Invitation](#resend-registrant-invitation), which requires `organizer`. Because the ownership check runs in the service, the invitation can only be sent to a registrant record that belongs to the caller; the endpoint cannot be used to email anyone else.
+
+### Proxy API Endpoint
+
+**Method**: `POST /itx/meetings/{meeting_id}/registrants/{registrant_id}/self_resend?v=1`
+
+**Authorization**: Requires `viewer` permission on the meeting; caller must own the registrant record
+
+**Request Headers**:
+
+```text
+Authorization: Bearer <jwt_token>
+```
+
+**Path Parameters**:
+
+- `meeting_id` (string, required) - The Zoom meeting ID
+- `registrant_id` (string, required) - ID of the caller's own registrant record
+
+**Response**: `204 No Content`
+
+**How it works**: the service reads the registrant from ITX and compares its `email` (case-insensitive) and `username` to the JWT principal. The email comes from the JWT claim, or from the NATS user profile when the token carries none. If either matches, it calls the same ITX resend endpoint the organizer endpoint uses (`POST /v2/zoom/meetings/{meeting_id}/registrants/{registrant_id}/resend`). If neither matches, ITX is not asked to resend anything.
+
+**Error Responses**:
+
+- `400 Bad Request` — M2M client token used; self-resend requires a user token
+- `401 Unauthorized` — Missing or invalid JWT
+- `403 Forbidden` — Caller lacks viewer access, or the `registrant_id` does not belong to the authenticated user
+- `404 Not Found` — Meeting or registrant not found
+
+---
+
 ## Authorization Requirements
 
 | Endpoint | Required Permission |
@@ -622,6 +658,7 @@ Authorization: Bearer <jwt_token>
 | Delete Registrant | `organizer` on meeting |
 | Get Registrant ICS | `viewer` on meeting |
 | Resend Registrant Invitation | `organizer` on meeting |
+| Self-Resend Registrant Invitation | `viewer` on meeting (+ must own the registrant record) |
 
 ---
 

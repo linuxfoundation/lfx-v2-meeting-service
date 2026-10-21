@@ -92,3 +92,13 @@ func (s *MeetingsAPI) ResendItxRegistrantInvitation(ctx context.Context, p *meet
 	slog.InfoContext(ctx, "registrant invitation resent", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
 	return nil
 }
+
+// SelfResendItxRegistrantInvitation resends the meeting invitation to the authenticated user's own registrant record.
+// The caller supplies their own registrant_id; the service verifies ownership before resending.
+func (s *MeetingsAPI) SelfResendItxRegistrantInvitation(ctx context.Context, p *meetingsvc.SelfResendItxRegistrantInvitationPayload) error {
+	if err := s.itxRegistrantService.SelfResendRegistrantInvitation(ctx, p.MeetingID, p.RegistrantID); err != nil {
+		return handleError(ctx, err)
+	}
+	slog.InfoContext(ctx, "self-resend of registrant invitation completed", "meeting_id", p.MeetingID, "registrant_id", p.RegistrantID)
+	return nil
+}
