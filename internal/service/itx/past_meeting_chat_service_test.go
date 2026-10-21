@@ -244,6 +244,49 @@ func TestPastMeetingChatService_GetPastMeetingChat(t *testing.T) {
 		})
 	})
 
+	t.Run("name header layout: public messages returned, private ones and their continuations dropped", func(t *testing.T) {
+		// The layout the provider writes today: a display name as header, no
+		// recipient, unindented continuation lines, CRLF endings and a trailing
+		// empty line. The senders of dropped messages appear nowhere in the body.
+		record := twoSessionRecord()
+		record.RecordingFiles = record.RecordingFiles[3:]
+		reader := &fakeRecordingRecordReader{record: record}
+		fetcher := &fakeRecordingFileFetcher{bodies: map[string]string{chatLinkA: "" +
+			"00:00:12\tAlice Example:\tHello everyone\r\n" +
+			"00:00:30\tBob Fixture (Example Foundation, Inc.):\tTwo points today:\r\n" +
+			"1. the release\r\n" +
+			"2. the roadmap\r\n" +
+			"00:00:45\tFrank Dropped to Alice Example:\tprivate-to-text\r\n" +
+			"private-to-continuation-text\r\n" +
+			"00:00:50\tGrace Dropped (Direct Message):\tprivate-dm-text\r\n" +
+			"00:00:55\tHenry Dropped (Privately) to Everyone:\tprivate-marked-text\r\n" +
+			"private-marked-continuation\r\n" +
+			"00:01:00\tCarol Example:\tReplying to \"Two points today:\"\r\n" +
+			"agreed on both\r\n" +
+			"\r\n"}}
+		svc := NewPastMeetingChatService(reader, fetcher, 1<<20)
+
+		resp, err := svc.GetPastMeetingChat(context.Background(), chatID, defaultWindow())
+		require.NoError(t, err)
+		s := resp.Sessions[0]
+		assert.Equal(t, 3, s.MessageCount)
+		assert.False(t, s.Truncated)
+		require.Len(t, s.Messages, 3)
+		assert.Equal(t, []string{"Alice Example", "Bob Fixture (Example Foundation, Inc.)", "Carol Example"},
+			[]string{s.Messages[0].Sender, s.Messages[1].Sender, s.Messages[2].Sender})
+		assert.Equal(t, "Two points today:\n1. the release\n2. the roadmap", s.Messages[1].Text)
+		assert.Equal(t, "Replying to \"Two points today:\"\nagreed on both", s.Messages[2].Text)
+		for _, m := range s.Messages {
+			assert.Equal(t, "Everyone", m.Recipient)
+		}
+
+		out, err := json.Marshal(resp)
+		require.NoError(t, err)
+		for _, dropped := range []string{"Frank Dropped", "Grace Dropped", "Henry Dropped", "private-to-text", "private-to-continuation-text", "private-dm-text", "private-marked-text", "private-marked-continuation", "Direct Message", "Privately"} {
+			assert.NotContains(t, string(out), dropped)
+		}
+	})
+
 	t.Run("empty chat file yields an empty session", func(t *testing.T) {
 		record := twoSessionRecord()
 		record.RecordingFiles = record.RecordingFiles[3:] // session A's CHAT only
