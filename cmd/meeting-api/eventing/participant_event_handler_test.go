@@ -100,7 +100,8 @@ func (m *mockParticipantPublisher) PublishMeetingAttachmentEvent(_ context.Conte
 func (m *mockParticipantPublisher) PublishPastMeetingAttachmentEvent(_ context.Context, _ string, _ *models.PastMeetingAttachmentEventData) error {
 	return nil
 }
-func (m *mockParticipantPublisher) Close() error { return nil }
+func (m *mockParticipantPublisher) Close() error                { return nil }
+func (m *mockParticipantPublisher) Flush(context.Context) error { return nil }
 
 // =============================================================================
 // v1Data helpers
@@ -152,6 +153,32 @@ func mustMarshalJSON(t *testing.T, v interface{}) []byte {
 // their specific mock BEFORE calling newParticipantHandlers so testify matches it
 // first (expectations are tried in registration order).
 func newParticipantHandlers(publisher *mockParticipantPublisher, mappingsKV, objectsKV *mockKeyValue) *EventHandlers {
+	mappingsKV.On("Create", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingChildRepairPrefix)
+	}), mock.Anything).Return(uint64(1), nil).Maybe()
+	mappingsKV.On("Update", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingChildRepairPrefix) || strings.HasPrefix(key, pastMeetingParticipantDiscoveryPrefix)
+	}), mock.Anything, mock.Anything).Return(uint64(2), nil).Maybe()
+	mappingsKV.On("Delete", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingParticipantDiscoveryPrefix)
+	})).Return(nil).Maybe()
+	objectsKV.On("ListKeysFiltered", mock.Anything, mock.Anything).Return(nil, jetstream.ErrNoKeysFound).Maybe()
+	objectsKV.On("History", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound).Maybe()
+	mappingsKV.On("Get", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingParticipantDiscoveryPrefix)
+	})).Return(mockKeyValueEntry{value: []byte(`{"owner":{"phase":"discovered"},"source_revision":0}`)}, nil).Maybe()
+	mappingsKV.On("ListKeysFiltered", mock.Anything, mock.Anything).Return(nil, jetstream.ErrNoKeysFound).Maybe()
+	publisher.On("PublishAccessDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	publisher.On("PublishIndexerDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+	mappingsKV.On("Get", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingRestorePendingPrefix) || strings.HasPrefix(key, pastMeetingCleanupKeyPrefix) || strings.HasPrefix(key, pastMeetingChildRepairPrefix)
+	})).Return(nil, jetstream.ErrKeyNotFound).Maybe()
+	objectsKV.On("Get", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, "itx-zoom-past-meetings.")
+	})).Return(mockKeyValueEntry{value: []byte(`{"proj_id":"proj-sfid"}`)}, nil).Maybe()
+	mappingsKV.On("Put", mock.Anything, mock.MatchedBy(func(key string) bool {
+		return strings.HasPrefix(key, pastMeetingInviteeIndexPrefix) || strings.HasPrefix(key, pastMeetingAttendeeIndexPrefix)
+	}), []byte("1")).Return(uint64(1), nil).Maybe()
 	mappingsKV.On("Get", mock.Anything, mock.MatchedBy(func(key string) bool {
 		return strings.HasPrefix(key, "v1_past_meetings.")
 	})).Return(mockKeyValueEntry{value: []byte("1")}, nil).Maybe()
@@ -469,6 +496,10 @@ func TestHandleInviteeUpdate_SiblingConvert_TransientError(t *testing.T) {
 	// Fetch sibling attendee object — succeeds, but the object has no proj_id.
 	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings-attendees."+attendeeUID).
 		Return(mockKeyValueEntry{value: attendeeJSON}, nil)
+	// The update's initial parent check succeeds; the later lookup inside
+	// siblingConvert fails to exercise its transient retry path.
+	objectsKV.On("Get", mock.Anything, "itx-zoom-past-meetings."+meetingAndOcc).
+		Return(mockKeyValueEntry{value: mustMarshalJSON(t, map[string]any{"proj_id": "proj-sfid"})}, nil).Once()
 	// siblingConvert will call resolveProjectFields which falls back to the past_meeting KV —
 	// return ErrKeyNotFound so the error wraps with "(transient)" and triggers the retry path.
 	objectsKV.On("Get", mock.Anything, mock.MatchedBy(func(k string) bool {
@@ -504,14 +535,8 @@ func TestHandleInviteeUpdate_ProjectNotFound(t *testing.T) {
 	publisher := &mockParticipantPublisher{}
 
 	// stubIDMapper returns ("", nil) for MapProjectV1ToV2 → handler skips.
-	h := &EventHandlers{
-		publisher:    publisher,
-		userLookup:   stubV1UserLookup{},
-		idMapper:     stubIDMapper{},
-		v1MappingsKV: mappingsKV,
-		v1ObjectsKV:  objectsKV,
-		logger:       slog.Default(),
-	}
+	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
+	h.idMapper = stubIDMapper{}
 
 	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
 		"itx-zoom-past-meetings-invitees."+inviteeUID,
@@ -540,6 +565,7 @@ func TestHandleInviteeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
 	// first (expectations are tried in registration order).
 	mappingsKV.On("Get", mock.Anything, "v1_past_meetings."+meetingAndOcc).
 		Return(mockKeyValueEntry{key: "v1_past_meetings." + meetingAndOcc, value: []byte(tombstoneMarker)}, nil)
+	objectsKV.On("Get", mock.Anything, pastMeetingObjectKeyPrefix+meetingAndOcc).Return(nil, jetstream.ErrKeyNotFound)
 
 	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
 	retry := h.handlePastMeetingInviteeUpdate(context.Background(),
@@ -548,7 +574,7 @@ func TestHandleInviteeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
 
 	assert.False(t, retry)
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
-	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
 }
@@ -570,6 +596,7 @@ func TestHandleAttendeeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
 	// first (expectations are tried in registration order).
 	mappingsKV.On("Get", mock.Anything, "v1_past_meetings."+meetingAndOcc).
 		Return(mockKeyValueEntry{key: "v1_past_meetings." + meetingAndOcc, value: []byte(tombstoneMarker)}, nil)
+	objectsKV.On("Get", mock.Anything, pastMeetingObjectKeyPrefix+meetingAndOcc).Return(nil, jetstream.ErrKeyNotFound)
 
 	h := newParticipantHandlers(publisher, mappingsKV, objectsKV)
 	retry := h.handlePastMeetingAttendeeUpdate(context.Background(),
@@ -578,7 +605,7 @@ func TestHandleAttendeeUpdate_ParentPastMeetingTombstoned(t *testing.T) {
 
 	assert.False(t, retry)
 	publisher.AssertNumberOfCalls(t, "PublishPastMeetingParticipantEvent", 0)
-	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 0)
+	publisher.AssertNumberOfCalls(t, "PublishAccessDelete", 1)
 	mappingsKV.AssertExpectations(t)
 	publisher.AssertExpectations(t)
 }

@@ -72,7 +72,8 @@ func (p *recordingTestPublisher) PublishIndexerDelete(_ context.Context, subject
 	p.indexerDeletes = append(p.indexerDeletes, subject+":"+id)
 	return nil
 }
-func (p *recordingTestPublisher) Close() error { return nil }
+func (p *recordingTestPublisher) Close() error                { return nil }
+func (p *recordingTestPublisher) Flush(context.Context) error { return nil }
 
 // =============================================================================
 // recordingTestIDMapper — returns a fixed project UID so the handler proceeds
@@ -214,7 +215,7 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 		assert.Equal(t, "meeting_hosts", pub.recordingData.RecordingAccess, "parent meeting_hosts must override snapshot public")
 	})
 
-	t.Run("parent not found falls back to meeting_hosts (fail-closed)", func(t *testing.T) {
+	t.Run("parent not found skips the recording", func(t *testing.T) {
 		pub := &recordingTestPublisher{}
 		v1Objects := &mockKeyValue{}
 		v1Mappings := &mockKeyValue{}
@@ -226,8 +227,7 @@ func TestHandlePastMeetingRecordingUpdate_AccessOverride(t *testing.T) {
 		recordingMap := baseRecordingData("public", "public")
 		retry := h.handlePastMeetingRecordingUpdate(context.Background(), recordingKey, recordingMap)
 		require.False(t, retry)
-		require.NotNil(t, pub.recordingData)
-		assert.Equal(t, defaultArtifactAccess, pub.recordingData.RecordingAccess, "parent not found must fail closed to meeting_hosts")
+		assert.Nil(t, pub.recordingData, "a missing parent must not produce an orphaned recording")
 	})
 
 	t.Run("parent empty access falls back to meeting_hosts for recording", func(t *testing.T) {

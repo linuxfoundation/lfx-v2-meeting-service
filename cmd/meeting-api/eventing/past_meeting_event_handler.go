@@ -9,11 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 
 	fgaconstants "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/constants"
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	itx "github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
@@ -214,8 +217,19 @@ type ZoomPastMeetingArtifact struct {
 	UpdatedBy models.UpdatedBy `json:"updated_by"`
 }
 
-// handlePastMeetingUpdate processes updates to past meeting records
+// handlePastMeetingUpdate processes updates under one outer parent owner.
 func (h *EventHandlers) handlePastMeetingUpdate(
+	ctx context.Context, key string, v1Data map[string]interface{},
+) bool {
+	if _, deleted := softDeletedAt(v1Data); deleted {
+		return false // Soft-delete routing owns the actual mutation.
+	}
+	return h.withParentOperation(ctx, extractIDFromKey(key, pastMeetingObjectKeyPrefix), func(owned context.Context) bool {
+		return h.handlePastMeetingUpdateOwned(owned, key, v1Data)
+	})
+}
+
+func (h *EventHandlers) handlePastMeetingUpdateOwned(
 	ctx context.Context,
 	key string,
 	v1Data map[string]interface{},
@@ -229,6 +243,21 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	if _, deleted := softDeletedAt(v1Data); deleted {
 		funcLogger.InfoContext(ctx, "skipping past meeting update for soft-deleted record")
 		return false
+	}
+	parentID := extractIDFromKey(key, pastMeetingObjectKeyPrefix)
+	state, authoritative, err := h.loadV1Parent(ctx, key, "v1_past_meetings."+parentID)
+	if err != nil {
+		return true
+	}
+	if state == parentGone || state == parentAbsent {
+		return h.handlePastMeetingDelete(ctx, key, nil)
+	}
+	if state != parentLive {
+		return false
+	}
+	v1Data = authoritative
+	if err := h.invalidatePastMeetingParticipantDiscovery(ctx, parentID); err != nil {
+		return true
 	}
 
 	// Convert v1Data to past meeting event data
@@ -255,18 +284,62 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	}
 	funcLogger = funcLogger.With("past_meeting_id", pastMeetingData.ID)
 	funcLogger.InfoContext(ctx, "processing past meeting update")
+	baseCtx := ctx
+	replay := &pastMeetingReplayState{parentID: pastMeetingData.ID, ready: make(map[string]uint64)}
+	defer func() {
+		retry = h.finishPastMeetingReplay(baseCtx, key, replay, retry)
+	}()
 
 	// Determine action (created vs updated)
 	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingData.ID)
 	indexerAction := indexerConstants.ActionCreated
-	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
+	restored := false
+	if entry, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+		restored = entryIsTombstoned(entry)
+	} else if !isKVAbsenceError(err) {
+		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to load past meeting mapping, will retry")
+		return true
+	}
+	if !restored {
+		// A failed restore may already have written the live parent mapping.
+		// Keep retrying its children until both restore markers are cleared.
+		pending, err := h.liveMarkerSet(ctx, pastMeetingRestorePendingPrefix+pastMeetingData.ID)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting restore-pending marker, will retry")
+			return true
+		}
+		cleaned, err := h.liveMarkerSet(ctx, pastMeetingCleanupKeyPrefix+pastMeetingData.ID)
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting restore marker, will retry")
+			return true
+		}
+		restored = pending || cleaned
+	}
+	needsChildReplay := restored || indexerAction == indexerConstants.ActionCreated
+	if restored {
+		entry, err := h.v1MappingsKV.Get(ctx, pastMeetingCleanupKeyPrefix+pastMeetingData.ID)
+		if err == nil {
+			replay.cleanupRevision = entry.Revision()
+		} else if !isKVAbsenceError(err) {
+			return true
+		}
+	}
+	if needsChildReplay {
+		// Persist first-create or restore intent before writing the live parent
+		// mapping. A child failure must still be discoverable on redelivery.
+		revision, err := h.v1MappingsKV.Put(ctx, pastMeetingRestorePendingPrefix+pastMeetingData.ID, []byte("1"))
+		if err != nil {
+			funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to mark past meeting child replay pending, will retry")
+			return true
+		}
+		replay.pendingRevision = revision
 	}
 
 	// Publish to indexer and FGA-sync
 	if err := h.publisher.PublishPastMeetingEvent(ctx, string(indexerAction), pastMeetingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish past meeting event")
-		return isTransientError(err)
+		return true
 	}
 
 	// Store mapping. On a restore this replaces the delete tombstone; if the write fails
@@ -287,15 +360,165 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	// records do not change when those settings do. Republish them so that tightening a
 	// setting revokes public visibility in the index, not only in FGA. This runs even when the
 	// marker write failed, so a retry never delays revoking public visibility.
+	ctx = context.WithValue(ctx, pastMeetingReplayContextKey{}, replay)
 	if h.republishPastMeetingArtifacts(ctx, pastMeetingData.MeetingAndOccurrenceID, funcLogger) {
 		retry = true
 	}
 	if retry {
 		return true
 	}
-
+	if needsChildReplay {
+		if h.republishPastMeetingChildren(ctx, pastMeetingData.ID, funcLogger) {
+			return true
+		}
+	}
 	funcLogger.InfoContext(ctx, "successfully processed past meeting", "action", string(indexerAction))
 	return false // Success, ACK
+}
+
+// finishPastMeetingReplay runs outside child recursion suppression, even after
+// a replay failure. A newer authoritative deletion supersedes stale live data.
+// Only child revisions actually reconciled by this replay can be completed.
+func (h *EventHandlers) finishPastMeetingReplay(ctx context.Context, key string, replay *pastMeetingReplayState, retry bool) bool {
+	if replay.pendingRevision == 0 && (retry || len(replay.ready) != 0) {
+		// Ordinary updates can also create child work. Persist that obligation
+		// before draining, so a drain read/claim failure survives redelivery.
+		revision, err := h.v1MappingsKV.Put(ctx, pastMeetingRestorePendingPrefix+replay.parentID, []byte("1"))
+		if err != nil {
+			return true
+		}
+		replay.pendingRevision = revision
+	}
+	state, _, err := h.loadV1Parent(ctx, key, "v1_past_meetings."+replay.parentID)
+	if err != nil {
+		return true
+	}
+	wasDeleted := state == parentGone || state == parentAbsent
+	if wasDeleted {
+		retry = h.publishPastMeetingDelete(ctx, key, replay.parentID)
+	}
+	if retry {
+		return true
+	}
+	if h.drainPastMeetingChildRepairs(ctx, replay) {
+		return true
+	}
+	after, _, err := h.loadV1Parent(ctx, key, "v1_past_meetings."+replay.parentID)
+	if err != nil {
+		return true
+	}
+	if after == parentGone || after == parentAbsent {
+		if wasDeleted {
+			return false // Preserve deletion/restore markers for a future restore.
+		}
+		return h.publishPastMeetingDelete(ctx, key, replay.parentID)
+	}
+	if after != parentLive {
+		return true
+	}
+	return h.finalizePastMeetingReplayMarkers(ctx, replay)
+}
+
+// finalizePastMeetingReplayMarkers clears only the revisions covered by this
+// successful replay and drain. Never let an older invocation erase newer work.
+func (h *EventHandlers) finalizePastMeetingReplayMarkers(ctx context.Context, replay *pastMeetingReplayState) bool {
+	for _, marker := range []struct {
+		key      string
+		revision uint64
+	}{
+		{pastMeetingCleanupKeyPrefix + replay.parentID, replay.cleanupRevision},
+		{pastMeetingRestorePendingPrefix + replay.parentID, replay.pendingRevision},
+	} {
+		if marker.revision == 0 {
+			continue
+		}
+		entry, err := h.v1MappingsKV.Get(ctx, marker.key)
+		if isKVAbsenceError(err) {
+			continue // A nested successful repair already finished this work.
+		}
+		if err != nil || entry.Revision() != marker.revision {
+			return true
+		}
+		if err := h.v1MappingsKV.Delete(ctx, marker.key, jetstream.LastRevision(marker.revision)); err != nil && !isKVAbsenceError(err) {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *EventHandlers) drainPastMeetingChildRepairs(ctx context.Context, replay *pastMeetingReplayState) bool {
+	if len(replay.ready) != 0 && parentOperation(ctx, replay.parentID) == nil {
+		return h.withParentOperation(ctx, replay.parentID, func(owned context.Context) bool {
+			return h.drainPastMeetingChildRepairs(owned, replay)
+		})
+	}
+	owners := make(map[string]*pastMeetingChildAttempt)
+	for key, owner := range childRepairOwners(ctx) {
+		owners[key] = owner
+	}
+	var claimed []*pastMeetingChildAttempt
+	claimFailed := false
+	fullReplay := false
+	for childKey, expected := range replay.ready {
+		entry, err := h.v1MappingsKV.Get(ctx, pastMeetingChildRepairPrefix+childKey)
+		if isKVAbsenceError(err) {
+			continue // Another worker already completed this obligation.
+		}
+		if err != nil || entry.Revision() != expected {
+			claimFailed = true
+			break
+		}
+		var intent childRepairIntent
+		if json.Unmarshal(entry.Value(), &intent) != nil || intent.ParentID != replay.parentID || intent.Phase != childRepairReady {
+			claimFailed = true
+			break // Never consume an active writer or a different repair.
+		}
+		needsReplay, err := h.childRepairNeedsFullReplay(ctx, intent)
+		if err != nil {
+			claimFailed = true
+			break
+		}
+		intent = claimChildRepairIntent(intent, needsReplay)
+		fullReplay = fullReplay || intent.FullReplay
+		revision, err := h.updateChildRepairIntent(ctx, childKey, intent, expected)
+		if err != nil {
+			claimFailed = true
+			break
+		}
+		owner := &pastMeetingChildAttempt{key: childKey, intent: intent, revision: revision}
+		owners[childKey] = owner
+		claimed = append(claimed, owner)
+	}
+	if len(claimed) == 0 {
+		return claimFailed
+	}
+	retry := claimFailed
+	ctx = context.WithValue(ctx, pastMeetingChildRepairOwnerContextKey{}, owners)
+	if !claimFailed {
+		for _, owner := range claimed {
+			if h.compensateClaimedChildRepair(ctx, owner) {
+				retry = true
+				break
+			}
+			fullReplay = fullReplay || owner.intent.FullReplay
+		}
+	}
+	if !retry && fullReplay {
+		// All destructive child writes have finished. Reconcile the actual
+		// live parent/children AFTER them, once for this batch, rather than
+		// treating a live parent read as evidence that a late delete is fixed.
+		handled, failed := h.repairPastMeetingIfLive(ctx, replay.parentID)
+		retry = failed
+		if !retry && !handled {
+			retry = h.retriggerPastMeetingIndexing(ctx, replay.parentID)
+		}
+	}
+	for _, owner := range claimed {
+		if h.completePastMeetingChildRepair(ctx, owner.key, owner.intent, owner.revision, retry) {
+			retry = true
+		}
+	}
+	return retry
 }
 
 // republishPastMeetingArtifacts re-runs the recording and summary handlers on the past
@@ -328,6 +551,27 @@ func (h *EventHandlers) republishPastMeetingArtifacts(
 // as if the record had just been written. A record that no longer exists has nothing to
 // republish.
 func (h *EventHandlers) republishArtifactRecord(ctx context.Context, key string, logger *slog.Logger) (retry bool) {
+	if _, replaying := ctx.Value(pastMeetingReplayContextKey{}).(*pastMeetingReplayState); replaying {
+		if entry, err := h.v1MappingsKV.Get(ctx, pastMeetingChildRepairPrefix+key); err == nil {
+			var intent childRepairIntent
+			if json.Unmarshal(entry.Value(), &intent) != nil {
+				return true
+			}
+			if intent.Phase != childRepairReady && childRepairOwners(ctx)[key] == nil {
+				// Do not race or steal the source, but do not clear the parent's
+				// replay obligation either: a fast-path owner might not repair
+				// restoration that starts during its final flush.
+				return true
+			}
+		} else if !isKVAbsenceError(err) {
+			return true
+		}
+		// Record handed-off work even if the child record is now absent. The
+		// outer replay drains it after authoritative parent reconciliation.
+		if h.resumePastMeetingChildRepair(ctx, key) {
+			return true
+		}
+	}
 	entry, err := h.v1ObjectsKV.Get(ctx, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
@@ -345,35 +589,290 @@ func (h *EventHandlers) republishArtifactRecord(ctx context.Context, key string,
 		logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to decode past meeting artifact for republish", "artifact_key", key)
 		return false
 	}
+	ctx = context.WithValue(ctx, replayedSourceContextKey{}, &replayedSource{key: key, revision: entry.Revision()})
 	return handleKVPut(ctx, key, data, h)
 }
 
 // handlePastMeetingDelete processes past meeting deletions
 func (h *EventHandlers) handlePastMeetingDelete(ctx context.Context, key string, _ map[string]interface{}) (retry bool) {
-	pastMeetingID := extractIDFromKey(key, "itx-zoom-past-meetings.")
-	mappingKey := fmt.Sprintf("v1_past_meetings.%s", pastMeetingID)
-	if h.isTombstoned(ctx, mappingKey) {
-		h.logger.DebugContext(ctx, "past meeting delete already processed, skipping", "past_meeting_id", pastMeetingID)
-		return false
-	}
-	h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
-	return h.publishPastMeetingDelete(ctx, key, pastMeetingID)
+	return h.withParentOperation(ctx, extractIDFromKey(key, pastMeetingObjectKeyPrefix), func(owned context.Context) bool {
+		return h.handlePastMeetingDeleteOwned(owned, key)
+	})
 }
 
-// publishPastMeetingDelete removes the past meeting from the indexer, revokes its access,
-// and tombstones its mappings. It does not check the tombstone first, so the retrigger can
-// replay it after a republish that raced a delete. Every step is idempotent.
+func (h *EventHandlers) handlePastMeetingDeleteOwned(ctx context.Context, key string) (retry bool) {
+	pastMeetingID := extractIDFromKey(key, pastMeetingObjectKeyPrefix)
+	if handled, retry := h.repairPastMeetingIfLive(ctx, pastMeetingID); handled {
+		return retry // A stale delete must not undo a newer live restore.
+	}
+	// Older tombstones predate child cleanup. Only a separate durable marker
+	// proves that the full scan finished; later deliveries can then skip it.
+	sourceRevision, err := h.parentSourceRevision(ctx, pastMeetingID)
+	if err != nil {
+		return true
+	}
+	cleaned, err := h.cleanupCompletedForRevision(ctx, pastMeetingID, sourceRevision)
+	if err != nil {
+		return true
+	}
+	tombstoned, err := h.tombstoneState(ctx, "v1_past_meetings."+pastMeetingID)
+	if err != nil {
+		return true
+	}
+	if !cleaned || !tombstoned {
+		h.logger.InfoContext(ctx, "processing past meeting delete", "past_meeting_id", pastMeetingID)
+		if h.publishPastMeetingDelete(ctx, key, pastMeetingID) {
+			return true
+		}
+	}
+	return h.drainReadyPastMeetingChildren(ctx, pastMeetingID)
+}
+
+// drainReadyPastMeetingChildren also runs on an already-clean actual delete
+// delivery: parent completion cannot discharge a later failed child retraction.
+func (h *EventHandlers) drainReadyPastMeetingChildren(ctx context.Context, parentID string) bool {
+	replay := &pastMeetingReplayState{parentID: parentID, ready: make(map[string]uint64)}
+	replayCtx := context.WithValue(ctx, pastMeetingReplayContextKey{}, replay)
+	if h.resumePastMeetingChildRepair(replayCtx, "itx-zoom-past-meetings-recordings."+parentID) {
+		return true
+	}
+	for _, child := range pastMeetingChildKinds {
+		ids, err := listIndexedPastMeetingChildIDs(ctx, h.v1MappingsKV, child, parentID)
+		if err != nil {
+			return true
+		}
+		for _, id := range ids {
+			if h.resumePastMeetingChildRepair(replayCtx, child.objectPrefix+id) {
+				return true
+			}
+		}
+	}
+	return h.drainPastMeetingChildRepairs(ctx, replay)
+}
+
+// publishPastMeetingDelete removes the past meeting and its children from the indexer,
+// revokes access, and tombstones its mappings. Keep the tombstone last so a failed
+// child cleanup is retried. The retrigger can replay the idempotent deletes after
+// a republish that raced a delete.
 func (h *EventHandlers) publishPastMeetingDelete(ctx context.Context, key, pastMeetingID string) (retry bool) {
+	return h.withParentOperation(ctx, pastMeetingID, func(owned context.Context) bool {
+		return h.publishPastMeetingDeleteOwned(owned, key, pastMeetingID)
+	})
+}
+
+func (h *EventHandlers) publishPastMeetingDeleteOwned(ctx context.Context, key, pastMeetingID string) (retry bool) {
+	if handled, retry := h.repairPastMeetingIfLive(ctx, pastMeetingID); handled {
+		return retry
+	}
+	sourceRevision, err := h.parentSourceRevision(ctx, pastMeetingID)
+	if err != nil {
+		return true
+	}
+	// Persist deletion/restore intent before the first child is removed. A
+	// partial cleanup may fail before the parent tombstone or completion marker
+	// exists; restoration must still know to republish those children.
+	if _, err := h.v1MappingsKV.Put(ctx, pastMeetingRestorePendingPrefix+pastMeetingID, []byte("1")); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to mark past meeting deletion in progress, will retry")
+		return true
+	}
+	if h.deletePastMeetingArtifacts(ctx, pastMeetingID) {
+		return true
+	}
 	deleteAccessPayload, err := buildGenericDeleteAccessPayload("v1_past_meeting", pastMeetingID)
 	if err != nil {
 		h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to build delete access payload", "past_meeting_id", pastMeetingID)
 		return false
 	}
-	return h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
+	if h.handleMeetingTypeDelete(ctx, key, pastMeetingID, deleteAccessPayload, meetingDeleteConfig{
 		indexerSubject:      "lfx.index.v1_past_meeting",
 		deleteAccessSubject: fgaconstants.GenericDeleteAccessSubject,
 		tombstoneKeyFmts:    []string{"v1_past_meetings.%s", "v1-mappings.past-meeting-mappings.%s"},
+	}) {
+		return true
+	}
+	tombstoned, err := h.tombstoneState(ctx, "v1_past_meetings."+pastMeetingID)
+	if err != nil || !tombstoned {
+		return true
+	}
+	completion, err := json.Marshal(pastMeetingCleanupCompletion{Complete: true, SourceRevision: sourceRevision})
+	if err != nil {
+		return true
+	}
+	if _, err := h.v1MappingsKV.Put(ctx, pastMeetingCleanupKeyPrefix+pastMeetingID, completion); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to mark past meeting child cleanup complete, will retry")
+		return true
+	}
+	// A restore may finish while cleanup is publishing its final deletes. If
+	// so, republish the parent access and every tracked child so delete cannot
+	// be the last writer.
+	if handled, retry := h.repairPastMeetingIfLive(ctx, pastMeetingID); handled {
+		return retry
+	}
+	afterRevision, err := h.parentSourceRevision(ctx, pastMeetingID)
+	return err != nil || afterRevision != sourceRevision
+}
+
+// repairPastMeetingIfLive fences a stale delete or compensation against the
+// current v1 record. Mark replay pending before republishing, so any failure
+// remains retryable after the parent mapping has already become live.
+func (h *EventHandlers) repairPastMeetingIfLive(ctx context.Context, pastMeetingID string) (handled, retry bool) {
+	if parentOperation(ctx, pastMeetingID) != nil {
+		return h.repairPastMeetingIfLiveOwned(ctx, pastMeetingID)
+	}
+	state, _, err := h.loadV1Parent(ctx, pastMeetingObjectKeyPrefix+pastMeetingID, "v1_past_meetings."+pastMeetingID)
+	if err != nil {
+		return true, true
+	}
+	if state != parentLive {
+		return false, false
+	}
+	retry = h.withParentOperation(ctx, pastMeetingID, func(owned context.Context) bool {
+		var failed bool
+		handled, failed = h.repairPastMeetingIfLiveOwned(owned, pastMeetingID)
+		return failed
 	})
+	return handled || retry, retry
+}
+
+func (h *EventHandlers) repairPastMeetingIfLiveOwned(ctx context.Context, pastMeetingID string) (handled, retry bool) {
+	key := pastMeetingObjectKeyPrefix + pastMeetingID
+	state, data, err := h.loadV1Parent(ctx, key, "v1_past_meetings."+pastMeetingID)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to check past meeting after delete, will retry")
+		return true, true
+	}
+	if state != parentLive {
+		return false, false
+	}
+	if _, err := h.v1MappingsKV.Put(ctx, pastMeetingRestorePendingPrefix+pastMeetingID, []byte("1")); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to mark restored past meeting for repair, will retry")
+		return true, true
+	}
+	if h.handlePastMeetingUpdate(ctx, key, data) {
+		return true, true
+	}
+	// The snapshot used above can become stale while its writes are in flight.
+	// As on the mapping-retrigger path, deletion must win even with no children
+	// available to compensate the stale parent publish.
+	after, _, err := h.loadV1Parent(ctx, key, "v1_past_meetings."+pastMeetingID)
+	if err != nil {
+		return true, true
+	}
+	if after == parentGone || after == parentAbsent {
+		return true, h.publishPastMeetingDelete(ctx, key, pastMeetingID)
+	}
+	return true, false
+}
+
+// deletePastMeetingArtifacts retracts every indexed child before the parent tombstone
+// makes future delete deliveries no-ops. The recording and transcript share the parent
+// ID; summaries are tracked by parent in v1-mappings, but older indexed summaries
+// may predate that index. Scan child tables as well to find legacy summaries,
+// attachments and participants with independent IDs.
+func (h *EventHandlers) deletePastMeetingArtifacts(ctx context.Context, pastMeetingID string) (retry bool) {
+	if h.ensurePastMeetingParticipantsDiscovered(ctx, pastMeetingID) {
+		return true
+	}
+	for _, subject := range []string{eventing.IndexV1PastMeetingRecordingSubject, eventing.IndexV1PastMeetingTranscriptSubject} {
+		if err := h.publisher.PublishIndexerDelete(ctx, subject, pastMeetingID); err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to delete past meeting artifact, will retry", "subject", subject, "past_meeting_id", pastMeetingID)
+			return true
+		}
+	}
+
+	for _, child := range pastMeetingChildKinds {
+		ids, err := listIndexedPastMeetingChildIDs(ctx, h.v1MappingsKV, child, pastMeetingID)
+		if err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to list indexed past meeting children, will retry", "subject", child.subject)
+			return true
+		}
+		for _, id := range ids {
+			if err := h.publisher.PublishIndexerDelete(ctx, child.subject, id); err != nil {
+				h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to delete indexed past meeting child, will retry", "subject", child.subject)
+				return true
+			}
+		}
+		// Backfill legacy children that predate the per-parent lists. The scan
+		// only runs until the cleanup-complete marker is durably written.
+		if !child.participant() && h.deletePastMeetingChildren(ctx, pastMeetingID, child, ids) {
+			return true
+		}
+	}
+	return false
+}
+
+// deletePastMeetingChildren scans a child table for documents indexed under the
+// deleted parent. Do not tombstone child mappings: their own delete events still
+// need to clean up cross-references and can safely repeat these indexer deletes.
+func (h *EventHandlers) deletePastMeetingChildren(ctx context.Context, pastMeetingID string, child pastMeetingChildKind, indexedIDs []string) (retry bool) {
+	ids, err := h.discoverPastMeetingChildren(ctx, pastMeetingID, child, indexedIDs)
+	if err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to discover legacy past meeting children, will retry", "subject", child.subject)
+		return true
+	}
+	for _, id := range ids {
+		if err := h.publisher.PublishIndexerDelete(ctx, child.subject, id); err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to delete past meeting child, will retry", "subject", child.subject)
+			return true
+		}
+	}
+	return false
+}
+
+// discoverPastMeetingChildren durably tracks legacy children before deleting
+// documents or revoking parent-wide access. Returns only IDs not already indexed.
+func (h *EventHandlers) discoverPastMeetingChildren(ctx context.Context, pastMeetingID string, child pastMeetingChildKind, indexedIDs []string) ([]string, error) {
+	prefix := child.objectPrefix
+	lister, err := h.v1ObjectsKV.ListKeysFiltered(ctx, prefix+">")
+	if errors.Is(err, jetstream.ErrNoKeysFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = lister.Stop() }() // The keys channel is consumed or the handler retries.
+	var discovered []string
+	for key := range lister.Keys() {
+		entry, err := h.v1ObjectsKV.Get(ctx, key)
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			continue // A concurrent child delete already removed this record.
+		}
+		if err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to read past meeting child for delete, will retry", "key", key)
+			return nil, err
+		}
+		data, err := decodeData(entry.Value())
+		if err != nil {
+			// decodeData only reads these fixed bytes; retrying cannot fix them.
+			// We cannot identify an indexed document's parent from corrupt data,
+			// so log for operator follow-up without blocking other deletions.
+			h.logger.With(logging.ErrKey, err).ErrorContext(ctx, "permanent decode failure for past meeting child; operator cleanup may be required", "key", key)
+			continue
+		}
+		if utils.GetString(data["meeting_and_occurrence_id"]) != pastMeetingID {
+			continue
+		}
+		childID := strings.TrimPrefix(key, prefix)
+		if slices.Contains(indexedIDs, childID) {
+			continue // Already deleted through the parent-keyed list.
+		}
+		var trackErr error
+		if child.participant() {
+			trackErr = recordPastMeetingParticipantID(ctx, h.v1MappingsKV, child.indexPrefix, pastMeetingID, childID)
+		} else {
+			trackErr = recordPastMeetingChildID(ctx, h.v1MappingsKV, child.indexPrefix, pastMeetingID, childID)
+		}
+		if trackErr != nil {
+			h.logger.With(logging.ErrKey, trackErr).WarnContext(ctx, "failed to track past meeting child for restore, will retry", "key", key)
+			return nil, trackErr
+		}
+		discovered = append(discovered, childID)
+	}
+	if err := ctx.Err(); err != nil {
+		h.logger.With(logging.ErrKey, err).WarnContext(ctx, "past meeting child listing interrupted, will retry")
+		return nil, err
+	}
+	return discovered, nil
 }
 
 // convertMapToPastMeetingData converts v1 past meeting data to v2 format

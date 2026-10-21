@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel"
@@ -724,6 +725,13 @@ func (p *NATSPublisher) publish(ctx context.Context, subject string, data interf
 
 	p.logger.DebugContext(ctx, "successfully published event", "subject", subject, "payload_size", len(payload))
 	return nil
+}
+
+// Flush waits for the broker to receive preceding publications before ownership handoff.
+func (p *NATSPublisher) Flush(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	return p.nc.FlushWithContext(ctx)
 }
 
 // Close closes the NATS publisher and releases resources

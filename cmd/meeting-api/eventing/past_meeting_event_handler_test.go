@@ -117,10 +117,12 @@ func TestHandlePastMeetingUpdate_RepublishesArtifacts(t *testing.T) {
 			"approved":                  true,
 		})}, nil)
 
-		mappingsKV := &mockKeyValue{}
-		mappingsKV.On("Get", mock.Anything, testSummaryIndexKey).Return(summaryIndex, summaryIndexErr)
-		mappingsKV.On("Get", mock.Anything, mock.Anything).Return(nil, jetstream.ErrKeyNotFound)
-		mappingsKV.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(uint64(1), nil)
+		mappingsKV := newMemKV()
+		if summaryIndexErr != nil {
+			mappingsKV.getErrs[testSummaryIndexKey] = summaryIndexErr
+		} else if summaryIndex != nil {
+			mappingsKV.data[testSummaryIndexKey] = summaryIndex.Value()
+		}
 
 		publisher := &artifactRepublishPublisher{}
 		return &EventHandlers{

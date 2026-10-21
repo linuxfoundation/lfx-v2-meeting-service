@@ -85,6 +85,8 @@ func buildGenericMemberRemovePayload(objectType, uid, username string) ([]byte, 
 	return json.Marshal(msg)
 }
 
+const pastMeetingObjectKeyPrefix = "itx-zoom-past-meetings."
+
 // isTombstoned returns true if mappingKey holds a tombstone marker,
 // meaning this delete was already processed and should be skipped.
 func (h *EventHandlers) isTombstoned(ctx context.Context, mappingKey string) bool {
@@ -138,6 +140,16 @@ func (h *EventHandlers) loadV1Parent(ctx context.Context, objectKey, tombstoneKe
 			if deleted {
 				return parentGone, nil, nil
 			}
+			if strings.HasPrefix(objectKey, pastMeetingObjectKeyPrefix) {
+				parentID := strings.TrimPrefix(objectKey, pastMeetingObjectKeyPrefix)
+				deleting, markerErr := h.liveMarkerSet(ctx, pastMeetingRestorePendingPrefix+parentID)
+				if markerErr != nil {
+					return parentAbsent, nil, markerErr
+				}
+				if deleting {
+					return parentGone, nil, nil
+				}
+			}
 			return parentAbsent, nil, nil
 		case errors.Is(err, jetstream.ErrInvalidKey):
 			h.logger.WarnContext(ctx, "invalid parent key, skipping", "parent_key", objectKey)
@@ -173,7 +185,17 @@ func (h *EventHandlers) liveMarkerSet(ctx context.Context, mappingKey string) (b
 		}
 		return false, err
 	}
-	return string(entry.Value()) == "1", nil
+	if string(entry.Value()) == "1" {
+		return true, nil
+	}
+	if strings.HasPrefix(mappingKey, pastMeetingCleanupKeyPrefix) {
+		var completion pastMeetingCleanupCompletion
+		if err := json.Unmarshal(entry.Value(), &completion); err != nil {
+			return false, err
+		}
+		return completion.Complete, nil
+	}
+	return false, nil
 }
 
 // clearTombstone removes mappingKey when it holds a tombstone marker. Update handlers call it
@@ -232,13 +254,15 @@ func (h *EventHandlers) handleMeetingTypeDelete(
 
 	if err := h.publisher.PublishIndexerDelete(ctx, cfg.indexerSubject, id); err != nil {
 		funcLogger.With(logging.ErrKey, err, "subject", cfg.indexerSubject).ErrorContext(ctx, "failed to send delete indexer message")
-		return isTransientError(err)
+		// A publication error is never evidence of completed deletion. In
+		// particular, broker buffer errors need not match keyword classifiers.
+		return true
 	}
 
 	if cfg.deleteAccessSubject != "" {
 		if err := h.publisher.PublishAccessDelete(ctx, cfg.deleteAccessSubject, accessPayload); err != nil {
 			funcLogger.With(logging.ErrKey, err, "subject", cfg.deleteAccessSubject).ErrorContext(ctx, "failed to send access control delete message")
-			return isTransientError(err)
+			return true
 		}
 	}
 
@@ -383,7 +407,7 @@ func handleKVPut(ctx context.Context, key string, data map[string]any, handlers 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
 		return handlers.handlePastMeetingMappingUpdate(ctx, key, data)
 
-	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
+	case strings.HasPrefix(key, pastMeetingObjectKeyPrefix):
 		return handlers.handlePastMeetingUpdate(ctx, key, data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):
@@ -433,7 +457,7 @@ func routeDelete(ctx context.Context, key string, v1Data map[string]any, handler
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-mappings."):
 		return handlers.handlePastMeetingMappingDelete(ctx, key, v1Data)
 
-	case strings.HasPrefix(key, "itx-zoom-past-meetings."):
+	case strings.HasPrefix(key, pastMeetingObjectKeyPrefix):
 		return handlers.handlePastMeetingDelete(ctx, key, v1Data)
 
 	case strings.HasPrefix(key, "itx-zoom-past-meetings-invitees."):

@@ -102,6 +102,9 @@ func lookupParentPastMeeting(
 		}
 		return parentPastMeetingInfo{}, domain.NewUnavailableError("transient error decoding parent past_meeting", decErr)
 	}
+	if _, deleted := softDeletedAt(pastMeetingData); deleted {
+		return parentPastMeetingInfo{}, nil
+	}
 	return parentPastMeetingInfo{
 		ProjectSFID:          utils.GetString(pastMeetingData["proj_id"]),
 		ProjectSlug:          utils.GetString(pastMeetingData["project_slug"]),
