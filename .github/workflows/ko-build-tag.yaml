@@ -27,7 +27,7 @@ jobs:
       chart_name: ${{ steps.prepare.outputs.chart_name }}
       chart_version: ${{ steps.prepare.outputs.chart_version }}
     steps:
-      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2  # v2.22.2
         with:
           egress-policy: audit
           disable-sudo: true
@@ -92,7 +92,7 @@ jobs:
       digest: ${{ steps.publish-ghcr.outputs.digest }}
       image_name: ${{ steps.publish-ghcr.outputs.image_name }}
     steps:
-      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2  # v2.22.2
         with:
           egress-policy: audit
           disable-sudo: true
@@ -105,7 +105,7 @@ jobs:
       - name: Publish Chart to GHCR
         id: publish-ghcr
         # yamllint disable-line rule:line-length
-        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@a93335d2abc2a2e2bb1b7a4cdefbbf15351681ce  # main
+        uses: linuxfoundation/lfx-public-workflows/.github/actions/helm-chart-oci-publisher@737873e045a02df2f66b09d8061b98997cdf1880  # main
         with:
           name: ${{ needs.publish.outputs.chart_name }}
           repository: ${{ github.repository }}/chart
@@ -164,7 +164,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1  # v2.21.1
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2  # v2.22.2
         with:
           egress-policy: audit
           disable-sudo: true
@@ -184,7 +184,7 @@ jobs:
 
       - name: Mint GitHub App installation token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0 # zizmor: ignore[github-app] scoped to lfx-v2-argocd with actions:write only
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.2.0 # zizmor: ignore[github-app] scoped to lfx-v2-argocd with actions:write only
         with:
           client-id: ${{ env.TRIGGER_CLIENT_ID }}
           private-key: ${{ env.TRIGGER_PRIVATE_KEY }}
