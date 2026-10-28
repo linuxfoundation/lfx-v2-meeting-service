@@ -740,6 +740,7 @@ Request/reply subjects served by the preferred-email responder (see User Service
 
 | Selected address | `type` | `code` |
 |---|---|---|
-| Not on the user's profile, or matches an inactive/unverified record | `validation` | — |
-| Matches an active, verified record whose SFDC ID hasn't synced from Auth0 yet | `unavailable` | `email_not_synced` |
-| Matches an active, verified record with a synced SFDC ID | *(success — no error envelope)* | — |
+| Not on the user's profile | `validation` | — |
+| Matches a record with no SFDC ID yet (`Active`/`Verified` can still be unsynced false/false at this point too) | `unavailable` | `email_not_synced` |
+| Matches a record with a synced SFDC ID that is inactive or unverified | `validation` | — |
+| Matches a record with a synced SFDC ID that is active and verified | *(success — no error envelope)* | — |
