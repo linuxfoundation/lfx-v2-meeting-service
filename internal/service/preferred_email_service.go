@@ -108,9 +108,15 @@ func (s *PreferredEmailService) getSelf(ctx context.Context, token string) (*dom
 
 // resolveVerifiedEmailID finds the SFDC email-record ID for the given address among the
 // user's emails. The address must be an active, verified record (invites must only route to
-// a verified address): an address that doesn't match any record, or matches an inactive or
-// unverified one, is a ValidationError. An active, verified match whose SFDC ID hasn't synced
-// from auth0 yet returns a retryable UnavailableError wrapping domain.ErrEmailNotSynced.
+// a verified address): an address that doesn't match any record, or matches a record that
+// already has an SFDC ID but isn't active/verified, is a ValidationError. A match with no SFDC
+// ID yet returns a retryable UnavailableError wrapping domain.ErrEmailNotSynced regardless of
+// its Active/Verified flags -- those can lag the auth0->SFDC sync just as much as the ID does,
+// so a freshly-added address auth0 already reports as verified can briefly appear here with
+// both flags still false. Treating that as a permanent validation failure (rather than
+// retryable) was the root cause of lfx-self-serve-ops#1125: a verified secondary email was
+// rejected outright instead of "try again shortly". Once a record has an ID, its Active/Verified
+// flags are the final, synced word on whether the address can be selected.
 func resolveVerifiedEmailID(self *domain.Self, email string) (string, error) {
 	email = strings.TrimSpace(email)
 	matched := false
@@ -120,13 +126,13 @@ func resolveVerifiedEmailID(self *domain.Self, email string) (string, error) {
 			continue
 		}
 		matched = true
-		if !e.Active || !e.Verified {
+		if e.ID == "" {
+			pendingSync = true
 			continue
 		}
-		if e.ID != "" {
+		if e.Active && e.Verified {
 			return e.ID, nil
 		}
-		pendingSync = true
 	}
 
 	// Redact the address in the returned error — it propagates into logs via ErrKey.
