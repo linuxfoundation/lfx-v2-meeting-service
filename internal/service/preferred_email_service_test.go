@@ -64,6 +64,7 @@ func selfWithEmail() *domain.Self {
 			{ID: "e1", Address: "alice@work.com", Active: true, Verified: true},
 			{ID: "e-unverified", Address: "new@work.com", Active: true, Verified: false},
 			{ID: "", Address: "pending@example.com", Active: true, Verified: true},
+			{ID: "", Address: "midsync@example.com", Active: false, Verified: false},
 		},
 	}
 }
@@ -186,6 +187,21 @@ func TestSetPreferredEmail(t *testing.T) {
 		client.On("GetSelf", ctx, testToken).Return(selfWithEmail(), nil)
 
 		_, err := NewPreferredEmailService(client, slog.Default()).SetPreferredEmail(ctx, testToken, "pending@example.com", "")
+		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+		assert.ErrorIs(t, err, domain.ErrEmailNotSynced)
+		client.AssertNotCalled(t, "SetMeetingEmailPreference", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	// Regression for lfx-self-serve-ops#1125: a freshly-added address can appear with no SFDC ID
+	// *and* Active/Verified still false while the auth0->SFDC sync is mid-flight -- those flags
+	// lag the sync too, not just the ID. That must classify as retryable, not a permanent
+	// validation failure, even though the flags alone look identical to a genuinely-unverified
+	// address (contrast with "new@work.com" above, whose record already has an SFDC ID).
+	t.Run("unsynced address with no SFDC ID yet returns retryable unavailable error regardless of flags", func(t *testing.T) {
+		client := &mockUserServiceClient{}
+		client.On("GetSelf", ctx, testToken).Return(selfWithEmail(), nil)
+
+		_, err := NewPreferredEmailService(client, slog.Default()).SetPreferredEmail(ctx, testToken, "midsync@example.com", "")
 		assert.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
 		assert.ErrorIs(t, err, domain.ErrEmailNotSynced)
 		client.AssertNotCalled(t, "SetMeetingEmailPreference", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
