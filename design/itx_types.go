@@ -363,6 +363,9 @@ var ITXZoomMeetingRegistrant = Type("ITXZoomMeetingRegistrant", func() {
 	Attribute("username", String, "LF username", func() {
 		Example("testuser")
 	})
+	Attribute("user_id", String, "LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update", func() {
+		Example("lfx-user-123")
+	})
 
 	// Personal info
 	Attribute("first_name", String, "First name (required with email)", func() {

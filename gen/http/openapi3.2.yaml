@@ -2203,6 +2203,7 @@ paths:
                                 name: John Doe
                                 profile_picture: https://example.com/avatar.jpg
                                 username: jdoe
+                            user_id: lfx-user-123
                             username: testuser
             responses:
                 "201":
@@ -2241,6 +2242,7 @@ paths:
                                     name: John Doe
                                     profile_picture: https://example.com/avatar.jpg
                                     username: jdoe
+                                user_id: lfx-user-123
                                 username: testuser
                 "400":
                     description: 'BadRequest: Bad request'
@@ -2476,6 +2478,7 @@ paths:
                                     name: John Doe
                                     profile_picture: https://example.com/avatar.jpg
                                     username: jdoe
+                                user_id: lfx-user-123
                                 username: testuser
                 "400":
                     description: 'BadRequest: Bad request'
@@ -2606,6 +2609,7 @@ paths:
                                 name: John Doe
                                 profile_picture: https://example.com/avatar.jpg
                                 username: jdoe
+                            user_id: lfx-user-123
                             username: testuser
             responses:
                 "204":
@@ -3135,6 +3139,7 @@ paths:
                                     name: John Doe
                                     profile_picture: https://example.com/avatar.jpg
                                     username: jdoe
+                                user_id: lfx-user-123
                                 username: testuser
                 "400":
                     description: 'BadRequest: Bad request'
@@ -6328,6 +6333,10 @@ components:
                     example: Molestias sit voluptatibus et et aperiam doloremque.
                 updated_by:
                     $ref: '#/components/schemas/ITXUser'
+                user_id:
+                    type: string
+                    description: LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update
+                    example: lfx-user-123
                 username:
                     type: string
                     description: LF username
@@ -6363,6 +6372,7 @@ components:
                     name: John Doe
                     profile_picture: https://example.com/avatar.jpg
                     username: jdoe
+                user_id: lfx-user-123
                 username: testuser
         ForbiddenError:
             type: object
@@ -7497,6 +7507,10 @@ components:
                     example: Voluptatibus velit doloribus fuga dolor repellendus.
                 updated_by:
                     $ref: '#/components/schemas/ITXUser'
+                user_id:
+                    type: string
+                    description: LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update
+                    example: lfx-user-123
                 username:
                     type: string
                     description: LF username
@@ -7532,6 +7546,7 @@ components:
                     name: John Doe
                     profile_picture: https://example.com/avatar.jpg
                     username: jdoe
+                user_id: lfx-user-123
                 username: testuser
         ITXZoomMeetingResponse:
             type: object
