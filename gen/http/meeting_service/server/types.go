@@ -132,6 +132,9 @@ type CreateItxRegistrantRequestBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// First name (required with email)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// Last name (required with email)
@@ -196,6 +199,9 @@ type UpdateItxRegistrantRequestBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// First name (required with email)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// Last name (required with email)
@@ -763,6 +769,9 @@ type CreateItxRegistrantResponseBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// First name (required with email)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// Last name (required with email)
@@ -812,6 +821,9 @@ type SelfRegisterItxMeetingResponseBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// First name (required with email)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// Last name (required with email)
@@ -861,6 +873,9 @@ type GetItxRegistrantResponseBody struct {
 	Email *string `form:"email,omitempty" json:"email,omitempty" xml:"email,omitempty"`
 	// LF username
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string `form:"user_id,omitempty" json:"user_id,omitempty" xml:"user_id,omitempty"`
 	// First name (required with email)
 	FirstName *string `form:"first_name,omitempty" json:"first_name,omitempty" xml:"first_name,omitempty"`
 	// Last name (required with email)
@@ -4550,6 +4565,7 @@ func NewCreateItxRegistrantResponseBody(res *meetingservice.ITXZoomMeetingRegist
 		CommitteeUID:                  res.CommitteeUID,
 		Email:                         res.Email,
 		Username:                      res.Username,
+		UserID:                        res.UserID,
 		FirstName:                     res.FirstName,
 		LastName:                      res.LastName,
 		Org:                           res.Org,
@@ -4585,6 +4601,7 @@ func NewSelfRegisterItxMeetingResponseBody(res *meetingservice.ITXZoomMeetingReg
 		CommitteeUID:                  res.CommitteeUID,
 		Email:                         res.Email,
 		Username:                      res.Username,
+		UserID:                        res.UserID,
 		FirstName:                     res.FirstName,
 		LastName:                      res.LastName,
 		Org:                           res.Org,
@@ -4619,6 +4636,7 @@ func NewGetItxRegistrantResponseBody(res *meetingservice.ITXZoomMeetingRegistran
 		CommitteeUID:                  res.CommitteeUID,
 		Email:                         res.Email,
 		Username:                      res.Username,
+		UserID:                        res.UserID,
 		FirstName:                     res.FirstName,
 		LastName:                      res.LastName,
 		Org:                           res.Org,
@@ -8221,6 +8239,7 @@ func NewCreateItxRegistrantPayload(body *CreateItxRegistrantRequestBody, meeting
 		CommitteeUID:                  body.CommitteeUID,
 		Email:                         body.Email,
 		Username:                      body.Username,
+		UserID:                        body.UserID,
 		FirstName:                     body.FirstName,
 		LastName:                      body.LastName,
 		Org:                           body.Org,
@@ -8300,6 +8319,7 @@ func NewUpdateItxRegistrantPayload(body *UpdateItxRegistrantRequestBody, meeting
 		CommitteeUID:                  body.CommitteeUID,
 		Email:                         body.Email,
 		Username:                      body.Username,
+		UserID:                        body.UserID,
 		FirstName:                     body.FirstName,
 		LastName:                      body.LastName,
 		Org:                           body.Org,

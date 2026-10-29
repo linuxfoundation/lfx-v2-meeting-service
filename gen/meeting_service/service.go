@@ -445,6 +445,9 @@ type CreateItxRegistrantPayload struct {
 	Email *string
 	// LF username
 	Username *string
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string
 	// First name (required with email)
 	FirstName *string
 	// Last name (required with email)
@@ -1124,6 +1127,9 @@ type ITXZoomMeetingRegistrant struct {
 	Email *string
 	// LF username
 	Username *string
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string
 	// First name (required with email)
 	FirstName *string
 	// Last name (required with email)
@@ -1790,6 +1796,9 @@ type UpdateItxRegistrantPayload struct {
 	Email *string
 	// LF username
 	Username *string
+	// LF user ID. Sent back on update so that ITX sees the user the registrant is
+	// already linked to; only honored on update
+	UserID *string
 	// First name (required with email)
 	FirstName *string
 	// Last name (required with email)

@@ -86,7 +86,7 @@ Content-Type: application/json
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `committee_uid` | string | No | Committee UID (for committee registrants) |
-| `user_id` | string | No | LF user ID |
+| `user_id` | string | No | LF user ID. Not mapped on create, where the registrant is linked through `email` or `username`. Forwarded on update (see [Update Registrant](#update-registrant)) |
 | `email` | string | No | Registrant email address |
 | `username` | string | No | LF username |
 | `first_name` | string | Conditional | Required with email |
@@ -303,11 +303,17 @@ Content-Type: application/json
 
 **Request Body**: Same as ITX Create Registrant request body, except the proxy stamps `updated_by` (same shape as `created_by`) instead of `created_by`. See [Audit stamping](#audit-stamping).
 
+**`user_id` and `username` must be sent back as stored.** ITX does not treat them as optional on update: it compares the request's value with the stored one and rejects any difference with `400 user_id cannot be changed` or `400 username cannot be changed`. An omitted value counts as a difference when the registrant is linked to a user. A registrant with no linked user has nothing to compare, so both can be left out. `user_id` is checked first, so a missing `user_id` hides a missing `username` behind the same error.
+
+On a registrant with no linked user, a `user_id` or `username` that is supplied is read as a new link to that LF user, and ITX then sets the registrant's email to that user's preferred email if the two differ. `username` already behaved this way; `user_id` is a second way to do it, and the route requires the `organizer` relation on the meeting.
+
+ITX stores `NONE` for a registrant's blank `user_id` (the column is indexed and cannot be empty) and maps it back to blank in its own responses, but a `NONE` in a request is read as a new link and looked up as a user. The proxy therefore maps `NONE` to empty before forwarding, and omits it from responses. Clients can pass the `user_id` they hold from the index as it is.
+
 **Response**: `204 No Content`
 
 ### Field Mapping
 
-Same as Create Registrant field mapping.
+Same as Create Registrant field mapping, with `user_id` forwarded on update only.
 
 ---
 

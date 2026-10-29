@@ -27,11 +27,33 @@ func ConvertCreateITXRegistrantPayloadToITX(p *meetingservice.CreateItxRegistran
 	return req
 }
 
-// ConvertUpdateITXRegistrantPayloadToITX converts Goa update payload to ITX registrant
+// itxNoUserID is the value ITX stores in place of a blank user_id, because the column is indexed and cannot be
+// empty. ITX maps it back to blank in its responses but does not accept it in a request: on a registrant with no
+// linked user, a non-empty user_id is read as a new link and looked up, so "NONE" fails as an invalid user.
+const itxNoUserID = "NONE"
+
+// normalizeITXUserID returns the user_id as ITX expects to receive it, with its blank sentinel mapped to empty.
+func normalizeITXUserID(userID string) string {
+	if userID == itxNoUserID {
+		return ""
+	}
+	return userID
+}
+
+// ConvertUpdateITXRegistrantPayloadToITX converts Goa update payload to ITX registrant.
+//
+// user_id and username are forwarded because ITX compares an update's values against the stored ones and rejects
+// any difference with "user_id cannot be changed" / "username cannot be changed". A blank counts as a difference
+// for a registrant that is linked to a user, so leaving them out fails the update.
+//
+// On a registrant with no linked user there is nothing to compare, and ITX reads a supplied user_id (or username)
+// as a new link to that user. That is already true of username, and the update route requires the organizer
+// relation, so user_id adds no new capability. Create does not map user_id; it links through email or username.
 func ConvertUpdateITXRegistrantPayloadToITX(p *meetingservice.UpdateItxRegistrantPayload) *itx.ZoomMeetingRegistrant {
 	req := &itx.ZoomMeetingRegistrant{
 		// Map committee_uid (proxy) to committee_id (ITX)
 		CommitteeID:    utils.StringValue(p.CommitteeUID),
+		UserID:         normalizeITXUserID(utils.StringValue(p.UserID)),
 		Email:          utils.StringValue(p.Email),
 		Username:       utils.StringValue(p.Username),
 		FirstName:      utils.StringValue(p.FirstName),
@@ -68,6 +90,7 @@ func ConvertITXRegistrantToGoa(resp *itx.ZoomMeetingRegistrant) *meetingservice.
 
 		// Identity fields - map committee_id (ITX) to committee_uid (proxy)
 		CommitteeUID: utils.StringPtrOmitEmpty(resp.CommitteeID),
+		UserID:       utils.StringPtrOmitEmpty(normalizeITXUserID(resp.UserID)),
 		Email:        utils.StringPtrOmitEmpty(resp.Email),
 		Username:     utils.StringPtrOmitEmpty(resp.Username),
 

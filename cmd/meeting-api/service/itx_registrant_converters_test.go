@@ -250,3 +250,61 @@ func TestConvertITXRegistrantToGoa(t *testing.T) {
 		assert.Nil(t, g.TotalOccurrenceCount)
 	})
 }
+
+// ── user_id handling ────────────────────────────────────────────────────────
+
+func TestNormalizeITXUserID(t *testing.T) {
+	assert.Equal(t, "user-0001", normalizeITXUserID("user-0001"), "a real user_id passes through")
+	assert.Empty(t, normalizeITXUserID("NONE"), "ITX's blank sentinel must not reach ITX as a user to look up")
+	assert.Empty(t, normalizeITXUserID(""))
+}
+
+func TestConvertUpdateITXRegistrantPayloadToITX_UserID(t *testing.T) {
+	t.Run("forwards user_id and username so ITX sees the stored link unchanged", func(t *testing.T) {
+		req := ConvertUpdateITXRegistrantPayloadToITX(&meetingservice.UpdateItxRegistrantPayload{
+			UserID:   utils.StringPtrOmitEmpty("user-0001"),
+			Username: utils.StringPtrOmitEmpty("alice"),
+		})
+
+		assert.Equal(t, "user-0001", req.UserID)
+		assert.Equal(t, "alice", req.Username)
+	})
+
+	t.Run("maps ITX's blank sentinel to empty", func(t *testing.T) {
+		req := ConvertUpdateITXRegistrantPayloadToITX(&meetingservice.UpdateItxRegistrantPayload{
+			UserID: utils.StringPtrOmitEmpty("NONE"),
+		})
+
+		assert.Empty(t, req.UserID)
+	})
+
+	t.Run("omitted user_id stays empty", func(t *testing.T) {
+		req := ConvertUpdateITXRegistrantPayloadToITX(&meetingservice.UpdateItxRegistrantPayload{})
+
+		assert.Empty(t, req.UserID)
+	})
+}
+
+func TestConvertCreateITXRegistrantPayloadToITX_DropsUserID(t *testing.T) {
+	// A caller must not choose which LF account a new registrant is linked to, so create never maps user_id.
+	req := ConvertCreateITXRegistrantPayloadToITX(&meetingservice.CreateItxRegistrantPayload{
+		Email:  utils.StringPtrOmitEmpty("alice@example.com"),
+		UserID: utils.StringPtrOmitEmpty("user-0001"),
+	})
+
+	assert.Equal(t, "alice@example.com", req.Email)
+	assert.Empty(t, req.UserID)
+}
+
+func TestConvertITXRegistrantToGoa_UserID(t *testing.T) {
+	t.Run("returns a linked registrant's user_id", func(t *testing.T) {
+		g := ConvertITXRegistrantToGoa(&itx.ZoomMeetingRegistrant{ID: "reg-001", UserID: "user-0001"})
+
+		assert.Equal(t, "user-0001", utils.StringValue(g.UserID))
+	})
+
+	t.Run("omits user_id for an unlinked registrant, however ITX spells it", func(t *testing.T) {
+		assert.Nil(t, ConvertITXRegistrantToGoa(&itx.ZoomMeetingRegistrant{ID: "reg-001", UserID: "NONE"}).UserID)
+		assert.Nil(t, ConvertITXRegistrantToGoa(&itx.ZoomMeetingRegistrant{ID: "reg-001"}).UserID)
+	})
+}

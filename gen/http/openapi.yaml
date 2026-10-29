@@ -4642,6 +4642,10 @@ definitions:
                 example: Voluptatibus velit doloribus fuga dolor repellendus.
             updated_by:
                 $ref: '#/definitions/ITXUser'
+            user_id:
+                type: string
+                description: LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update
+                example: lfx-user-123
             username:
                 type: string
                 description: LF username
@@ -4677,6 +4681,7 @@ definitions:
                 name: John Doe
                 profile_picture: https://example.com/avatar.jpg
                 username: jdoe
+            user_id: lfx-user-123
             username: testuser
     ITXZoomMeetingResponse:
         title: ITXZoomMeetingResponse
@@ -5734,6 +5739,10 @@ definitions:
                 example: Molestias sit voluptatibus et et aperiam doloremque.
             updated_by:
                 $ref: '#/definitions/ITXUser'
+            user_id:
+                type: string
+                description: LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update
+                example: lfx-user-123
             username:
                 type: string
                 description: LF username
@@ -5768,6 +5777,7 @@ definitions:
                 name: John Doe
                 profile_picture: https://example.com/avatar.jpg
                 username: jdoe
+            user_id: lfx-user-123
             username: testuser
     MeetingServiceResendItxMeetingInvitationsRequestBody:
         title: MeetingServiceResendItxMeetingInvitationsRequestBody
@@ -6538,6 +6548,10 @@ definitions:
                 example: Magni ut id eum aut nemo.
             updated_by:
                 $ref: '#/definitions/ITXUser'
+            user_id:
+                type: string
+                description: LF user ID. Sent back on update so that ITX sees the user the registrant is already linked to; only honored on update
+                example: lfx-user-123
             username:
                 type: string
                 description: LF username
@@ -6572,6 +6586,7 @@ definitions:
                 name: John Doe
                 profile_picture: https://example.com/avatar.jpg
                 username: jdoe
+            user_id: lfx-user-123
             username: testuser
     NotFoundError:
         title: NotFoundError
