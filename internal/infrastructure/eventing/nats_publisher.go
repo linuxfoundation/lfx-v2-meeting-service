@@ -694,7 +694,21 @@ func (p *NATSPublisher) PublishAccessMemberPut(ctx context.Context, objectType, 
 		return nil
 	}
 
-	memberMsg := fgatypes.GenericFGAMessage{
+	memberMsg := buildAccessMemberPutMessage(objectType, uid, username, relations, mutuallyExclusiveWith)
+
+	if err := p.publish(ctx, fgaconstants.GenericMemberPutSubject, memberMsg); err != nil {
+		return fmt.Errorf("failed to publish access member_put: %w", err)
+	}
+
+	return nil
+}
+
+// buildAccessMemberPutMessage builds the generic member_put envelope for
+// PublishAccessMemberPut. Factored out so the message shape -- object_type,
+// operation, and the member-data fields fga-sync requires -- can be unit
+// tested without a live NATS connection.
+func buildAccessMemberPutMessage(objectType, uid, username string, relations, mutuallyExclusiveWith []string) fgatypes.GenericFGAMessage {
+	return fgatypes.GenericFGAMessage{
 		ObjectType: objectType,
 		Operation:  "member_put",
 		Data: fgatypes.GenericMemberData{
@@ -704,12 +718,6 @@ func (p *NATSPublisher) PublishAccessMemberPut(ctx context.Context, objectType, 
 			MutuallyExclusiveWith: mutuallyExclusiveWith,
 		},
 	}
-
-	if err := p.publish(ctx, fgaconstants.GenericMemberPutSubject, memberMsg); err != nil {
-		return fmt.Errorf("failed to publish access member_put: %w", err)
-	}
-
-	return nil
 }
 
 // publishWithSpan wraps conn.PublishMsg with an OTel producer span and injects

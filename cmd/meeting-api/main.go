@@ -190,6 +190,9 @@ func run() int {
 	// solely on the async registrant-event path (see docs/fga-contract.md).
 	var hostGrantPublisher domain.EventPublisher
 	if committeeAuthzNatsConn != nil {
+		// NewNATSPublisher does not currently fail, but its signature returns an
+		// error, so handle it the same way the connections above do rather than
+		// relying on that staying true.
 		pub, err := eventing.NewNATSPublisher(committeeAuthzNatsConn, slog.Default())
 		if err != nil {
 			slog.With(logging.ErrKey, err).ErrorContext(ctx,
@@ -213,7 +216,7 @@ func run() int {
 	}
 	chatFileFetcher := chatfile.NewFetcher(constants.PastMeetingChatFetchTimeout, nil)
 
-	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz, hostGrantPublisher)
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz, hostGrantPublisher, userReader)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader, pastMeetingAuthz)

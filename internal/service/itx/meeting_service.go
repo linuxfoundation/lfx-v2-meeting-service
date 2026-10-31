@@ -24,6 +24,7 @@ type MeetingService struct {
 	idMapper         domain.IDMapper
 	committeeAuthz   domain.CommitteeAuthorizer // nil when NATS is unavailable
 	eventPublisher   domain.EventPublisher      // nil when NATS is unavailable
+	userReader       domain.UserReader          // nil when NATS is unavailable
 }
 
 // NewMeetingService creates a new ITX meeting service.
@@ -37,7 +38,11 @@ type MeetingService struct {
 // checks every newly attached committee and CreateMeeting checks every committee
 // plus the project (see authorizeCreateScope); RPC errors fail closed (503) to
 // prevent bypass during fga-sync outages.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer, eventPublisher domain.EventPublisher) *MeetingService {
+//
+// userReader may be nil (e.g. when NATS is disabled), in which case the
+// synchronous creator host grant (grantCreatorHostAccess) uses the raw JWT
+// principal unresolved -- see that function's doc comment.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer, eventPublisher domain.EventPublisher, userReader domain.UserReader) *MeetingService {
 	return &MeetingService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		meetingClient:    meetingClient,
@@ -45,6 +50,7 @@ func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient d
 		idMapper:         idMapper,
 		committeeAuthz:   committeeAuthz,
 		eventPublisher:   eventPublisher,
+		userReader:       userReader,
 	}
 }
 
@@ -117,7 +123,28 @@ func (s *MeetingService) grantCreatorHostAccess(ctx context.Context, meetingID s
 	if strings.HasSuffix(creator.Username, "@clients") {
 		return
 	}
-	if err := s.eventPublisher.PublishAccessMemberPut(ctx, "v1_meeting", meetingID, creator.Username,
+
+	// creator.Username is the raw JWT principal, which can be an auth identifier
+	// (e.g. an Auth0 "sub" like "auth0|<id>") rather than the user's LFX/LFID
+	// username -- the same distinction SelfRegisterForMeeting resolves before
+	// writing a registrant (see its doc comment). The registrant-event member_put
+	// this grant backstops is keyed on the LFX username, so a tuple written
+	// under the unresolved principal would never match it: the creator still
+	// wouldn't see the meeting, and no later registrant-event member_remove
+	// would ever clean up the mismatched tuple. Resolve it the same way: via
+	// the verified email, falling back to the raw principal when no reader is
+	// wired or the lookup fails.
+	username := creator.Username
+	if s.userReader != nil && creator.Email != "" {
+		if resolved, err := s.userReader.UsernameByEmail(ctx, creator.Email); err != nil {
+			slog.WarnContext(ctx, "failed to resolve LFX username from email for creator host grant; using JWT principal",
+				"meeting_id", meetingID, logging.ErrKey, err)
+		} else if resolved != "" {
+			username = resolved
+		}
+	}
+
+	if err := s.eventPublisher.PublishAccessMemberPut(ctx, "v1_meeting", meetingID, username,
 		[]string{"host"}, []string{"participant"}); err != nil {
 		// Unlike the registrant-event path, there is no retry or fallback that can
 		// recover this: the creator has no registrant record, so nothing will ever

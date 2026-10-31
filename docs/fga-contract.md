@@ -122,7 +122,9 @@ Published to `lfx.fga-sync.member_put` directly from `CreateMeeting` (`internal/
 
 A meeting's creator has no registrant record unless one is separately created, so without this call there is no event that could ever grant them `host` access — not a propagation delay, a permanent gap (see GH-4780 in `lfx-self-serve`). This grant is redundant with, not a replacement for, the registrant-event path: if a registrant event for the creator is later processed, `member_put` fires again from that path too.
 
-**When:** every successful `CreateZoomMeeting`, for the authenticated creator only (resolved the same way as the `created_by` audit stamp). Skipped when there is no authenticated principal, when `username` would be empty, or when the principal is an M2M client (`@clients` suffix — same exclusion as `SubmitMeetingResponse` and `registrant_service.go`, which have no personal identity to bind a host grant to).
+**When:** every successful `CreateZoomMeeting`, for the authenticated creator only. Skipped when there is no authenticated principal, when `username` would be empty, or when the principal is an M2M client (`@clients` suffix — same exclusion as `SubmitMeetingResponse` and `registrant_service.go`, which have no personal identity to bind a host grant to).
+
+**Identity:** the raw JWT principal (the `created_by` audit stamp's `Username`) can be an auth identifier such as an Auth0 `sub` rather than the user's LFX/LFID username — the same distinction `SelfRegisterForMeeting` resolves before writing a registrant. Since the registrant-event `member_put` above is keyed on the LFX username, this grant resolves it the same way: via the verified email (`UserReader.UsernameByEmail`), falling back to the raw principal when no reader is wired or the lookup fails.
 
 **Fails open:** a publish error here is logged at Error level (`failed to grant meeting creator host access; creator will not see the meeting until a host registrant event is processed`) but never fails the `CreateMeeting` response — the meeting already exists in ITX at this point, so surfacing the error would strand the caller with an orphaned Zoom meeting and no actionable failure. Unlike the registrant-event path, a failed grant here has no retry or fallback: nothing else will ever re-attempt it for the creator, so this reopens the exact gap the grant exists to close.
 
@@ -134,7 +136,7 @@ A meeting's creator has no registrant record unless one is separately created, s
 |---|---|---|
 | `object_type` | `v1_meeting` | Always |
 | `uid` | The newly created meeting's ID | Always |
-| `username` | The authenticated creator's username | Always (skipped entirely if empty) |
+| `username` | The authenticated creator's LFX username, resolved from their verified email (falls back to the raw JWT principal) | Always (skipped entirely if empty) |
 | `relations` | `["host"]` | Always |
 | `mutually_exclusive_with` | `["participant"]` | Always |
 
