@@ -5,7 +5,6 @@ package eventing
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/v1objects"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/utils"
 )
 
 // =============================================================================
@@ -33,6 +33,13 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	key string,
 	v1Data map[string]interface{},
 ) (retry bool) {
+	ctx, finish, blocked := h.startPastMeetingChildAttempt(ctx, key)
+	if blocked {
+		return true
+	}
+	defer func() {
+		retry = finish(retry)
+	}()
 	funcLogger := h.logger.With("key", key, "handler", "past_meeting_recording")
 	funcLogger.DebugContext(ctx, "processing past meeting recording update")
 
@@ -61,14 +68,27 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	// /itx/past_meetings. The parent record is the authoritative source for both the indexer
 	// public flag and the body access fields, matching the FGA tuples written by
 	// PublishPastMeetingEvent.
-	parent, lookupErr := lookupParentPastMeeting(ctx, recordingData.MeetingAndOccurrenceID, h.v1ObjectsKV, funcLogger)
+	parentKey := pastMeetingObjectKeyPrefix + recordingData.MeetingAndOccurrenceID
+	parentMappingKey := "v1_past_meetings." + recordingData.MeetingAndOccurrenceID
+	state, parentData, lookupErr := h.loadV1Parent(ctx, parentKey, parentMappingKey)
 	if lookupErr != nil {
-		if errors.Is(lookupErr, errMsgpackStructural) {
-			funcLogger.With(logging.ErrKey, lookupErr).ErrorContext(ctx, "permanent decode failure looking up parent past meeting, skipping recording")
-			return false
-		}
 		funcLogger.With(logging.ErrKey, lookupErr).WarnContext(ctx, "transient error fetching parent past meeting, will retry")
 		return true
+	}
+	if state == parentGone {
+		funcLogger.InfoContext(ctx, "parent past meeting is deleted, retracting recording and transcript")
+		return h.deletePastMeetingRecordingDocuments(ctx, key, recordingData.ID)
+	}
+	if state != parentLive {
+		// A new parent's first put republishes the recording through
+		// republishPastMeetingArtifacts, including on its initial create.
+		funcLogger.InfoContext(ctx, "parent past meeting is absent or unusable, skipping recording")
+		return false
+	}
+	parent := parentPastMeetingInfo{
+		PrimaryCommitteeSFID: utils.GetString(parentData["committee"]),
+		RecordingAccess:      utils.GetString(parentData["recording_access"]),
+		TranscriptAccess:     utils.GetString(parentData["transcript_access"]),
 	}
 	committees, commErr := resolveParentPastMeetingCommittees(ctx, recordingData.MeetingAndOccurrenceID, parent.PrimaryCommitteeSFID, h.idMapper, h.v1MappingsKV, funcLogger)
 	if commErr != nil {
@@ -107,16 +127,31 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	}
 
 	// Publish recording event to the indexer (recordings send no FGA message)
+	// Check the parent on every exit after publication starts, including a
+	// failed transcript operation after a successful recording publication.
+	// This runs before the outer ownership finalizer.
+	defer func() {
+		after, _, err := h.loadV1Parent(ctx, parentKey, parentMappingKey)
+		if err != nil {
+			retry = true
+			return
+		}
+		if after == parentGone || after == parentAbsent {
+			if h.deletePastMeetingRecordingDocuments(ctx, key, recordingData.ID) {
+				retry = true
+			}
+		}
+	}()
 	if err := h.publisher.PublishPastMeetingRecordingEvent(ctx, string(indexerAction), recordingData); err != nil {
 		funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish recording event")
-		return isTransientError(err)
+		return true
 	}
 
 	// If the record has TRANSCRIPT or TIMELINE files, publish a separate transcript event
 	if transcriptData != nil {
 		if err := h.publisher.PublishPastMeetingTranscriptEvent(ctx, string(indexerAction), transcriptData); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to publish transcript event")
-			return isTransientError(err)
+			return true
 		}
 	} else {
 		// The record has no transcript files. Remove any transcript document an earlier publish
@@ -126,7 +161,7 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 		// that was never indexed is harmless, as on the recording delete path.
 		if err := h.publisher.PublishIndexerDelete(ctx, eventing.IndexV1PastMeetingTranscriptSubject, recordingData.ID); err != nil {
 			funcLogger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to delete stale transcript document")
-			return isTransientError(err)
+			return true
 		}
 	}
 
@@ -136,6 +171,19 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting recording", "action", string(indexerAction))
+	return false
+}
+
+func (h *EventHandlers) deletePastMeetingRecordingDocuments(ctx context.Context, key, id string) (retry bool) {
+	if h.beginPastMeetingChildRepair(ctx, key, id) {
+		return true
+	}
+	for _, subject := range []string{eventing.IndexV1PastMeetingRecordingSubject, eventing.IndexV1PastMeetingTranscriptSubject} {
+		if err := h.publisher.PublishIndexerDelete(ctx, subject, id); err != nil {
+			h.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to retract recording of deleted past meeting, will retry", "subject", subject)
+			return true
+		}
+	}
 	return false
 }
 

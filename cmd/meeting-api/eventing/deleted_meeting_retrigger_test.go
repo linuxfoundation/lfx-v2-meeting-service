@@ -6,6 +6,8 @@ package eventing
 import (
 	"context"
 	"errors"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/nats-io/nats.go/jetstream"
@@ -21,15 +23,36 @@ import (
 // record written concurrently by another consumer.
 type memKV struct {
 	jetstream.KeyValue
-	data     map[string][]byte
-	getErrs  map[string]error
-	putErrs  map[string]error
-	arriving map[string][]byte
-	gets     []string
+	data        map[string][]byte
+	getErrs     map[string]error
+	putErrs     map[string]error
+	deleteErrs  map[string]error
+	revisions   map[string]uint64
+	listErrs    map[string]error
+	arriving    map[string][]byte
+	onCreate    func(string)
+	gets        []string
+	lists       []string
+	afterGet    func(string)
+	afterUpdate func(string)
 }
 
 func newMemKV() *memKV {
-	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}, putErrs: map[string]error{}, arriving: map[string][]byte{}}
+	return &memKV{data: map[string][]byte{}, getErrs: map[string]error{}, putErrs: map[string]error{}, deleteErrs: map[string]error{}, revisions: map[string]uint64{}, listErrs: map[string]error{}, arriving: map[string][]byte{}}
+}
+
+type memKVEntry struct {
+	mockKeyValueEntry
+	revision uint64
+}
+
+func (e memKVEntry) Revision() uint64 { return e.revision }
+
+func (k *memKV) revision(key string) uint64 {
+	if revision := k.revisions[key]; revision != 0 {
+		return revision
+	}
+	return 1
 }
 
 func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
@@ -43,9 +66,16 @@ func (k *memKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, err
 			k.data[key] = pending
 			delete(k.arriving, key)
 		}
+		if k.afterGet != nil {
+			k.afterGet(key)
+		}
 		return nil, jetstream.ErrKeyNotFound
 	}
-	return mockKeyValueEntry{key: key, value: v}, nil
+	entry := memKVEntry{mockKeyValueEntry: mockKeyValueEntry{key: key, value: v}, revision: k.revision(key)}
+	if k.afterGet != nil {
+		k.afterGet(key)
+	}
+	return entry, nil
 }
 
 func (k *memKV) Put(_ context.Context, key string, value []byte) (uint64, error) {
@@ -53,12 +83,92 @@ func (k *memKV) Put(_ context.Context, key string, value []byte) (uint64, error)
 		return 0, err
 	}
 	k.data[key] = value
-	return 1, nil
+	k.revisions[key] = k.revision(key) + 1
+	return k.revisions[key], nil
+}
+
+func (k *memKV) Create(_ context.Context, key string, value []byte, _ ...jetstream.KVCreateOpt) (uint64, error) {
+	if err := k.putErrs[key]; err != nil {
+		return 0, err
+	}
+	if _, exists := k.data[key]; exists {
+		return 0, jetstream.ErrKeyExists
+	}
+	k.data[key] = value
+	k.revisions[key] = k.revision(key) + 1
+	if k.onCreate != nil {
+		k.onCreate(key)
+	}
+	return k.revisions[key], nil
+}
+
+func (k *memKV) Update(_ context.Context, key string, value []byte, revision uint64) (uint64, error) {
+	if err := k.putErrs[key]; err != nil {
+		return 0, err
+	}
+	if _, exists := k.data[key]; !exists {
+		return 0, jetstream.ErrKeyNotFound
+	}
+	if revision != k.revision(key) {
+		return 0, jetstream.ErrKeyRevisionMismatch
+	}
+	k.data[key] = value
+	k.revisions[key] = revision + 1
+	if k.afterUpdate != nil {
+		k.afterUpdate(key)
+	}
+	return k.revisions[key], nil
 }
 
 func (k *memKV) Delete(_ context.Context, key string, _ ...jetstream.KVDeleteOpt) error {
+	if err := k.deleteErrs[key]; err != nil {
+		return err
+	}
 	delete(k.data, key)
+	k.revisions[key] = k.revision(key) + 1
 	return nil
+}
+
+func (k *memKV) History(ctx context.Context, key string, _ ...jetstream.WatchOpt) ([]jetstream.KeyValueEntry, error) {
+	if _, ok := k.data[key]; ok {
+		entry, err := k.Get(ctx, key)
+		return []jetstream.KeyValueEntry{entry}, err
+	}
+	if revision := k.revisions[key]; revision != 0 {
+		return []jetstream.KeyValueEntry{memKVEntry{mockKeyValueEntry: mockKeyValueEntry{key: key}, revision: revision}}, nil
+	}
+	return nil, jetstream.ErrKeyNotFound
+}
+
+type memKeyLister struct{ keys <-chan string }
+
+func (l memKeyLister) Keys() <-chan string { return l.keys }
+func (l memKeyLister) Stop() error         { return nil }
+
+func (k *memKV) ListKeysFiltered(_ context.Context, filters ...string) (jetstream.KeyLister, error) {
+	var keys []string
+	for _, filter := range filters {
+		k.lists = append(k.lists, filter)
+		if err := k.listErrs[filter]; err != nil {
+			return nil, err
+		}
+		prefix := strings.TrimSuffix(filter, ">")
+		for key := range k.data {
+			if strings.HasPrefix(key, prefix) {
+				keys = append(keys, key)
+			}
+		}
+	}
+	if len(keys) == 0 {
+		return nil, jetstream.ErrNoKeysFound
+	}
+	sort.Strings(keys)
+	ch := make(chan string, len(keys))
+	for _, key := range keys {
+		ch <- key
+	}
+	close(ch)
+	return memKeyLister{keys: ch}, nil
 }
 
 // retriggerTestPublisher counts the live-object publishes that a deleted meeting must not

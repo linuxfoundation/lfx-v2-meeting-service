@@ -26,7 +26,7 @@ This service uses four FGA operation types for publishing tuple changes and one 
 | `lfx.fga-sync.update_access` | `update_access` | Create and update — sets object-level access config and references |
 | `lfx.fga-sync.member_put` | `member_put` | Adds a user to one or more relations on an object |
 | `lfx.fga-sync.member_remove` | `member_remove` | Removes a user from an object; sent on registrant delete and on full participant deletes. An empty `relations` array removes all relations for that user on the object |
-| `lfx.fga-sync.delete_access` | `delete_access` | Delete — removes all FGA tuples for the object |
+| `lfx.fga-sync.delete_access` | `delete_access` | Delete — removes all FGA tuples for the object; also sent by past-meeting participant compensation when the parent is deleted or disappears after publication |
 | `lfx.access_check.request` | request/reply | Synchronous committee write-access and project `meetings_creator` checks during `CreateMeeting` / `UpdateMeeting` |
 
 ---
@@ -189,6 +189,8 @@ Only the public artifact viewer relations are set, one per artifact access field
 
 Published to `lfx.fga-sync.member_put` when a participant event is processed and the participant has a non-empty `Username`.
 
+Participant updates publish only under a live parent. An initially absent, untombstoned parent is deferred without revoking access; the parent's first create replays tracked participants. A live authoritative parent record takes precedence over a stale mapping tombstone during restoration. Deleted-parent compensation is described below.
+
 The object UID is the **parent past meeting's `MeetingAndOccurrenceID`**, not the participant UID.
 
 #### Member Data
@@ -220,6 +222,10 @@ Published to `lfx.fga-sync.member_remove` when a participant is fully deleted �
 
 When a participant record is deleted but a sibling record still exists (e.g., an attendee record remains when an invitee record is deleted), a `member_put` is sent instead to update the user's remaining relations rather than remove them entirely.
 
+These sibling rules apply to live parents. Under a deleted parent, participant updates and deletes retract all tracked participant documents and send parent-wide `delete_access`, rather than publishing a surviving sibling's `member_put`. This also compensates an update or partial delete whose publish races parent deletion, including a parent that disappears after publication but before its tombstone is written. It runs even when the triggering participant has no username, because the revocation targets the parent object, not a user. An initially absent, untombstoned parent does **not** trigger this parent-wide revocation.
+
+Compensation discovers and durably tracks legacy invitees/attendees before parent-wide revocation, so repair restores their memberships as well as newly tracked participants. Discovery/read/tracking errors retry before sending `delete_access`. It persists an event-keyed, CAS-owned child-repair intent before its first destructive write. After all child-handler writes and a NATS flush, the owner hands off `writing` intent as `repairable`; another worker must atomically claim it as `repairing` before replay and cannot consume an in-flight owner's intent. The authoritative parent is re-read: if live, its `update_access` and tracked children (including participant `member_put`s) are replayed. If restoration occurs during participant-delete compensation, sibling handling is reassessed before continuing. Initially absent-parent per-user removal also records intent to repair a concurrent first create, without revoking parent-wide access. Repair failures retain intent and retry before any child tombstone short-circuit. A deletion racing the repair is rechecked and cleaned up rather than leaving a resurrected parent. Ownership never expires automatically: a crashed owner or failed flush requires confirmed worker termination and operator recovery as documented in [Child Compensation Recovery](event-processing.md#child-compensation-recovery).
+
 | Field | Value |
 |---|---|
 | `object_type` | `v1_past_meeting` |
@@ -227,9 +233,25 @@ When a participant record is deleted but a sibling record still exists (e.g., an
 | `username` | LFX username (from v1 `lf_sso` field) |
 | `relations` | `[]` (empty — removes all relations for the user) |
 
+Every full participant delete with a known parent acquires owned repair protection before destructive writes, not only deletes whose initial parent read was absent/deleted. Before removal it resolves an existing sibling cross-reference and durably tracks that legacy sibling; lookup/tracking failures retry without removing access. This keeps a newly restored sibling recoverable even when it was not in the new parent-keyed index at the initial lookup. Parent-driven replay completes handed-off child intents outside recursion suppression after reconciling authoritative parent state, including when a replay failure races parent deletion; no separate child event is required to drain that work.
+
+Owned protection begins before old-username cleanup as well as full participant deletion. It does not imply parent-wide replay on every ordinary removal: after publications are flushed, skipping replay requires the same live parent source and mapping revisions, a synchronized baseline with no pending replay/cleanup markers, and no parent-wide compensation obligation. Both individual and batch repair reevaluate that state at claim time. A sibling discovered on the second lookup requires reconciliation. Unknown/changed/in-progress state and parent-wide revocation still require full repair. During reconciliation, owning repairs may finish their own retained sources under source-key-scoped capabilities; competing workers cannot acquire those `repairing` records. Outer replay finishes pending affected-document/access compensation and actual post-delete reconciliation before clearing intents. If another owner blocks child restoration, the parent retries instead of clearing its replay obligation.
+
+Pending participant source deletion is durable independently of the source KV value. Claimed repair explicitly resumes a hard-deleted source from its retained rich mapping (or a retained soft delete) before completing intent, preserving sibling rules. Replaying only parent `update_access` cannot discharge that obligation because it excludes membership relations. The owned parent operation remains through outer child draining and claim completion; legacy helper markers use captured revisions but are not completion proof for the owned operation. Actual parent delete redelivery also drains ready child intents after generation cleanup is complete.
+
+Parent mutations additionally have one durable outer owner in `past-meeting-operation` state. Cleanup/restore and nested reconciliation share that capability; nested work cannot complete the outer obligation before child claims finish. Foreign workers request reconciliation and retry rather than publish parent changes concurrently. Partial cleanup failure retains repairable ownership independently of legacy replay hints. The next parent operation reconciles current source state before completion. As with child ownership, there is no automatic timeout takeover; orphan recovery requires confirmed termination of the prior worker and connection.
+
+Attachment replay separately checks the attachment's source revision around publication. A newer source deletion has its own durable retraction obligation, honored even under a live parent and without trusting an older attachment tombstone as evidence that a later stale publication was removed. Attachments remain indexer-only; parent ownership and attachment source compensation introduce no new FGA operation shape.
+
+Legacy participant discovery is durably coalesced per deletion generation before `delete_access`; both parent cleanup and late-child compensation reuse it. Participant publication persists its affected document IDs before sending a `member_put`, so repeated compensation deletes only documents that source could have published, not every tracked participant. A new source deletion revision or live-parent processing invalidates old discovery state. This bounds historical-table scans while retaining all legacy participants needed for restored `member_put`s. See the event-processing contract for discovery ownership, retained hard-delete history, and orphan recovery.
+
 ### Delete
 
 On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` with only the past meeting `uid` — all FGA tuples for `v1_past_meeting:{uid}` are removed by the fga-sync service.
+
+Skipping a completed parent deletion requires a cleanup-completion record matching its current authoritative deletion revision, including retained hard-delete history. An old boolean completion or an earlier deletion generation cannot suppress revocation/cleanup after artifacts were republished under an unprocessed restore.
+
+An indexer-delete or access-revocation publication error always retries; it cannot authorize tombstones or cleanup completion, regardless of its error-message classification. Pending artifact-retraction intents also remain independently recoverable after parent cleanup: individual/batch repair retries the source-specific recording/transcript, summary, or attachment deletes before completing the intent. These retractions remain indexer-only, with access governed by the parent as above.
 
 ---
 
@@ -248,6 +270,8 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 | Update participant — username cleared or changed | `v1_past_meeting` | `lfx.fga-sync.member_remove` | Sent for old username before new `member_put`; skipped if sibling invitee/attendee record still grants old username access |
 | Delete participant (full delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_remove` | Sent when no invitee/attendee sibling record remains; skipped if `Username` is empty |
 | Delete participant (partial delete, with username) | `v1_past_meeting` | `lfx.fga-sync.member_put` | Sent when a sibling invitee/attendee record still exists — updates remaining relations instead of removing |
+| Participant update/delete — deleted-parent compensation | `v1_past_meeting` | `lfx.fga-sync.delete_access` | Revokes **all** parent tuples, even without a participant username; also compensates a parent disappearing after publication. Not sent for an initially absent, untombstoned parent |
+| Child compensation — parent restored during cleanup or repair retried | `v1_past_meeting` | `lfx.fga-sync.update_access`, `lfx.fga-sync.member_put` | Replays the live parent's access and tracked participants after destructive writes; durable child repair intent must finish before ACK |
 | Create/update recording | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Delete recording | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |
 | Create/update transcript | _(none)_ | _(none)_ | Indexer only — access checked via parent `v1_past_meeting` |

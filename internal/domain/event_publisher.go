@@ -34,6 +34,10 @@ type EventPublisher interface {
 	// The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 	PublishAccessDelete(ctx context.Context, subject string, payload []byte) error
 
+	// Flush waits for the broker to receive all preceding publications before
+	// compensation ownership can be handed to another worker.
+	Flush(ctx context.Context) error
+
 	// Close closes the publisher and releases resources
 	Close() error
 }
