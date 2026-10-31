@@ -116,6 +116,26 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
 | `mutually_exclusive_with` | `["host"]` | When `registrant.Host == false` |
 
+### member_put (Synchronous creator grant)
+
+Published to `lfx.fga-sync.member_put` directly from `CreateMeeting` (`internal/service/itx/meeting_service.go`'s `grantCreatorHostAccess`), immediately after a successful `CreateZoomMeeting`, independent of the registrant-event path above.
+
+A meeting's creator has no registrant record unless one is separately created, so without this call there is no event that could ever grant them `host` access — not a propagation delay, a permanent gap (see GH-4780 in `lfx-self-serve`). This grant is redundant with, not a replacement for, the registrant-event path: if a registrant event for the creator is later processed, `member_put` fires again from that path too.
+
+**When:** every successful `CreateMeeting`, for the authenticated creator only (resolved the same way as the `created_by` audit stamp). Skipped when there is no authenticated principal, or when `username` would be empty.
+
+**Fails open:** a publish error here is logged (`failed to synchronously grant meeting creator host access`) but never fails the `CreateMeeting` response — the meeting already exists in ITX at this point, so surfacing the error would strand the caller with an orphaned Zoom meeting and no actionable failure.
+
+#### Member Data
+
+| Field | Value | Condition |
+|---|---|---|
+| `object_type` | `v1_meeting` | Always |
+| `uid` | The newly created meeting's ID | Always |
+| `username` | The authenticated creator's username | Always (skipped entirely if empty) |
+| `relations` | `["host"]` | Always |
+| `mutually_exclusive_with` | `["participant"]` | Always |
+
 ### member_remove (Registrant)
 
 Published to `lfx.fga-sync.member_remove` in two cases:

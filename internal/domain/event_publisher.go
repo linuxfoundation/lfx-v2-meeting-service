@@ -33,6 +33,12 @@ type EventPublisher interface {
 	// PublishAccessDelete sends a pre-built access control message payload to subject.
 	// The caller is responsible for marshalling the payload; pass []byte(id) for simple deletes.
 	PublishAccessDelete(ctx context.Context, subject string, payload []byte) error
+	// PublishAccessMemberPut publishes a generic member_put message granting username
+	// the given relations on objectType:uid, outside the resource-specific Publish*Event
+	// flows. Used for a synchronous, out-of-band grant (e.g. the meeting creator's
+	// `host` relation at CreateMeeting time) that must not wait on a registrant/
+	// participant event. A no-op (returns nil without publishing) when username is empty.
+	PublishAccessMemberPut(ctx context.Context, objectType, uid, username string, relations, mutuallyExclusiveWith []string) error
 
 	// Close closes the publisher and releases resources
 	Close() error

@@ -10,6 +10,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
@@ -22,6 +23,7 @@ type MeetingService struct {
 	registrantClient domain.ITXRegistrantClient
 	idMapper         domain.IDMapper
 	committeeAuthz   domain.CommitteeAuthorizer // nil when NATS is unavailable
+	eventPublisher   domain.EventPublisher      // nil when NATS is unavailable
 }
 
 // NewMeetingService creates a new ITX meeting service.
@@ -35,13 +37,14 @@ type MeetingService struct {
 // checks every newly attached committee and CreateMeeting checks every committee
 // plus the project (see authorizeCreateScope); RPC errors fail closed (503) to
 // prevent bypass during fga-sync outages.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
+func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer, eventPublisher domain.EventPublisher) *MeetingService {
 	return &MeetingService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		meetingClient:    meetingClient,
 		registrantClient: registrantClient,
 		idMapper:         idMapper,
 		committeeAuthz:   committeeAuthz,
+		eventPublisher:   eventPublisher,
 	}
 }
 
@@ -80,7 +83,33 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 		return nil, err
 	}
 
+	s.grantCreatorHostAccess(ctx, resp.ID, itxReq.CreatedBy)
+
 	return resp, nil
+}
+
+// grantCreatorHostAccess synchronously grants the meeting creator the `host`
+// FGA relation, independent of whether a registrant event for them is ever
+// generated. update_access excludes host/participant (docs/fga-contract.md);
+// the only other path that can grant them is member_put off a registrant
+// event, which requires a registrant record to exist for the creator in the
+// first place — self-serve's create flow never creates one, so without this
+// call the creator can be permanently absent from their own "my meetings"
+// view (GH-4780). Fails open: the meeting already exists in ITX at this
+// point, so a publish failure here must not fail the create response — it
+// would strand the caller with an orphaned Zoom meeting and no error to act
+// on. The async registrant-event path remains the mechanism for every other
+// host/participant (self-registrants, committee members, PCC-added
+// registrants) and still applies on top of this grant if one later fires.
+func (s *MeetingService) grantCreatorHostAccess(ctx context.Context, meetingID string, creator *itx.User) {
+	if s.eventPublisher == nil || creator == nil || creator.Username == "" {
+		return
+	}
+	if err := s.eventPublisher.PublishAccessMemberPut(ctx, "v1_meeting", meetingID, creator.Username,
+		[]string{"host"}, []string{"participant"}); err != nil {
+		slog.WarnContext(ctx, "failed to synchronously grant meeting creator host access; relying on async registrant-event path",
+			"meeting_id", meetingID, logging.ErrKey, err)
+	}
 }
 
 // GetMeeting retrieves a meeting via ITX proxy

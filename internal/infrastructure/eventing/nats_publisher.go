@@ -686,6 +686,32 @@ func (p *NATSPublisher) PublishAccessDelete(ctx context.Context, subject string,
 	return p.publishWithSpan(ctx, subject, payload)
 }
 
+// PublishAccessMemberPut publishes a generic member_put message granting username
+// the given relations on objectType:uid. See domain.EventPublisher for when to use
+// this over a resource-specific Publish*Event method.
+func (p *NATSPublisher) PublishAccessMemberPut(ctx context.Context, objectType, uid, username string, relations, mutuallyExclusiveWith []string) error {
+	if username == "" {
+		return nil
+	}
+
+	memberMsg := fgatypes.GenericFGAMessage{
+		ObjectType: objectType,
+		Operation:  "member_put",
+		Data: fgatypes.GenericMemberData{
+			UID:                   uid,
+			Username:              username,
+			Relations:             relations,
+			MutuallyExclusiveWith: mutuallyExclusiveWith,
+		},
+	}
+
+	if err := p.publish(ctx, fgaconstants.GenericMemberPutSubject, memberMsg); err != nil {
+		return fmt.Errorf("failed to publish access member_put: %w", err)
+	}
+
+	return nil
+}
+
 // publishWithSpan wraps conn.PublishMsg with an OTel producer span and injects
 // trace context into the NATS message headers.
 func (p *NATSPublisher) publishWithSpan(ctx context.Context, subject string, data []byte) error {

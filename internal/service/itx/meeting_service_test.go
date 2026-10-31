@@ -148,6 +148,29 @@ func allowAllCommittees() *fakeCommitteeAuthorizer {
 	return &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
 }
 
+// fakeEventPublisher is a minimal test double for domain.EventPublisher, capturing
+// PublishAccessMemberPut calls for the synchronous host-grant tests below.
+type fakeEventPublisher struct {
+	domain.EventPublisher
+	calls                     int
+	lastObjectType            string
+	lastUID                   string
+	lastUsername              string
+	lastRelations             []string
+	lastMutuallyExclusiveWith []string
+	err                       error
+}
+
+func (f *fakeEventPublisher) PublishAccessMemberPut(_ context.Context, objectType, uid, username string, relations, mutuallyExclusiveWith []string) error {
+	f.calls++
+	f.lastObjectType = objectType
+	f.lastUID = uid
+	f.lastUsername = username
+	f.lastRelations = relations
+	f.lastMutuallyExclusiveWith = mutuallyExclusiveWith
+	return f.err
+}
+
 func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 	baseReq := func() *models.CreateITXMeetingRequest {
 		return &models.CreateITXMeetingRequest{
@@ -164,7 +187,7 @@ func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", AvatarURL: "https://example.com/a.jpg", Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
 		require.NoError(t, err)
@@ -185,7 +208,7 @@ func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
 		require.NoError(t, err)
@@ -195,7 +218,7 @@ func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 	t.Run("degrades to username/email when resolver errors", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		reader := &fakeUserMetadataReader{err: errors.New("auth service unavailable")}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("bob", "bob@heimdall.example.com"), baseReq())
 		require.NoError(t, err, "resolver failures must never block meeting creation")
@@ -207,7 +230,7 @@ func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 
 	t.Run("degrades to username/email when reader is nil (NATS disabled)", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("carol", "carol@heimdall.example.com"), baseReq())
 		require.NoError(t, err)
@@ -218,12 +241,73 @@ func TestMeetingService_CreateMeeting_CreatedBy(t *testing.T) {
 	t.Run("omits created_by when there is no principal in context", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "alice"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		_, err := svc.CreateMeeting(context.Background(), baseReq())
 		require.NoError(t, err)
 		assert.Nil(t, client.lastCreateReq.CreatedBy)
 		assert.Empty(t, reader.calls, "resolver should not be called without a principal")
+	})
+}
+
+// TestMeetingService_CreateMeeting_SynchronousHostGrant covers the GH-4780 fix:
+// the meeting creator must be granted the FGA `host` relation synchronously at
+// creation time, independent of whether a registrant event for them is ever
+// generated (see grantCreatorHostAccess and docs/fga-contract.md member_put).
+func TestMeetingService_CreateMeeting_SynchronousHostGrant(t *testing.T) {
+	baseReq := func() *models.CreateITXMeetingRequest {
+		return &models.CreateITXMeetingRequest{
+			ProjectUID: "proj-1",
+			Title:      "Test Meeting",
+			StartTime:  "2026-01-01T00:00:00Z",
+			Duration:   30,
+			Visibility: itx.MeetingVisibilityPublic,
+		}
+	}
+
+	t.Run("grants creator host access synchronously after create", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-123"}}
+		publisher := &fakeEventPublisher{}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, publisher)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
+		require.NoError(t, err)
+
+		require.Equal(t, 1, publisher.calls)
+		assert.Equal(t, "v1_meeting", publisher.lastObjectType)
+		assert.Equal(t, "mtg-123", publisher.lastUID)
+		assert.Equal(t, "alice", publisher.lastUsername)
+		assert.Equal(t, []string{"host"}, publisher.lastRelations)
+		assert.Equal(t, []string{"participant"}, publisher.lastMutuallyExclusiveWith)
+	})
+
+	t.Run("does not fail the create when the synchronous grant publish fails", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-456"}}
+		publisher := &fakeEventPublisher{err: errors.New("nats unavailable")}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, publisher)
+
+		resp, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
+		require.NoError(t, err, "a synchronous grant failure must not fail an otherwise-successful create")
+		require.NotNil(t, resp)
+		assert.Equal(t, 1, publisher.calls, "the publish must still be attempted")
+	})
+
+	t.Run("skips the publish when there is no principal in context", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-789"}}
+		publisher := &fakeEventPublisher{}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, publisher)
+
+		_, err := svc.CreateMeeting(context.Background(), baseReq())
+		require.NoError(t, err)
+		assert.Zero(t, publisher.calls, "no creator principal means nothing to grant")
+	})
+
+	t.Run("skips the publish when no event publisher is configured", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-999"}}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
+		require.NoError(t, err, "a nil event publisher (NATS disabled) must not block meeting creation")
 	})
 }
 
@@ -246,7 +330,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", AvatarURL: "https://example.com/a.jpg", Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -269,7 +353,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -280,7 +364,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	t.Run("degrades to username/email when resolver errors", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{err: errors.New("auth service unavailable")}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.UpdateMeeting(ctxWithPrincipal("bob", "bob@heimdall.example.com"), "meeting-1", baseReq())
 		require.NoError(t, err, "resolver failures must never block meeting updates")
@@ -292,7 +376,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 
 	t.Run("degrades to username/email when reader is nil (NATS disabled)", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateMeeting(ctxWithPrincipal("carol", "carol@heimdall.example.com"), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -303,7 +387,7 @@ func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) 
 	t.Run("omits updated_by when there is no principal in context", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		reader := &fakeUserMetadataReader{profile: &domain.UserProfile{Username: "alice"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -329,7 +413,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 
 	t.Run("create forwards reminder fields to ITX", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(context.Background(), baseReq())
 		require.NoError(t, err)
@@ -341,7 +425,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 
 	t.Run("update forwards reminder fields to ITX", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -353,7 +437,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 
 	t.Run("explicit false serializes on the wire so ITX resets the stored pair", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.AutoEmailReminderEnabled = utils.BoolPtr(false)
@@ -372,7 +456,7 @@ func TestMeetingService_AutoEmailReminderFieldsForwardedToITX(t *testing.T) {
 
 	t.Run("omitted reminder field stays off the wire so ITX preserves the stored pair", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.AutoEmailReminderEnabled = nil
@@ -405,7 +489,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 
 	t.Run("create forwards the flag to ITX", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(context.Background(), baseReq())
 		require.NoError(t, err)
@@ -416,7 +500,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 
 	t.Run("update forwards the flag to ITX", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -427,7 +511,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 
 	t.Run("explicit false serializes on the wire", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.ShowMeetingAttendees = utils.BoolPtr(false)
@@ -442,7 +526,7 @@ func TestMeetingService_ShowMeetingAttendeesForwardedToITX(t *testing.T) {
 
 	t.Run("omitted field stays off the wire so ITX preserves the stored value", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.ShowMeetingAttendees = nil
@@ -475,7 +559,7 @@ func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 
 	t.Run("create forwards owner and serializes it on the wire", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(context.Background(), baseReq())
 		require.NoError(t, err)
@@ -492,7 +576,7 @@ func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 
 	t.Run("update forwards owner to ITX", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -503,7 +587,7 @@ func TestMeetingService_OwnerForwardedToITX(t *testing.T) {
 
 	t.Run("omitted owner stays off the wire so ITX preserves the stored owner", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: &itx.ZoomMeetingResponse{Project: "proj-1"}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.Owner = nil
@@ -525,7 +609,7 @@ func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.UpdateOccurrence(ctxWithPrincipal("alice", ""), "meeting-1", "occ-1", &itx.UpdateOccurrenceRequest{Topic: "new topic"})
 		require.NoError(t, err)
@@ -537,7 +621,7 @@ func TestMeetingService_UpdateOccurrence_StampsUpdatedBy(t *testing.T) {
 
 	t.Run("omits updated_by when no principal in context", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateOccurrence(context.Background(), "meeting-1", "occ-1", &itx.UpdateOccurrenceRequest{})
 		require.NoError(t, err)
@@ -552,7 +636,7 @@ func TestMeetingService_DeleteOccurrence(t *testing.T) {
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil, nil)
 
 		err := svc.DeleteOccurrence(ctxWithPrincipal("alice", ""), "meeting-1", "occ-1", &itx.DeleteOccurrenceRequest{Note: "Holiday week"})
 		require.NoError(t, err)
@@ -564,7 +648,7 @@ func TestMeetingService_DeleteOccurrence(t *testing.T) {
 
 	t.Run("a nil request still reaches ITX without a note", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.DeleteOccurrence(context.Background(), "meeting-1", "occ-1", nil)
 		require.NoError(t, err)
@@ -599,7 +683,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 
 	t.Run("allows update when project is unchanged", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		err := svc.UpdateMeeting(context.Background(), "meeting-1", baseReq())
 		require.NoError(t, err)
@@ -608,7 +692,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 
 	t.Run("rejects update that changes project_uid", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.ProjectUID = "proj-other"
@@ -623,7 +707,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 	t.Run("allows update that adds a committee when FGA grants access", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		authz := allowAllCommittees()
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
@@ -638,7 +722,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 	t.Run("allows update that swaps a committee when FGA grants access", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		authz := allowAllCommittees()
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
@@ -652,7 +736,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 	t.Run("rejects update that swaps to a committee the principal cannot write", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{}} // denies everything
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = []models.Committee{{UID: "00000000-0000-0000-0000-000000000099"}}
@@ -665,7 +749,7 @@ func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {
 	t.Run("allows update that removes all committees (no FGA check needed)", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: currentMeeting}
 		authz := allowAllCommittees()
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = nil
@@ -700,7 +784,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 	t.Run("rejects adding a committee the principal cannot write", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{}} // denies everything
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
@@ -713,7 +797,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 	t.Run("skips FGA check for committees already on the meeting", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{}} // denies everything
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		// Request contains only the existing committee — no delta, so no FGA call expected.
 		err := svc.UpdateMeeting(ctxWithPrincipal("alice", ""), "meeting-1", baseReq())
@@ -724,7 +808,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 	t.Run("skips FGA check when no committees in request", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = nil
@@ -736,7 +820,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 	t.Run("rejects update when FGA is unavailable (fail closed)", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
 		authz := &fakeCommitteeAuthorizer{err: errors.New("nats: no servers available")}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
@@ -751,7 +835,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 
 	t.Run("skips FGA check when committeeAuthz is nil (NATS disabled)", func(t *testing.T) {
 		client := &fakeMeetingClient{getResp: existing}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: "00000000-0000-0000-0000-000000000002"})
@@ -768,7 +852,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		mapper := committeeV2ToV1Mapper{v2UID: v2UID, v1SFID: v1SFID}
 		authz := allowAllCommittees()
 		client := &fakeMeetingClient{getResp: existing}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		req := baseReq()
 		req.Committees = append(req.Committees, models.Committee{UID: v2UID})
@@ -801,7 +885,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		}
 		authz := allowAllCommittees()
 		client := &fakeMeetingClient{getResp: liveRecord}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		req := baseReq()
 		req.ProjectUID = projV2
@@ -823,7 +907,7 @@ func TestMeetingService_UpdateMeeting_CommitteeAuthorization(t *testing.T) {
 		}
 		mapper := fullIDMapper{projectV2: projV2, projectV1: projV1}
 		client := &fakeMeetingClient{getResp: liveRecord}
-		svc := NewMeetingService(client, nil, mapper, nil, allowAllCommittees())
+		svc := NewMeetingService(client, nil, mapper, nil, allowAllCommittees(), nil)
 
 		req := baseReq()
 		req.ProjectUID = projV2
@@ -872,7 +956,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 			allowedIDs:      map[string]bool{comm1V2: true},
 			creatorProjects: map[string]bool{projV2: true},
 		}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
 		require.Error(t, err)
@@ -885,7 +969,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("checks a repeated committee only once", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm1V2: true}}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm1V2, comm1V2))
 		require.NoError(t, err)
@@ -896,7 +980,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("fails closed when the committee check errors", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{err: errors.New("nats: no servers available")}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -910,7 +994,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 			allowedIDs:      map[string]bool{"*": true},
 			creatorProjects: map[string]bool{projV2: true},
 		}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
 		require.NoError(t, err)
@@ -922,7 +1006,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("allows a committee writer to create under the committee's own project", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm1V2: true}}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.NoError(t, err)
@@ -933,7 +1017,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("rejects a committee writer creating under a project that does not own the committee", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{comm2V2: true}}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm2V2))
 		require.Error(t, err)
@@ -944,7 +1028,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("rejects a committee writer when any committee belongs to another project", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2, comm2V2))
 		require.Error(t, err)
@@ -955,7 +1039,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("rejects a committee-only caller when the mapper cannot report ownership", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
-		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz)
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -968,7 +1052,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 		noOwner.committeeProject = map[string]string{}
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
-		svc := NewMeetingService(client, nil, noOwner, nil, authz)
+		svc := NewMeetingService(client, nil, noOwner, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -981,7 +1065,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 		failing.ownershipErr = domain.NewUnavailableError("v1-sync-helper lookup timed out")
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
-		svc := NewMeetingService(client, nil, failing, nil, authz)
+		svc := NewMeetingService(client, nil, failing, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -995,7 +1079,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 			allowedIDs: map[string]bool{"*": true},
 			creatorErr: errors.New("nats: timeout"),
 		}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -1005,7 +1089,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 
 	t.Run("fails closed when the committee authorizer is not configured", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, mapper, nil, nil)
+		svc := NewMeetingService(client, nil, mapper, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq(comm1V2))
 		require.Error(t, err)
@@ -1015,7 +1099,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 
 	t.Run("allows a create without committees when the authorizer is not configured", func(t *testing.T) {
 		client := &fakeMeetingClient{}
-		svc := NewMeetingService(client, nil, mapper, nil, nil)
+		svc := NewMeetingService(client, nil, mapper, nil, nil, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq())
 		require.NoError(t, err)
@@ -1025,7 +1109,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("rejects committees without an authenticated principal", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{allowedIDs: map[string]bool{"*": true}}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(context.Background(), baseReq(comm1V2))
 		require.Error(t, err)
@@ -1036,7 +1120,7 @@ func TestMeetingService_CreateMeeting_Authorization(t *testing.T) {
 	t.Run("leaves a create without committees to Heimdall's project check", func(t *testing.T) {
 		client := &fakeMeetingClient{}
 		authz := &fakeCommitteeAuthorizer{}
-		svc := NewMeetingService(client, nil, mapper, nil, authz)
+		svc := NewMeetingService(client, nil, mapper, nil, authz, nil)
 
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", ""), baseReq())
 		require.NoError(t, err)
@@ -1122,7 +1206,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 				Username: "other-user",
 			},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", "alice@example.com"), meetingID, compoundID, baseReq())
 		require.NoError(t, err)
@@ -1138,7 +1222,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 				Email:    "other@example.com",
 			},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		// No email in ctx — match must fall back to username.
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", ""), meetingID, compoundID, baseReq())
@@ -1155,7 +1239,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 				Username: "other-user",
 			},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", "alice@example.com"), meetingID, compoundID, baseReq())
 		require.NoError(t, err)
@@ -1174,7 +1258,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 		reader := &fakeUserMetadataReader{
 			profile: &domain.UserProfile{Username: "alice", Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, reader, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, reader, nil, nil)
 
 		// JWT email is empty — service must resolve the profile and use its email.
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", ""), meetingID, compoundID, baseReq())
@@ -1191,7 +1275,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 				Username: "other-user",
 			},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", "alice@example.com"), meetingID, compoundID, baseReq())
 		require.Error(t, err)
@@ -1204,7 +1288,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 		registrantClient := &fakeGetRegistrantClient{
 			registrant: &itx.ZoomMeetingRegistrant{ID: registrantID, Email: "alice@example.com"},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(context.Background(), meetingID, compoundID, baseReq())
 		require.Error(t, err)
@@ -1217,7 +1301,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 		registrantClient := &fakeGetRegistrantClient{
 			registrant: &itx.ZoomMeetingRegistrant{ID: registrantID, Email: "svc@example.com"},
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("clientid@clients", ""), meetingID, compoundID, baseReq())
 		require.Error(t, err)
@@ -1230,7 +1314,7 @@ func TestMeetingService_SubmitMeetingResponse(t *testing.T) {
 		registrantClient := &fakeGetRegistrantClient{
 			err: errors.New("itx: upstream error"),
 		}
-		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil)
+		svc := NewMeetingService(meetingClient, registrantClient, noOpIDMapper{}, nil, nil, nil)
 
 		_, err := svc.SubmitMeetingResponse(ctxWithPrincipal("alice", "alice@example.com"), meetingID, compoundID, baseReq())
 		require.Error(t, err)
