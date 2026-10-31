@@ -309,6 +309,40 @@ func TestMeetingService_CreateMeeting_SynchronousHostGrant(t *testing.T) {
 		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
 		require.NoError(t, err, "a nil event publisher (NATS disabled) must not block meeting creation")
 	})
+
+	t.Run("skips the publish for an M2M client principal", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-m2m"}}
+		publisher := &fakeEventPublisher{}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, publisher)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("some-client-id@clients", ""), baseReq())
+		require.NoError(t, err)
+		assert.Zero(t, publisher.calls, "an M2M principal has no personal identity to bind a host grant to")
+	})
+
+	t.Run("skips the publish when authorization denies the create", func(t *testing.T) {
+		client := &fakeMeetingClient{createResp: &itx.ZoomMeetingResponse{ID: "mtg-should-not-grant"}}
+		publisher := &fakeEventPublisher{}
+		authz := &fakeCommitteeAuthorizer{} // denies every committee: allowedIDs is empty
+		req := baseReq()
+		req.Committees = []models.Committee{{UID: "committee-1"}}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, authz, publisher)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), req)
+		require.Error(t, err)
+		assert.Nil(t, client.lastCreateReq, "ITX must not be called when authorization denies the create")
+		assert.Zero(t, publisher.calls, "no grant must be published for a create that was never authorized")
+	})
+
+	t.Run("skips the publish when the ITX create itself errors", func(t *testing.T) {
+		client := &fakeMeetingClient{createErr: errors.New("itx unavailable")}
+		publisher := &fakeEventPublisher{}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil, publisher)
+
+		_, err := svc.CreateMeeting(ctxWithPrincipal("alice", "alice@heimdall.example.com"), baseReq())
+		require.Error(t, err)
+		assert.Zero(t, publisher.calls, "no grant must be published when no meeting was ever created")
+	})
 }
 
 func TestMeetingService_UpdateMeeting_StampsUpdatedByNotCreatedBy(t *testing.T) {

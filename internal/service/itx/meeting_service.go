@@ -78,12 +78,18 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 		return nil, err
 	}
 
+	// Grant before mapResponseV1ToV2: the Zoom meeting already exists in ITX as
+	// soon as CreateZoomMeeting succeeds, and resp.ID is a native Zoom ID the
+	// mapping step never touches (it only rewrites resp.Project/resp.Committees).
+	// Granting after the mapping would skip the creator's host access whenever
+	// that mapping errors, even though the meeting — and the gap this grant
+	// closes — already exists.
+	s.grantCreatorHostAccess(ctx, resp.ID, itxReq.CreatedBy)
+
 	// Map v1 SFIDs back to v2 UIDs in response
 	if err := s.mapResponseV1ToV2(ctx, resp); err != nil {
 		return nil, err
 	}
-
-	s.grantCreatorHostAccess(ctx, resp.ID, itxReq.CreatedBy)
 
 	return resp, nil
 }
@@ -102,12 +108,22 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 // host/participant (self-registrants, committee members, PCC-added
 // registrants) and still applies on top of this grant if one later fires.
 func (s *MeetingService) grantCreatorHostAccess(ctx context.Context, meetingID string, creator *itx.User) {
-	if s.eventPublisher == nil || creator == nil || creator.Username == "" {
+	if meetingID == "" || s.eventPublisher == nil || creator == nil || creator.Username == "" {
+		return
+	}
+	// M2M client principals carry an @clients suffix and have no personal
+	// identity to bind a host grant to (same guard as SubmitMeetingResponse
+	// and registrant_service.go).
+	if strings.HasSuffix(creator.Username, "@clients") {
 		return
 	}
 	if err := s.eventPublisher.PublishAccessMemberPut(ctx, "v1_meeting", meetingID, creator.Username,
 		[]string{"host"}, []string{"participant"}); err != nil {
-		slog.WarnContext(ctx, "failed to synchronously grant meeting creator host access; relying on async registrant-event path",
+		// Unlike the registrant-event path, there is no retry or fallback that can
+		// recover this: the creator has no registrant record, so nothing will ever
+		// re-attempt this grant. Logged at Error, not Warn, because this recreates
+		// the exact permanent-visibility gap (GH-4780) this change exists to close.
+		slog.ErrorContext(ctx, "failed to grant meeting creator host access; creator will not see the meeting until a host registrant event is processed",
 			"meeting_id", meetingID, logging.ErrKey, err)
 	}
 }
