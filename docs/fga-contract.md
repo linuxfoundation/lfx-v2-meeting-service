@@ -116,6 +116,30 @@ The object UID is the **parent meeting ID**, not the registrant UID.
 | `mutually_exclusive_with` | `["participant"]` | When `registrant.Host == true` |
 | `mutually_exclusive_with` | `["host"]` | When `registrant.Host == false` |
 
+### member_put (Synchronous creator grant)
+
+Published to `lfx.fga-sync.member_put` directly from `CreateMeeting` (`internal/service/itx/meeting_service.go`'s `grantCreatorHostAccess`), immediately after a successful `CreateZoomMeeting`, independent of the registrant-event path above.
+
+A meeting's creator has no registrant record unless one is separately created, so without this call there is no event that could ever grant them `host` access — not a propagation delay, a permanent gap (see GH-4780 in `lfx-self-serve`). This grant is redundant with, not a replacement for, the registrant-event path: if a registrant event for the creator is later processed, `member_put` fires again from that path too.
+
+**When:** every successful `CreateZoomMeeting`, for the authenticated creator only. Skipped when there is no authenticated principal, when `username` would be empty, or when the principal is an M2M client (`@clients` suffix — same exclusion as `SubmitMeetingResponse` and `registrant_service.go`, which have no personal identity to bind a host grant to).
+
+**Identity:** the raw JWT principal (the `created_by` audit stamp's `Username`) can be an auth identifier such as an Auth0 `sub` rather than the user's LFX/LFID username — the same distinction `SelfRegisterForMeeting` resolves before writing a registrant. Since the registrant-event `member_put` above is keyed on the LFX username, this grant resolves it the same way: via the verified email (`UserReader.UsernameByEmail`), falling back to the raw principal when no reader is wired or the lookup fails.
+
+**Fails open:** a publish error here is logged at Error level (`failed to grant meeting creator host access; creator will not see the meeting until a host registrant event is processed`) but never fails the `CreateMeeting` response — the meeting already exists in ITX at this point, so surfacing the error would strand the caller with an orphaned Zoom meeting and no actionable failure. Unlike the registrant-event path, a failed grant here has no retry or fallback: nothing else will ever re-attempt it for the creator, so this reopens the exact gap the grant exists to close.
+
+**Lifetime:** this grant has no independent revoke path. It is removed only if the meeting itself is deleted (`delete_access`, below) or if a registrant event later processed for the same creator issues its own `member_remove`/`member_put` (e.g. an organizer explicitly demotes or removes them as a registrant). There is currently no mechanism to revoke it on its own — e.g. if the creator later loses project or committee write access — short of one of those two paths.
+
+#### Member Data
+
+| Field | Value | Condition |
+|---|---|---|
+| `object_type` | `v1_meeting` | Always |
+| `uid` | The newly created meeting's ID | Always |
+| `username` | The authenticated creator's LFX username, resolved from their verified email (falls back to the raw JWT principal) | Always (skipped entirely if empty) |
+| `relations` | `["host"]` | Always |
+| `mutually_exclusive_with` | `["participant"]` | Always |
+
 ### member_remove (Registrant)
 
 Published to `lfx.fga-sync.member_remove` in two cases:
@@ -239,6 +263,7 @@ On delete, a `delete_access` message is sent to `lfx.fga-sync.delete_access` wit
 |---|---|---|---|
 | Create/update meeting | `v1_meeting` | `lfx.fga-sync.update_access` | Always sent |
 | Delete meeting | `v1_meeting` | `lfx.fga-sync.delete_access` | Always sent |
+| Create meeting — creator host grant | `v1_meeting` | `lfx.fga-sync.member_put` | Sent synchronously from `CreateMeeting` after a successful ITX create, before the registrant-event path ever runs; skipped for M2M (`@clients`) principals or when there is no authenticated principal; fails open (logged at Error, never fails the create) |
 | Create/update registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_put` | Skipped if `Username` is empty |
 | Delete registrant (with username) | `v1_meeting` | `lfx.fga-sync.member_remove` | Skipped if `Username` is empty after legacy-mapping resolution (mapping left untombstoned when the principal is unknown) |
 | Create/update meeting RSVP | _(none)_ | _(none)_ | Indexer only — no FGA message sent |

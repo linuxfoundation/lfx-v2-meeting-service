@@ -91,6 +91,9 @@ func (m *mockEventPublisher) PublishIndexerDelete(_ context.Context, _, _ string
 func (m *mockEventPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
 	return m.Called(ctx, subject, payload).Error(0)
 }
+func (m *mockEventPublisher) PublishAccessMemberPut(ctx context.Context, objectType, uid, username string, relations, mutuallyExclusiveWith []string) error {
+	return m.Called(ctx, objectType, uid, username, relations, mutuallyExclusiveWith).Error(0)
+}
 func (m *mockEventPublisher) Close() error { return nil }
 
 type stubUserReader struct {

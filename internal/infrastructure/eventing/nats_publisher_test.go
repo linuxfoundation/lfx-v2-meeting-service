@@ -4,13 +4,43 @@
 package eventing
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	fgatypes "github.com/linuxfoundation/lfx-v2-fga-sync/pkg/types"
+
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 )
+
+// TestBuildAccessMemberPutMessage pins the exact member_put shape fga-sync
+// requires. A wrong field or operation name here would pass every other test
+// in the synchronous creator host-grant change and silently reopen GH-4780.
+func TestBuildAccessMemberPutMessage(t *testing.T) {
+	msg := buildAccessMemberPutMessage("v1_meeting", "mtg-1", "alice", []string{"host"}, []string{"participant"})
+
+	assert.Equal(t, "v1_meeting", msg.ObjectType)
+	assert.Equal(t, "member_put", msg.Operation)
+
+	data, ok := msg.Data.(fgatypes.GenericMemberData)
+	require.True(t, ok, "Data must be a GenericMemberData, not left as a map or another type")
+	assert.Equal(t, "mtg-1", data.UID)
+	assert.Equal(t, "alice", data.Username)
+	assert.Equal(t, []string{"host"}, data.Relations)
+	assert.Equal(t, []string{"participant"}, data.MutuallyExclusiveWith)
+}
+
+// TestNATSPublisher_PublishAccessMemberPut_EmptyUsernameNoOp confirms the
+// empty-username guard returns before ever touching the NATS connection, so
+// it is safe to assert without a live server.
+func TestNATSPublisher_PublishAccessMemberPut_EmptyUsernameNoOp(t *testing.T) {
+	p := &NATSPublisher{}
+
+	err := p.PublishAccessMemberPut(context.Background(), "v1_meeting", "mtg-1", "", []string{"host"}, []string{"participant"})
+	assert.NoError(t, err)
+}
 
 func TestPastMeetingSummaryIndexingConfig(t *testing.T) {
 	const (
