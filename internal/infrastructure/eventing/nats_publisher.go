@@ -185,27 +185,7 @@ func (p *NATSPublisher) PublishMeetingHostCredentialsEvent(ctx context.Context, 
 func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action string, registrant *models.RegistrantEventData) error {
 	p.logger.InfoContext(ctx, "publishing registrant event", "action", action, "registrant_uid", registrant.UID)
 
-	tags := registrant.Tags()
-	publicFalse := false
-	indexerMsg := indexerTypes.IndexerMessageEnvelope{
-		Action:  indexerConstants.MessageAction(action),
-		Headers: map[string]string{"authorization": authorizationHeaderValue},
-		Data:    registrant,
-		Tags:    tags,
-		IndexingConfig: &indexerTypes.IndexingConfig{
-			ObjectID:             registrant.UID,
-			Public:               &publicFalse,
-			AccessCheckObject:    objectTypeV1Meeting + ":" + registrant.MeetingID,
-			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   objectTypeV1Meeting + ":" + registrant.MeetingID,
-			HistoryCheckRelation: "auditor",
-			ParentRefs:           registrant.ParentRefs(),
-			Tags:                 tags,
-			SortName:             registrant.SortName(),
-			NameAndAliases:       registrant.NameAndAliases(),
-			Fulltext:             registrant.FullText(),
-		},
-	}
+	indexerMsg := registrantIndexerMessage(action, registrant)
 
 	if err := p.publish(ctx, IndexV1MeetingRegistrantSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish registrant to indexer: %w", err)
@@ -241,13 +221,59 @@ func (p *NATSPublisher) PublishRegistrantEvent(ctx context.Context, action strin
 	return nil
 }
 
+// registrantIndexerMessage builds the indexer envelope that PublishRegistrantEvent
+// sends for a meeting registrant.
+//
+// A registrant document carries the registrant's personal data (email, name,
+// organization, job title, username, invite delivery diagnostics), so it is
+// access-checked with v1_meeting#auditor — the relation the HTTP API requires to
+// read a single registrant (GET /itx/meetings/{id}/registrants/{rid}) — and not
+// viewer, which every registrant holds on the meeting.
+func registrantIndexerMessage(action string, registrant *models.RegistrantEventData) indexerTypes.IndexerMessageEnvelope {
+	tags := registrant.Tags()
+	publicFalse := false
+	return indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    registrant,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             registrant.UID,
+			Public:               &publicFalse,
+			AccessCheckObject:    objectTypeV1Meeting + ":" + registrant.MeetingID,
+			AccessCheckRelation:  "auditor",
+			HistoryCheckObject:   objectTypeV1Meeting + ":" + registrant.MeetingID,
+			HistoryCheckRelation: "auditor",
+			ParentRefs:           registrant.ParentRefs(),
+			Tags:                 tags,
+			SortName:             registrant.SortName(),
+			NameAndAliases:       registrant.NameAndAliases(),
+			Fulltext:             registrant.FullText(),
+		},
+	}
+}
+
 // PublishInviteResponseEvent publishes an invite response (RSVP) event to indexer service
 func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action string, response *models.InviteResponseEventData) error {
 	p.logger.InfoContext(ctx, "publishing invite response event", "action", action, "response_id", response.ID)
 
+	indexerMsg := inviteResponseIndexerMessage(action, response)
+
+	if err := p.publish(ctx, IndexV1MeetingRSVPSubject, indexerMsg); err != nil {
+		return fmt.Errorf("failed to publish invite response to indexer: %w", err)
+	}
+
+	return nil
+}
+
+// inviteResponseIndexerMessage builds the indexer envelope that
+// PublishInviteResponseEvent sends for an RSVP. An RSVP carries the same
+// registrant personal data as the registrant document plus the registrant's
+// answer, so it uses the same v1_meeting#auditor access check.
+func inviteResponseIndexerMessage(action string, response *models.InviteResponseEventData) indexerTypes.IndexerMessageEnvelope {
 	tags := response.Tags()
 	publicFalse := false
-	indexerMsg := indexerTypes.IndexerMessageEnvelope{
+	return indexerTypes.IndexerMessageEnvelope{
 		Action:  indexerConstants.MessageAction(action),
 		Headers: map[string]string{"authorization": authorizationHeaderValue},
 		Data:    response,
@@ -256,7 +282,7 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 			ObjectID:             response.ID,
 			Public:               &publicFalse,
 			AccessCheckObject:    objectTypeV1Meeting + ":" + response.MeetingID,
-			AccessCheckRelation:  "viewer",
+			AccessCheckRelation:  "auditor",
 			HistoryCheckObject:   objectTypeV1Meeting + ":" + response.MeetingID,
 			HistoryCheckRelation: "auditor",
 			ParentRefs:           response.ParentRefs(),
@@ -266,12 +292,6 @@ func (p *NATSPublisher) PublishInviteResponseEvent(ctx context.Context, action s
 			Fulltext:             response.FullText(),
 		},
 	}
-
-	if err := p.publish(ctx, IndexV1MeetingRSVPSubject, indexerMsg); err != nil {
-		return fmt.Errorf("failed to publish invite response to indexer: %w", err)
-	}
-
-	return nil
 }
 
 // PublishPastMeetingEvent publishes a past meeting event to indexer and FGA-sync services
@@ -395,27 +415,7 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 	}
 	p.logger.InfoContext(ctx, "publishing past meeting participant event", "action", action, "participant_uid", participant.UID)
 
-	tags := participant.Tags()
-	publicFalse := false
-	indexerMsg := indexerTypes.IndexerMessageEnvelope{
-		Action:  indexerConstants.MessageAction(action),
-		Headers: map[string]string{"authorization": authorizationHeaderValue},
-		Data:    participant,
-		Tags:    tags,
-		IndexingConfig: &indexerTypes.IndexingConfig{
-			ObjectID:             participant.UID,
-			Public:               &publicFalse,
-			AccessCheckObject:    objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
-			AccessCheckRelation:  "viewer",
-			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
-			HistoryCheckRelation: "auditor",
-			ParentRefs:           participant.ParentRefs(),
-			Tags:                 tags,
-			SortName:             participant.SortName(),
-			NameAndAliases:       participant.NameAndAliases(),
-			Fulltext:             participant.FullText(),
-		},
-	}
+	indexerMsg := pastMeetingParticipantIndexerMessage(action, participant)
 
 	if err := p.publish(ctx, IndexV1PastMeetingParticipantSubject, indexerMsg); err != nil {
 		return fmt.Errorf("failed to publish participant to indexer: %w", err)
@@ -453,6 +453,40 @@ func (p *NATSPublisher) PublishPastMeetingParticipantEvent(ctx context.Context, 
 	}
 
 	return nil
+}
+
+// pastMeetingParticipantIndexerMessage builds the indexer envelope that
+// PublishPastMeetingParticipantEvent sends for an invitee or attendee record.
+//
+// A participant document carries the participant's personal data (email, name,
+// organization, job title, username, Zoom display name, join/leave sessions). The
+// HTTP API exposes participant records to meeting organizers only, so the document
+// is access-checked with v1_past_meeting#organizer — not viewer, which every
+// invitee and attendee holds. The history check uses organizer as well because
+// auditor is broader than organizer, and the history audience must not exceed the
+// access audience.
+func pastMeetingParticipantIndexerMessage(action string, participant *models.PastMeetingParticipantEventData) indexerTypes.IndexerMessageEnvelope {
+	tags := participant.Tags()
+	publicFalse := false
+	return indexerTypes.IndexerMessageEnvelope{
+		Action:  indexerConstants.MessageAction(action),
+		Headers: map[string]string{"authorization": authorizationHeaderValue},
+		Data:    participant,
+		Tags:    tags,
+		IndexingConfig: &indexerTypes.IndexingConfig{
+			ObjectID:             participant.UID,
+			Public:               &publicFalse,
+			AccessCheckObject:    objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			AccessCheckRelation:  "organizer",
+			HistoryCheckObject:   objectTypeV1PastMeeting + ":" + participant.MeetingAndOccurrenceID,
+			HistoryCheckRelation: "organizer",
+			ParentRefs:           participant.ParentRefs(),
+			Tags:                 tags,
+			SortName:             participant.SortName(),
+			NameAndAliases:       participant.NameAndAliases(),
+			Fulltext:             participant.FullText(),
+		},
+	}
 }
 
 // PublishPastMeetingRecordingEvent publishes a recording event to the indexer only; it sends no

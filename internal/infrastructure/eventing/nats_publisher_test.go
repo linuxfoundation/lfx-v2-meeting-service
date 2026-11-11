@@ -168,3 +168,77 @@ func TestPastMeetingSummaryIndexerMessage(t *testing.T) {
 		})
 	}
 }
+
+// TestRosterIndexerMessages pins the access relations of the documents that carry a
+// meeting roster's personal data. They must match the HTTP API's read relation for
+// the same records (auditor for registrants, organizer for participants), not viewer,
+// which every registrant and participant holds.
+func TestRosterIndexerMessages(t *testing.T) {
+	const (
+		meetingID       = "12345678901"
+		meetingAndOccID = "12345678901-1700000000000"
+	)
+
+	t.Run("registrant is readable by meeting auditors only", func(t *testing.T) {
+		registrant := &models.RegistrantEventData{
+			UID:       "00000000-0000-0000-0000-000000000001",
+			MeetingID: meetingID,
+			Email:     "alice@example.com",
+			Username:  "alice",
+		}
+
+		msg := registrantIndexerMessage("created", registrant)
+
+		require.NotNil(t, msg.IndexingConfig)
+		require.NotNil(t, msg.IndexingConfig.Public)
+		assert.False(t, *msg.IndexingConfig.Public)
+		assert.Equal(t, registrant.UID, msg.IndexingConfig.ObjectID)
+		assert.Equal(t, "v1_meeting:"+meetingID, msg.IndexingConfig.AccessCheckObject)
+		assert.Equal(t, "auditor", msg.IndexingConfig.AccessCheckRelation)
+		assert.Equal(t, "v1_meeting:"+meetingID, msg.IndexingConfig.HistoryCheckObject)
+		assert.Equal(t, "auditor", msg.IndexingConfig.HistoryCheckRelation)
+	})
+
+	t.Run("rsvp is readable by meeting auditors only", func(t *testing.T) {
+		response := &models.InviteResponseEventData{
+			ID:        "00000000-0000-0000-0000-000000000002",
+			MeetingID: meetingID,
+			Email:     "alice@example.com",
+			Username:  "alice",
+		}
+
+		msg := inviteResponseIndexerMessage("created", response)
+
+		require.NotNil(t, msg.IndexingConfig)
+		require.NotNil(t, msg.IndexingConfig.Public)
+		assert.False(t, *msg.IndexingConfig.Public)
+		assert.Equal(t, response.ID, msg.IndexingConfig.ObjectID)
+		assert.Equal(t, "v1_meeting:"+meetingID, msg.IndexingConfig.AccessCheckObject)
+		assert.Equal(t, "auditor", msg.IndexingConfig.AccessCheckRelation)
+		assert.Equal(t, "v1_meeting:"+meetingID, msg.IndexingConfig.HistoryCheckObject)
+		assert.Equal(t, "auditor", msg.IndexingConfig.HistoryCheckRelation)
+	})
+
+	t.Run("past meeting participant is readable by organizers only", func(t *testing.T) {
+		participant := &models.PastMeetingParticipantEventData{
+			UID:                    "00000000-0000-0000-0000-000000000003",
+			MeetingAndOccurrenceID: meetingAndOccID,
+			MeetingID:              meetingID,
+			Email:                  "alice@example.com",
+			Username:               "alice",
+			IsInvited:              true,
+			IsAttended:             true,
+		}
+
+		msg := pastMeetingParticipantIndexerMessage("created", participant)
+
+		require.NotNil(t, msg.IndexingConfig)
+		require.NotNil(t, msg.IndexingConfig.Public)
+		assert.False(t, *msg.IndexingConfig.Public)
+		assert.Equal(t, participant.UID, msg.IndexingConfig.ObjectID)
+		assert.Equal(t, "v1_past_meeting:"+meetingAndOccID, msg.IndexingConfig.AccessCheckObject)
+		assert.Equal(t, "organizer", msg.IndexingConfig.AccessCheckRelation)
+		assert.Equal(t, "v1_past_meeting:"+meetingAndOccID, msg.IndexingConfig.HistoryCheckObject)
+		assert.Equal(t, "organizer", msg.IndexingConfig.HistoryCheckRelation)
+	})
+}
