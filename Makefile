@@ -9,7 +9,7 @@ CMD_PATH=$(GO_MODULE)/cmd/meeting-api
 DESIGN_MODULE=$(GO_MODULE)/design
 GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*')
 GOA_VERSION=v3.23.4
-GOLANGCI_LINT_VERSION=v2.6.0
+GOLANGCI_LINT_VERSION=v2.15.0
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
