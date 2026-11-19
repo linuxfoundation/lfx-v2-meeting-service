@@ -91,7 +91,7 @@ caller; only the telemetry is reduced to a status.
 - The whole `internal/infrastructure/transport/` package was deleted as part of
   this work.
 
-**Why it is not tooling's job:** gitleaks matches committed literals, not runtime
+**Why it is not tooling's job:** betterleaks matches committed literals, not runtime
 dataflow; there is no `gosec` and no taint analysis. The only automated guard is
 this repo's own `internal/infrastructure/proxy/client_otel_test.go` assertion
 that `exception.message == "HTTP 500"` — itself written because of these
