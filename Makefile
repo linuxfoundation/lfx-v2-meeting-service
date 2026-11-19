@@ -10,6 +10,7 @@ DESIGN_MODULE=$(GO_MODULE)/design
 GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*')
 GOA_VERSION=v3.23.4
 GOLANGCI_LINT_VERSION=v2.15.0
+GO_MOD_VERSION=$(shell awk '/^go /{print $$2}' go.mod)
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
@@ -66,9 +67,12 @@ deps: install-hooks
 	@echo "==> Installing dependencies..."
 	go mod download
 	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
-	@command -v golangci-lint >/dev/null 2>&1 || { \
-		echo "==> Installing golangci-lint..."; \
-		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
+	@# golangci-lint refuses to lint a module whose Go minor is newer than the
+	@# Go it was built with, so reinstall unless the binary on PATH is the
+	@# pinned version built with go.mod's Go minor, and build it with that Go.
+	@golangci-lint version 2>/dev/null | grep -q "has version $(GOLANGCI_LINT_VERSION:v%=%) built with go$(basename $(GO_MOD_VERSION))" || { \
+		echo "==> Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
+		GOTOOLCHAIN=go$(GO_MOD_VERSION) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
 	}
 
 # Install git hooks from scripts/hooks into .git/hooks (no-op in CI or tarballs)
