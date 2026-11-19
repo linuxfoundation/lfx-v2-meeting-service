@@ -264,13 +264,14 @@ MegaLinter (v10.2.0) runs Go 1.26.10 in its image, so
 `.github/workflows/mega-linter.yaml` sets `GOTOOLCHAIN: auto` to let its Go
 linters download the `go.mod` toolchain. Its bundled golangci-lint 2.15.0 is
 built with Go 1.27.0 and lints this module. For local runs, `make deps`
-installs the same `GOLANGCI_LINT_VERSION` built with the `go.mod` Go, and
-reinstalls it when the installed binary's version or Go minor differs, since
-a golangci-lint built with an older Go minor refuses to lint this module.
-osv-scanner's govulncheck call
-analysis is built with Go 1.26 and cannot load a Go 1.27 module, so
-osv-scanner falls back to matching vulnerabilities by version: any known
-vulnerability in a dependency version fails the check, reachable or not.
+builds the same `GOLANGCI_LINT_VERSION` with the `go.mod` Go into
+`$(go env GOPATH)/bin/golangci-lint-<version>-go<minor>/`, and `make lint`
+runs that binary rather than whatever `golangci-lint` is on `PATH`, since a
+golangci-lint built with an older Go minor refuses to lint this module.
+osv-scanner's govulncheck call analysis is built with Go 1.26 and cannot load
+a Go 1.27 module, so osv-scanner falls back to matching vulnerabilities by
+version: any known vulnerability in a dependency version fails the check,
+reachable or not.
 
 There's no built-in `go` subcommand to look up the latest patch release for
 a given minor version -- query the official `go.dev/dl` JSON feed instead:

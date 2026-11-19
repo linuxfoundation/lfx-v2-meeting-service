@@ -11,6 +11,10 @@ GO_FILES=$(shell find . -name '*.go' -not -path './gen/*' -not -path './vendor/*
 GOA_VERSION=v3.23.4
 GOLANGCI_LINT_VERSION=v2.15.0
 GO_MOD_VERSION=$(shell awk '/^go /{print $$2}' go.mod)
+# golangci-lint refuses to lint a module whose Go minor is newer than the Go it
+# was built with. Install it into a directory named for its version and go.mod's
+# Go minor, and run that exact binary, so nothing else on PATH can shadow it.
+LINT_TOOL=$(shell go env GOPATH)/bin/golangci-lint-$(GOLANGCI_LINT_VERSION)-go$(basename $(GO_MOD_VERSION))/golangci-lint
 
 # Docker variables
 DOCKER_IMAGE=linuxfoundation/lfx-v2-meeting-service
@@ -67,12 +71,11 @@ deps: install-hooks
 	@echo "==> Installing dependencies..."
 	go mod download
 	go install goa.design/goa/v3/cmd/goa@$(GOA_VERSION)
-	@# golangci-lint refuses to lint a module whose Go minor is newer than the
-	@# Go it was built with, so reinstall unless the binary on PATH is the
-	@# pinned version built with go.mod's Go minor, and build it with that Go.
-	@golangci-lint version 2>/dev/null | grep -q "has version $(GOLANGCI_LINT_VERSION:v%=%) built with go$(basename $(GO_MOD_VERSION))" || { \
+	@# Build with go.mod's Go: go install of a pinned version otherwise uses
+	@# the local Go, which can be older than go.mod's.
+	@test -x $(LINT_TOOL) || { \
 		echo "==> Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."; \
-		GOTOOLCHAIN=go$(GO_MOD_VERSION) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
+		GOBIN=$(dir $(LINT_TOOL)) GOTOOLCHAIN=go$(GO_MOD_VERSION) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION); \
 	}
 
 # Install git hooks from scripts/hooks into .git/hooks (no-op in CI or tarballs)
@@ -137,10 +140,10 @@ clean:
 # Run linter
 lint:
 	@echo "==> Running linter..."
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
+	@if [ -x $(LINT_TOOL) ]; then \
+		$(LINT_TOOL) run ./...; \
 	else \
-		echo "golangci-lint not found. Run 'make deps' to install it."; \
+		echo "golangci-lint $(GOLANGCI_LINT_VERSION) not found at $(LINT_TOOL). Run 'make deps' to install it."; \
 		exit 1; \
 	fi
 
