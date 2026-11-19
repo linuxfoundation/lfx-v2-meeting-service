@@ -250,39 +250,28 @@ The service follows a clean architecture pattern with:
 - **Local development**: When making code changes, build the image with `make docker-build` and install with `make helm-install-local`. This uses `values.local.yaml` which points to the local Docker image (`linuxfoundation/lfx-v2-meeting-service`, `pullPolicy: Never`).
 - Before using `make helm-install-local` for the first time, copy the example: `cp charts/lfx-v2-meeting-service/values.local.example.yaml charts/lfx-v2-meeting-service/values.local.yaml`. This file is gitignored.
 
-### Go Toolchain Version
+### Go version
 
-Freely bump `go.mod`'s `go` directive to the latest available *patch*
-release (e.g. `1.X.Y` → `1.X.{Y+1}`) to pick up security fixes. Do **not**
-bump the *minor* version (e.g. `1.X.x` → `1.{X+1}.x`) unless the user
-explicitly asks for it, **and** you've validated it against the Go version
-MegaLinter itself bundles -- MegaLinter runs several linters (e.g.
-`golangci-lint`) against its own bundled Go version, and a `go.mod`
-directive newer than that bundled version breaks those checks.
+This repo targets Go 1.27.x (currently 1.27.4). This supersedes the Go
+version policy in the `lfx-megalinter` skill, which targets the latest stable
+minor minus one: don't move `go.mod` back to Go 1.26. Take every 1.27.x patch
+release, and update `go.mod`, the "Dependencies" list in this file and the
+Go prerequisites in `README.md` together. CI and release builds read the Go
+version from `go.mod` (`go-version-file: go.mod`), so the `go` directive is
+the Go a release is built with.
 
-To find MegaLinter's bundled Go version:
-
-```bash
-# 1. Find the MegaLinter flavor and pinned version tag used in CI, and
-#    capture them into variables for the next command.
-set -euo pipefail
-line=$(grep -oE 'flavors/[a-z]+@[0-9a-f]+ *# *v[0-9.]+' .github/workflows/*.yaml | head -1)
-MEGALINTER_FLAVOR=$(echo "$line" | grep -oE 'flavors/[a-z]+' | cut -d/ -f2)
-MEGALINTER_TAG=$(echo "$line" | grep -oE 'v[0-9.]+$')
-
-# 2. Fetch that flavor's Dockerfile and read its GO_ALPINE_VERSION build
-#    arg, this is the bundled Go version used by golangci-lint and other
-#    Go-based linters. GO_IMAGE_VERSION only selects the revive builder
-#    image and is not the bundled Go version.
-curl -fsS "https://raw.githubusercontent.com/oxsecurity/megalinter/${MEGALINTER_TAG}/flavors/${MEGALINTER_FLAVOR}/Dockerfile" \
-  | grep -i 'GO_ALPINE_VERSION'
-```
-
-`go.mod`'s `go` directive must never exceed that bundled version. Staying
-one minor version behind it (rather than matching its minor *and* patch
-exactly) leaves room to always take the latest patch release for security
-fixes without ever being blocked by MegaLinter's own bundled patch version
-lagging behind a newly disclosed vulnerability.
+MegaLinter (v10.2.0) runs Go 1.26.10 in its image, so
+`.github/workflows/mega-linter.yaml` sets `GOTOOLCHAIN: auto` to let its Go
+linters download the `go.mod` toolchain. Its bundled golangci-lint 2.15.0 is
+built with Go 1.27.0 and lints this module. For local runs, `make deps`
+builds the same `GOLANGCI_LINT_VERSION` with the `go.mod` Go into
+`$(go env GOPATH)/bin/golangci-lint-<version>-go<minor>/`, and `make lint`
+runs that binary rather than whatever `golangci-lint` is on `PATH`, since a
+golangci-lint built with an older Go minor refuses to lint this module.
+osv-scanner's govulncheck call analysis is built with Go 1.26 and cannot load
+a Go 1.27 module, so osv-scanner falls back to matching vulnerabilities by
+version: any known vulnerability in a dependency version fails the check,
+reachable or not.
 
 There's no built-in `go` subcommand to look up the latest patch release for
 a given minor version -- query the official `go.dev/dl` JSON feed instead:
@@ -424,7 +413,7 @@ Use the canonical helpers from `pkg/utils/ptr.go` for optional fields:
 
 ### Dependencies
 
-- Built with Go 1.25+
+- Built with Go 1.27
 - Primary framework: Goa v3 for API generation
 - Optional: NATS for ID mapping, preferred-email, user-metadata, and invite features (can be disabled)
 - Standard testing with testify

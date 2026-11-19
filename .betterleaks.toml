@@ -1,7 +1,7 @@
 # Copyright The Linux Foundation and each contributor to LFX.
 # SPDX-License-Identifier: MIT
 
-# Gitleaks configuration to ignore false positives in generated files
+# Betterleaks configuration to ignore false positives in generated files
 [allowlist]
   paths = [
     "^gen/.*"
