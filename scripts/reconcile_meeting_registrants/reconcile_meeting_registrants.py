@@ -45,7 +45,7 @@ from common import (
     registrant_key,
 )
 
-PLAN_VERSION = 2
+PLAN_VERSION = 3  # PG state revisions are not comparable with legacy KV plans.
 
 
 class Discovery(Protocol):
@@ -95,6 +95,7 @@ class Config:
     request_timeout: float
     verify_timeout: float
     verify_interval: float
+    state_database_identity: str = ""
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,7 @@ class TargetIdentity:
     opensearch_url: str
     opensearch_index: str
     nats_url: str
+    state_database_identity: str = ""
 
 
 @dataclass(frozen=True)
@@ -216,6 +218,7 @@ def target_identity(config: Config) -> TargetIdentity:
         opensearch_url=_sanitize_endpoint(config.opensearch_url, {"http", "https"}),
         opensearch_index=config.opensearch_index,
         nats_url=_sanitize_endpoint(config.nats_url, {"nats", "tls", "ws", "wss"}),
+        state_database_identity=config.state_database_identity,
     )
 
 
@@ -1013,8 +1016,6 @@ async def run(config: Config) -> dict[str, Any]:
     targets = target_identity(config)
     if config.mode == "apply":
         reviewed_plan = read_plan(config.plan_path)
-        if targets != reviewed_plan.targets:
-            raise PlanDriftError("runtime targets differ from the reviewed plan")
     sts, dynamodb = build_aws_clients(config)
     authority = DynamoAuthority(sts, dynamodb, config.dynamodb_table, config.aws_region)
     environment = authority.discover_environment()
@@ -1028,6 +1029,9 @@ async def run(config: Config) -> dict[str, Any]:
         targets.nats_url, config.request_timeout
     )
     try:
+        config = replace(config, state_database_identity=mappings.identity)
+        if config.mode == "apply" and target_identity(config) != reviewed_plan.targets:
+            raise PlanDriftError("runtime targets differ from the reviewed plan")
         if config.mode == "dry-run":
             return await _run_dry(
                 config, environment, discovery, authority, values, mappings

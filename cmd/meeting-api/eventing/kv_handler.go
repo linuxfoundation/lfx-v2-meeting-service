@@ -33,7 +33,7 @@ type EventHandlers struct {
 	idMapper      domain.IDMapper
 	projectLookup domain.ProjectLookup
 	v1ObjectsKV   jetstream.KeyValue
-	v1MappingsKV  jetstream.KeyValue
+	v1MappingsKV  domain.EventState
 	logger        *slog.Logger
 
 	// Invite feature fields. inviteSender and userReader must be non-nil, and
@@ -259,7 +259,7 @@ func NewEventHandlers(
 	idMapper domain.IDMapper,
 	projectLookup domain.ProjectLookup,
 	v1ObjectsKV jetstream.KeyValue,
-	v1MappingsKV jetstream.KeyValue,
+	v1MappingsKV domain.EventState,
 	logger *slog.Logger,
 	opts ...EventHandlersOption,
 ) *EventHandlers {

@@ -12,6 +12,13 @@ image:
 
 replicaCount: 1
 
+# Existing Secret containing the meeting-owned Postgres DSN. Provision the
+# database and run the offline migration before starting event processing.
+# Alternatively configure MEETING_STATE_DATABASE_URL via app.environment.
+eventStateDatabase:
+  secretName: ""
+  secretKey: database-url
+
 # podAnnotations are additional annotations applied to the pod template.
 # Example:
 #   prometheus.io/scrape: "true"
@@ -165,6 +172,8 @@ app:
     # answer the cluster's requests (default: true)
     NATS_RESPONDERS_ENABLED:
       value: "true"
+    # Event processing requires a provisioned and verified Postgres event-state
+    # database. See docs/event-state-postgres.md before upgrading.
     # EVENT_PROCESSING_ENABLED enables/disables event processing for v1→v2 data synchronization
     # (default: true)
     EVENT_PROCESSING_ENABLED:

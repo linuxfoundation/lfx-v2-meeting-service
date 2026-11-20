@@ -4,11 +4,31 @@
 package idmapper
 
 import (
+	"context"
 	"testing"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestParticipantAliasesNeverFallBackToHelper(t *testing.T) {
+	mapper := &NATSMapper{}
+	for name, lookup := range map[string]func(context.Context, string) (string, error){
+		"invitee":                 mapper.MapInviteeIDToParticipantV2,
+		"attendee":                mapper.MapAttendeeIDToParticipantV2,
+		"participant to invitee":  mapper.MapParticipantV2ToInviteeID,
+		"participant to attendee": mapper.MapParticipantV2ToAttendeeID,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := lookup(context.Background(), "test-id")
+			require.Error(t, err)
+			require.Equal(t, domain.ErrorTypeUnavailable, domain.GetErrorType(err))
+			_, err = lookup(context.Background(), "")
+			require.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
+		})
+	}
+}
 
 // The owning project SFID from the committee mapping reply is what CreateMeeting
 // uses to bind a committee-authorized create to the committee's own project.

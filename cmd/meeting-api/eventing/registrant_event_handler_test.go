@@ -103,19 +103,60 @@ func (s stubUserReader) UsernameByEmail(_ context.Context, _ string) (string, er
 }
 
 type stubInviteSender struct {
-	result *domain.InviteResult
-	err    error
-	called bool
-	last   inviteapi.SendInviteRequest
+	result     *domain.InviteResult
+	err        error
+	called     bool
+	calls      int
+	beforeSend func()
+	last       inviteapi.SendInviteRequest
 }
 
 func (s *stubInviteSender) SendInvite(_ context.Context, req inviteapi.SendInviteRequest) (*domain.InviteResult, error) {
 	s.called = true
+	s.calls++
+	if s.beforeSend != nil {
+		s.beforeSend()
+	}
 	s.last = req
 	if s.err != nil {
 		return nil, s.err
 	}
 	return s.result, nil
+}
+
+type invitationReplayState struct {
+	domain.EventState
+	exists        bool
+	value         []byte
+	revision      uint64
+	completionErr error
+}
+
+func (s *invitationReplayState) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
+	if !s.exists {
+		return nil, jetstream.ErrKeyNotFound
+	}
+	return mockKeyValueEntry{key: key, value: s.value}, nil
+}
+func (s *invitationReplayState) Create(_ context.Context, _ string, value []byte, _ ...jetstream.KVCreateOpt) (uint64, error) {
+	if s.exists {
+		return 0, jetstream.ErrKeyExists
+	}
+	s.exists = true
+	s.value = append([]byte{}, value...)
+	s.revision = 1
+	return s.revision, nil
+}
+func (s *invitationReplayState) Update(_ context.Context, _ string, value []byte, revision uint64) (uint64, error) {
+	if s.completionErr != nil {
+		return 0, s.completionErr
+	}
+	if revision != s.revision {
+		return 0, jetstream.ErrKeyRevisionMismatch
+	}
+	s.value = append([]byte{}, value...)
+	s.revision++
+	return s.revision, nil
 }
 
 // TestConvertMapToInviteResponseData_MailerDaemon verifies that mailer-daemon bounce emails
@@ -235,7 +276,8 @@ func TestMaybeSendInvite(t *testing.T) {
 			userReader: stubUserReader{err: domain.ErrUserNotFound},
 			setupMaps: func(kv *mockKeyValue) {
 				kv.On("Get", mock.Anything, inviteSentKey).Return(nil, jetstream.ErrKeyNotFound)
-				kv.On("Put", mock.Anything, inviteSentKey, []byte("invite-new")).Return(uint64(1), nil)
+				kv.On("Create", mock.Anything, inviteSentKey, []byte("pending")).Return(uint64(1), nil)
+				kv.On("Update", mock.Anything, inviteSentKey, []byte("invite-new"), uint64(1)).Return(uint64(2), nil)
 			},
 			setupObjects: func(kv *mockKeyValue) {
 				kv.On("Get", mock.Anything, meetingKey).
@@ -243,6 +285,17 @@ func TestMaybeSendInvite(t *testing.T) {
 			},
 			wantCalled: true,
 			wantRole:   meetingconstants.InviteRoleRegistrant,
+		},
+		{
+			name:       "a concurrent claim rejection prevents dispatch",
+			userReader: stubUserReader{err: domain.ErrUserNotFound},
+			setupMaps: func(kv *mockKeyValue) {
+				kv.On("Get", mock.Anything, inviteSentKey).Return(nil, jetstream.ErrKeyNotFound)
+				kv.On("Create", mock.Anything, inviteSentKey, []byte("pending")).Return(uint64(0), jetstream.ErrKeyExists)
+			},
+			setupObjects: func(kv *mockKeyValue) {
+				kv.On("Get", mock.Anything, meetingKey).Return(mockKeyValueEntry{key: meetingKey, value: meetingPayload}, nil)
+			},
 		},
 	}
 
@@ -284,6 +337,35 @@ func TestMaybeSendInvite(t *testing.T) {
 
 			objectsKV.AssertExpectations(t)
 			mappingsKV.AssertExpectations(t)
+		})
+	}
+	for _, outcome := range []string{"success", "send failure", "unresolved result", "completion failure"} {
+		t.Run(outcome+" retains a single dispatch across replay", func(t *testing.T) {
+			state := &invitationReplayState{}
+			objects := &mockKeyValue{}
+			objects.On("Get", mock.Anything, meetingKey).Return(mockKeyValueEntry{key: meetingKey, value: meetingPayload}, nil).Once()
+			sender := &stubInviteSender{result: &domain.InviteResult{InviteUID: "invite-new"}}
+			sender.beforeSend = func() {
+				require.True(t, state.exists, "claim must be durable before dispatch")
+				require.Equal(t, "pending", string(state.value))
+			}
+			switch outcome {
+			case "send failure":
+				sender.err = errors.New("temporary send failure")
+			case "unresolved result":
+				sender.result = nil
+			case "completion failure":
+				state.completionErr = errors.New("state completion unavailable")
+			}
+			h := &EventHandlers{v1ObjectsKV: objects, v1MappingsKV: state, userReader: stubUserReader{err: domain.ErrUserNotFound}, inviteSender: sender, selfServeBaseURL: "https://app.example.com", logger: slog.Default()}
+			for range 2 {
+				h.maybeSendInvite(context.Background(), slog.Default(), registrantUID, email, "Guest", meetingID, models.CreatedBy{})
+			}
+			require.Equal(t, 1, sender.calls)
+			if outcome != "success" {
+				require.Equal(t, "pending", string(state.value))
+			}
+			objects.AssertExpectations(t)
 		})
 	}
 }

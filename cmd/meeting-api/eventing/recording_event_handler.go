@@ -104,6 +104,8 @@ func (h *EventHandlers) handlePastMeetingRecordingUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	// Publish recording event to the indexer (recordings send no FGA message)

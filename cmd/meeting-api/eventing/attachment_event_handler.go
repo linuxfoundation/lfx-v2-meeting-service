@@ -152,6 +152,8 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	if err := h.publisher.PublishMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
@@ -161,6 +163,7 @@ func (h *EventHandlers) handleMeetingAttachmentUpdate(
 
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store meeting attachment mapping")
+		return true
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed meeting attachment", "action", string(indexerAction))
@@ -354,6 +357,8 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	if err := h.publisher.PublishPastMeetingAttachmentEvent(ctx, string(indexerAction), attachmentData); err != nil {
@@ -363,6 +368,7 @@ func (h *EventHandlers) handlePastMeetingAttachmentUpdate(
 
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store past meeting attachment mapping")
+		return true
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed past meeting attachment", "action", string(indexerAction))

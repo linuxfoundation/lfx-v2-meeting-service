@@ -49,14 +49,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventstate"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
 const (
-	kvBucketName         = "v1-objects"
-	kvMappingsBucketName = "v1-mappings"
-	scrollPageSize       = 200
+	kvBucketName   = "v1-objects"
+	scrollPageSize = 200
 )
 
 // objectTypeConfig maps an OpenSearch object_type to one or more KV key prefixes.
@@ -164,9 +165,14 @@ func run(ctx context.Context, nc *nats.Conn, _, osURL string, requestedTypes []s
 		return 1
 	}
 
-	kvMappings, err := js.KeyValue(ctx, kvMappingsBucketName)
+	kvMappings, err := eventstate.Open(ctx, os.Getenv("MEETING_STATE_DATABASE_URL"))
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to bind to KV bucket", "bucket", kvMappingsBucketName, "error", err)
+		slog.ErrorContext(ctx, "failed to open meeting state database")
+		return 1
+	}
+	defer kvMappings.Close()
+	if err := kvMappings.Ready(ctx); err != nil {
+		slog.ErrorContext(ctx, "meeting state cutover is not verified")
 		return 1
 	}
 
@@ -223,7 +229,7 @@ func reindexType(
 	ctx context.Context,
 	httpClient *http.Client,
 	kv jetstream.KeyValue,
-	kvMappings jetstream.KeyValue,
+	kvMappings domain.EventState,
 	osURL, objectType string,
 	kvPrefixes []string,
 	reindex bool,
@@ -349,8 +355,8 @@ func reputEntry(ctx context.Context, kv jetstream.KeyValue, kvKey string) reputR
 // when is_attended=true only. When both flags are set, the merged document carries the
 // invitee_id as object_id; the attendee_id is resolved via the
 // v1_participant_by_meeting_user.attendee.<meeting_and_occurrence_id>.<username>
-// cross-reference stored in the v1-mappings KV bucket.
-func resolveParticipantKeys(ctx context.Context, kvMappings jetstream.KeyValue, hit osHit) []string {
+// cross-reference stored in the meeting-owned Postgres state.
+func resolveParticipantKeys(ctx context.Context, kvMappings domain.EventState, hit osHit) []string {
 	id := hit.Source.ObjectID
 	isInvited := hit.Source.Data.IsInvited
 	isAttended := hit.Source.Data.IsAttended

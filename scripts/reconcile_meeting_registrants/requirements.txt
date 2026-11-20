@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 boto3==1.43.49
+asyncpg==0.32.0
 botocore[crt]==1.43.49
 certifi==2026.10.19
 idna>=3.15

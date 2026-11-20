@@ -33,8 +33,19 @@ registrant UID. Any other key schema is rejected rather than guessed.
    - `sts:AssumeRole` only when `--assume-role-arn` is used
    - `dynamodb:DescribeTable`
    - `dynamodb:BatchGetItem`
-5. NATS read access to `v1-objects` and `v1-mappings`; apply/restore also require
-   revision-conditional update access to `v1-objects`.
+5. NATS read access to `v1-objects`; apply/restore also require
+    revision-conditional update access to `v1-objects`.
+6. `MEETING_STATE_DATABASE_URL` loaded from an approved Secret, with read access
+   to the meeting-owned Postgres state and cutover checkpoint. The tool refuses
+   unverified PG state and never opens `v1-mappings` KV. Database operations use
+   read-only transactions and five-second deadlines.
+
+Create a new dry-run plan after the PG cutover. Version-2 KV-derived plans are
+rejected because KV and PG revisions are not comparable. Version-3 plans retain
+a credential-free fingerprint of the PG endpoint and actual database/schema;
+changing that target invalidates the plan before any source write. PG revisions
+are compared only with later PG reads, and source KV revisions only with source
+KV. The tool never writes processing-state tables.
 
 Install dependencies in an isolated environment:
 
