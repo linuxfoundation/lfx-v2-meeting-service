@@ -491,7 +491,7 @@ The service includes event processing for v1→v2 data synchronization. See [Eve
 - `EVENT_PROCESSING_ENABLED`: Enable event processing (default: `true`)
 - `EVENT_CONSUMER_NAME`: JetStream consumer name (default: `meeting-service-kv-consumer`)
 - `EVENT_STREAM_NAME`: KV bucket stream name (default: `KV_v1-objects`)
-- `EVENT_V1_MAPPINGS_BUCKET`: KV bucket name for v1 ID mappings (default: `v1-mappings`)
+- `MEETING_STATE_DATABASE_URL`: Secret-loaded URL for meeting-owned Postgres event-state tables. Required for event processing, enabled historical participant alias reads even with processing disabled, and state-backed repair tools. A verified cutover is required before use (see `docs/event-state-postgres.md`).
 - `EVENT_MAX_DELIVER`: Max delivery attempts (default: `3`)
 - `EVENT_ACK_WAIT`: Ack timeout (default: `30s`)
 - `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`)

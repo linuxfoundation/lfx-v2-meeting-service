@@ -94,8 +94,9 @@ func run() int {
 		natsURL := os.Getenv("NATS_URL")
 		if natsURL != "" {
 			natsMapper, err := idmapper.NewNATSMapper(idmapper.Config{
-				URL:     natsURL,
-				Timeout: 5 * time.Second,
+				URL:              natsURL,
+				Timeout:          5 * time.Second,
+				StateDatabaseURL: env.EventConfig.StateDatabaseURL,
 			})
 			if err != nil {
 				slog.With(logging.ErrKey, err).Warn("Failed to initialize NATS ID mapper, falling back to no-op mapper")
@@ -254,14 +255,14 @@ func run() int {
 			slog.WarnContext(ctx, "EVENT_PROCESSING_ENABLED but NATS_URL not set, event processing will not start")
 		} else {
 			eventConfig := eventing.Config{
-				NATSURL:              natsURL,
-				ConsumerName:         env.EventConfig.ConsumerName,
-				StreamName:           env.EventConfig.StreamName,
-				FilterSubjects:       env.EventConfig.FilterSubjects,
-				MaxDeliver:           env.EventConfig.MaxDeliver,
-				AckWait:              env.EventConfig.AckWait,
-				MaxAckPending:        env.EventConfig.MaxAckPending,
-				V1MappingsBucketName: env.EventConfig.V1MappingsBucketName,
+				NATSURL:          natsURL,
+				ConsumerName:     env.EventConfig.ConsumerName,
+				StreamName:       env.EventConfig.StreamName,
+				FilterSubjects:   env.EventConfig.FilterSubjects,
+				MaxDeliver:       env.EventConfig.MaxDeliver,
+				AckWait:          env.EventConfig.AckWait,
+				MaxAckPending:    env.EventConfig.MaxAckPending,
+				StateDatabaseURL: env.EventConfig.StateDatabaseURL,
 			}
 
 			ep, err := apieventing.NewEventProcessor(eventConfig, idMapper, slog.Default().With("component", "event-processor"), env.InviteConfig)

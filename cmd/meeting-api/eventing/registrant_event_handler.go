@@ -493,12 +493,24 @@ func (h *EventHandlers) maybeSendInvite(ctx context.Context, logger *slog.Logger
 		}
 	}
 
+	// Claim dispatch before the external side effect. A lost response or failed
+	// completion write leaves the claim pending for manual reconciliation; it
+	// never authorizes a second invitation on replay or a concurrent worker.
+	claimRevision, claimErr := h.v1MappingsKV.Create(ctx, inviteSentKey, []byte("pending"))
+	if claimErr != nil {
+		logger.WarnContext(ctx, "LFID invite dispatch not claimed; skipping invite")
+		return
+	}
 	result, sendErr := h.inviteSender.SendInvite(ctx, req)
 	if sendErr != nil {
 		logger.With(logging.ErrKey, sendErr).WarnContext(ctx, "failed to send LFID invite for registrant; continuing")
 		return
 	}
-	if _, err := h.v1MappingsKV.Put(ctx, inviteSentKey, []byte(result.InviteUID)); err != nil {
+	if result == nil || result.InviteUID == "" {
+		logger.WarnContext(ctx, "LFID invite result unresolved; retaining dispatch claim")
+		return
+	}
+	if _, err := h.v1MappingsKV.Update(ctx, inviteSentKey, []byte(result.InviteUID), claimRevision); err != nil {
 		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store registrant LFID invite sent marker")
 	}
 	logger.InfoContext(ctx, "sent LFID invite for registrant",
@@ -700,6 +712,8 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	// Publish to indexer
@@ -711,6 +725,7 @@ func (h *EventHandlers) handleInviteResponseUpdate(
 	// Store mapping
 	if _, err := h.v1MappingsKV.Put(ctx, mappingKey, []byte("1")); err != nil {
 		funcLogger.With(logging.ErrKey, err).WarnContext(ctx, "failed to store invite response mapping")
+		return true
 	}
 
 	funcLogger.InfoContext(ctx, "successfully processed invite response", "action", string(indexerAction))

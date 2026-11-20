@@ -8,7 +8,7 @@
 // Without the JSON format the handler cannot detect username changes, which means
 // stale FGA access is never revoked when a user's username is cleared or replaced.
 //
-// The script scans three key families in the v1-mappings KV bucket:
+// The script scans three resource kinds in the meeting-owned Postgres state:
 //
 //	v1_meeting_registrants.*
 //	v1_past_meeting_invitees.*
@@ -67,12 +67,13 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/vmihailenco/msgpack/v5"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventstate"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/msgpackutil"
 )
 
 const (
-	kvObjectsBucket  = "v1-objects"
-	kvMappingsBucket = "v1-mappings"
+	kvObjectsBucket = "v1-objects"
 )
 
 // mappingConfig describes how to backfill one family of mapping keys.
@@ -173,9 +174,14 @@ func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 		return 1
 	}
 
-	mappingsKV, err := js.KeyValue(ctx, kvMappingsBucket)
+	mappingsKV, err := eventstate.Open(ctx, os.Getenv("MEETING_STATE_DATABASE_URL"))
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to bind to KV bucket", "bucket", kvMappingsBucket, "error", err)
+		slog.ErrorContext(ctx, "failed to open meeting state database")
+		return 1
+	}
+	defer mappingsKV.Close()
+	if err := mappingsKV.Ready(ctx); err != nil {
+		slog.ErrorContext(ctx, "meeting state cutover is not verified")
 		return 1
 	}
 
@@ -230,30 +236,20 @@ func run(ctx context.Context, nc *nats.Conn, apply bool, workers int) int {
 //     Get(v1 object) + Put(mapping) concurrently.
 func backfillType(
 	ctx context.Context,
-	objectsKV, mappingsKV jetstream.KeyValue,
+	objectsKV jetstream.KeyValue,
+	mappingsKV *eventstate.Store,
 	cfg mappingConfig,
 	apply bool,
 	workers int,
 ) (updated, skipped, failed, notFound, unresolved int, err error) {
 	// --- Phase 1: scan ---
-	// Give the Watch consumer creation and initial-value delivery a long deadline.
-	// The nats.go jetstream package applies an internal 5-second timeout when the
-	// context has no deadline; overriding it with an explicit one prevents that.
-	watchKey := cfg.mappingPrefix + ".>"
-	watchCtx, watchCancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer watchCancel()
-	watcher, watchErr := mappingsKV.Watch(watchCtx, watchKey, jetstream.IgnoreDeletes())
-	if watchErr != nil {
-		return 0, 0, 0, 0, 0, fmt.Errorf("watch %q: %w", watchKey, watchErr)
+	entries, scanErr := mappingsKV.Scan(ctx, cfg.mappingPrefix)
+	if scanErr != nil {
+		return 0, 0, 0, 0, 0, scanErr
 	}
 
 	var legacy []legacyEntry
-	nilSeen := false
-	for entry := range watcher.Updates() {
-		if entry == nil {
-			nilSeen = true
-			break // nil = end of initial values
-		}
+	for _, entry := range entries {
 		currentValue := string(entry.Value())
 		// Skip already-JSON entries and tombstones. Tombstones are written as a
 		// regular Put with value "!del" (not a NATS-level delete), so IgnoreDeletes()
@@ -274,12 +270,6 @@ func backfillType(
 			uid:          uid,
 			revision:     entry.Revision(),
 		})
-	}
-	if stopErr := watcher.Stop(); stopErr != nil {
-		slog.WarnContext(ctx, "failed to stop watcher", "mapping_prefix", cfg.mappingPrefix, "error", stopErr)
-	}
-	if !nilSeen {
-		return 0, 0, 0, 0, 0, fmt.Errorf("watcher for %q closed without delivering initial values (context may have expired or watcher failed)", watchKey)
 	}
 
 	slog.InfoContext(ctx, "scan complete",
@@ -376,7 +366,8 @@ func needsPrincipalResolution(cfg mappingConfig, value string) bool {
 // writes it (when apply=true). Returns the result and whether the username was non-empty.
 func processEntry(
 	ctx context.Context,
-	objectsKV, mappingsKV jetstream.KeyValue,
+	objectsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	cfg mappingConfig,
 	e legacyEntry,
 	apply bool,
@@ -457,7 +448,7 @@ func processEntry(
 	}
 
 	if _, putErr := mappingsKV.Update(ctx, e.mappingKey, []byte(newValue), e.revision); putErr != nil {
-		if errors.Is(putErr, jetstream.ErrKeyExists) {
+		if errors.Is(putErr, jetstream.ErrKeyExists) || errors.Is(putErr, jetstream.ErrKeyRevisionMismatch) {
 			// A live handler wrote a newer value after the scan; skip — the current value is valid.
 			slog.InfoContext(ctx, "skipping: mapping updated by live handler since scan",
 				"mapping_key", e.mappingKey)

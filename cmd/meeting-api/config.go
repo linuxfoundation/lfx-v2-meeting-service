@@ -59,14 +59,14 @@ type userServiceConfig struct {
 
 // eventConfig holds event processing configuration
 type eventConfig struct {
-	Enabled              bool
-	ConsumerName         string
-	StreamName           string
-	FilterSubjects       []string
-	MaxDeliver           int
-	AckWait              time.Duration
-	MaxAckPending        int
-	V1MappingsBucketName string
+	Enabled          bool
+	ConsumerName     string
+	StreamName       string
+	FilterSubjects   []string
+	MaxDeliver       int
+	AckWait          time.Duration
+	MaxAckPending    int
+	StateDatabaseURL string
 }
 
 // parseFlags parses command line flags for the meeting service
@@ -267,20 +267,15 @@ func parseEventConfig() eventConfig {
 		}
 	}
 
-	v1MappingsBucketName := os.Getenv("EVENT_V1_MAPPINGS_BUCKET")
-	if v1MappingsBucketName == "" {
-		v1MappingsBucketName = "v1-mappings"
-	}
-
 	return eventConfig{
-		Enabled:              enabled,
-		ConsumerName:         consumerName,
-		StreamName:           streamName,
-		FilterSubjects:       filterSubjects,
-		MaxDeliver:           maxDeliver,
-		AckWait:              ackWait,
-		MaxAckPending:        maxAckPending,
-		V1MappingsBucketName: v1MappingsBucketName,
+		Enabled:          enabled,
+		ConsumerName:     consumerName,
+		StreamName:       streamName,
+		FilterSubjects:   filterSubjects,
+		MaxDeliver:       maxDeliver,
+		AckWait:          ackWait,
+		MaxAckPending:    maxAckPending,
+		StateDatabaseURL: os.Getenv("MEETING_STATE_DATABASE_URL"),
 	}
 }
 

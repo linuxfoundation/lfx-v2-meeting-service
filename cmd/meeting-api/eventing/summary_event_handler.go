@@ -12,6 +12,7 @@ import (
 	"slices"
 
 	indexerConstants "github.com/linuxfoundation/lfx-v2-indexer-service/pkg/constants"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
@@ -176,6 +177,8 @@ func (h *EventHandlers) handlePastMeetingSummaryUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	// Look up project info and ai_summary_access from the parent past meeting record.
@@ -280,7 +283,7 @@ const maxSummaryIndexUpdateAttempts = 5
 // recordPastMeetingSummary adds summaryID to the set of summaries recorded under the past
 // meeting. The set is updated with compare-and-swap so concurrent summary events for the same
 // past meeting cannot drop each other's entries.
-func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue, meetingAndOccurrenceID, summaryID string) error {
+func recordPastMeetingSummary(ctx context.Context, mappingsKV domain.EventState, meetingAndOccurrenceID, summaryID string) error {
 	key := pastMeetingSummaryIndexKeyPrefix + meetingAndOccurrenceID
 	for attempt := 0; attempt < maxSummaryIndexUpdateAttempts; attempt++ {
 		entry, err := mappingsKV.Get(ctx, key)
@@ -316,7 +319,7 @@ func recordPastMeetingSummary(ctx context.Context, mappingsKV jetstream.KeyValue
 // listPastMeetingSummaryIDs returns the IDs of the summaries recorded under the past meeting
 // by handlePastMeetingSummaryUpdate. Any KV or decode error is returned so the caller retries
 // rather than acting on an incomplete list.
-func listPastMeetingSummaryIDs(ctx context.Context, meetingAndOccurrenceID string, mappingsKV jetstream.KeyValue) ([]string, error) {
+func listPastMeetingSummaryIDs(ctx context.Context, meetingAndOccurrenceID string, mappingsKV domain.EventState) ([]string, error) {
 	entry, err := mappingsKV.Get(ctx, pastMeetingSummaryIndexKeyPrefix+meetingAndOccurrenceID)
 	if err != nil {
 		// An invalid key is permanent and recordPastMeetingSummary could never have written

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/v1objects"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -60,6 +61,9 @@ func isKVAbsenceError(err error) bool {
 func isTransientError(err error) bool {
 	if err == nil {
 		return false
+	}
+	if errors.Is(err, domain.ErrEventStateUnavailable) {
+		return true
 	}
 	if errors.Is(err, errOccurrenceExpansionTimeout) {
 		return true

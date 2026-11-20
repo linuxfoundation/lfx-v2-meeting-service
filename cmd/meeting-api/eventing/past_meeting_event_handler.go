@@ -261,6 +261,8 @@ func (h *EventHandlers) handlePastMeetingUpdate(
 	indexerAction := indexerConstants.ActionCreated
 	if _, err := h.v1MappingsKV.Get(ctx, mappingKey); err == nil {
 		indexerAction = indexerConstants.ActionUpdated
+	} else if !isKVAbsenceError(err) {
+		return true
 	}
 
 	// Publish to indexer and FGA-sync
@@ -382,7 +384,7 @@ func convertMapToPastMeetingData(
 	v1Data map[string]interface{},
 	idMapper domain.IDMapper,
 	v1ObjectsKV jetstream.KeyValue,
-	mappingsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	logger *slog.Logger,
 ) (*models.PastMeetingEventData, error) {
 	rawPastMeeting, err := decodeV1[pastMeetingDBRaw](v1Data)
@@ -623,7 +625,7 @@ func getCommitteesForPastMeeting(
 	ctx context.Context,
 	pastMeetingUUID string,
 	idMapper domain.IDMapper,
-	mappingsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	logger *slog.Logger,
 ) ([]models.Committee, error) {
 	key := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
@@ -674,7 +676,7 @@ func resolveParentPastMeetingCommittees(
 	meetingAndOccurrenceID string,
 	primaryCommitteeSFID string,
 	idMapper domain.IDMapper,
-	mappingsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	logger *slog.Logger,
 ) ([]models.Committee, error) {
 	committees, err := getCommitteesForPastMeeting(ctx, meetingAndOccurrenceID, idMapper, mappingsKV, logger)
@@ -703,10 +705,13 @@ func updatePastMeetingCommitteeMappings(
 	mappingID string,
 	committeeID string,
 	v1Data map[string]interface{},
-	mappingsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	logger *slog.Logger,
 ) error {
 	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
+	if store, ok := mappingsKV.(domain.CommitteeAssociationState); ok {
+		return store.UpsertCommitteeAssociation(ctx, "past_meeting", pastMeetingUUID, mappingID, committeeID, utils.GetStringSliceFromMap(v1Data, "committee_filters"))
+	}
 	var mappings map[string]map[string]interface{}
 
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
@@ -747,10 +752,13 @@ func removePastMeetingCommitteeMapping(
 	ctx context.Context,
 	pastMeetingUUID string,
 	mappingID string,
-	mappingsKV jetstream.KeyValue,
+	mappingsKV domain.EventState,
 	logger *slog.Logger,
 ) error {
 	mappingsKey := fmt.Sprintf("v1-mappings.past-meeting-mappings.%s", pastMeetingUUID)
+	if store, ok := mappingsKV.(domain.CommitteeAssociationState); ok {
+		return store.RemoveCommitteeAssociation(ctx, "past_meeting", pastMeetingUUID, mappingID)
+	}
 	entry, err := mappingsKV.Get(ctx, mappingsKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {

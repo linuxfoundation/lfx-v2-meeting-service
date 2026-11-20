@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
@@ -23,14 +24,21 @@ const (
 
 // Config holds the configuration for the NATS-based ID mapper
 type Config struct {
-	URL     string
-	Timeout time.Duration
+	URL              string
+	Timeout          time.Duration
+	StateDatabaseURL string
 }
 
 // NATSMapper implements IDMapper using NATS messaging to the v1-sync-helper service
 type NATSMapper struct {
-	conn    *nats.Conn
-	timeout time.Duration
+	conn             *nats.Conn
+	timeout          time.Duration
+	stateDatabaseURL string
+	stateMu          sync.Mutex
+	state            aliasState
+	stateInit        *aliasInitialization
+	stateClosed      bool
+	openState        func(context.Context, string) (aliasState, error)
 }
 
 // NewNATSMapper creates a new NATS-based ID mapper
@@ -54,13 +62,28 @@ func NewNATSMapper(cfg Config) (*NATSMapper, error) {
 	}
 
 	return &NATSMapper{
-		conn:    conn,
-		timeout: timeout,
+		conn:             conn,
+		timeout:          timeout,
+		stateDatabaseURL: cfg.StateDatabaseURL,
 	}, nil
 }
 
 // Close closes the NATS connection
 func (m *NATSMapper) Close() {
+	m.stateMu.Lock()
+	m.stateClosed = true
+	state, init := m.state, m.stateInit
+	m.state = nil
+	if init != nil {
+		init.cancel()
+	}
+	m.stateMu.Unlock()
+	if init != nil {
+		<-init.done
+	}
+	if state != nil {
+		state.Close()
+	}
 	if m.conn != nil {
 		m.conn.Close()
 	}
@@ -205,7 +228,7 @@ func (m *NATSMapper) MapInviteeIDToParticipantV2(ctx context.Context, inviteeID 
 
 	// Request format: past_meeting_participant.invitee_id.{invitee_id} returns {v2_participant_id}
 	key := fmt.Sprintf("past_meeting_participant.invitee_id.%s", inviteeID)
-	return m.lookup(ctx, key)
+	return m.lookupParticipantAlias(ctx, key)
 }
 
 // MapAttendeeIDToParticipantV2 maps ITX attendee ID to V2 participant ID
@@ -216,7 +239,7 @@ func (m *NATSMapper) MapAttendeeIDToParticipantV2(ctx context.Context, attendeeI
 
 	// Request format: past_meeting_participant.attendee_id.{attendee_id} returns {v2_participant_id}
 	key := fmt.Sprintf("past_meeting_participant.attendee_id.%s", attendeeID)
-	return m.lookup(ctx, key)
+	return m.lookupParticipantAlias(ctx, key)
 }
 
 // MapParticipantV2ToInviteeID maps a V2 participant ID to ITX invitee ID
@@ -227,7 +250,7 @@ func (m *NATSMapper) MapParticipantV2ToInviteeID(ctx context.Context, v2Particip
 
 	// Request format: past_meeting_participant.participant_to_invitee_id.{v2_participant_id} returns {invitee_id}
 	key := fmt.Sprintf("past_meeting_participant.participant_to_invitee_id.%s", v2ParticipantID)
-	return m.lookup(ctx, key)
+	return m.lookupParticipantAlias(ctx, key)
 }
 
 // MapParticipantV2ToAttendeeID maps a V2 participant ID to ITX attendee ID
@@ -238,5 +261,5 @@ func (m *NATSMapper) MapParticipantV2ToAttendeeID(ctx context.Context, v2Partici
 
 	// Request format: past_meeting_participant.participant_to_attendee_id.{v2_participant_id} returns {attendee_id}
 	key := fmt.Sprintf("past_meeting_participant.participant_to_attendee_id.%s", v2ParticipantID)
-	return m.lookup(ctx, key)
+	return m.lookupParticipantAlias(ctx, key)
 }

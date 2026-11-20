@@ -28,6 +28,6 @@ type Config struct {
 	// MaxAckPending is the maximum number of outstanding acknowledgments
 	MaxAckPending int
 
-	// V1MappingsBucketName is the name of the KV bucket for storing v1 mappings
-	V1MappingsBucketName string
+	// StateDatabaseURL addresses the meeting-owned processing-state database.
+	StateDatabaseURL string
 }

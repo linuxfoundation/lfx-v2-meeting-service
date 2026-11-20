@@ -60,8 +60,8 @@ This document describes the architecture, configuration, data transformation pat
            ├──────────────┬────────────────┐
            ▼              ▼                ▼
     ┌─────────────┐  ┌──────────┐  ┌──────────────┐
-    │  Indexer    │  │ FGA-Sync │  │ v1-mappings  │
-    │  Service    │  │ Service  │  │ KV Bucket    │
+    │  Indexer    │  │ FGA-Sync │  │ Meeting state│
+    │  Service    │  │ Service  │  │ Postgres     │
     └─────────────┘  └──────────┘  └──────────────┘
 ```
 
@@ -74,7 +74,7 @@ This document describes the architecture, configuration, data transformation pat
 5. **Transformation**: Handler converts v1 data to v2 format, enriches with user data, calculates occurrences
 6. **ID Mapping**: SFIDs mapped to UUIDs via ID mapper service
 7. **Publishing**: Events published to indexer (search) and, for meetings, past meetings, registrants and past meeting participants, to FGA-sync (access control)
-8. **Mapping Storage**: v1→v2 ID mappings stored in `v1-mappings` KV bucket
+8. **Processing State**: meeting-owned processing, relationship and invitation state is stored in Postgres. The business entity IDs remain unchanged; canonical project/committee translations still use the helper RPC. See [Postgres migration and cutover](event-state-postgres.md).
 
 ## Event Types
 
@@ -116,6 +116,7 @@ The system processes 12 different event types:
 | `EVENT_ACK_WAIT` | No | `30s` | Acknowledgment wait timeout |
 | `EVENT_MAX_ACK_PENDING` | No | `1000` | Maximum pending acks |
 | `NATS_URL` | Yes | - | NATS server connection URL |
+| `MEETING_STATE_DATABASE_URL` | Processing, enabled historical alias reads, or state-backed repairs | - | Secret-loaded URL for verified meeting-owned event-state tables; alias reads can require it with processing disabled |
 | `INVITES_ENABLED` | No | `false` | Enable LFID invite sending (registrant handler) and `invite_accepted` enrichment |
 | `LFX_SELF_SERVE_BASE_URL` | No | derived from `LFX_ENVIRONMENT` | Base URL embedded in invite emails as `return_url` |
 
@@ -127,11 +128,11 @@ When `INVITES_ENABLED=true`, the meeting service participates in the platform LF
 
 During registrant create processing (`itx-zoom-meetings-registrants-v2.*`), after the registrant is indexed:
 
-1. Skip if the registrant already has a username (LFID) or if an invite was already sent for this registrant UID (tracked in `v1-mappings` as `v1_meeting_registrant_lfid_invite_sent.{registrant_uid}`).
+1. Skip if the registrant already has a username (LFID) or if its Postgres invitation guard is present (pending dispatch or completed).
 2. Look up the email via `lfx.auth-service.email_to_username` — skip if an LFID already exists.
 3. Resolve the meeting title from the `v1-objects` KV bucket; skip if unavailable.
-4. Send `lfx.invite-service.send_invite` with `resource.type=meeting` and role `Registrant`.
-5. Store the invite UID in the sent-marker mapping key (best-effort).
+4. Acquire a create-only dispatch claim, then send `lfx.invite-service.send_invite` with `resource.type=meeting` and role `Registrant`. Concurrent/replayed handlers cannot both claim dispatch.
+5. Record the returned invite UID under the claimed revision. Ambiguous results or failed completion writes retain the pending claim for manual reconciliation, never automatic resend.
 
 All invite operations are best-effort: errors are logged and never cause KV message retries.
 

@@ -15,23 +15,24 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventstate"
 	infraNATS "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/nats"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 )
 
 // EventProcessor manages the lifecycle of event processing via NATS JetStream
 type EventProcessor struct {
-	nc           *nats.Conn
-	js           jetstream.JetStream
-	consumer     jetstream.Consumer
-	publisher    domain.EventPublisher
-	userLookup   domain.V1UserLookup
-	idMapper     domain.IDMapper
-	v1ObjectsKV  jetstream.KeyValue
-	v1MappingsKV jetstream.KeyValue
-	logger       *slog.Logger
-	config       eventing.Config
-	handlers     *EventHandlers
+	nc          *nats.Conn
+	js          jetstream.JetStream
+	consumer    jetstream.Consumer
+	publisher   domain.EventPublisher
+	userLookup  domain.V1UserLookup
+	idMapper    domain.IDMapper
+	v1ObjectsKV jetstream.KeyValue
+	stateStore  *eventstate.Store
+	logger      *slog.Logger
+	config      eventing.Config
+	handlers    *EventHandlers
 }
 
 // NewEventProcessor creates a new event processor
@@ -56,24 +57,22 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 		return nil, fmt.Errorf("failed to get v1-objects KV bucket: %w", err)
 	}
 
-	// Get or create v1-mappings KV bucket (for tracking synced items)
-	v1MappingsKV, err := js.CreateKeyValue(context.Background(), jetstream.KeyValueConfig{
-		Bucket:      config.V1MappingsBucketName,
-		Description: "Stores mappings of v1 objects synced to v2",
-		TTL:         0, // No expiration
-	})
+	// State must have been provisioned and migrated before this processor starts.
+	v1MappingsKV, err := eventstate.Open(context.Background(), config.StateDatabaseURL)
 	if err != nil {
-		// If bucket already exists, just get it
-		v1MappingsKV, err = js.KeyValue(context.Background(), config.V1MappingsBucketName)
-		if err != nil {
-			nc.Close()
-			return nil, fmt.Errorf("failed to get/create v1-mappings KV bucket: %w", err)
-		}
+		nc.Close()
+		return nil, fmt.Errorf("failed to initialize meeting state: %w", err)
+	}
+	if err := v1MappingsKV.Ready(context.Background()); err != nil {
+		v1MappingsKV.Close()
+		nc.Close()
+		return nil, err
 	}
 
 	// Create publisher
 	publisher, err := eventing.NewNATSPublisher(nc, logger)
 	if err != nil {
+		v1MappingsKV.Close()
 		nc.Close()
 		return nil, fmt.Errorf("failed to create publisher: %w", err)
 	}
@@ -94,16 +93,16 @@ func NewEventProcessor(config eventing.Config, idMapper domain.IDMapper, logger 
 	handlers := NewEventHandlers(publisher, userLookup, idMapper, projectLookup, v1ObjectsKV, v1MappingsKV, logger, handlerOpts...)
 
 	ep := &EventProcessor{
-		nc:           nc,
-		js:           js,
-		publisher:    publisher,
-		userLookup:   userLookup,
-		idMapper:     idMapper,
-		v1ObjectsKV:  v1ObjectsKV,
-		v1MappingsKV: v1MappingsKV,
-		logger:       logger,
-		config:       config,
-		handlers:     handlers,
+		nc:          nc,
+		js:          js,
+		publisher:   publisher,
+		userLookup:  userLookup,
+		idMapper:    idMapper,
+		v1ObjectsKV: v1ObjectsKV,
+		stateStore:  v1MappingsKV,
+		logger:      logger,
+		config:      config,
+		handlers:    handlers,
 	}
 
 	return ep, nil
@@ -219,6 +218,9 @@ func (ep *EventProcessor) Stop(ctx context.Context) error {
 	// Close NATS connection
 	if ep.nc != nil {
 		ep.nc.Close()
+	}
+	if ep.stateStore != nil {
+		ep.stateStore.Close()
 	}
 
 	ep.logger.InfoContext(ctx, "event processor stopped")

@@ -16,6 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOTOOLCHAIN: local
+      TEST_PGUSER: testuser
+      TEST_PGPASSWORD: test-password
+      TEST_PGHOST: 127.0.0.1
+      TEST_PGPORT: "5432"
+      TEST_PGDATABASE: postgres
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:1d5b02d3a9941fbd52437db4107f8c52d6297dac553ca1e5c299ebb3756b4857
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43  # v2.22.3
@@ -52,8 +70,33 @@ jobs:
       - name: Build
         run: make build
 
-      - name: Test
+      - name: Prepare test database URL
+        # Assemble the synthetic test DSN at runtime rather than embedding a
+        # credential-shaped URL in source. Production credentials are not used.
+        # This step retains normal secret-scanner coverage of the workflow.
+        run: |
+          python3 - <<'PY'
+          import os
+          from urllib.parse import quote, urlencode, urlunsplit
+          authority = "{}:{}@{}:{}".format(
+              quote(os.environ["TEST_PGUSER"], safe=""),
+              quote(os.environ["TEST_PGPASSWORD"], safe=""),
+              os.environ["TEST_PGHOST"], os.environ["TEST_PGPORT"],
+          )
+          dsn = urlunsplit(("postgresql", authority,
+              "/" + quote(os.environ["TEST_PGDATABASE"], safe=""),
+              urlencode({"sslmode": "disable"}), ""))
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+              output.write("MEETING_STATE_TEST_DATABASE_URL=" + dsn + "\n")
+          PY
+      - name: Run tests
         run: go test ./... -v
+
+      - name: Test reconciliation tooling
+        run: |
+          python3 -m venv "$RUNNER_TEMP/meeting-reconcile-tests"
+          "$RUNNER_TEMP/meeting-reconcile-tests/bin/python" -m pip install -r scripts/reconcile_meeting_registrants/requirements.txt
+          "$RUNNER_TEMP/meeting-reconcile-tests/bin/python" -m unittest discover -s scripts/reconcile_meeting_registrants -p 'test_*.py'
 
       - name: Vulnerability scan
         run: |

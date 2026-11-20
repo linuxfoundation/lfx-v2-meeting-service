@@ -536,7 +536,7 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 | `EVENT_PROCESSING_ENABLED` | Enable KV-based event processing | `true` |
 | `EVENT_CONSUMER_NAME` | JetStream consumer name | `meeting-service-kv-consumer` |
 | `EVENT_STREAM_NAME` | KV bucket stream name | `KV_v1-objects` |
-| `EVENT_V1_MAPPINGS_BUCKET` | KV bucket name for v1 ID mappings | `v1-mappings` |
+| `MEETING_STATE_DATABASE_URL` | Secret-loaded Postgres URL required for event processing, enabled historical participant alias reads, and state-backed repair tools; see [cutover guide](docs/event-state-postgres.md) | — |
 | `EVENT_MAX_DELIVER` | Max delivery attempts per message | `3` |
 | `EVENT_ACK_WAIT` | Ack timeout | `30s` |
 | `EVENT_MAX_ACK_PENDING` | Max pending acks | `1000` |
