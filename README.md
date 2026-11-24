@@ -605,6 +605,24 @@ When changing the API:
 3. Run `make verify` to confirm generated code is current
 4. Commit both the design changes and the regenerated files
 
+## 🔒 Dependency vulnerability scanning
+
+MegaLinter's OSV scan is blocking. Its bundled analyzer is built with Go 1.26 and cannot load this service's Go 1.27 module, so vulnerability findings fall back to matching by dependency version: any known vulnerability in a dependency version fails the check, reachable or not (see [Go version](CLAUDE.md#go-version) in `CLAUDE.md`). Do not disable scanning or downgrade the Go minor to work around it.
+
+When a scanner table appears to report an installed version as already fixed, inspect the complete affected ranges in its JSON output and the source advisory:
+
+```bash
+osv-scanner scan source --format json \
+  --experimental-exclude .git --experimental-exclude cmd/meeting-api/kodata \
+  --experimental-exclude megalinter-reports --experimental-exclude templates \
+  --recursive .
+```
+
+For example, the [verified GO-2026-6278 record][websocket-advisory] includes a reintroduced affected range at `gorilla/websocket` `v1.5.3`, fixed at `v1.5.4-0.20240701034025-d67f41855da4`. The [upstream fix][websocket-mask-fix] postdates the `v1.5.3` tag, so `go.mod` pins that exact fix commit for this indirect dependency instead of suppressing the advisory. A single fixed-version table cell or stale lookup response is not evidence that a package is unaffected.
+
+[websocket-advisory]: https://raw.githubusercontent.com/golang/vulndb/0db6d52dd97bd2ece1030efae06302b118182e83/data/osv/GO-2026-6278.json
+[websocket-mask-fix]: https://github.com/gorilla/websocket/commit/d67f41855da42d7bccd9ef050c49f7e54e783b95
+
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
