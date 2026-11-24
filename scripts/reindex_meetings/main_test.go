@@ -107,3 +107,19 @@ func TestReputEntry(t *testing.T) {
 		assert.Equal(t, reputFailed, reputEntry(ctx, kv, key))
 	})
 }
+
+func TestTypeSupported(t *testing.T) {
+	ok, _ := typeSupported("v1_past_meeting", true)
+	assert.True(t, ok)
+
+	ok, listed := typeSupported("v1_meeting_rsvp", true)
+	assert.False(t, ok)
+	assert.NotContains(t, listed, "v1_meeting_rsvp")
+	assert.Contains(t, listed, "v1_past_meeting")
+
+	ok, _ = typeSupported("v1_meeting_rsvp", false)
+	assert.True(t, ok, "rsvp stays reindexable in the OpenSearch mode")
+
+	ok, _ = typeSupported("not_a_type", false)
+	assert.False(t, ok)
+}

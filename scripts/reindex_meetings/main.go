@@ -27,11 +27,18 @@
 //	         logs what would be re-put without making any changes). Each re-put
 //	         is a compare-and-set on the revision that was read; keys a live
 //	         writer changed in between are skipped and counted as superseded.
+//	-missing-only
+//	         Instead of refreshing records that are already indexed, find the
+//	         v1-objects records the event handler never indexed (no success
+//	         marker in v1-mappings) and re-put only those. Needs no OpenSearch.
+//	         Supported for every type above except v1_meeting_rsvp and
+//	         v1_past_meeting_participant. Dry-run by default, like -reindex.
 //
 // Environment variables:
 //
 //	NATS_URL       NATS server URL (default: nats://127.0.0.1:4222)
-//	OPENSEARCH_URL OpenSearch base URL (default: http://localhost:9200)
+//	OPENSEARCH_URL OpenSearch base URL (default: http://localhost:9200);
+//	               not used with -missing-only
 package main
 
 import (
@@ -98,6 +105,7 @@ type osScrollResponse struct {
 func main() {
 	typesFlag := flag.String("types", "", "comma-separated list of object types to reindex (required)")
 	reindex := flag.Bool("reindex", false, "actually re-put KV entries and trigger reindexing (default: logs only)")
+	missingOnly := flag.Bool("missing-only", false, "re-put only the v1-objects records that have no success marker in v1-mappings, i.e. were never indexed (needs no OpenSearch)")
 	flag.Parse()
 
 	osURL := os.Getenv("OPENSEARCH_URL")
@@ -119,9 +127,9 @@ func main() {
 	requestedTypes := strings.Split(*typesFlag, ",")
 	for _, t := range requestedTypes {
 		t = strings.TrimSpace(t)
-		if _, ok := objectTypeConfig[t]; !ok {
-			slog.Error("unsupported object type", "type", t)
-			fmt.Fprintf(os.Stderr, "supported types: %s\n", strings.Join(supportedTypes(), ", "))
+		if ok, supported := typeSupported(t, *missingOnly); !ok {
+			slog.Error("unsupported object type", "type", t, "missing_only", *missingOnly)
+			fmt.Fprintf(os.Stderr, "supported types: %s\n", strings.Join(supported, ", "))
 			os.Exit(1)
 		}
 	}
@@ -132,6 +140,7 @@ func main() {
 		"opensearch_url", osURL,
 		"nats_url", natsURL,
 		"reindex", *reindex,
+		"missing_only", *missingOnly,
 		"types", *typesFlag,
 	)
 
@@ -146,7 +155,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	exitCode := run(ctx, nc, natsURL, osURL, requestedTypes, *reindex)
+	var exitCode int
+	if *missingOnly {
+		exitCode = runMissing(ctx, nc, requestedTypes, *reindex)
+	} else {
+		exitCode = run(ctx, nc, natsURL, osURL, requestedTypes, *reindex)
+	}
 	nc.Close()
 	os.Exit(exitCode)
 }
@@ -488,6 +502,17 @@ func deleteScroll(ctx context.Context, client *http.Client, osURL, scrollID stri
 	}
 	resp.Body.Close() //nolint:errcheck
 	return nil
+}
+
+// typeSupported reports whether t can be used in the selected mode, and returns
+// the sorted list of types that can, for the error message.
+func typeSupported(t string, missingOnly bool) (bool, []string) {
+	if missingOnly {
+		_, ok := missingMarkerConfig[t]
+		return ok, supportedMissingTypes()
+	}
+	_, ok := objectTypeConfig[t]
+	return ok, supportedTypes()
 }
 
 // supportedTypes returns the sorted list of valid object type names.
