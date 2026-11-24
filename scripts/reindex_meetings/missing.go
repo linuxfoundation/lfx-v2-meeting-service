@@ -81,25 +81,46 @@ func (s *missingStats) add(other missingStats) {
 	s.superseded += other.superseded
 }
 
+// decodeRecord decodes a v1-objects value the way the event handler does: JSON
+// first, then msgpack. The value is read from the platform's own bucket, so,
+// unlike the service, this operator script does not bound the msgpack nesting
+// depth.
+func decodeRecord(value []byte) (map[string]any, error) {
+	var data map[string]any
+	if err := json.Unmarshal(value, &data); err != nil {
+		if err := msgpack.Unmarshal(value, &data); err != nil {
+			return nil, fmt.Errorf("decode record: %w", err)
+		}
+	}
+	return data, nil
+}
+
+// checkDecodable reports whether a value decodes, for use as a re-put check.
+func checkDecodable(value []byte) error {
+	_, err := decodeRecord(value)
+	return err
+}
+
+// readRecord reads and decodes the v1-objects record at key. A key that no
+// longer exists is reported as jetstream.ErrKeyNotFound.
+func readRecord(ctx context.Context, kv jetstream.KeyValue, key string) (map[string]any, error) {
+	entry, err := kv.Get(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	return decodeRecord(entry.Value())
+}
+
 // recordIsSoftDeleted reports whether the v1-objects record at key is a soft
 // delete (_sdc_deleted_at set), the same rule the event pipeline applies. A
-// record that has vanished counts as deleted. The value is read from the
-// platform's own bucket, so, unlike the service, this operator script does not
-// bound the msgpack nesting depth.
+// record that has vanished counts as deleted.
 func recordIsSoftDeleted(ctx context.Context, kv jetstream.KeyValue, key string) (bool, error) {
-	entry, err := kv.Get(ctx, key)
+	data, err := readRecord(ctx, kv, key)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
 			return true, nil
 		}
 		return false, err
-	}
-
-	var data map[string]any
-	if err := json.Unmarshal(entry.Value(), &data); err != nil {
-		if err := msgpack.Unmarshal(entry.Value(), &data); err != nil {
-			return false, fmt.Errorf("decode record: %w", err)
-		}
 	}
 	_, deleted := v1objects.SoftDeletedAt(data)
 	return deleted, nil
@@ -164,7 +185,18 @@ func findMissing(
 			}
 			reason = "live record with a delete tombstone"
 		case errors.Is(err, jetstream.ErrKeyNotFound):
-			// no marker: fall through
+			// No marker. Before calling the record missing, make sure it is a record the
+			// consumer can process: one that does not decode would be rejected again and
+			// stay unindexed, however many times it is re-put.
+			if _, rerr := readRecord(ctx, kv, key); rerr != nil {
+				if errors.Is(rerr, jetstream.ErrKeyNotFound) {
+					stats.notFound++
+				} else {
+					slog.ErrorContext(ctx, "record with no success marker cannot be read or decoded, not re-putting it", "key", key, "marker", markerKey, "error", rerr)
+					stats.failed++
+				}
+				continue
+			}
 		default:
 			slog.ErrorContext(ctx, "failed to read success marker", "key", key, "marker", markerKey, "error", err)
 			stats.failed++
@@ -178,7 +210,7 @@ func findMissing(
 		}
 		slog.InfoContext(ctx, "re-putting", "key", key, "marker", markerKey, "reason", reason)
 
-		switch reputEntry(ctx, kv, key) {
+		switch reputEntryChecked(ctx, kv, key, checkDecodable) {
 		case reputProcessed:
 			stats.processed++
 		case reputNotFound:
@@ -190,7 +222,9 @@ func findMissing(
 		}
 	}
 
-	return stats, nil
+	// The key channel also closes when ctx is cancelled mid-listing, which would
+	// otherwise report a partial scan as complete.
+	return stats, ctx.Err()
 }
 
 // runMissing is the -missing-only counterpart of run. It needs only NATS: it

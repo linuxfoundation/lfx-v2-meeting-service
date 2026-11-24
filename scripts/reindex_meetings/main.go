@@ -329,6 +329,16 @@ const (
 // changed or deleted the key in between, the write is rejected and the key is
 // skipped, because that newer write already triggers the consumer with current data.
 func reputEntry(ctx context.Context, kv jetstream.KeyValue, kvKey string) reputResult {
+	return reputEntryChecked(ctx, kv, kvKey, nil)
+}
+
+// reputEntryChecked is reputEntry with an optional validation of the value that
+// is about to be written. The same read supplies both the value that is checked
+// and the revision the write is conditional on, so what is validated is exactly
+// what is re-put. A value that fails the check is counted as a failure and is not
+// written, because the consumer would reject it and the record would stay missing
+// behind a run that looked successful.
+func reputEntryChecked(ctx context.Context, kv jetstream.KeyValue, kvKey string, check func([]byte) error) reputResult {
 	entry, err := kv.Get(ctx, kvKey)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrKeyNotFound) {
@@ -337,6 +347,13 @@ func reputEntry(ctx context.Context, kv jetstream.KeyValue, kvKey string) reputR
 		}
 		slog.ErrorContext(ctx, "failed to get KV entry", "key", kvKey, "error", err)
 		return reputFailed
+	}
+
+	if check != nil {
+		if err := check(entry.Value()); err != nil {
+			slog.ErrorContext(ctx, "record failed validation, not re-putting it", "key", kvKey, "error", err)
+			return reputFailed
+		}
 	}
 
 	if _, err := kv.Update(ctx, kvKey, entry.Value(), entry.Revision()); err != nil {

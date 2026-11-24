@@ -14,6 +14,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 // fakeKeyLister serves a fixed list of keys.
@@ -44,7 +45,7 @@ func newFakeBucket(keys ...string) *fakeBucket {
 		getErrs: map[string]error{},
 	}
 	for _, k := range keys {
-		b.values[k] = []byte("value-of-" + k)
+		b.values[k] = []byte(`{"id":"` + k + `"}`)
 		b.revs[k] = 1
 	}
 	return b
@@ -248,6 +249,43 @@ func TestFindMissing(t *testing.T) {
 		assert.Equal(t, 1, stats.failed)
 		assert.Equal(t, 0, stats.missing)
 		assert.Empty(t, kv.updated)
+	})
+
+	t.Run("a record with no marker that cannot be decoded is a failure and is not re-put, in both modes", func(t *testing.T) {
+		for _, reindex := range []bool{false, true} {
+			kv := newFakeBucket("itx-zoom-past-meetings.c")
+			kv.values["itx-zoom-past-meetings.c"] = []byte("\xff not a record")
+
+			stats, err := findMissing(ctx, kv, newFakeBucket(), "v1_past_meeting", spec, reindex)
+
+			require.NoError(t, err)
+			assert.Equal(t, 1, stats.failed, "reindex=%v", reindex)
+			assert.Equal(t, 0, stats.missing, "reindex=%v: a corrupt record is not reported as missing", reindex)
+			assert.Equal(t, 0, stats.processed, "reindex=%v", reindex)
+			assert.Empty(t, kv.updated, "reindex=%v", reindex)
+		}
+	})
+
+	t.Run("a msgpack record with no marker is eligible", func(t *testing.T) {
+		packed, err := msgpack.Marshal(map[string]any{"id": "c"})
+		require.NoError(t, err)
+		kv := newFakeBucket("itx-zoom-past-meetings.c")
+		kv.values["itx-zoom-past-meetings.c"] = packed
+
+		stats, err := findMissing(ctx, kv, newFakeBucket(), "v1_past_meeting", spec, true)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, stats.processed)
+		assert.Equal(t, []string{"itx-zoom-past-meetings.c"}, kv.updated)
+	})
+
+	t.Run("a cancelled scan reports the cancellation even when the listing yields no keys", func(t *testing.T) {
+		cancelled, cancel := context.WithCancel(ctx)
+		cancel()
+
+		_, err := findMissing(cancelled, newFakeBucket(), newFakeBucket(), "v1_past_meeting", spec, true)
+
+		require.ErrorIs(t, err, context.Canceled)
 	})
 
 	t.Run("the scan stops when the context is cancelled", func(t *testing.T) {
