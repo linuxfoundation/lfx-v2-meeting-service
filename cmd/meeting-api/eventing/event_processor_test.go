@@ -23,6 +23,8 @@ import (
 type fakeJetStreamMsg struct {
 	subject     string
 	numDelivery uint64
+	streamSeq   uint64
+	headers     nats.Header
 	metadataErr error
 
 	acked       bool
@@ -38,10 +40,13 @@ func (m *fakeJetStreamMsg) Metadata() (*jetstream.MsgMetadata, error) {
 	if m.metadataErr != nil {
 		return nil, m.metadataErr
 	}
-	return &jetstream.MsgMetadata{NumDelivered: m.numDelivery}, nil
+	return &jetstream.MsgMetadata{
+		NumDelivered: m.numDelivery,
+		Sequence:     jetstream.SequencePair{Stream: m.streamSeq},
+	}, nil
 }
 func (m *fakeJetStreamMsg) Data() []byte         { return nil }
-func (m *fakeJetStreamMsg) Headers() nats.Header { return nil }
+func (m *fakeJetStreamMsg) Headers() nats.Header { return m.headers }
 func (m *fakeJetStreamMsg) Subject() string      { return m.subject }
 func (m *fakeJetStreamMsg) Reply() string        { return "" }
 func (m *fakeJetStreamMsg) Ack() error {
@@ -216,8 +221,9 @@ func TestMsgHandlerPanic(t *testing.T) {
 	// the handler's recover block exists to contain.
 	newProcessor := func(logs *bytes.Buffer) *EventProcessor {
 		return &EventProcessor{
-			logger: slog.New(slog.NewTextHandler(logs, nil)),
-			config: infraeventing.Config{MaxDeliver: 8},
+			logger:      slog.New(slog.NewTextHandler(logs, nil)),
+			config:      infraeventing.Config{MaxDeliver: 8},
+			v1ObjectsKV: &fakeLatestKV{}, // revision 0: every message is current
 		}
 	}
 
@@ -242,5 +248,199 @@ func TestMsgHandlerPanic(t *testing.T) {
 		assert.True(t, msg.terminated)
 		assert.False(t, msg.naked)
 		assert.Contains(t, logs.String(), "event dropped after max deliveries")
+	})
+}
+
+// fakeRevisionEntry is a KV entry that only carries a revision.
+type fakeRevisionEntry struct {
+	jetstream.KeyValueEntry
+	revision uint64
+}
+
+func (e fakeRevisionEntry) Revision() uint64 { return e.revision }
+
+// fakeLatestKV answers Get with a fixed revision, or a fixed error. It embeds
+// jetstream.KeyValue so it can be assigned to EventProcessor; only Get is called.
+type fakeLatestKV struct {
+	jetstream.KeyValue
+	revision uint64
+	err      error
+	gets     []string
+}
+
+func (k *fakeLatestKV) Get(_ context.Context, key string) (jetstream.KeyValueEntry, error) {
+	k.gets = append(k.gets, key)
+	if k.err != nil {
+		return nil, k.err
+	}
+	return fakeRevisionEntry{revision: k.revision}, nil
+}
+
+func TestCheckRedelivery(t *testing.T) {
+	ctx := context.Background()
+	const subject = "$KV.v1-objects.itx-zoom-meetings-registrants-v2.abc"
+	deleteHeaders := nats.Header{"KV-Operation": []string{"DEL"}}
+	purgeHeaders := nats.Header{"KV-Operation": []string{"PURGE"}}
+
+	tests := []struct {
+		name    string
+		msg     *fakeJetStreamMsg
+		kv      *fakeLatestKV
+		want    redeliveryVerdict
+		wantGet bool
+	}{
+		{
+			name: "the first delivery is never checked",
+			msg:  &fakeJetStreamMsg{subject: subject, numDelivery: 1, streamSeq: 5},
+			kv:   &fakeLatestKV{revision: 9},
+			want: redeliveryCurrent,
+		},
+		{
+			name:    "a redelivery of the latest revision is current",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 3, streamSeq: 9},
+			kv:      &fakeLatestKV{revision: 9},
+			want:    redeliveryCurrent,
+			wantGet: true,
+		},
+		{
+			name:    "a redelivery of an older revision is superseded",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 3, streamSeq: 5},
+			kv:      &fakeLatestKV{revision: 9},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a put whose key was deleted since is superseded",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a delete whose key is still deleted is current and must still be applied",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, headers: deleteHeaders},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliveryCurrent,
+			wantGet: true,
+		},
+		{
+			name:    "a purge whose key is still deleted is current",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, headers: purgeHeaders},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliveryCurrent,
+			wantGet: true,
+		},
+		{
+			name:    "a delete whose key was recreated since is superseded",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, headers: deleteHeaders},
+			kv:      &fakeLatestKV{revision: 9},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a lookup error means the message cannot be shown to be current",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5},
+			kv:      &fakeLatestKV{err: errors.New("nats timeout")},
+			want:    redeliveryUnknown,
+			wantGet: true,
+		},
+		{
+			name: "unavailable metadata is treated as current",
+			msg:  &fakeJetStreamMsg{subject: subject, metadataErr: errors.New("no metadata")},
+			kv:   &fakeLatestKV{revision: 9},
+			want: redeliveryCurrent,
+		},
+		{
+			name: "a malformed subject is left for the handler to reject",
+			msg:  &fakeJetStreamMsg{subject: "$KV.v1-objects", numDelivery: 2, streamSeq: 5},
+			kv:   &fakeLatestKV{revision: 9},
+			want: redeliveryCurrent,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, checkRedelivery(ctx, tt.kv, tt.msg))
+			if tt.wantGet {
+				assert.Equal(t, []string{"itx-zoom-meetings-registrants-v2.abc"}, tt.kv.gets, "the key is the part after $KV.<bucket>.")
+			} else {
+				assert.Empty(t, tt.kv.gets)
+			}
+		})
+	}
+
+	t.Run("a missing bucket is treated as current", func(t *testing.T) {
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 3, streamSeq: 5}
+		assert.Equal(t, redeliveryCurrent, checkRedelivery(ctx, nil, msg))
+	})
+}
+
+func TestMsgHandlerStaleRedelivery(t *testing.T) {
+	ctx := context.Background()
+	const subject = "$KV.v1-objects.itx-zoom-meetings-registrants-v2.abc"
+
+	// handlers is nil on purpose: kvHandler dereferences it, so a message that
+	// reaches the handler panics and is NAKed. A skipped message must not.
+	newProcessor := func(logs *bytes.Buffer, kv *fakeLatestKV) *EventProcessor {
+		return &EventProcessor{
+			logger:      slog.New(slog.NewTextHandler(logs, nil)),
+			config:      infraeventing.Config{MaxDeliver: 8},
+			v1ObjectsKV: kv,
+		}
+	}
+
+	t.Run("a superseded redelivery is acknowledged without being processed", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 4, streamSeq: 5}
+
+		newProcessor(&logs, &fakeLatestKV{revision: 9}).msgHandler(ctx)(msg)
+
+		assert.True(t, msg.acked)
+		assert.False(t, msg.naked)
+		assert.False(t, msg.terminated)
+		out := logs.String()
+		assert.Contains(t, out, "skipping redelivery of a superseded revision")
+		assert.NotContains(t, out, "panic in event handler", "the handler must not run")
+	})
+
+	t.Run("a deleted key supersedes a redelivered put", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5}
+
+		newProcessor(&logs, &fakeLatestKV{err: jetstream.ErrKeyNotFound}).msgHandler(ctx)(msg)
+
+		assert.True(t, msg.acked)
+		assert.NotContains(t, logs.String(), "panic in event handler")
+	})
+
+	t.Run("a lookup error is retried with the scheduled delay", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5}
+
+		newProcessor(&logs, &fakeLatestKV{err: errors.New("nats timeout")}).msgHandler(ctx)(msg)
+
+		assert.True(t, msg.naked)
+		assert.Equal(t, 10*time.Second, msg.nakDelay)
+		assert.False(t, msg.acked)
+		assert.NotContains(t, logs.String(), "panic in event handler")
+	})
+
+	t.Run("a lookup error on the final delivery is logged as a drop", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 8, streamSeq: 5}
+
+		newProcessor(&logs, &fakeLatestKV{err: errors.New("nats timeout")}).msgHandler(ctx)(msg)
+
+		assert.True(t, msg.terminated)
+		assert.Contains(t, logs.String(), "event dropped after max deliveries")
+	})
+
+	t.Run("a current redelivery still reaches the handler", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 9}
+
+		newProcessor(&logs, &fakeLatestKV{revision: 9}).msgHandler(ctx)(msg)
+
+		assert.Contains(t, logs.String(), "panic in event handler", "reaching the nil handlers proves it was processed")
+		assert.NotContains(t, logs.String(), "skipping redelivery")
 	})
 }

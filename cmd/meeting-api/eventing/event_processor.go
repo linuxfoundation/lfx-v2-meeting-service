@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -160,6 +161,23 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 			}
 		}()
 
+		switch checkRedelivery(ctx, ep.v1ObjectsKV, msg) {
+		case redeliverySuperseded:
+			// A newer revision of this key has its own delivery. Applying this older
+			// one now would overwrite the newer state, for example re-granting access
+			// after a delete, so acknowledge it without processing.
+			ep.logger.InfoContext(ctx, "skipping redelivery of a superseded revision", "subject", msg.Subject())
+			if err := msg.Ack(); err != nil {
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK superseded message")
+			}
+			return
+		case redeliveryUnknown:
+			// The current revision could not be read, so this message cannot be shown to
+			// be current. Treat it as a failed delivery and try again later.
+			settleMessage(ctx, ep.logger, msg, true, ep.config.MaxDeliver)
+			return
+		}
+
 		shouldRetry := kvHandler(ctx, msg, ep.handlers)
 		settleMessage(ctx, ep.logger, msg, shouldRetry, ep.config.MaxDeliver)
 	}
@@ -283,6 +301,65 @@ var retryDelays = []time.Duration{
 
 // unknownAttemptRetryDelay is used when the delivery count is unavailable.
 const unknownAttemptRetryDelay = 20 * time.Second
+
+// kvGetter reads the current entry of a key. jetstream.KeyValue satisfies it.
+type kvGetter interface {
+	Get(ctx context.Context, key string) (jetstream.KeyValueEntry, error)
+}
+
+// redeliveryVerdict is the outcome of checkRedelivery.
+type redeliveryVerdict int
+
+const (
+	// redeliveryCurrent means the message is still the latest state of its key,
+	// or is not a redelivery, and should be processed.
+	redeliveryCurrent redeliveryVerdict = iota
+	// redeliverySuperseded means a newer revision of the key exists.
+	redeliverySuperseded
+	// redeliveryUnknown means the current revision could not be read.
+	redeliveryUnknown
+)
+
+// checkRedelivery decides whether a redelivered message still describes the
+// current state of its key. JetStream redelivers a failed message with its
+// original payload, and with retries that span tens of minutes the key may have
+// been updated or deleted since. The first delivery is always processed: only a
+// redelivery can be stale. The message's stream sequence is the key's revision at
+// the time it was written, so a higher current revision means it was superseded.
+//
+// A put whose key is now deleted is superseded by the delete. A delete whose key
+// is still deleted is not: it is the current state and must still be applied.
+func checkRedelivery(ctx context.Context, kv kvGetter, msg jetstream.Msg) redeliveryVerdict {
+	if kv == nil {
+		return redeliveryCurrent
+	}
+	metadata, err := msg.Metadata()
+	if err != nil || metadata.NumDelivered <= 1 {
+		return redeliveryCurrent
+	}
+
+	// Subject format: $KV.<bucket>.<key>. A malformed subject is left for kvHandler to reject.
+	parts := strings.SplitN(msg.Subject(), ".", 3)
+	if len(parts) < 3 || parts[2] == "" {
+		return redeliveryCurrent
+	}
+
+	entry, err := kv.Get(ctx, parts[2])
+	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return redeliveryUnknown
+		}
+		// The key is deleted now.
+		if op := getOperation(msg); op == jetstream.KeyValueDelete || op == jetstream.KeyValuePurge {
+			return redeliveryCurrent
+		}
+		return redeliverySuperseded
+	}
+	if entry.Revision() > metadata.Sequence.Stream {
+		return redeliverySuperseded
+	}
+	return redeliveryCurrent
+}
 
 // getRetryDelay returns the delay before redelivery based on the delivery attempt.
 func getRetryDelay(numDelivered uint64) time.Duration {

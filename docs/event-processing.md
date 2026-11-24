@@ -469,7 +469,14 @@ A failed delivery is NAKed with a delay that grows with the delivery count:
 
 With the default `EVENT_MAX_DELIVER` of 8 a message keeps retrying for about 30 minutes, long enough to outlast a short outage of a dependency such as the v1-sync-helper ID lookup. A handler panic is treated as a failed delivery and follows the same schedule.
 
-If the 8th delivery also fails, the message is **dropped**: the service logs `event dropped after max deliveries` at error level with the subject and delivery count, then terminates the message. There is no dead letter queue, and JetStream does not redeliver the event. The record stays in the `v1-objects` KV bucket, so repair it by re-putting the key (see `scripts/reindex_meetings/`).
+A redelivery carries the original payload, so before processing one the service reads the key's current revision from `v1-objects`. If a newer revision exists, or the key has been deleted since, the redelivered put is **superseded**: it is acknowledged without being processed and logged as `skipping redelivery of a superseded revision`, because the newer revision has its own delivery and applying the older one could overwrite it, for example by re-granting access after a delete. A redelivered delete whose key is still deleted is current and is still applied. The first delivery is never checked. If the current revision cannot be read, the delivery is treated as failed and retried.
+
+If the 8th delivery also fails, the message is **dropped**: the service logs `event dropped after max deliveries` at error level with the subject and delivery count, then terminates the message. There is no dead letter queue, and JetStream does not redeliver the event.
+
+**Recovering a dropped event** depends on what it was:
+
+- **A dropped put** (create or update): the record is still in the `v1-objects` KV bucket, so repair it by re-putting the key (see `scripts/reindex_meetings/`, including its `-missing-only` mode).
+- **A dropped delete or purge**: there is no live value to re-put. The key is already gone, and `scripts/reindex_meetings/` skips keys it cannot find, so it does not repair the cleanup the delete would have done (the index document, access). Check which operation was dropped with `nats kv history v1-objects <key>`, and confirm the key is still deleted before replaying anything. Do not re-put an older value to trigger the delete: it would recreate the resource. This service has no tool that replays a delete, so handle it as a one-off.
 
 **Interaction with `EVENT_MAX_ACK_PENDING`:** a message NAKed with a delay keeps its slot in the consumer's pending window until it is redelivered. If more than `EVENT_MAX_ACK_PENDING` (default 1000) events are failing at once, for example a bulk reindex during an outage, the consumer stops receiving every other event until the delays elapse, up to 15 minutes at a time. Events are delayed, not lost.
 
@@ -954,7 +961,12 @@ nats consumer info KV_v1-objects meeting-service-kv-consumer
 
 # Find events that were dropped after their last delivery (search the service logs for)
 #   "event dropped after max deliveries"
-# then re-put the affected KV keys, see scripts/reindex_meetings/
+# then check which operation it was for the logged key:
+nats kv history v1-objects <key>
+# A dropped put: re-put the key, see scripts/reindex_meetings/.
+# A dropped delete or purge: there is nothing to re-put and the script skips missing
+# keys. Confirm the key is still deleted and clean up by hand; never re-put an old
+# value to trigger it, that would recreate the resource.
 
 # Inspect specific message
 nats consumer next KV_v1-objects meeting-service-kv-consumer
@@ -1044,8 +1056,8 @@ The system handles backpressure through:
 | ------- | ------- | ------------ |
 | **NATS JetStream** | Event storage and delivery | Service unavailable, all processing stops |
 | **ID Mapper** | SFID→UUID mapping | NAK for retry, fallback to SFID if persistent failure |
-| **Indexer Service** | Search indexing | Event lost if publish fails after 3 retries |
-| **FGA-Sync Service** | Access control sync | Event lost if publish fails after 3 retries |
+| **Indexer Service** | Search indexing | Event dropped if publish still fails on the last delivery (8 by default, about 30 minutes) |
+| **FGA-Sync Service** | Access control sync | Event dropped if publish still fails on the last delivery (8 by default, about 30 minutes) |
 
 ### Data Flow
 

@@ -481,7 +481,7 @@ The service includes event processing for v1→v2 data synchronization. See [Eve
 - `EVENT_CONSUMER_NAME`: JetStream consumer name (default: `meeting-service-kv-consumer`)
 - `EVENT_STREAM_NAME`: KV bucket stream name (default: `KV_v1-objects`)
 - `EVENT_V1_MAPPINGS_BUCKET`: KV bucket name for v1 ID mappings (default: `v1-mappings`)
-- `EVENT_MAX_DELIVER`: Max delivery attempts (default: `8`). Failed events are redelivered with an escalating delay (2s up to 15m, about 30 minutes in total); an event that still fails is logged at error level as `event dropped after max deliveries` and terminated
+- `EVENT_MAX_DELIVER`: Max delivery attempts (default: `8`). Failed events are redelivered with an escalating delay (2s up to 15m, about 30 minutes in total); an event that still fails is logged at error level as `event dropped after max deliveries` and terminated. A redelivery whose key has a newer revision, or has since been deleted, is acknowledged without processing and logged as `skipping redelivery of a superseded revision`
 - `EVENT_ACK_WAIT`: Ack timeout (default: `30s`)
 - `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`). A message waiting on a delayed retry keeps its slot, so more than this many failing events at once pause delivery of all events until the retry delays elapse
 
