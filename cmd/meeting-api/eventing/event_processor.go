@@ -329,6 +329,9 @@ const (
 //
 // A put whose key is now deleted is superseded by the delete. A delete whose key
 // is still deleted is not: it is the current state and must still be applied.
+// A soft delete, a put whose record carries _sdc_deleted_at, counts as a delete
+// here: its cleanup depends on the payload, which a later hard delete does not
+// carry, so it must still be applied.
 func checkRedelivery(ctx context.Context, kv kvGetter, msg jetstream.Msg) redeliveryVerdict {
 	if kv == nil {
 		return redeliveryCurrent
@@ -352,6 +355,11 @@ func checkRedelivery(ctx context.Context, kv kvGetter, msg jetstream.Msg) redeli
 		// The key is deleted now.
 		if op := getOperation(msg); op == jetstream.KeyValueDelete || op == jetstream.KeyValuePurge {
 			return redeliveryCurrent
+		}
+		if data, derr := decodeData(msg.Data()); derr == nil {
+			if _, softDeleted := softDeletedAt(data); softDeleted {
+				return redeliveryCurrent
+			}
 		}
 		return redeliverySuperseded
 	}

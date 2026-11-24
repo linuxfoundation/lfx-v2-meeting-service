@@ -25,6 +25,7 @@ type fakeJetStreamMsg struct {
 	numDelivery uint64
 	streamSeq   uint64
 	headers     nats.Header
+	data        []byte
 	metadataErr error
 
 	acked       bool
@@ -45,7 +46,7 @@ func (m *fakeJetStreamMsg) Metadata() (*jetstream.MsgMetadata, error) {
 		Sequence:     jetstream.SequencePair{Stream: m.streamSeq},
 	}, nil
 }
-func (m *fakeJetStreamMsg) Data() []byte         { return nil }
+func (m *fakeJetStreamMsg) Data() []byte         { return m.data }
 func (m *fakeJetStreamMsg) Headers() nats.Header { return m.headers }
 func (m *fakeJetStreamMsg) Subject() string      { return m.subject }
 func (m *fakeJetStreamMsg) Reply() string        { return "" }
@@ -279,6 +280,8 @@ func (k *fakeLatestKV) Get(_ context.Context, key string) (jetstream.KeyValueEnt
 func TestCheckRedelivery(t *testing.T) {
 	ctx := context.Background()
 	const subject = "$KV.v1-objects.itx-zoom-meetings-registrants-v2.abc"
+	softDeletePayload := []byte(`{"id":"abc","_sdc_deleted_at":"2026-01-01T00:00:00Z"}`)
+	livePayload := []byte(`{"id":"abc"}`)
 	deleteHeaders := nats.Header{"KV-Operation": []string{"DEL"}}
 	purgeHeaders := nats.Header{"KV-Operation": []string{"PURGE"}}
 
@@ -334,6 +337,41 @@ func TestCheckRedelivery(t *testing.T) {
 			name:    "a delete whose key was recreated since is superseded",
 			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, headers: deleteHeaders},
 			kv:      &fakeLatestKV{revision: 9},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a soft delete whose key was hard-deleted since is current, its cleanup needs the payload",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, data: softDeletePayload},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliveryCurrent,
+			wantGet: true,
+		},
+		{
+			name:    "a soft delete whose key was restored since is superseded",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, data: softDeletePayload},
+			kv:      &fakeLatestKV{revision: 9},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a live put whose key was hard-deleted since is superseded",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, data: livePayload},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "an empty deleted marker is a live put, not a soft delete",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, data: []byte(`{"id":"abc","_sdc_deleted_at":""}`)},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
+			want:    redeliverySuperseded,
+			wantGet: true,
+		},
+		{
+			name:    "a payload that cannot be decoded is superseded when its key is gone",
+			msg:     &fakeJetStreamMsg{subject: subject, numDelivery: 2, streamSeq: 5, data: []byte("\xff not a record")},
+			kv:      &fakeLatestKV{err: jetstream.ErrKeyNotFound},
 			want:    redeliverySuperseded,
 			wantGet: true,
 		},
@@ -432,6 +470,22 @@ func TestMsgHandlerStaleRedelivery(t *testing.T) {
 
 		assert.True(t, msg.terminated)
 		assert.Contains(t, logs.String(), "event dropped after max deliveries")
+	})
+
+	t.Run("a failed soft delete whose key was hard-deleted since still reaches the handler", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{
+			subject:     subject,
+			numDelivery: 2,
+			streamSeq:   5,
+			data:        []byte(`{"id":"abc","_sdc_deleted_at":"2026-01-01T00:00:00Z"}`),
+		}
+
+		newProcessor(&logs, &fakeLatestKV{err: jetstream.ErrKeyNotFound}).msgHandler(ctx)(msg)
+
+		assert.Contains(t, logs.String(), "panic in event handler", "reaching the nil handlers proves it was processed")
+		assert.NotContains(t, logs.String(), "skipping redelivery")
+		assert.False(t, msg.acked)
 	})
 
 	t.Run("a current redelivery still reaches the handler", func(t *testing.T) {
