@@ -161,24 +161,7 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 		}()
 
 		shouldRetry := kvHandler(ctx, msg, ep.handlers)
-
-		if shouldRetry {
-			var numDelivered uint64
-			if metadata, err := msg.Metadata(); err != nil {
-				ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
-			} else {
-				numDelivered = metadata.NumDelivered
-			}
-			delay := getRetryDelay(numDelivered)
-			if err := msg.NakWithDelay(delay); err != nil {
-				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
-			}
-			ep.logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
-		} else {
-			if err := msg.Ack(); err != nil {
-				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
-			}
-		}
+		settleMessage(ctx, ep.logger, msg, shouldRetry, ep.config.MaxDeliver)
 	}
 }
 
@@ -281,14 +264,75 @@ func (ep *EventProcessor) setupConsumer(ctx context.Context) error {
 	return nil
 }
 
-// getRetryDelay returns the delay duration based on delivery attempt
+// retryDelays is the NAK delay applied after each failed delivery, indexed by
+// delivery attempt (the first entry follows the first delivery). The schedule
+// escalates so that an outage of a dependency such as the v1-sync-helper ID
+// lookup, lasting tens of minutes, does not exhaust the redeliveries: with the
+// default EVENT_MAX_DELIVER of 8 the seven delays below keep a message retrying
+// for about 30 minutes. A MaxDeliver longer than the schedule reuses the last
+// delay.
+var retryDelays = []time.Duration{
+	2 * time.Second,
+	10 * time.Second,
+	30 * time.Second,
+	1 * time.Minute,
+	5 * time.Minute,
+	10 * time.Minute,
+	15 * time.Minute,
+}
+
+// unknownAttemptRetryDelay is used when the delivery count is unavailable.
+const unknownAttemptRetryDelay = 20 * time.Second
+
+// getRetryDelay returns the delay before redelivery based on the delivery attempt.
 func getRetryDelay(numDelivered uint64) time.Duration {
-	switch numDelivered {
-	case 1:
-		return 2 * time.Second
-	case 2:
-		return 10 * time.Second
-	default:
-		return 20 * time.Second
+	if numDelivered == 0 {
+		return unknownAttemptRetryDelay
 	}
+	idx := numDelivered - 1
+	if idx >= uint64(len(retryDelays)) {
+		return retryDelays[len(retryDelays)-1]
+	}
+	return retryDelays[idx]
+}
+
+// settleMessage acknowledges the message, or, when the handler asked for a retry,
+// schedules a delayed redelivery. When the retry would exceed maxDeliver the
+// event can never be delivered again: JetStream would otherwise discard it
+// without a trace, so the drop is logged at error level and the message is
+// terminated, which also frees its slot in the consumer's pending window.
+// A maxDeliver of zero or less means unlimited deliveries, so the message is
+// never treated as exhausted.
+func settleMessage(ctx context.Context, logger *slog.Logger, msg jetstream.Msg, shouldRetry bool, maxDeliver int) {
+	if !shouldRetry {
+		if err := msg.Ack(); err != nil {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
+		}
+		return
+	}
+
+	var numDelivered uint64
+	if metadata, err := msg.Metadata(); err != nil {
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
+	} else {
+		numDelivered = metadata.NumDelivered
+	}
+
+	if maxDeliver > 0 && numDelivered >= uint64(maxDeliver) {
+		logger.ErrorContext(ctx, "event dropped after max deliveries, it will not be indexed until it is reindexed",
+			"subject", msg.Subject(),
+			"num_delivered", numDelivered,
+			"max_deliver", maxDeliver,
+		)
+		if err := msg.Term(); err != nil {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to terminate message")
+		}
+		return
+	}
+
+	delay := getRetryDelay(numDelivered)
+	if err := msg.NakWithDelay(delay); err != nil {
+		logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
+	}
+	logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
 }

@@ -246,7 +246,7 @@ func parseEventConfig() eventConfig {
 		"$KV.v1-objects.itx-zoom-past-meetings-attachments.>",
 	}
 
-	maxDeliver := 3
+	maxDeliver := 8
 	if maxDeliverStr := os.Getenv("EVENT_MAX_DELIVER"); maxDeliverStr != "" {
 		if val, err := strconv.Atoi(maxDeliverStr); err == nil {
 			maxDeliver = val
