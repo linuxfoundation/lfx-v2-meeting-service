@@ -424,7 +424,7 @@ Use the canonical helpers from `pkg/utils/ptr.go` for optional fields:
 
 - `scripts/backfill_meeting_host_credentials/` — backfills missing `MeetingHostCredentials` documents in OpenSearch for meetings indexed before the host_key separation
 - `scripts/backfill_participant_mappings/` — migrates legacy participant mapping records to the new JSON format
-- `scripts/reindex_meetings/` — re-triggers the full event processing pipeline by re-putting NATS KV entries
+- `scripts/reindex_meetings/` — re-triggers the full event processing pipeline by re-putting NATS KV entries; `-missing-only` finds and re-puts the records the event handler never indexed (no success marker in `v1-mappings`)
 - `scripts/reconcile_meeting_registrants/` — reconciles registrant records
 
 `tmp/` was used for temporary one-off migration scripts (fix_*_access_check, cleanup_orphaned_meetings, reindex_past_meeting_participants). These files are **not tracked in git** — they are created locally and run ad-hoc against a live environment.

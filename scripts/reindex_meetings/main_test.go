@@ -107,3 +107,71 @@ func TestReputEntry(t *testing.T) {
 		assert.Equal(t, reputFailed, reputEntry(ctx, kv, key))
 	})
 }
+
+func TestTypeSupported(t *testing.T) {
+	ok, _ := typeSupported("v1_past_meeting", true)
+	assert.True(t, ok)
+
+	ok, _ = typeSupported("v1_meeting_rsvp", true)
+	assert.True(t, ok)
+
+	ok, _ = typeSupported("v1_past_meeting_participant", true)
+	assert.True(t, ok)
+
+	ok, listed := typeSupported("not_a_type", true)
+	assert.False(t, ok)
+	assert.Contains(t, listed, "v1_past_meeting")
+
+	ok, listed = typeSupported("not_a_type", false)
+	assert.False(t, ok)
+	assert.Contains(t, listed, "v1_past_meeting_participant")
+}
+
+func TestReputEntryChecked(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("a nil check behaves like reputEntry", func(t *testing.T) {
+		kv := &fakeKV{exists: true, value: []byte("v"), revision: 3}
+
+		assert.Equal(t, reputProcessed, reputEntryChecked(ctx, kv, "k", nil))
+		assert.Equal(t, 1, kv.updates)
+	})
+
+	t.Run("a value that passes the check is re-put", func(t *testing.T) {
+		kv := &fakeKV{exists: true, value: []byte("v"), revision: 3}
+
+		got := reputEntryChecked(ctx, kv, "k", func([]byte) error { return nil })
+
+		assert.Equal(t, reputProcessed, got)
+		assert.Equal(t, 1, kv.updates)
+	})
+
+	t.Run("a value that fails the check is a failure and is not written", func(t *testing.T) {
+		kv := &fakeKV{exists: true, value: []byte("v"), revision: 3}
+
+		got := reputEntryChecked(ctx, kv, "k", func([]byte) error { return errors.New("bad record") })
+
+		assert.Equal(t, reputFailed, got)
+		assert.Equal(t, 0, kv.updates)
+	})
+
+	t.Run("the check sees the value that is written", func(t *testing.T) {
+		kv := &fakeKV{exists: true, value: []byte("read-value"), revision: 3}
+		var checked []byte
+
+		reputEntryChecked(ctx, kv, "k", func(v []byte) error { checked = v; return nil })
+
+		assert.Equal(t, []byte("read-value"), checked)
+		assert.Equal(t, []byte("read-value"), kv.value)
+	})
+
+	t.Run("a missing key is not checked", func(t *testing.T) {
+		kv := &fakeKV{}
+		called := false
+
+		got := reputEntryChecked(ctx, kv, "k", func([]byte) error { called = true; return nil })
+
+		assert.Equal(t, reputNotFound, got)
+		assert.False(t, called)
+	})
+}
