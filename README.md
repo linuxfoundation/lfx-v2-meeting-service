@@ -13,7 +13,7 @@ If you are an AI agent (Claude, Cursor, Copilot, etc.) working on this codebase,
 ### For Local Development
 
 1. **Prerequisites**
-   - Go 1.25+ installed
+   - Go 1.27+ installed
    - Make installed
 
 2. **Clone and Setup**
@@ -170,7 +170,7 @@ For the data schemas, tags, access control values, and parent references for all
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.27+
 - Make
 - Git (configured with GPG signing and DCO signoff — see [Contributing](#-contributing))
 

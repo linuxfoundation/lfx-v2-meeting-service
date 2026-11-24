@@ -44,9 +44,9 @@ rather than re-litigating it:
 - `reconcile_meeting_registrants`: **"a 1,497-line tool with 69 tests" → 1,376
   lines of tool code and 72 tests**. The 1,497 figure matches no commit in that
   file's history.
-- `.gitleaks.toml`: **"a four-line allowlist" → no detection rules at all**, one
-  `[allowlist]`, one `paths` entry, in a 9-line file. The substance was always
-  right; only the descriptor was wrong.
+- `.betterleaks.toml`: **"a four-line allowlist" → no detection rules at
+  all**, one `[allowlist]`, one `paths` entry, in a 9-line file. The substance
+  was always right; only the descriptor was wrong.
 
 **A failed check can mean the probe is wrong, not the claim.** The test count
 above first came back as 32 from `grep -c '^def test_\|    def test_'`, which
@@ -81,7 +81,7 @@ A candidate becomes an entry here only when all of these hold:
    `golangci-lint` runs defaults only (errcheck, gosimple, govet, ineffassign,
    staticcheck, unused) with no `gosec`; MegaLinter runs the **Go flavor**, so
    Python under `scripts/**` is linted and tested by nothing; `make verify`
-   checks `design/`↔`gen/` drift only; `.gitleaks.toml` carries **no detection
+   checks `design/`↔`gen/` drift only; `.betterleaks.toml` carries **no detection
    rules at all** — a single `[allowlist]` whose only entry is
    `paths = ["^gen/.*"]` — so it matches committed literals, never runtime
    dataflow. A pattern a linter or CI job already blocks would be noise.
