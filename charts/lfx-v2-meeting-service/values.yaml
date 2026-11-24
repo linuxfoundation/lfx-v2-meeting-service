@@ -182,15 +182,19 @@ app:
     EVENT_FILTER_SUBJECT:
       value: "$KV.v1-objects.>"
     # EVENT_MAX_DELIVER is the maximum delivery attempts for event processing
-    # (default: 3)
+    # (default: 8). Failed events are redelivered with an escalating delay that
+    # spans about 30 minutes at this value; an event that still fails is dropped
+    # and logged at error level.
     EVENT_MAX_DELIVER:
-      value: "3"
+      value: "8"
     # EVENT_ACK_WAIT is the acknowledgment timeout for event processing
     # (default: 30s)
     EVENT_ACK_WAIT:
       value: "30s"
     # EVENT_MAX_ACK_PENDING is the maximum pending acknowledgments for event processing
-    # (default: 1000)
+    # (default: 1000). A message waiting on a delayed retry keeps its slot, so
+    # more than this many failing events at once pause delivery of all events
+    # until the retry delays elapse.
     EVENT_MAX_ACK_PENDING:
       value: "1000"
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification

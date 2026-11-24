@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -153,32 +154,32 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 	return func(msg jetstream.Msg) {
 		defer func() {
 			if r := recover(); r != nil {
-				ep.logger.ErrorContext(ctx, "panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
-				if err := msg.Nak(); err != nil {
-					ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message after panic")
-				}
+				ep.logger.ErrorContext(ctx, "panic in event handler, treating the delivery as failed", "subject", msg.Subject(), "panic", r)
+				// A panic is a failed delivery like any other: it follows the same
+				// backoff and is logged when it exhausts its redeliveries.
+				settleMessage(ctx, ep.logger, msg, true, ep.config.MaxDeliver)
 			}
 		}()
 
-		shouldRetry := kvHandler(ctx, msg, ep.handlers)
-
-		if shouldRetry {
-			var numDelivered uint64
-			if metadata, err := msg.Metadata(); err != nil {
-				ep.logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
-			} else {
-				numDelivered = metadata.NumDelivered
-			}
-			delay := getRetryDelay(numDelivered)
-			if err := msg.NakWithDelay(delay); err != nil {
-				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
-			}
-			ep.logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
-		} else {
+		switch checkRedelivery(ctx, ep.v1ObjectsKV, msg) {
+		case redeliverySuperseded:
+			// A newer revision of this key has its own delivery. Applying this older
+			// one now would overwrite the newer state, for example re-granting access
+			// after a delete, so acknowledge it without processing.
+			ep.logger.InfoContext(ctx, "skipping redelivery of a superseded revision", "subject", msg.Subject())
 			if err := msg.Ack(); err != nil {
-				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
+				ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK superseded message")
 			}
+			return
+		case redeliveryUnknown:
+			// The current revision could not be read, so this message cannot be shown to
+			// be current. Treat it as a failed delivery and try again later.
+			settleMessage(ctx, ep.logger, msg, true, ep.config.MaxDeliver)
+			return
 		}
+
+		shouldRetry := kvHandler(ctx, msg, ep.handlers)
+		settleMessage(ctx, ep.logger, msg, shouldRetry, ep.config.MaxDeliver)
 	}
 }
 
@@ -281,14 +282,142 @@ func (ep *EventProcessor) setupConsumer(ctx context.Context) error {
 	return nil
 }
 
-// getRetryDelay returns the delay duration based on delivery attempt
-func getRetryDelay(numDelivered uint64) time.Duration {
-	switch numDelivered {
-	case 1:
-		return 2 * time.Second
-	case 2:
-		return 10 * time.Second
-	default:
-		return 20 * time.Second
+// retryDelays is the NAK delay applied after each failed delivery, indexed by
+// delivery attempt (the first entry follows the first delivery). The schedule
+// escalates so that an outage of a dependency such as the v1-sync-helper ID
+// lookup, lasting tens of minutes, does not exhaust the redeliveries: with the
+// default EVENT_MAX_DELIVER of 8 the seven delays below keep a message retrying
+// for about 30 minutes. A MaxDeliver longer than the schedule reuses the last
+// delay.
+var retryDelays = []time.Duration{
+	2 * time.Second,
+	10 * time.Second,
+	30 * time.Second,
+	1 * time.Minute,
+	5 * time.Minute,
+	10 * time.Minute,
+	15 * time.Minute,
+}
+
+// unknownAttemptRetryDelay is used when the delivery count is unavailable.
+const unknownAttemptRetryDelay = 20 * time.Second
+
+// kvGetter reads the current entry of a key. jetstream.KeyValue satisfies it.
+type kvGetter interface {
+	Get(ctx context.Context, key string) (jetstream.KeyValueEntry, error)
+}
+
+// redeliveryVerdict is the outcome of checkRedelivery.
+type redeliveryVerdict int
+
+const (
+	// redeliveryCurrent means the message is still the latest state of its key,
+	// or is not a redelivery, and should be processed.
+	redeliveryCurrent redeliveryVerdict = iota
+	// redeliverySuperseded means a newer revision of the key exists.
+	redeliverySuperseded
+	// redeliveryUnknown means the current revision could not be read.
+	redeliveryUnknown
+)
+
+// checkRedelivery decides whether a redelivered message still describes the
+// current state of its key. JetStream redelivers a failed message with its
+// original payload, and with retries that span tens of minutes the key may have
+// been updated or deleted since. The first delivery is always processed: only a
+// redelivery can be stale. The message's stream sequence is the key's revision at
+// the time it was written, so a higher current revision means it was superseded.
+//
+// A put whose key is now deleted is superseded by the delete. A delete whose key
+// is still deleted is not: it is the current state and must still be applied.
+// A soft delete, a put whose record carries _sdc_deleted_at, counts as a delete
+// here: its cleanup depends on the payload, which a later hard delete does not
+// carry, so it must still be applied.
+func checkRedelivery(ctx context.Context, kv kvGetter, msg jetstream.Msg) redeliveryVerdict {
+	if kv == nil {
+		return redeliveryCurrent
 	}
+	metadata, err := msg.Metadata()
+	if err != nil || metadata.NumDelivered <= 1 {
+		return redeliveryCurrent
+	}
+
+	// Subject format: $KV.<bucket>.<key>. A malformed subject is left for kvHandler to reject.
+	parts := strings.SplitN(msg.Subject(), ".", 3)
+	if len(parts) < 3 || parts[2] == "" {
+		return redeliveryCurrent
+	}
+
+	entry, err := kv.Get(ctx, parts[2])
+	if err != nil {
+		if !errors.Is(err, jetstream.ErrKeyNotFound) {
+			return redeliveryUnknown
+		}
+		// The key is deleted now.
+		if op := getOperation(msg); op == jetstream.KeyValueDelete || op == jetstream.KeyValuePurge {
+			return redeliveryCurrent
+		}
+		if data, derr := decodeData(msg.Data()); derr == nil {
+			if _, softDeleted := softDeletedAt(data); softDeleted {
+				return redeliveryCurrent
+			}
+		}
+		return redeliverySuperseded
+	}
+	if entry.Revision() > metadata.Sequence.Stream {
+		return redeliverySuperseded
+	}
+	return redeliveryCurrent
+}
+
+// getRetryDelay returns the delay before redelivery based on the delivery attempt.
+func getRetryDelay(numDelivered uint64) time.Duration {
+	if numDelivered == 0 {
+		return unknownAttemptRetryDelay
+	}
+	idx := numDelivered - 1
+	if idx >= uint64(len(retryDelays)) {
+		return retryDelays[len(retryDelays)-1]
+	}
+	return retryDelays[idx]
+}
+
+// settleMessage acknowledges the message, or, when the handler asked for a retry,
+// schedules a delayed redelivery. When the retry would exceed maxDeliver the
+// event can never be delivered again: JetStream would otherwise discard it
+// without a trace, so the drop is logged at error level and the message is
+// terminated, which also frees its slot in the consumer's pending window.
+// A maxDeliver of zero or less means unlimited deliveries, so the message is
+// never treated as exhausted.
+func settleMessage(ctx context.Context, logger *slog.Logger, msg jetstream.Msg, shouldRetry bool, maxDeliver int) {
+	if !shouldRetry {
+		if err := msg.Ack(); err != nil {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to ACK message")
+		}
+		return
+	}
+
+	var numDelivered uint64
+	if metadata, err := msg.Metadata(); err != nil {
+		logger.With(logging.ErrKey, err).WarnContext(ctx, "failed to get message metadata, using default retry delay")
+	} else {
+		numDelivered = metadata.NumDelivered
+	}
+
+	if maxDeliver > 0 && numDelivered >= uint64(maxDeliver) {
+		logger.ErrorContext(ctx, "event dropped after max deliveries, it will not be indexed until it is reindexed",
+			"subject", msg.Subject(),
+			"num_delivered", numDelivered,
+			"max_deliver", maxDeliver,
+		)
+		if err := msg.Term(); err != nil {
+			logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to terminate message")
+		}
+		return
+	}
+
+	delay := getRetryDelay(numDelivered)
+	if err := msg.NakWithDelay(delay); err != nil {
+		logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message")
+	}
+	logger.InfoContext(ctx, "message NAKed for retry", "subject", msg.Subject(), "delay", delay)
 }

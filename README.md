@@ -537,7 +537,7 @@ Load the private key from file: `export ITX_CLIENT_PRIVATE_KEY="$(cat path/to/pr
 | `EVENT_CONSUMER_NAME` | JetStream consumer name | `meeting-service-kv-consumer` |
 | `EVENT_STREAM_NAME` | KV bucket stream name | `KV_v1-objects` |
 | `EVENT_V1_MAPPINGS_BUCKET` | KV bucket name for v1 ID mappings | `v1-mappings` |
-| `EVENT_MAX_DELIVER` | Max delivery attempts per message | `3` |
+| `EVENT_MAX_DELIVER` | Max delivery attempts per message; retries back off from 2s to 15m (about 30 minutes in total) before the event is dropped and logged at error level | `8` |
 | `EVENT_ACK_WAIT` | Ack timeout | `30s` |
 | `EVENT_MAX_ACK_PENDING` | Max pending acks | `1000` |
 
