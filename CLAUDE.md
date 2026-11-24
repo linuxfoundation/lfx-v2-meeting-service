@@ -483,7 +483,7 @@ The service includes event processing for v1→v2 data synchronization. See [Eve
 - `EVENT_V1_MAPPINGS_BUCKET`: KV bucket name for v1 ID mappings (default: `v1-mappings`)
 - `EVENT_MAX_DELIVER`: Max delivery attempts (default: `8`). Failed events are redelivered with an escalating delay (2s up to 15m, about 30 minutes in total); an event that still fails is logged at error level as `event dropped after max deliveries` and terminated
 - `EVENT_ACK_WAIT`: Ack timeout (default: `30s`)
-- `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`)
+- `EVENT_MAX_ACK_PENDING`: Max pending acks (default: `1000`). A message waiting on a delayed retry keeps its slot, so more than this many failing events at once pause delivery of all events until the retry delays elapse
 
 **Note**: The KV filter subjects are hardcoded to 12 key-prefix patterns within the single `v1-objects` KV bucket/stream (meetings, meeting-committee mappings, registrants, invite-responses, meeting attachments, past-meetings, past-meeting mappings, past-meeting invitees/attendees/recordings/summaries/attachments). There is no `EVENT_FILTER_SUBJECT` env var.
 

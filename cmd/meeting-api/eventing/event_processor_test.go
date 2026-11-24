@@ -15,6 +15,8 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	infraeventing "github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/eventing"
 )
 
 // fakeJetStreamMsg records how a message was settled so tests can assert on it.
@@ -204,5 +206,41 @@ func TestSettleMessage(t *testing.T) {
 		assert.Contains(t, out, "failed to ACK message")
 		assert.Contains(t, out, "failed to NAK message")
 		assert.Contains(t, out, "failed to terminate message")
+	})
+}
+
+func TestMsgHandlerPanic(t *testing.T) {
+	ctx := context.Background()
+
+	// A nil handlers value makes kvHandler dereference nil, which is the panic
+	// the handler's recover block exists to contain.
+	newProcessor := func(logs *bytes.Buffer) *EventProcessor {
+		return &EventProcessor{
+			logger: slog.New(slog.NewTextHandler(logs, nil)),
+			config: infraeventing.Config{MaxDeliver: 8},
+		}
+	}
+
+	t.Run("a panic is retried with the scheduled delay", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: "$KV.v1-objects.itx-zoom-past-meetings.abc", numDelivery: 2}
+
+		require.NotPanics(t, func() { newProcessor(&logs).msgHandler(ctx)(msg) })
+
+		assert.True(t, msg.naked)
+		assert.Equal(t, 10*time.Second, msg.nakDelay)
+		assert.False(t, msg.terminated)
+		assert.Contains(t, logs.String(), "panic in event handler")
+	})
+
+	t.Run("a panic on the final delivery is logged as a drop", func(t *testing.T) {
+		var logs bytes.Buffer
+		msg := &fakeJetStreamMsg{subject: "$KV.v1-objects.itx-zoom-past-meetings.abc", numDelivery: 8}
+
+		require.NotPanics(t, func() { newProcessor(&logs).msgHandler(ctx)(msg) })
+
+		assert.True(t, msg.terminated)
+		assert.False(t, msg.naked)
+		assert.Contains(t, logs.String(), "event dropped after max deliveries")
 	})
 }

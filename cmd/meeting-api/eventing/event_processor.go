@@ -153,10 +153,10 @@ func (ep *EventProcessor) msgHandler(ctx context.Context) jetstream.MessageHandl
 	return func(msg jetstream.Msg) {
 		defer func() {
 			if r := recover(); r != nil {
-				ep.logger.ErrorContext(ctx, "panic in event handler, NAKing message", "subject", msg.Subject(), "panic", r)
-				if err := msg.Nak(); err != nil {
-					ep.logger.With(logging.ErrKey, err).ErrorContext(ctx, "failed to NAK message after panic")
-				}
+				ep.logger.ErrorContext(ctx, "panic in event handler, treating the delivery as failed", "subject", msg.Subject(), "panic", r)
+				// A panic is a failed delivery like any other: it follows the same
+				// backoff and is logged when it exhausts its redeliveries.
+				settleMessage(ctx, ep.logger, msg, true, ep.config.MaxDeliver)
 			}
 		}()
 

@@ -192,7 +192,9 @@ app:
     EVENT_ACK_WAIT:
       value: "30s"
     # EVENT_MAX_ACK_PENDING is the maximum pending acknowledgments for event processing
-    # (default: 1000)
+    # (default: 1000). A message waiting on a delayed retry keeps its slot, so
+    # more than this many failing events at once pause delivery of all events
+    # until the retry delays elapse.
     EVENT_MAX_ACK_PENDING:
       value: "1000"
     # OTEL_SERVICE_NAME is the service name for OpenTelemetry resource identification

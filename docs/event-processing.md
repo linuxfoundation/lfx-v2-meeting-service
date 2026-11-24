@@ -112,7 +112,7 @@ The system processes 12 different event types:
 | `EVENT_CONSUMER_NAME` | No | `meeting-service-kv-consumer` | JetStream consumer name |
 | `EVENT_STREAM_NAME` | No | `KV_v1-objects` | KV bucket stream name |
 | `EVENT_FILTER_SUBJECT` | No | `$KV.v1-objects.>` | Subject filter pattern |
-| `EVENT_MAX_DELIVER` | No | `3` | Maximum delivery attempts |
+| `EVENT_MAX_DELIVER` | No | `8` | Maximum delivery attempts; failed events back off from 2s to 15m (about 30 minutes in total) |
 | `EVENT_ACK_WAIT` | No | `30s` | Acknowledgment wait timeout |
 | `EVENT_MAX_ACK_PENDING` | No | `1000` | Maximum pending acks |
 | `NATS_URL` | Yes | - | NATS server connection URL |
@@ -236,7 +236,7 @@ consumer, err := stream.CreateOrUpdateConsumer(ctx, jetstream.ConsumerConfig{
 
 - **DeliverLastPerSubjectPolicy**: Only processes the latest update for each key (skips intermediate states)
 - **AckExplicitPolicy**: Requires explicit ACK/NAK for each message
-- **MaxDeliver: 3**: Retries failed messages up to 3 times with exponential backoff
+- **MaxDeliver: 8**: Redelivers a failed message up to 8 times in total with an escalating delay (see [Retry behavior](#transient-errors-nak-for-retry)). After the last failed delivery the message is dropped and logged at error level
 - **AckWait: 30s**: Handler has 30 seconds to process before automatic redelivery
 - **Auto-recreate on deletion**: If the consumer is deleted on the NATS server at runtime (e.g. via CLI or server-side cleanup), the service detects the deletion and automatically recreates it with exponential backoff (1s → 5s → 15s → 30s). The service never requires a restart for this condition.
 
@@ -461,10 +461,17 @@ The system distinguishes between transient and permanent errors:
 
 **Retry behavior:**
 
-- Attempt 1: Immediate redelivery
-- Attempt 2: ~2 second delay
-- Attempt 3: ~10 second delay
-- After 3 attempts: Message moved to dead letter queue
+A failed delivery is NAKed with a delay that grows with the delivery count:
+
+| After delivery | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| -------------- | - | - | - | - | - | - | - |
+| Delay before redelivery | 2s | 10s | 30s | 1m | 5m | 10m | 15m |
+
+With the default `EVENT_MAX_DELIVER` of 8 a message keeps retrying for about 30 minutes, long enough to outlast a short outage of a dependency such as the v1-sync-helper ID lookup. A handler panic is treated as a failed delivery and follows the same schedule.
+
+If the 8th delivery also fails, the message is **dropped**: the service logs `event dropped after max deliveries` at error level with the subject and delivery count, then terminates the message. There is no dead letter queue, and JetStream does not redeliver the event. The record stays in the `v1-objects` KV bucket, so repair it by re-putting the key (see `scripts/reindex_meetings/`).
+
+**Interaction with `EVENT_MAX_ACK_PENDING`:** a message NAKed with a delay keeps its slot in the consumer's pending window until it is redelivered. If more than `EVENT_MAX_ACK_PENDING` (default 1000) events are failing at once, for example a bulk reindex during an outage, the consumer stops receiving every other event until the delays elapse, up to 15 minutes at a time. Events are delayed, not lost.
 
 #### Permanent Errors (ACK to skip)
 
@@ -930,7 +937,7 @@ kubectl rollout restart deployment/meeting-service -n lfx
 **Symptoms:**
 
 - `Num Redelivered` increasing
-- Same `num_delivered` value in logs (2 or 3)
+- `num_delivered` in logs climbing toward `EVENT_MAX_DELIVER` (default 8)
 
 **Checks:**
 
@@ -942,8 +949,12 @@ kubectl rollout restart deployment/meeting-service -n lfx
 **Resolution:**
 
 ```bash
-# Check dead letter queue for permanently failed messages
-nats stream info KV_v1-objects
+# Check the consumer for pending and redelivered messages
+nats consumer info KV_v1-objects meeting-service-kv-consumer
+
+# Find events that were dropped after their last delivery (search the service logs for)
+#   "event dropped after max deliveries"
+# then re-put the affected KV keys, see scripts/reindex_meetings/
 
 # Inspect specific message
 nats consumer next KV_v1-objects meeting-service-kv-consumer
