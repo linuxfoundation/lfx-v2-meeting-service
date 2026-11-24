@@ -31,8 +31,7 @@
 //	         Instead of refreshing records that are already indexed, find the
 //	         v1-objects records the event handler never indexed (no success
 //	         marker in v1-mappings) and re-put only those. Needs no OpenSearch.
-//	         Supported for every type above except v1_meeting_rsvp and
-//	         v1_past_meeting_participant. Dry-run by default, like -reindex.
+//	         Supported for every type above. Dry-run by default, like -reindex.
 //
 // Environment variables:
 //

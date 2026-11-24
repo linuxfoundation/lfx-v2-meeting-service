@@ -94,57 +94,82 @@ func (b *fakeBucket) ListKeysFiltered(_ context.Context, filters ...string) (jet
 }
 
 func TestMissingMarkerConfig(t *testing.T) {
-	t.Run("every audited type uses the same v1-objects prefix as the OpenSearch mode", func(t *testing.T) {
-		for objectType, spec := range missingMarkerConfig {
-			prefixes, ok := objectTypeConfig[objectType]
-			require.True(t, ok, "%s is audited but not a reindexable type", objectType)
-			assert.Equal(t, []string{spec.keyPrefix}, prefixes, objectType)
+	t.Run("every reindexable type is audited", func(t *testing.T) {
+		for objectType := range objectTypeConfig {
+			assert.Contains(t, missingMarkerConfig, objectType)
 		}
+		assert.Len(t, missingMarkerConfig, len(objectTypeConfig))
+	})
+
+	t.Run("key prefixes match the OpenSearch mode where it has fixed prefixes", func(t *testing.T) {
+		for objectType, specs := range missingMarkerConfig {
+			want := objectTypeConfig[objectType]
+			if want == nil {
+				continue // participants are resolved through a cross-reference there
+			}
+			var got []string
+			for _, spec := range specs {
+				got = append(got, spec.keyPrefix)
+			}
+			assert.Equal(t, want, got, objectType)
+		}
+	})
+
+	t.Run("participants scan invitees and attendees", func(t *testing.T) {
+		specs := missingMarkerConfig["v1_past_meeting_participant"]
+		require.Len(t, specs, 2)
+		assert.Equal(t, markerSpec{keyPrefix: "itx-zoom-past-meetings-invitees.", markerPrefix: "v1_past_meeting_invitees."}, specs[0])
+		assert.Equal(t, markerSpec{keyPrefix: "itx-zoom-past-meetings-attendees.", markerPrefix: "v1_past_meeting_attendees."}, specs[1])
 	})
 
 	t.Run("prefixes end in a dot so an ID can be appended", func(t *testing.T) {
-		for objectType, spec := range missingMarkerConfig {
-			assert.True(t, strings.HasSuffix(spec.keyPrefix, "."), "%s key prefix", objectType)
-			assert.True(t, strings.HasSuffix(spec.markerPrefix, "."), "%s marker prefix", objectType)
-		}
-	})
-
-	t.Run("no key prefix contains another, so a type never lists another type's keys", func(t *testing.T) {
-		for a, specA := range missingMarkerConfig {
-			for b, specB := range missingMarkerConfig {
-				if a == b {
-					continue
-				}
-				assert.False(t, strings.HasPrefix(specA.keyPrefix, specB.keyPrefix), "%s overlaps %s", a, b)
+		for objectType, specs := range missingMarkerConfig {
+			for _, spec := range specs {
+				assert.True(t, strings.HasSuffix(spec.keyPrefix, "."), "%s key prefix", objectType)
+				assert.True(t, strings.HasSuffix(spec.markerPrefix, "."), "%s marker prefix", objectType)
 			}
 		}
 	})
 
-	t.Run("types without a marker keyed by the v1-objects ID are not audited", func(t *testing.T) {
-		assert.NotContains(t, missingMarkerConfig, "v1_meeting_rsvp")
-		assert.NotContains(t, missingMarkerConfig, "v1_past_meeting_participant")
+	t.Run("no key prefix contains another, so a scan never lists another type's keys", func(t *testing.T) {
+		var all []string
+		for _, specs := range missingMarkerConfig {
+			for _, spec := range specs {
+				all = append(all, spec.keyPrefix)
+			}
+		}
+		for i, a := range all {
+			for j, b := range all {
+				if i != j {
+					assert.False(t, strings.HasPrefix(a, b), "%s overlaps %s", a, b)
+				}
+			}
+		}
 	})
 
-	t.Run("past meeting maps to the marker the handler writes", func(t *testing.T) {
-		assert.Equal(t, "v1_past_meetings.", missingMarkerConfig["v1_past_meeting"].markerPrefix)
-		assert.Equal(t, "v1_meetings.", missingMarkerConfig["v1_meeting"].markerPrefix)
+	t.Run("markers match the keys the handlers write", func(t *testing.T) {
+		assert.Equal(t, "v1_meetings.", missingMarkerConfig["v1_meeting"][0].markerPrefix)
+		assert.Equal(t, "v1_past_meetings.", missingMarkerConfig["v1_past_meeting"][0].markerPrefix)
+		assert.Equal(t, "v1_invite_responses.", missingMarkerConfig["v1_meeting_rsvp"][0].markerPrefix)
 	})
 }
 
 func TestFindMissing(t *testing.T) {
 	ctx := context.Background()
-	spec := missingMarkerConfig["v1_past_meeting"]
+	spec := missingMarkerConfig["v1_past_meeting"][0]
 
 	// a is indexed, b was deliberately tombstoned, c has no marker. The
 	// recording key shares a name prefix with the past meeting prefix but is a
 	// different type and must be ignored.
 	objects := func() *fakeBucket {
-		return newFakeBucket(
+		b := newFakeBucket(
 			"itx-zoom-past-meetings.a",
 			"itx-zoom-past-meetings.b",
 			"itx-zoom-past-meetings.c",
 			"itx-zoom-past-meetings-recordings.c",
 		)
+		b.values["itx-zoom-past-meetings.b"] = []byte(`{"id":"b","_sdc_deleted_at":"2026-01-01T00:00:00Z"}`)
+		return b
 	}
 	mappings := func() *fakeBucket {
 		m := newFakeBucket("v1_past_meetings.a", "v1_past_meetings.b")
@@ -177,8 +202,9 @@ func TestFindMissing(t *testing.T) {
 		assert.Empty(t, kvMappings.updated, "the mappings bucket is only read")
 	})
 
-	t.Run("a tombstoned marker counts as handled", func(t *testing.T) {
+	t.Run("a tombstoned marker on a soft-deleted record counts as handled", func(t *testing.T) {
 		kv := newFakeBucket("itx-zoom-past-meetings.b")
+		kv.values["itx-zoom-past-meetings.b"] = []byte(`{"_sdc_deleted_at":"2026-01-01T00:00:00Z"}`)
 		kvMappings := newFakeBucket("v1_past_meetings.b")
 		kvMappings.values["v1_past_meetings.b"] = []byte("!del")
 
@@ -188,6 +214,81 @@ func TestFindMissing(t *testing.T) {
 		assert.Equal(t, 1, stats.withMarker)
 		assert.Equal(t, 0, stats.missing)
 		assert.Empty(t, kv.updated)
+	})
+
+	t.Run("a tombstoned marker on a live record is missing, its restore was dropped", func(t *testing.T) {
+		for name, value := range map[string]string{
+			"no deleted field":   `{"id":"b"}`,
+			"null deleted field": `{"id":"b","_sdc_deleted_at":null}`,
+			"empty deleted":      `{"id":"b","_sdc_deleted_at":""}`,
+		} {
+			kv := newFakeBucket("itx-zoom-past-meetings.b")
+			kv.values["itx-zoom-past-meetings.b"] = []byte(value)
+			kvMappings := newFakeBucket("v1_past_meetings.b")
+			kvMappings.values["v1_past_meetings.b"] = []byte("!del")
+
+			stats, err := findMissing(ctx, kv, kvMappings, "v1_past_meeting", spec, true)
+
+			require.NoError(t, err, name)
+			assert.Equal(t, 1, stats.missing, name)
+			assert.Equal(t, 1, stats.processed, name)
+			assert.Equal(t, []string{"itx-zoom-past-meetings.b"}, kv.updated, name)
+		}
+	})
+
+	t.Run("a record behind a tombstone that cannot be decoded is a failure and is not re-put", func(t *testing.T) {
+		kv := newFakeBucket("itx-zoom-past-meetings.b")
+		kv.values["itx-zoom-past-meetings.b"] = []byte("\xff not a record")
+		kvMappings := newFakeBucket("v1_past_meetings.b")
+		kvMappings.values["v1_past_meetings.b"] = []byte("!del")
+
+		stats, err := findMissing(ctx, kv, kvMappings, "v1_past_meeting", spec, true)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, stats.failed)
+		assert.Equal(t, 0, stats.missing)
+		assert.Empty(t, kv.updated)
+	})
+
+	t.Run("the scan stops when the context is cancelled", func(t *testing.T) {
+		cancelled, cancel := context.WithCancel(ctx)
+		cancel()
+
+		_, err := findMissing(cancelled, objects(), mappings(), "v1_past_meeting", spec, true)
+
+		require.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("participants are scanned per key prefix against their own markers", func(t *testing.T) {
+		kv := newFakeBucket(
+			"itx-zoom-past-meetings-invitees.i1",
+			"itx-zoom-past-meetings-invitees.i2",
+			"itx-zoom-past-meetings-attendees.a1",
+		)
+		kvMappings := newFakeBucket("v1_past_meeting_invitees.i1", "v1_past_meeting_attendees.a1")
+
+		var total missingStats
+		for _, s := range missingMarkerConfig["v1_past_meeting_participant"] {
+			stats, err := findMissing(ctx, kv, kvMappings, "v1_past_meeting_participant", s, true)
+			require.NoError(t, err)
+			total.add(stats)
+		}
+
+		assert.Equal(t, 3, total.scanned)
+		assert.Equal(t, 2, total.withMarker)
+		assert.Equal(t, 1, total.missing)
+		assert.Equal(t, []string{"itx-zoom-past-meetings-invitees.i2"}, kv.updated)
+	})
+
+	t.Run("rsvps use the invite response marker", func(t *testing.T) {
+		kv := newFakeBucket("itx-zoom-meetings-invite-responses-v2.r1", "itx-zoom-meetings-invite-responses-v2.r2")
+		kvMappings := newFakeBucket("v1_invite_responses.r1")
+
+		stats, err := findMissing(ctx, kv, kvMappings, "v1_meeting_rsvp", missingMarkerConfig["v1_meeting_rsvp"][0], false)
+
+		require.NoError(t, err)
+		assert.Equal(t, 1, stats.withMarker)
+		assert.Equal(t, 1, stats.missing)
 	})
 
 	t.Run("nothing to do when every record has a marker", func(t *testing.T) {

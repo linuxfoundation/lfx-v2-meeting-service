@@ -5,14 +5,23 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sort"
 	"strings"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"github.com/vmihailenco/msgpack/v5"
+
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/infrastructure/v1objects"
 )
+
+// tombstoneMarker is the value the event handler writes to a v1-mappings key
+// when it processes a delete. A restore replaces it with the live marker.
+const tombstoneMarker = "!del"
 
 // markerSpec ties a v1-objects key prefix to the success marker the event
 // handler writes to v1-mappings once it has published that record to the
@@ -23,20 +32,21 @@ type markerSpec struct {
 	markerPrefix string
 }
 
-// missingMarkerConfig lists the object types -missing-only can audit. Each
-// marker key is the one the corresponding handler in cmd/meeting-api/eventing
-// writes after a successful publish. v1_meeting_rsvp and
-// v1_past_meeting_participant are not listed: their handlers do not write a
-// marker keyed by the v1-objects ID, so a missing record cannot be told apart
-// from one that was indexed.
-var missingMarkerConfig = map[string]markerSpec{
-	"v1_meeting":                 {keyPrefix: "itx-zoom-meetings-v2.", markerPrefix: "v1_meetings."},
-	"v1_meeting_registrant":      {keyPrefix: "itx-zoom-meetings-registrants-v2.", markerPrefix: "v1_meeting_registrants."},
-	"v1_meeting_attachment":      {keyPrefix: "itx-zoom-meetings-attachments-v2.", markerPrefix: "v1_meeting_attachments."},
-	"v1_past_meeting":            {keyPrefix: "itx-zoom-past-meetings.", markerPrefix: "v1_past_meetings."},
-	"v1_past_meeting_recording":  {keyPrefix: "itx-zoom-past-meetings-recordings.", markerPrefix: "v1_past_meeting_recordings."},
-	"v1_past_meeting_summary":    {keyPrefix: "itx-zoom-past-meetings-summaries.", markerPrefix: "v1_past_meeting_summaries."},
-	"v1_past_meeting_attachment": {keyPrefix: "itx-zoom-past-meetings-attachments.", markerPrefix: "v1_past_meeting_attachments."},
+// missingMarkerConfig lists, per object type, the v1-objects key prefixes
+// -missing-only scans. Each marker key is the one the corresponding handler in
+// cmd/meeting-api/eventing writes after a successful publish, built from the
+// same ID that follows the v1-objects key prefix. Participants span two key
+// prefixes, one for invitees and one for attendees.
+var missingMarkerConfig = map[string][]markerSpec{
+	"v1_meeting":                  {{keyPrefix: "itx-zoom-meetings-v2.", markerPrefix: "v1_meetings."}},
+	"v1_meeting_registrant":       {{keyPrefix: "itx-zoom-meetings-registrants-v2.", markerPrefix: "v1_meeting_registrants."}},
+	"v1_meeting_rsvp":             {{keyPrefix: "itx-zoom-meetings-invite-responses-v2.", markerPrefix: "v1_invite_responses."}},
+	"v1_meeting_attachment":       {{keyPrefix: "itx-zoom-meetings-attachments-v2.", markerPrefix: "v1_meeting_attachments."}},
+	"v1_past_meeting":             {{keyPrefix: "itx-zoom-past-meetings.", markerPrefix: "v1_past_meetings."}},
+	"v1_past_meeting_participant": {{keyPrefix: "itx-zoom-past-meetings-invitees.", markerPrefix: "v1_past_meeting_invitees."}, {keyPrefix: "itx-zoom-past-meetings-attendees.", markerPrefix: "v1_past_meeting_attendees."}},
+	"v1_past_meeting_recording":   {{keyPrefix: "itx-zoom-past-meetings-recordings.", markerPrefix: "v1_past_meeting_recordings."}},
+	"v1_past_meeting_summary":     {{keyPrefix: "itx-zoom-past-meetings-summaries.", markerPrefix: "v1_past_meeting_summaries."}},
+	"v1_past_meeting_attachment":  {{keyPrefix: "itx-zoom-past-meetings-attachments.", markerPrefix: "v1_past_meeting_attachments."}},
 }
 
 // supportedMissingTypes returns the sorted object types -missing-only accepts.
@@ -58,6 +68,41 @@ type missingStats struct {
 	failed     int // lookups or re-puts that failed
 	notFound   int // keys that vanished between listing and re-put
 	superseded int // keys a live writer changed since they were read
+}
+
+// add accumulates other into s.
+func (s *missingStats) add(other missingStats) {
+	s.scanned += other.scanned
+	s.withMarker += other.withMarker
+	s.missing += other.missing
+	s.processed += other.processed
+	s.failed += other.failed
+	s.notFound += other.notFound
+	s.superseded += other.superseded
+}
+
+// recordIsSoftDeleted reports whether the v1-objects record at key is a soft
+// delete (_sdc_deleted_at set), the same rule the event pipeline applies. A
+// record that has vanished counts as deleted. The value is read from the
+// platform's own bucket, so, unlike the service, this operator script does not
+// bound the msgpack nesting depth.
+func recordIsSoftDeleted(ctx context.Context, kv jetstream.KeyValue, key string) (bool, error) {
+	entry, err := kv.Get(ctx, key)
+	if err != nil {
+		if errors.Is(err, jetstream.ErrKeyNotFound) {
+			return true, nil
+		}
+		return false, err
+	}
+
+	var data map[string]any
+	if err := json.Unmarshal(entry.Value(), &data); err != nil {
+		if err := msgpack.Unmarshal(entry.Value(), &data); err != nil {
+			return false, fmt.Errorf("decode record: %w", err)
+		}
+	}
+	_, deleted := v1objects.SoftDeletedAt(data)
+	return deleted, nil
 }
 
 // findMissing lists the v1-objects keys of one type and checks each for its
@@ -87,6 +132,9 @@ func findMissing(
 	}()
 
 	for key := range lister.Keys() {
+		if err := ctx.Err(); err != nil {
+			return stats, err
+		}
 		id := strings.TrimPrefix(key, spec.keyPrefix)
 		if id == "" || id == key {
 			continue
@@ -94,10 +142,30 @@ func findMissing(
 		stats.scanned++
 
 		markerKey := spec.markerPrefix + id
-		if _, err := kvMappings.Get(ctx, markerKey); err == nil {
+		reason := "no success marker"
+		entry, err := kvMappings.Get(ctx, markerKey)
+		switch {
+		case err == nil && string(entry.Value()) != tombstoneMarker:
 			stats.withMarker++
 			continue
-		} else if !errors.Is(err, jetstream.ErrKeyNotFound) {
+		case err == nil:
+			// A delete tombstone is only right while the record is deleted. A
+			// restore replaces it with the live marker, so a live record that still
+			// has it had its restore event dropped.
+			deleted, derr := recordIsSoftDeleted(ctx, kv, key)
+			if derr != nil {
+				slog.ErrorContext(ctx, "failed to read record behind a delete tombstone", "key", key, "marker", markerKey, "error", derr)
+				stats.failed++
+				continue
+			}
+			if deleted {
+				stats.withMarker++
+				continue
+			}
+			reason = "live record with a delete tombstone"
+		case errors.Is(err, jetstream.ErrKeyNotFound):
+			// no marker: fall through
+		default:
 			slog.ErrorContext(ctx, "failed to read success marker", "key", key, "marker", markerKey, "error", err)
 			stats.failed++
 			continue
@@ -105,10 +173,10 @@ func findMissing(
 
 		stats.missing++
 		if !reindex {
-			slog.InfoContext(ctx, "[dry-run] no success marker, would re-put", "key", key, "marker", markerKey)
+			slog.InfoContext(ctx, "[dry-run] would re-put", "key", key, "marker", markerKey, "reason", reason)
 			continue
 		}
-		slog.InfoContext(ctx, "no success marker, re-putting", "key", key, "marker", markerKey)
+		slog.InfoContext(ctx, "re-putting", "key", key, "marker", markerKey, "reason", reason)
 
 		switch reputEntry(ctx, kv, key) {
 		case reputProcessed:
@@ -151,10 +219,14 @@ func runMissing(ctx context.Context, nc *nats.Conn, requestedTypes []string, rei
 		objectType = strings.TrimSpace(objectType)
 		slog.InfoContext(ctx, "scanning object type for missing success markers", "object_type", objectType)
 
-		stats, err := findMissing(ctx, kv, kvMappings, objectType, missingMarkerConfig[objectType], reindex)
-		if err != nil {
-			slog.ErrorContext(ctx, "fatal error scanning type", "object_type", objectType, "error", err)
-			return 1
+		var stats missingStats
+		for _, spec := range missingMarkerConfig[objectType] {
+			specStats, err := findMissing(ctx, kv, kvMappings, objectType, spec, reindex)
+			if err != nil {
+				slog.ErrorContext(ctx, "fatal error scanning type", "object_type", objectType, "key_prefix", spec.keyPrefix, "error", err)
+				return 1
+			}
+			stats.add(specStats)
 		}
 
 		slog.InfoContext(ctx, "finished object type",
@@ -172,13 +244,7 @@ func runMissing(ctx context.Context, nc *nats.Conn, requestedTypes []string, rei
 				"object_type", objectType)
 		}
 
-		total.scanned += stats.scanned
-		total.withMarker += stats.withMarker
-		total.missing += stats.missing
-		total.processed += stats.processed
-		total.failed += stats.failed
-		total.notFound += stats.notFound
-		total.superseded += stats.superseded
+		total.add(stats)
 	}
 
 	slog.InfoContext(ctx, "reindex_meetings missing-only complete",
