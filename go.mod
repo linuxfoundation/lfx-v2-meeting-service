@@ -6,20 +6,20 @@ module github.com/linuxfoundation/lfx-v2-meeting-service
 go 1.27.4
 
 require (
-	github.com/auth0/go-auth0 v1.50.0
+	github.com/auth0/go-auth0 v1.53.0
 	github.com/auth0/go-jwt-middleware/v2 v2.3.1
-	github.com/go-chi/chi/v5 v5.4.0
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/google/uuid v1.6.0
-	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.11
-	github.com/linuxfoundation/lfx-v2-indexer-service v0.5.3
-	github.com/linuxfoundation/lfx-v2-invite-service v0.2.3
-	github.com/nats-io/nats.go v1.54.0
+	github.com/linuxfoundation/lfx-v2-fga-sync v0.3.14
+	github.com/linuxfoundation/lfx-v2-indexer-service v0.5.5
+	github.com/linuxfoundation/lfx-v2-invite-service v0.2.7
+	github.com/nats-io/nats.go v1.56.0
 	github.com/remychantenay/slog-otel v1.3.5
 	github.com/stretchr/testify v1.12.1
 	github.com/teambition/rrule-go v1.8.2
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
-	go.opentelemetry.io/contrib/propagators/jaeger v1.46.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.47.0
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.23.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.23.0
@@ -31,8 +31,8 @@ require (
 	go.opentelemetry.io/otel/sdk/log v1.47.0
 	go.opentelemetry.io/otel/sdk/metric v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	goa.design/goa/v3 v3.32.0
-	golang.org/x/oauth2 v0.37.0
+	goa.design/goa/v3 v3.35.0
+	golang.org/x/oauth2 v0.38.0
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
@@ -78,7 +78,7 @@ require (
 	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/tools v0.52.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b // indirect
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
