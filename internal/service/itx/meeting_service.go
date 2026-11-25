@@ -10,6 +10,7 @@ import (
 
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/domain/models"
+	"github.com/linuxfoundation/lfx-v2-meeting-service/internal/logging"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/constants"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/models/itx"
 	"github.com/linuxfoundation/lfx-v2-meeting-service/pkg/redaction"
@@ -22,6 +23,8 @@ type MeetingService struct {
 	registrantClient domain.ITXRegistrantClient
 	idMapper         domain.IDMapper
 	committeeAuthz   domain.CommitteeAuthorizer // nil when NATS is unavailable
+	eventPublisher   domain.EventPublisher      // nil when NATS is unavailable
+	userReader       domain.UserReader          // nil when NATS is unavailable
 }
 
 // NewMeetingService creates a new ITX meeting service.
@@ -35,13 +38,19 @@ type MeetingService struct {
 // checks every newly attached committee and CreateMeeting checks every committee
 // plus the project (see authorizeCreateScope); RPC errors fail closed (503) to
 // prevent bypass during fga-sync outages.
-func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer) *MeetingService {
+//
+// userReader may be nil (e.g. when NATS is disabled), in which case the
+// synchronous creator host grant (grantCreatorHostAccess) uses the raw JWT
+// principal unresolved -- see that function's doc comment.
+func NewMeetingService(meetingClient domain.ITXMeetingClient, registrantClient domain.ITXRegistrantClient, idMapper domain.IDMapper, userMetadata domain.UserMetadataReader, committeeAuthz domain.CommitteeAuthorizer, eventPublisher domain.EventPublisher, userReader domain.UserReader) *MeetingService {
 	return &MeetingService{
 		auditStamper:     auditStamper{userMetadata: userMetadata},
 		meetingClient:    meetingClient,
 		registrantClient: registrantClient,
 		idMapper:         idMapper,
 		committeeAuthz:   committeeAuthz,
+		eventPublisher:   eventPublisher,
+		userReader:       userReader,
 	}
 }
 
@@ -75,12 +84,75 @@ func (s *MeetingService) CreateMeeting(ctx context.Context, req *models.CreateIT
 		return nil, err
 	}
 
+	// Grant before mapResponseV1ToV2: the Zoom meeting already exists in ITX as
+	// soon as CreateZoomMeeting succeeds, and resp.ID is a native Zoom ID the
+	// mapping step never touches (it only rewrites resp.Project/resp.Committees).
+	// Granting after the mapping would skip the creator's host access whenever
+	// that mapping errors, even though the meeting — and the gap this grant
+	// closes — already exists.
+	s.grantCreatorHostAccess(ctx, resp.ID, itxReq.CreatedBy)
+
 	// Map v1 SFIDs back to v2 UIDs in response
 	if err := s.mapResponseV1ToV2(ctx, resp); err != nil {
 		return nil, err
 	}
 
 	return resp, nil
+}
+
+// grantCreatorHostAccess synchronously grants the meeting creator the `host`
+// FGA relation, independent of whether a registrant event for them is ever
+// generated. update_access excludes host/participant (docs/fga-contract.md);
+// the only other path that can grant them is member_put off a registrant
+// event, which requires a registrant record to exist for the creator in the
+// first place — self-serve's create flow never creates one, so without this
+// call the creator can be permanently absent from their own "my meetings"
+// view (GH-4780). Fails open: the meeting already exists in ITX at this
+// point, so a publish failure here must not fail the create response — it
+// would strand the caller with an orphaned Zoom meeting and no error to act
+// on. The async registrant-event path remains the mechanism for every other
+// host/participant (self-registrants, committee members, PCC-added
+// registrants) and still applies on top of this grant if one later fires.
+func (s *MeetingService) grantCreatorHostAccess(ctx context.Context, meetingID string, creator *itx.User) {
+	if meetingID == "" || s.eventPublisher == nil || creator == nil || creator.Username == "" {
+		return
+	}
+	// M2M client principals carry an @clients suffix and have no personal
+	// identity to bind a host grant to (same guard as SubmitMeetingResponse
+	// and registrant_service.go).
+	if strings.HasSuffix(creator.Username, "@clients") {
+		return
+	}
+
+	// creator.Username is the raw JWT principal, which can be an auth identifier
+	// (e.g. an Auth0 "sub" like "auth0|<id>") rather than the user's LFX/LFID
+	// username -- the same distinction SelfRegisterForMeeting resolves before
+	// writing a registrant (see its doc comment). The registrant-event member_put
+	// this grant backstops is keyed on the LFX username, so a tuple written
+	// under the unresolved principal would never match it: the creator still
+	// wouldn't see the meeting, and no later registrant-event member_remove
+	// would ever clean up the mismatched tuple. Resolve it the same way: via
+	// the verified email, falling back to the raw principal when no reader is
+	// wired or the lookup fails.
+	username := creator.Username
+	if s.userReader != nil && creator.Email != "" {
+		if resolved, err := s.userReader.UsernameByEmail(ctx, creator.Email); err != nil {
+			slog.WarnContext(ctx, "failed to resolve LFX username from email for creator host grant; using JWT principal",
+				"meeting_id", meetingID, logging.ErrKey, err)
+		} else if resolved != "" {
+			username = resolved
+		}
+	}
+
+	if err := s.eventPublisher.PublishAccessMemberPut(ctx, "v1_meeting", meetingID, username,
+		[]string{"host"}, []string{"participant"}); err != nil {
+		// Unlike the registrant-event path, there is no retry or fallback that can
+		// recover this: the creator has no registrant record, so nothing will ever
+		// re-attempt this grant. Logged at Error, not Warn, because this recreates
+		// the exact permanent-visibility gap (GH-4780) this change exists to close.
+		slog.ErrorContext(ctx, "failed to grant meeting creator host access; creator will not see the meeting until a host registrant event is processed",
+			"meeting_id", meetingID, logging.ErrKey, err)
+	}
 }
 
 // GetMeeting retrieves a meeting via ITX proxy

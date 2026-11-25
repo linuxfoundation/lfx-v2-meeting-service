@@ -67,6 +67,9 @@ func (m *mockParticipantPublisher) PublishPastMeetingParticipantEvent(ctx contex
 func (m *mockParticipantPublisher) PublishAccessDelete(ctx context.Context, subject string, payload []byte) error {
 	return m.Called(ctx, subject, payload).Error(0)
 }
+func (m *mockParticipantPublisher) PublishAccessMemberPut(ctx context.Context, objectType, uid, username string, relations, mutuallyExclusiveWith []string) error {
+	return m.Called(ctx, objectType, uid, username, relations, mutuallyExclusiveWith).Error(0)
+}
 func (m *mockParticipantPublisher) PublishIndexerDelete(ctx context.Context, subject, id string) error {
 	return m.Called(ctx, subject, id).Error(0)
 }

@@ -183,6 +183,25 @@ func run() int {
 		defer committeeAuthzNatsConn.Close()
 	}
 
+	// Host-grant publisher: lets CreateMeeting synchronously grant the creator
+	// `host` access over the same connection, independent of whether the
+	// (separately gated, KV-based) async event-processing pipeline is enabled.
+	// nil only when NATS_URL is not configured, in which case the creator relies
+	// solely on the async registrant-event path (see docs/fga-contract.md).
+	var hostGrantPublisher domain.EventPublisher
+	if committeeAuthzNatsConn != nil {
+		// NewNATSPublisher does not currently fail, but its signature returns an
+		// error, so handle it the same way the connections above do rather than
+		// relying on that staying true.
+		pub, err := eventing.NewNATSPublisher(committeeAuthzNatsConn, slog.Default())
+		if err != nil {
+			slog.With(logging.ErrKey, err).ErrorContext(ctx,
+				"failed to initialize host-grant publisher; refusing to start with synchronous host grants disabled")
+			return 1
+		}
+		hostGrantPublisher = pub
+	}
+
 	// Recording record reader: the past-meeting chat route reads the recording record
 	// from the v1-objects KV bucket on demand (the bucket the event pipeline watches),
 	// over the same NATS connection as the authorizers. The bucket is bound lazily on
@@ -197,7 +216,7 @@ func run() int {
 	}
 	chatFileFetcher := chatfile.NewFetcher(constants.PastMeetingChatFetchTimeout, nil)
 
-	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz)
+	itxMeetingService := itxservice.NewMeetingService(itxClient.Meetings(), itxClient.Registrants(), idMapper, userMetadataReader, committeeAuthz, hostGrantPublisher, userReader)
 	itxRegistrantService := itxservice.NewRegistrantService(itxClient.Registrants(), itxClient.Meetings(), idMapper, userMetadataReader, userReader)
 	itxPastMeetingService := itxservice.NewPastMeetingService(itxClient.PastMeetings(), itxClient.Meetings(), idMapper, userMetadataReader)
 	itxPastMeetingSummaryService := itxservice.NewPastMeetingSummaryService(itxClient.PastMeetingSummaries(), userMetadataReader, pastMeetingAuthz)

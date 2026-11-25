@@ -65,6 +65,10 @@ func (p *recordingTestPublisher) PublishMeetingAttachmentEvent(_ context.Context
 func (p *recordingTestPublisher) PublishPastMeetingAttachmentEvent(_ context.Context, _ string, _ *models.PastMeetingAttachmentEventData) error {
 	return nil
 }
+func (p *recordingTestPublisher) PublishAccessMemberPut(_ context.Context, _, _, _ string, _, _ []string) error {
+	return nil
+}
+
 func (p *recordingTestPublisher) PublishAccessDelete(_ context.Context, _ string, _ []byte) error {
 	return nil
 }
