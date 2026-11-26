@@ -315,10 +315,12 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `access_check_object` | `v1_meeting:{meeting_id}` (access checked on the parent meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_relation` | `auditor` |
 | `history_check_object` | `v1_meeting:{meeting_id}` |
 | `history_check_relation` | `auditor` |
 | `public` | `false` (always) |
+
+The document carries the registrant's personal data, so it is checked with `auditor`, the relation the HTTP API requires to read a single registrant (`GET /itx/meetings/{meeting_id}/registrants/{registrant_id}`, see [Get Registrant](api-contracts/itx-registrants-api.md)). It is not checked with `viewer`, which is broader than the API's read relation for this record (every registrant holds `viewer` on the meeting). Documents indexed before this relation need a [one-time republish](#roster-relations-reindex).
 
 ### Search Behavior
 
@@ -386,10 +388,12 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `access_check_object` | `v1_meeting:{meeting_id}` (access checked on the parent meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_relation` | `auditor` |
 | `history_check_object` | `v1_meeting:{meeting_id}` |
 | `history_check_relation` | `auditor` |
 | `public` | `false` (always) |
+
+An RSVP carries the same registrant personal data as the [registrant document](#v1-meeting-registrant) plus the registrant's answer, so it uses the same `auditor` check. Documents indexed before this relation need a [one-time republish](#roster-relations-reindex).
 
 ### Search Behavior
 
@@ -562,10 +566,14 @@ Used by `created_by`, `updated_by`, `owner`, and entries in `updated_by_list`:
 | Field | Value |
 |---|---|
 | `access_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` (access checked on the parent past meeting) |
-| `access_check_relation` | `viewer` |
+| `access_check_relation` | `organizer` |
 | `history_check_object` | `v1_past_meeting:{meeting_and_occurrence_id}` |
-| `history_check_relation` | `auditor` |
+| `history_check_relation` | `organizer` |
 | `public` | `false` (always) |
+
+The document carries the participant's personal data and attendance sessions. The HTTP API exposes participant records to meeting organizers only (every `/itx/past_meetings/{past_meeting_id}/participants` route requires `organizer`), so the document is checked with `organizer`, not `viewer`, which every invitee and attendee holds. The history check uses `organizer` as well because `auditor` is broader than `organizer` in the platform model; the history audience never exceeds the access audience.
+
+<a id="roster-relations-reindex"></a>Registrant, RSVP and participant documents indexed before these relations keep their previous `viewer` access check until they are republished. Run `go run ./scripts/reindex_meetings/ -types v1_meeting_registrant,v1_meeting_rsvp,v1_past_meeting_participant -reindex` once after deploying. The script republishes only documents whose v1 KV source still exists and passes the event handlers' checks; keys it reports as `not_found` or `skipped` are not republished. Afterwards, confirm that no document of these three types still carries a `viewer` access check, and delete any that do.
 
 ### Search Behavior
 
