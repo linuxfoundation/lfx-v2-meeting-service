@@ -37,15 +37,22 @@ func (c *Client) GetZoomMeeting(ctx context.Context, meetingID string) (*itx.Zoo
 	})
 }
 
-// DeleteZoomMeeting deletes a Zoom meeting from ITX.
-func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string) error {
-	return c.doNoContent(ctx, apiRequest{
+// DeleteZoomMeeting deletes a Zoom meeting from ITX. A nil req sends no body.
+func (c *Client) DeleteZoomMeeting(ctx context.Context, meetingID string, req *itx.DeleteMeetingRequest) error {
+	apiReq := apiRequest{
 		method:      http.MethodDelete,
 		path:        "/v2/zoom/meetings/%s",
 		pathArgs:    []any{meetingID},
 		debugOp:     "DeleteZoomMeeting",
 		debugFields: []any{"meetingID", meetingID},
-	})
+	}
+	// Leave the body unset for nil: a typed nil pointer in the interface field would be sent as "null".
+	if req != nil {
+		apiReq.body = req
+		// The note is free text written by the organizer, so the body is kept out of the logs.
+		apiReq.skipBodyLog = true
+	}
+	return c.doNoContent(ctx, apiReq)
 }
 
 // UpdateZoomMeeting updates a Zoom meeting in ITX.

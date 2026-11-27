@@ -571,7 +571,8 @@ func NewDeleteItxMeetingHandler(
 			}
 			return
 		}
-		res, err := endpoint(ctx, payload)
+		data := &meetingservice.DeleteItxMeetingRequestData{Payload: payload, Body: r.Body}
+		res, err := endpoint(ctx, data)
 		if err != nil {
 			if err := encodeError(ctx, w, err); err != nil && errhandler != nil {
 				errhandler(ctx, w, err)

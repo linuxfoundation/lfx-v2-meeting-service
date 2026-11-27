@@ -27,6 +27,7 @@ type fakeMeetingClient struct {
 	lastUpdateOccurrenceID string
 	lastUpdateOccurrence   *itx.UpdateOccurrenceRequest
 	lastDeleteOccurrence   *itx.DeleteOccurrenceRequest
+	lastDeleteMeeting      *itx.DeleteMeetingRequest
 	createResp             *itx.ZoomMeetingResponse
 	createErr              error
 	// getResp/getErr control GetZoomMeeting; used by update tests to set the
@@ -99,6 +100,11 @@ func (f *fakeMeetingClient) UpdateZoomMeeting(_ context.Context, _ string, req *
 func (f *fakeMeetingClient) UpdateOccurrence(_ context.Context, _, occurrenceID string, req *itx.UpdateOccurrenceRequest) error {
 	f.lastUpdateOccurrenceID = occurrenceID
 	f.lastUpdateOccurrence = req
+	return nil
+}
+
+func (f *fakeMeetingClient) DeleteZoomMeeting(_ context.Context, _ string, req *itx.DeleteMeetingRequest) error {
+	f.lastDeleteMeeting = req
 	return nil
 }
 
@@ -574,6 +580,34 @@ func TestMeetingService_DeleteOccurrence(t *testing.T) {
 		require.NoError(t, err)
 		assert.JSONEq(t, `{}`, string(body))
 	})
+}
+
+func TestMeetingService_DeleteMeeting(t *testing.T) {
+	t.Run("forwards the note and stamps updated_by", func(t *testing.T) {
+		client := &fakeMeetingClient{}
+		reader := &fakeUserMetadataReader{
+			profile: &domain.UserProfile{Username: "alice", Name: "Alice Example", Email: "alice@example.com"},
+		}
+		svc := NewMeetingService(client, nil, noOpIDMapper{}, reader, nil)
+
+		err := svc.DeleteMeeting(ctxWithPrincipal("alice", ""), "meeting-1", &itx.DeleteMeetingRequest{Note: "Series ended"})
+		require.NoError(t, err)
+		require.NotNil(t, client.lastDeleteMeeting)
+		assert.Equal(t, "Series ended", client.lastDeleteMeeting.Note)
+		require.NotNil(t, client.lastDeleteMeeting.UpdatedBy)
+		assert.Equal(t, "alice", client.lastDeleteMeeting.UpdatedBy.Username)
+	})
+
+	// Without a note the delete must reach ITX exactly as before: no body at all.
+	for name, req := range map[string]*itx.DeleteMeetingRequest{"nil request": nil, "empty note": {}} {
+		t.Run(name+" sends no body", func(t *testing.T) {
+			client := &fakeMeetingClient{lastDeleteMeeting: &itx.DeleteMeetingRequest{Note: "sentinel"}}
+			svc := NewMeetingService(client, nil, noOpIDMapper{}, nil, nil)
+
+			require.NoError(t, svc.DeleteMeeting(ctxWithPrincipal("alice", ""), "meeting-1", req))
+			assert.Nil(t, client.lastDeleteMeeting)
+		})
+	}
 }
 
 func TestMeetingService_UpdateMeeting_ProjectImmutability(t *testing.T) {

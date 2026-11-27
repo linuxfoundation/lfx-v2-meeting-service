@@ -331,7 +331,7 @@ paths:
             tags:
                 - Meeting Service
             summary: delete-itx-meeting Meeting Service
-            description: Delete a Zoom meeting through ITX API proxy
+            description: 'Delete a Zoom meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that is forwarded to ITX with the cancellation. The body is read by hand so a request without one stays valid.'
             operationId: Meeting Service#delete-itx-meeting
             parameters:
                 - name: v

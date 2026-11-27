@@ -14,7 +14,7 @@ type ITXMeetingClient interface {
 	CreateZoomMeeting(ctx context.Context, req *itx.CreateZoomMeetingRequest) (*itx.ZoomMeetingResponse, error)
 	GetZoomMeeting(ctx context.Context, meetingID string) (*itx.ZoomMeetingResponse, error)
 	UpdateZoomMeeting(ctx context.Context, meetingID string, req *itx.CreateZoomMeetingRequest) error
-	DeleteZoomMeeting(ctx context.Context, meetingID string) error
+	DeleteZoomMeeting(ctx context.Context, meetingID string, req *itx.DeleteMeetingRequest) error
 	GetMeetingCount(ctx context.Context, projectID string) (*itx.MeetingCountResponse, error)
 	GetMeetingJoinLink(ctx context.Context, req *itx.GetJoinLinkRequest) (*itx.ZoomMeetingJoinLink, error)
 	ResendMeetingInvitations(ctx context.Context, meetingID string, req *itx.ResendMeetingInvitationsRequest) error

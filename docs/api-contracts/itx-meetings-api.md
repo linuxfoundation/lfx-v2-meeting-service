@@ -27,7 +27,7 @@ Client → LFX Meeting Service (Proxy) → ITX Service → Zoom API
 The LFX Meeting Service proxy adds identity-attribution fields to ITX write requests so ITX records who made each change. These fields are populated by the proxy from the authenticated JWT principal — clients do not send them in their proxy request; if provided, they are overwritten.
 
 - `created_by` — stamped on `POST` (create) requests.
-- `updated_by` — stamped on `PUT` (update) requests, including per-occurrence updates.
+- `updated_by` — stamped on `PUT` (update) requests, including per-occurrence updates, and on a meeting delete that carries a `note`.
 
 Shape:
 
@@ -437,7 +437,27 @@ Authorization: Bearer <jwt_token>
 
 - `meeting_id` (string, required) - The Zoom meeting ID
 
+**Request Body** (optional):
+
+```json
+{
+  "note": "This series has ended"
+}
+```
+
+- `note` (string, optional) - Note forwarded to ITX with the cancellation. Trimmed; at most 4000 characters.
+
+The body may be omitted entirely; a request without one behaves as before. An empty or whitespace-only
+body, JSON `null`, `{}`, `{"note": null}`, and a note that is blank after trimming are all treated as no
+note. The service reads the body by hand
+(`SkipRequestBodyEncodeDecode`) because Goa would otherwise treat a declared body as required, so the
+generated OpenAPI spec does not show this schema.
+
 **Response**: `204 No Content`
+
+**Error Responses**:
+
+- `400 Bad Request` - A non-empty body that isn't a JSON object or `null`, malformed JSON, a `note` that is neither a string nor `null`, a `note` over 4000 characters, or a body over 64 KiB
 
 ### ITX API Endpoint
 
@@ -453,6 +473,17 @@ x-scope: manage:zoom
 **Path Parameters**:
 
 - `meeting_id` (string, required) - The Zoom meeting ID
+
+**Request Body** (only when the proxy request carried a non-empty `note`):
+
+```json
+{
+  "note": "This series has ended",
+  "updated_by": { "username": "...", "name": "...", "email": "..." }
+}
+```
+
+Without a note the proxy sends no body, exactly as before. `updated_by` is stamped from the authenticated principal.
 
 **Response**: `204 No Content`
 

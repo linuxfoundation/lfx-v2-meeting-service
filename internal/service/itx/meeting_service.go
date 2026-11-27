@@ -146,9 +146,14 @@ func (s *MeetingService) UpdateMeeting(ctx context.Context, meetingID string, re
 	return s.meetingClient.UpdateZoomMeeting(ctx, meetingID, itxReq)
 }
 
-// DeleteMeeting deletes a meeting via ITX proxy
-func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string) error {
-	err := s.meetingClient.DeleteZoomMeeting(ctx, meetingID)
+// DeleteMeeting deletes a meeting via ITX proxy. Without a note it sends no body, as before.
+func (s *MeetingService) DeleteMeeting(ctx context.Context, meetingID string, req *itx.DeleteMeetingRequest) error {
+	if req == nil || req.Note == "" {
+		req = nil
+	} else {
+		req.UpdatedBy = s.buildRequestingUser(ctx)
+	}
+	err := s.meetingClient.DeleteZoomMeeting(ctx, meetingID, req)
 	if err != nil {
 		return err
 	}

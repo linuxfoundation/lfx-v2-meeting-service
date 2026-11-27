@@ -25,8 +25,10 @@ type Service interface {
 	CreateItxMeeting(context.Context, *CreateItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
 	// Get a Zoom meeting through ITX API proxy
 	GetItxMeeting(context.Context, *GetItxMeetingPayload) (res *ITXZoomMeetingResponse, err error)
-	// Delete a Zoom meeting through ITX API proxy
-	DeleteItxMeeting(context.Context, *DeleteItxMeetingPayload) (err error)
+	// Delete a Zoom meeting through ITX API proxy. Accepts an optional JSON body
+	// {"note": "..."} (at most 4000 characters) that is forwarded to ITX with the
+	// cancellation. The body is read by hand so a request without one stays valid.
+	DeleteItxMeeting(context.Context, *DeleteItxMeetingPayload, io.ReadCloser) (err error)
 	// Update a Zoom meeting through ITX API proxy
 	UpdateItxMeeting(context.Context, *UpdateItxMeetingPayload) (err error)
 	// Get the count of Zoom meetings for a project through ITX API proxy
