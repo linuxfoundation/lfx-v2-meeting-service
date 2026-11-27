@@ -1001,3 +1001,39 @@ func TestParseDeleteITXOccurrenceBody(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDeleteITXMeetingBody(t *testing.T) {
+	// Existing callers send no body at all; they must keep working unchanged.
+	for name, body := range map[string]string{"empty": "", "empty object": "{}", "null note": `{"note":null}`} {
+		t.Run(name+" body yields no note", func(t *testing.T) {
+			req, err := ParseDeleteITXMeetingBody(strings.NewReader(body))
+			require.NoError(t, err)
+			assert.Equal(t, &itx.DeleteMeetingRequest{}, req)
+		})
+	}
+
+	t.Run("a nil body is valid and carries no note", func(t *testing.T) {
+		req, err := ParseDeleteITXMeetingBody(nil)
+		require.NoError(t, err)
+		assert.Equal(t, &itx.DeleteMeetingRequest{}, req)
+	})
+
+	t.Run("trims the note", func(t *testing.T) {
+		req, err := ParseDeleteITXMeetingBody(strings.NewReader(`{"note":"  Series ended  "}`))
+		require.NoError(t, err)
+		assert.Equal(t, "Series ended", req.Note)
+	})
+
+	for name, body := range map[string]string{
+		"a note over the limit": `{"note":"` + strings.Repeat("a", MaxOccurrenceCancelNoteLength+1) + `"}`,
+		"a non-string note":     `{"note":42}`,
+		"malformed JSON":        `{"note":`,
+		"an oversized body":     `{"note":"a","pad":"` + strings.Repeat("a", maxDeleteOccurrenceBodyBytes) + `"}`,
+	} {
+		t.Run("rejects "+name+" as a validation error", func(t *testing.T) {
+			_, err := ParseDeleteITXMeetingBody(strings.NewReader(body))
+			require.Error(t, err)
+			assert.Equal(t, domain.ErrorTypeValidation, domain.GetErrorType(err))
+		})
+	}
+}

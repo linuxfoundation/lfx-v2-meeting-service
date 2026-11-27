@@ -83,6 +83,7 @@ func ParseEndpoint(
 		meetingServiceDeleteItxMeetingMeetingIDFlag   = new(cliStringFlag)
 		meetingServiceDeleteItxMeetingVersionFlag     = new(cliStringFlag)
 		meetingServiceDeleteItxMeetingBearerTokenFlag = new(cliStringFlag)
+		meetingServiceDeleteItxMeetingStreamFlag      = new(cliStringFlag)
 
 		meetingServiceUpdateItxMeetingFlags           = flag.NewFlagSet("update-itx-meeting", flag.ExitOnError)
 		meetingServiceUpdateItxMeetingBodyFlag        = new(cliStringFlag)
@@ -342,6 +343,7 @@ func ParseEndpoint(
 	meetingServiceDeleteItxMeetingFlags.Var(meetingServiceDeleteItxMeetingMeetingIDFlag, "meeting-id", "The Zoom meeting ID")
 	meetingServiceDeleteItxMeetingFlags.Var(meetingServiceDeleteItxMeetingVersionFlag, "version", "")
 	meetingServiceDeleteItxMeetingFlags.Var(meetingServiceDeleteItxMeetingBearerTokenFlag, "bearer-token", "")
+	meetingServiceDeleteItxMeetingFlags.Var(meetingServiceDeleteItxMeetingStreamFlag, "stream", "path to file containing the streamed request body")
 	meetingServiceUpdateItxMeetingFlags.Var(meetingServiceUpdateItxMeetingBodyFlag, "body", "")
 	meetingServiceUpdateItxMeetingFlags.Var(meetingServiceUpdateItxMeetingMeetingIDFlag, "meeting-id", "The Zoom meeting ID")
 	meetingServiceUpdateItxMeetingFlags.Var(meetingServiceUpdateItxMeetingVersionFlag, "version", "")
@@ -763,6 +765,13 @@ func ParseEndpoint(
 			case "delete-itx-meeting":
 				endpoint = c.DeleteItxMeeting()
 				data, err = meetingservicec.BuildDeleteItxMeetingPayload(meetingServiceDeleteItxMeetingMeetingIDFlag.value, meetingServiceDeleteItxMeetingVersionFlag.value, meetingServiceDeleteItxMeetingBearerTokenFlag.value)
+				if err == nil {
+					if meetingServiceDeleteItxMeetingStreamFlag.value == nil {
+						err = fmt.Errorf("missing required flag --stream")
+					} else {
+						data, err = meetingservicec.BuildDeleteItxMeetingStreamPayload(data, *meetingServiceDeleteItxMeetingStreamFlag.value)
+					}
+				}
 			case "update-itx-meeting":
 				endpoint = c.UpdateItxMeeting()
 				data, err = meetingservicec.BuildUpdateItxMeetingPayload(meetingServiceUpdateItxMeetingBodyFlag.value, meetingServiceUpdateItxMeetingMeetingIDFlag.value, meetingServiceUpdateItxMeetingVersionFlag.value, meetingServiceUpdateItxMeetingBearerTokenFlag.value, meetingServiceUpdateItxMeetingXSyncFlag.value)
@@ -910,7 +919,7 @@ func meetingServiceUsage() {
 	fmt.Fprintln(os.Stderr, `    livez: Check if the service is alive.`)
 	fmt.Fprintln(os.Stderr, `    create-itx-meeting: Create a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting: Get a Zoom meeting through ITX API proxy`)
-	fmt.Fprintln(os.Stderr, `    delete-itx-meeting: Delete a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `    delete-itx-meeting: Delete a Zoom meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that is forwarded to ITX with the cancellation. The body is read by hand so a request without one stays valid.`)
 	fmt.Fprintln(os.Stderr, `    update-itx-meeting: Update a Zoom meeting through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    get-itx-meeting-count: Get the count of Zoom meetings for a project through ITX API proxy`)
 	fmt.Fprintln(os.Stderr, `    create-itx-registrant: Create a meeting registrant through ITX API proxy`)
@@ -1039,20 +1048,22 @@ func meetingServiceDeleteItxMeetingUsage() {
 	fmt.Fprint(os.Stderr, " -meeting-id STRING")
 	fmt.Fprint(os.Stderr, " -version STRING")
 	fmt.Fprint(os.Stderr, " -bearer-token STRING")
+	fmt.Fprint(os.Stderr, " -stream STRING")
 	fmt.Fprintln(os.Stderr)
 
 	// Description
 	fmt.Fprintln(os.Stderr)
-	fmt.Fprintln(os.Stderr, `Delete a Zoom meeting through ITX API proxy`)
+	fmt.Fprintln(os.Stderr, `Delete a Zoom meeting through ITX API proxy. Accepts an optional JSON body {"note": "..."} (at most 4000 characters) that is forwarded to ITX with the cancellation. The body is read by hand so a request without one stays valid.`)
 
 	// Flags list
 	fmt.Fprintln(os.Stderr, `    -meeting-id STRING: The Zoom meeting ID`)
 	fmt.Fprintln(os.Stderr, `    -version STRING: `)
 	fmt.Fprintln(os.Stderr, `    -bearer-token STRING: `)
+	fmt.Fprintln(os.Stderr, `    -stream STRING: path to file containing the streamed request body`)
 
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "Example:")
-	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\"")
+	fmt.Fprintf(os.Stderr, "    %s %s\n", os.Args[0], "meeting-service delete-itx-meeting --meeting-id \"1234567890\" --version \"1\" --bearer-token \"eyJhbGci...\" --stream \"goa.png\"")
 }
 
 func meetingServiceUpdateItxMeetingUsage() {

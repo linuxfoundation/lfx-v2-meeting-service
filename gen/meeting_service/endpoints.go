@@ -64,6 +64,15 @@ type Endpoints struct {
 	GetItxPastMeetingAttachmentDownload   goa.Endpoint
 }
 
+// DeleteItxMeetingRequestData holds both the payload and the HTTP request body
+// reader of the "delete-itx-meeting" method.
+type DeleteItxMeetingRequestData struct {
+	// Payload is the method payload.
+	Payload *DeleteItxMeetingPayload
+	// Body streams the HTTP request body.
+	Body io.ReadCloser
+}
+
 // DeleteItxOccurrenceRequestData holds both the payload and the HTTP request
 // body reader of the "delete-itx-occurrence" method.
 type DeleteItxOccurrenceRequestData struct {
@@ -243,7 +252,7 @@ func NewGetItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.End
 // method "delete-itx-meeting" of service "Meeting Service".
 func NewDeleteItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.Endpoint {
 	return func(ctx context.Context, req any) (any, error) {
-		p := req.(*DeleteItxMeetingPayload)
+		ep := req.(*DeleteItxMeetingRequestData)
 		var err error
 		sc := security.JWTScheme{
 			Name:           "jwt",
@@ -251,14 +260,14 @@ func NewDeleteItxMeetingEndpoint(s Service, authJWTFn security.AuthJWTFunc) goa.
 			RequiredScopes: []string{},
 		}
 		var token string
-		if p.BearerToken != nil {
-			token = string(*p.BearerToken)
+		if ep.Payload.BearerToken != nil {
+			token = string(*ep.Payload.BearerToken)
 		}
 		ctx, err = authJWTFn(ctx, token, &sc)
 		if err != nil {
 			return nil, err
 		}
-		return nil, s.DeleteItxMeeting(ctx, p)
+		return nil, s.DeleteItxMeeting(ctx, ep.Payload, ep.Body)
 	}
 }
 

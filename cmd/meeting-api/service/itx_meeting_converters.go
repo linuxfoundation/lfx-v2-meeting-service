@@ -353,3 +353,13 @@ func ParseDeleteITXOccurrenceBody(body io.Reader) (*itx.DeleteOccurrenceRequest,
 	req.Note = note
 	return req, nil
 }
+
+// ParseDeleteITXMeetingBody reads the optional {"note": "..."} body of a meeting delete,
+// with the same rules as ParseDeleteITXOccurrenceBody.
+func ParseDeleteITXMeetingBody(body io.Reader) (*itx.DeleteMeetingRequest, error) {
+	occ, err := ParseDeleteITXOccurrenceBody(body)
+	if err != nil {
+		return nil, err
+	}
+	return &itx.DeleteMeetingRequest{Note: occ.Note}, nil
+}

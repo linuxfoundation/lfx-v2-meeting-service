@@ -144,7 +144,9 @@ var _ = Service("Meeting Service", func() {
 	})
 
 	Method("delete-itx-meeting", func() {
-		Description("Delete a Zoom meeting through ITX API proxy")
+		Description("Delete a Zoom meeting through ITX API proxy. " +
+			"Accepts an optional JSON body {\"note\": \"...\"} (at most 4000 characters) that is forwarded to ITX " +
+			"with the cancellation. The body is read by hand so a request without one stays valid.")
 
 		Security(JWTAuth)
 
@@ -169,6 +171,8 @@ var _ = Service("Meeting Service", func() {
 			Param("version:v")
 			Param("meeting_id")
 			Header("bearer_token:Authorization")
+			// Goa treats a declared body as required, which would reject the existing body-less callers.
+			SkipRequestBodyEncodeDecode()
 			Response(StatusNoContent)
 			Response("BadRequest", StatusBadRequest)
 			Response("Unauthorized", StatusUnauthorized)

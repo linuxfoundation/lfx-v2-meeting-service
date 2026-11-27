@@ -269,6 +269,12 @@ type DeleteOccurrenceRequest struct {
 	UpdatedBy *User  `json:"updated_by,omitempty"` // User cancelling the occurrence (read-only, set by API)
 }
 
+// DeleteMeetingRequest represents the optional body sent when deleting a whole meeting or series
+type DeleteMeetingRequest struct {
+	Note      string `json:"note,omitempty"`       // Note forwarded to ITX with the cancellation
+	UpdatedBy *User  `json:"updated_by,omitempty"` // User deleting the meeting (read-only, set by API)
+}
+
 // ResendMeetingInvitationsRequest represents the request to resend invitations to all registrants
 type ResendMeetingInvitationsRequest struct {
 	ExcludeRegistrantIDs []string `json:"exclude_registrant_ids,omitempty"` // Registrant IDs to exclude

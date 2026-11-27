@@ -546,16 +546,19 @@ func DecodeGetItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder, r
 func (c *Client) BuildDeleteItxMeetingRequest(ctx context.Context, v any) (*http.Request, error) {
 	var (
 		meetingID string
+		body      io.Reader
 	)
 	{
-		p, ok := v.(*meetingservice.DeleteItxMeetingPayload)
+		rd, ok := v.(*meetingservice.DeleteItxMeetingRequestData)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting", "*meetingservice.DeleteItxMeetingPayload", v)
+			return nil, goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting", "meetingservice.DeleteItxMeetingRequestData", v)
 		}
+		p := rd.Payload
+		body = rd.Body
 		meetingID = p.MeetingID
 	}
 	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DeleteItxMeetingMeetingServicePath(meetingID)}
-	req, err := http.NewRequest("DELETE", u.String(), nil)
+	req, err := http.NewRequest("DELETE", u.String(), body)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("Meeting Service", "delete-itx-meeting", u.String(), err)
 	}
@@ -570,10 +573,11 @@ func (c *Client) BuildDeleteItxMeetingRequest(ctx context.Context, v any) (*http
 // Meeting Service delete-itx-meeting server.
 func EncodeDeleteItxMeetingRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, any) error {
 	return func(req *http.Request, v any) error {
-		p, ok := v.(*meetingservice.DeleteItxMeetingPayload)
+		data, ok := v.(*meetingservice.DeleteItxMeetingRequestData)
 		if !ok {
-			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting", "*meetingservice.DeleteItxMeetingPayload", v)
+			return goahttp.ErrInvalidType("Meeting Service", "delete-itx-meeting", "*meetingservice.DeleteItxMeetingRequestData", v)
 		}
+		p := data.Payload
 		if p.BearerToken != nil {
 			head := *p.BearerToken
 			if !strings.Contains(head, " ") {
@@ -717,6 +721,19 @@ func DecodeDeleteItxMeetingResponse(decoder func(*http.Response) goahttp.Decoder
 			return nil, goahttp.ErrInvalidResponse("Meeting Service", "delete-itx-meeting", resp.StatusCode, string(body))
 		}
 	}
+}
+
+// // BuildDeleteItxMeetingStreamPayload creates a streaming endpoint request
+// payload from the method payload and the path to the file to be streamed
+func BuildDeleteItxMeetingStreamPayload(payload any, fpath string) (*meetingservice.DeleteItxMeetingRequestData, error) {
+	f, err := os.Open(fpath)
+	if err != nil {
+		return nil, err
+	}
+	return &meetingservice.DeleteItxMeetingRequestData{
+		Payload: payload.(*meetingservice.DeleteItxMeetingPayload),
+		Body:    f,
+	}, nil
 }
 
 // BuildUpdateItxMeetingRequest instantiates a HTTP request object with method

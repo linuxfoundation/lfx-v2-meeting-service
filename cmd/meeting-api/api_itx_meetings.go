@@ -76,12 +76,19 @@ func (s *MeetingsAPI) UpdateItxMeeting(ctx context.Context, p *meetingsvc.Update
 }
 
 // DeleteItxMeeting deletes a meeting via ITX proxy
-func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.DeleteItxMeetingPayload) error {
-	err := s.itxMeetingService.DeleteMeeting(ctx, p.MeetingID)
+func (s *MeetingsAPI) DeleteItxMeeting(ctx context.Context, p *meetingsvc.DeleteItxMeetingPayload, body io.ReadCloser) error {
+	if body != nil {
+		defer func() { _ = body.Close() }()
+	}
+	req, err := service.ParseDeleteITXMeetingBody(body)
 	if err != nil {
 		return handleError(ctx, err)
 	}
-	slog.InfoContext(ctx, "meeting deleted", "meeting_id", p.MeetingID)
+	err = s.itxMeetingService.DeleteMeeting(ctx, p.MeetingID, req)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+	slog.InfoContext(ctx, "meeting deleted", "meeting_id", p.MeetingID, "has_note", req.Note != "")
 	return nil
 }
 

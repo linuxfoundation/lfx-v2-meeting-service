@@ -185,8 +185,8 @@ func (c *Client) GetItxMeeting(ctx context.Context, p *GetItxMeetingPayload) (re
 //   - "InternalServerError" (type *InternalServerError): Internal server error
 //   - "ServiceUnavailable" (type *ServiceUnavailableError): Service unavailable
 //   - error: internal error
-func (c *Client) DeleteItxMeeting(ctx context.Context, p *DeleteItxMeetingPayload) (err error) {
-	_, err = c.DeleteItxMeetingEndpoint(ctx, p)
+func (c *Client) DeleteItxMeeting(ctx context.Context, p *DeleteItxMeetingPayload, req io.ReadCloser) (err error) {
+	_, err = c.DeleteItxMeetingEndpoint(ctx, &DeleteItxMeetingRequestData{Payload: p, Body: req})
 	return
 }
 
